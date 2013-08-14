@@ -1,1 +1,1 @@
-obj-${CONFIG_SPI_GPIO_CUSTOM}    += mc-icsp.o
+obj-${MC_ICSP}    += mc-icsp.o
