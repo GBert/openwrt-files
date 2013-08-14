@@ -22,8 +22,7 @@ define KernelPackage/mc-icsp-gpio-custom
 endef
 
 define KernelPackage/mc-icsp-gpio-custom/description
- Kernel module to register a Microchip ICSP Interface to programm PIC Microcontroller (PIC18F)
- - GPIO part
+ Kernel module to register a Microchip ICSP Interface to programm PIC Microcontroller (PIC18F) - GPIO part
 endef
 
 EXTRA_KCONFIG:= \
