@@ -1,1 +1,1 @@
-obj-${MC_ICSP}    += mc-icsp.o
+obj-${CONFIG_MC_ICSP}    += mc-icsp.o
