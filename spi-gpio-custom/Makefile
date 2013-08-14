@@ -40,14 +40,14 @@ MAKE_OPTS:= \
     $(EXTRA_KCONFIG)
 
 define Build/Prepare
-    mkdir -p $(PKG_BUILD_DIR)
-    $(CP) ./src/* $(PKG_BUILD_DIR)/
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-    $(MAKE) -C "$(LINUX_DIR)" \
-        $(MAKE_OPTS) \
-        modules
+	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE_OPTS) \
+	modules
 endef
 
 $(eval $(call KernelPackage,spi-gpio-custom))
