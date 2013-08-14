@@ -16,9 +16,11 @@ script/feeds install kmod-mc-icp kmod-mc-icp-gpio-custom</pre></code>
 in your OpenWrt source tree.
 
 ### Using
-On the OpenWrt Router just install both modules and add the device:
+On the OpenWrt Router just install both modules:
+<pre><code>insmod mc-icsp
+insmod mc-icsp-gpio-custom mc\_icsp=14,12,11,13</pre></code>
+and add the device:
 <pre><code>mknod /dev/icsp0 c 245 0</pre></code>
-
 ### Test
 
 <pre><code>root@OpenWrt-MC-ICSP:~# lpicp -x devid -d /dev/icsp0
@@ -35,6 +37,7 @@ there are lots of todos:
   to programm all sorts of modern PICs
 * timings aren't handled correctly
 * the programmer itself isn't ready (please have a look at: https://github.com/pavius/lpicp)
+* rmmod mc\_icsp\_gpio\_custom doesn't work properly
 
 ### Thanks
 
