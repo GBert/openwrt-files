@@ -22,8 +22,7 @@ define KernelPackage/mc-icsp
 endef
 
 define KernelPackage/mc-icsp/description
- Kernel module for register a Microchip ICSP Interface
- Kernel module for register a custom spi-gpio platform device.
+ Kernel module for register a Microchip ICSP Interface to programm PIC Microcontroller (PIC18F)
 endef
 
 EXTRA_KCONFIG:= \
@@ -41,14 +40,14 @@ MAKE_OPTS:= \
     $(EXTRA_KCONFIG)
 
 define Build/Prepare
-    mkdir -p $(PKG_BUILD_DIR)
-    $(CP) ./src/* $(PKG_BUILD_DIR)/
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
-    $(MAKE) -C "$(LINUX_DIR)" \
-        $(MAKE_OPTS) \
-        modules
+	$(MAKE) -C "$(LINUX_DIR)" \
+	$(MAKE_OPTS) \
+	modules
 endef
 
 $(eval $(call KernelPackage,mc-icsp))
