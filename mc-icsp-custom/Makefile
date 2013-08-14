@@ -8,26 +8,26 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=mc-icsp-custom
+PKG_NAME:=mc-icsp-gpio-custom
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define KernelPackage/mc-icsp-custom
+define KernelPackage/mc-icsp-gpio-custom
   SUBMENU:=Other modules
   TITLE:=Microchip ICSP Interface / GPIO customizing
   DEPENDS:=@GPIO_SUPPORT +kmod-mc-icsp
-  FILES:=$(PKG_BUILD_DIR)/mc-icsp-custom.ko
+  FILES:=$(PKG_BUILD_DIR)/mc-icsp-gpio-custom.ko
   KCONFIG:=
 endef
 
-define KernelPackage/mc-icsp-custom/description
+define KernelPackage/mc-icsp-gpio-custom/description
  Kernel module to register a Microchip ICSP Interface to programm PIC Microcontroller (PIC18F)
  - GPIO part
 endef
 
 EXTRA_KCONFIG:= \
-    CONFIG_MC_ICSP_CUSTOM=m
+    CONFIG_MC_ICSP_GPIO_CUSTOM=m
 
 EXTRA_CFLAGS:= \
     $(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
@@ -51,4 +51,4 @@ define Build/Compile
 	modules
 endef
 
-$(eval $(call KernelPackage,mc-icsp-custom))
+$(eval $(call KernelPackage,mc-icsp-gpio-custom))

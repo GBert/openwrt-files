@@ -1,1 +1,1 @@
-obj-${CONFIG_MCP_ICSP_CUSTOM}    += mc-icsp-custom.o
+obj-${CONFIG_MC_ICSP_GPIO_CUSTOM}    += mc-icsp-gpio-custom.o
