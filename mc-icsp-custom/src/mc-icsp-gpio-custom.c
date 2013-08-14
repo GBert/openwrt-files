@@ -7,6 +7,8 @@
  *  it under the terms of the GNU General Public License version 2 as
  *  published by the Free Software Foundation.
  *
+ *  Based on i2c-gpio-custom by:
+ *  Copyright (C) 2007-2008 Gabor Juhos <juhosg@openwrt.org>
  * ---------------------------------------------------------------------------
  *
  *  The behaviour of this driver can be altered by setting some parameters
@@ -18,12 +20,12 @@
  *
  *  where:
  *
- *  <sda>	GPIO pin ID to used for MCLR (required)
+ *  <mclr>	GPIO pin ID to used for MCLR (required)
  *  <pgd>	GPIO pin ID to used for PGD (required)
  *  <pgc>	GPIO pin ID to used for PGC (required)
  *  <pgm>	GPIO pin ID to used for PGM (required)
  *
- *  See include/mc_icsp-gpio.h for more information about the parameters.
+ *  See include/mc-icsp-gpio.h for more information about the parameters.
  *
  *  If this driver is built into the kernel, you can use the following kernel
  *  command line parameters, with the same values as the corresponding module
