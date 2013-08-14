@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/mc-icsp
-  SUBMENU:=SPI Support
+  SUBMENU:=Other modules
   TITLE:=Microchip ICSP Interface
   DEPENDS:=@GPIO_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/mc-icsp.ko
