@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mc-icsp-custom
   SUBMENU:=Other modules
   TITLE:=Microchip ICSP Interface / GPIO customizing
-  DEPENDS:=@GPIO_SUPPORT
+  DEPENDS:=@GPIO_SUPPORT +kmod-mc-icsp
   FILES:=$(PKG_BUILD_DIR)/mc-icsp-custom.ko
   KCONFIG:=
 endef

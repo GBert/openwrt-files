@@ -1,6 +1,6 @@
 config MC_ICSP_CUSTOM
     tristate "Microchip ICSP driver / GPIO customizing"
-    depends on GENERIC_GPIO
+    depends on GENERIC_GPIO MC_ICSP
     select MC_ICSP_CUSTOM
     help
       This is a GPIO lines Microchip ICSP Customizing tool. 
