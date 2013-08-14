@@ -27,7 +27,7 @@ define KernelPackage/mc-icsp-custom/description
 endef
 
 EXTRA_KCONFIG:= \
-    MC_ICSP_CUSTOM=m
+    CONFIG_MC_ICSP_CUSTOM=m
 
 EXTRA_CFLAGS:= \
     $(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
