@@ -39,7 +39,7 @@
 #include <linux/platform_device.h>
 #include <linux/gpio.h>
 
-#include "mc_icsp.h"
+#include "mc-icsp.h"
 #include "mc-icsp-gpio-custom.h"
 
 #define DRV_NAME	"mc-icsp-gpio-custom"
