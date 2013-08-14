@@ -22,7 +22,7 @@ define KernelPackage/mc-icsp
 endef
 
 define KernelPackage/mc-icsp/description
- Kernel module to register a Microchip ICSP Interface to programm PIC Microcontroller (PIC18F)
+ Kernel module to register a Microchip ICSP Interface to programm PIC Microcontroller (e.g. PIC18F)
 endef
 
 EXTRA_KCONFIG:= \
