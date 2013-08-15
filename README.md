@@ -23,7 +23,13 @@ and add the device:
 <pre><code>mknod /dev/icsp0 c 245 0</pre></code>
 ### Test
 
-<pre><code>root@OpenWrt-MC-ICSP:~# lpicp -x devid -d /dev/icsp0
+<pre><code>root@OpenWrt-MC-ICSP:~# cat /sys/kernel/debug/gpio
+GPIOs 0-23, platform/10000600.gpio, 10000600.gpio:
+ gpio-11  (MC ICSP PGC         ) out lo
+ gpio-12  (MC ICSP PGD         ) out lo
+ gpio-13  (MC ICSP PGM         ) out lo
+ gpio-14  (MC ICSP MCLR        ) out lo
+root@OpenWrt-MC-ICSP:~# lpicp -x devid -d /dev/icsp0
 Found device (PIC18F2585)
 Device ID: E7.0E
 Done successfully in 0.000s</pre></code>
