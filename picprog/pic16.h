@@ -107,7 +107,7 @@ struct pic16_config {
 #define PIC18F2550 (0x1240)
 #define PIC18F2553 (0x2a40)
 #define PIC18F2580 (0x1ac0)
-#define PIC18F2585 (0x0ec0)
+#define PIC18F2585 (0x0ee0)
 #define PIC18F2610 (0x0ca0)
 #define PIC18F2620 (0x0c80)
 #define PIC18F2680 (0x0ec0)
