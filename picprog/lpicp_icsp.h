@@ -63,9 +63,6 @@ struct mc_icsp_cmd_only_t
 /* lpp context */
 struct lpp_context_t
 {
-    struct lpp_log_record_t     *log_records;
-    unsigned int                log_record_count;
-    unsigned int                log_current_idx;
     char                        *icsp_dev_name;
     int                         icsp_dev_file;
 };

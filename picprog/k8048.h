@@ -33,6 +33,7 @@
 #include <errno.h> 
 #include <libgen.h>
 #include <fcntl.h>
+#include "lpicp_icsp.h"
 #ifndef O_NDELAY
 #define O_NDELAY O_NONBLOCK
 #endif
@@ -129,6 +130,7 @@
  * session
  */
 struct k8048 {
+	struct lpp_context_t *lpp_context;
 	char dotfile[STRLEN];   /* configuration */
 	char device[STRLEN];	/* I/O device name: tty or rpi */
 	unsigned char bitrules;	/* I/O bit rules */
@@ -154,7 +156,6 @@ struct k8048 {
  * prototypes
  */
 void usage_k8048(struct k8048 *);
-void usage_ktest(struct k8048 *, char *);
 void usage_k14(struct k8048 *, char *);
 void usage_k16(struct k8048 *, char *);
 void usage(struct k8048 *, char *, char *);

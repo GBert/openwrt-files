@@ -8,7 +8,7 @@
  */
 
 #include "k8048.h"
-
+#include "lpicp_icsp.h"
 /*
  * k8048 help
  */
@@ -160,7 +160,7 @@ main(int argc, char **argv)
 		usage_k8048(&k);
 
 	/* Open device */
-	if (io_open(&k) < 0) {
+	if (lpp_icsp_init(k.lpp_context, "/dev/icsp0") < 0) {
 		char *msg;
 
 		if (strstr(k.device, "/dev/") == k.device)
@@ -198,7 +198,7 @@ main(int argc, char **argv)
 	if (argv[1][0] == 's') {	/* Select */
 		if (argc < 3) {
 			pic_selector(&k);
-			io_close(&k);
+			lpp_icsp_destroy(k.lpp_context);
 			exit(EX_OK);
 		}
 		if (mystrcasestr(argv[2], "pic") == argv[2]) {
@@ -297,6 +297,6 @@ main(int argc, char **argv)
 			break;
 	}
 
-	io_close(&k);
+	lpp_icsp_destroy(k.lpp_context);
 	exit(EX_OK);
 }

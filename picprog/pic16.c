@@ -163,8 +163,9 @@ pic16_selector(struct k8048 *k)
 void
 pic16_core_instruction(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "0000");
-	io_word_out(k, word);
+	lpp_icsp_write_16(k->lpp_context,0, word);
+	/* io_command_out(k, "0000"); */
+	/* io_word_out(k, word); */
 }
 
 /*
@@ -177,12 +178,15 @@ pic16_core_instruction(struct k8048 *k, unsigned short word)
 void
 pic16_core_instruction_nopp(struct k8048 *k)
 {
-	io_command_out(k, "000");	/* 000 */
-	io_set_pgd_pgc(k, LOW, HIGH);   /* 0   */
-	io_usleep(k, 5000);		/* P9  */
-	io_set_pgc(k, LOW);
-	io_usleep(k, 1);		/* P10 */
-	io_word_out(k, 0);
+	lpp_icsp_command_only(k->lpp_context,0);
+	/* io_command_out(k, "000");	 000 */
+	/* io_set_pgd_pgc(k, LOW, HIGH);   0   */
+	lpp_icsp_delay_us(k->lpp_context,5000);
+	/* io_usleep(k, 5000);		 P9  */
+	/* io_set_pgc(k, LOW);		 */
+	/* io_usleep(k, 1);		 P10 */
+	lpp_icsp_data_only(k->lpp_context,0);
+	/* io_word_out(k, 0); */
 }
 
 /*
@@ -195,9 +199,12 @@ pic16_core_instruction_nopp(struct k8048 *k)
 void
 pic16_core_instruction_nope(struct k8048 *k)
 {
-	io_command_out(k, "0000");
-	io_usleep(k, 5001);		/* P10 + P11  */
-	io_word_out(k, 0);
+	lpp_icsp_command_only(k->lpp_context,0);
+	/* io_command_out(k, "0000"); */
+	lpp_icsp_delay_us(k->lpp_context,5001);
+	/* io_usleep(k, 5001);		 P10 + P11  */
+	lpp_icsp_data_only(k->lpp_context,0);
+	/* io_word_out(k, 0); */
 }
 
 /*
@@ -208,8 +215,11 @@ pic16_core_instruction_nope(struct k8048 *k)
 unsigned char
 pic16_shift_out_tablat_register(struct k8048 *k)
 {
-	io_command_out(k, "0010");
-	return io_byte_in(k);
+	unsigned char data;
+	/* io_command_out(k, "0010"); */
+	/* return io_byte_in(k); */
+	lpp_icsp_read_8(k->lpp_context, 2, data);
+	return data;
 }
 
 /*
@@ -220,8 +230,11 @@ pic16_shift_out_tablat_register(struct k8048 *k)
 unsigned char
 pic16_table_read(struct k8048 *k)
 {
-	io_command_out(k, "1000");
-	return io_byte_in(k);
+	unsigned char data;
+	/* io_command_out(k, "1000"); */
+	/* return io_byte_in(k); */
+	lpp_icsp_read_8(k->lpp_context, 8, &data);
+	return data;
 }
 
 /*
@@ -232,8 +245,11 @@ pic16_table_read(struct k8048 *k)
 unsigned char
 pic16_table_read_post_increment(struct k8048 *k)
 {
-	io_command_out(k, "1001");
-	return io_byte_in(k);
+	unsigned char data;
+	/* io_command_out(k, "1001"); */
+	/* return io_byte_in(k); */
+	lpp_icsp_read_8(k->lpp_context, 9, &data);
+	return data;
 }
 
 /*
@@ -244,8 +260,11 @@ pic16_table_read_post_increment(struct k8048 *k)
 unsigned char
 pic16_table_read_post_decrement(struct k8048 *k)
 {
-	io_command_out(k, "1010");
-	return io_byte_in(k);
+	unsigned char data;
+	/* io_command_out(k, "1010"); */
+	/* return io_byte_in(k); */
+	lpp_icsp_read_8(k->lpp_context, 10, &data);
+	return data;
 }
 
 /*
@@ -256,8 +275,11 @@ pic16_table_read_post_decrement(struct k8048 *k)
 unsigned char
 pic16_table_read_pre_increment(struct k8048 *k)
 {
-	io_command_out(k, "1011");
-	return io_byte_in(k);
+	unsigned char data;
+	/* io_command_out(k, "1011"); */
+	/* return io_byte_in(k); */
+	lpp_icsp_read_8(k->lpp_context, 11, &data);
+	return data;
 }
 
 /*
@@ -268,8 +290,10 @@ pic16_table_read_pre_increment(struct k8048 *k)
 void
 pic16_table_write(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "1100");
-	io_word_out(k, word);
+	/* io_command_out(k, "1100"); */
+	/* io_word_out(k, word); */
+	lpp_icsp_command_only(k->lpp_context,12);
+	lpp_icsp_data_only(k->lpp_context,word);
 }
 
 /*
@@ -280,8 +304,10 @@ pic16_table_write(struct k8048 *k, unsigned short word)
 void
 pic16_table_write_post_increment_2(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "1101");
-	io_word_out(k, word);
+	/* io_command_out(k, "1101"); */
+	/* io_word_out(k, word); */
+	lpp_icsp_command_only(k->lpp_context,13);
+	lpp_icsp_data_only(k->lpp_context,word);
 }
 
 /*
@@ -292,8 +318,10 @@ pic16_table_write_post_increment_2(struct k8048 *k, unsigned short word)
 void
 pic16_table_write_post_decrement_2(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "1110");
-	io_word_out(k, word);
+	/* io_command_out(k, "1110"); */
+	/* io_word_out(k, word); */
+	lpp_icsp_command_only(k->lpp_context,14);
+	lpp_icsp_data_only(k->lpp_context,word);
 }
 
 /*
@@ -306,8 +334,10 @@ pic16_table_write_post_decrement_2(struct k8048 *k, unsigned short word)
 void
 pic16_table_write_start_programming_2(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "1110");
-	io_word_out(k, word);
+	/* io_command_out(k, "1110"); */
+	/* io_word_out(k, word); */
+	lpp_icsp_command_only(k->lpp_context,15);
+	lpp_icsp_data_only(k->lpp_context,word);
 }
 
 /*
@@ -318,8 +348,10 @@ pic16_table_write_start_programming_2(struct k8048 *k, unsigned short word)
 void
 pic16_table_write_start_programming(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "1111");
-	io_word_out(k, word);
+	/* io_command_out(k, "1111"); */
+	/* io_word_out(k, word); */
+	lpp_icsp_command_only(k->lpp_context,15);
+	lpp_icsp_data_only(k->lpp_context,word);
 }
 
 /*****************************************************************************
