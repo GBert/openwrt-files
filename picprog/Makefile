@@ -29,9 +29,9 @@ TARGET1=k8048
 #SOURCE1=k8048.c inhx32.c pic12.c pic14.c pic16.c pic.c util.c
 #HEADER1=k8048.h inhx32.h pic12.h pic14.h pic16.h pic.h util.h
 #OBJECT1=k8048.o inhx32.o pic12.o pic14.o pic16.o pic.o util.o
-SOURCE1=lpicp_icsp.c k8048.c inhx32.c pic16.c pic.c util.c
-HEADER1=lpicp_icsp.h k8048.h inhx32.h pic16.h pic.h util.h
-OBJECT1=lpicp_icsp.o k8048.o inhx32.o pic16.o pic.o util.o
+SOURCE1=lpicp_icsp.c k8048.c inhx32.c io.c  pic16.c pic.c util.c
+HEADER1=lpicp_icsp.h k8048.h inhx32.h io.h pic16.h pic.h util.h
+OBJECT1=lpicp_icsp.o k8048.o inhx32.o io.o pic16.o pic.o util.o
 
 #
 # COMMAND LINE TOOL

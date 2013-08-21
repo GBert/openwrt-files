@@ -88,48 +88,6 @@ void io_signal();
 void io_signal_on();
 void io_signal_off();
 
-int io_open(struct k8048 *);
-void io_close(struct k8048 *);
-
-void io_set_pgd(struct k8048 *, int);
-void io_set_pgc(struct k8048 *, int);
-void io_set_pgd_pgc(struct k8048 *, int, int);
-void io_set_mclr(struct k8048 *, int);
-unsigned char get_pgd(struct k8048 *);
-
-void io_usleep(struct k8048 *, int);
-void io_standby(struct k8048 *);
-void io_init_program_verify(struct k8048 *);
-
-void io_data_input_pullup(struct k8048 *, int);
-
-void io_clock_out(struct k8048 *, int, int);
-unsigned char io_clock_in(struct k8048 *, int);
-
-void io_command_out(struct k8048 *, char *);
-
-void io_word_out14(struct k8048 *, unsigned short);
-unsigned short io_word_in14(struct k8048 *);
-
-void io_word_out(struct k8048 *, unsigned short);
-unsigned char io_byte_in(struct k8048 *);
-
 void io_cursor(struct k8048 *, char);
-
-void io_test0(struct k8048 *, int, int);
-void io_test1(struct k8048 *, int);
-void io_test2(struct k8048 *, int);
-void io_test3(struct k8048 *, int);
-void io_test4(struct k8048 *, int);
-
-int io_test_out(struct k8048 *, int, int, unsigned char);
-int io_test_in(struct k8048 *, int, int, unsigned char *);
-char *io_test_err(int);
-int io_test_command(struct k8048 *, int, int, unsigned char *, int, unsigned int *, int);
-
-void io_test_switch(struct k8048 *, int);
-void io_test_lasterror(struct k8048 *, int);
-
-void io_test5(struct k8048 *, int);
 
 #endif /* !_IO_H */
