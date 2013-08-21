@@ -15,60 +15,17 @@
 void
 usage_k8048(struct k8048 *k)
 {
-	printf("USAGE: k12 | k14 | k16\n\n");
+	printf("USAGE: k14 | k16\n\n");
 	printf("FILES:\n"
 		" %s\n"
 		"\t\tConfiguration.\n\n", k->dotfile);
 
 	printf("EXAMPLES:\n"
-		" k12 SELECT DEVICE OPERATION [ARG]\n"
-		"\t\t12-bit word PIC10F/12F/16F operations.\n"
 		" k14 [SELECT DEVICE] OPERATION [ARG]\n"
 		"\t\t14-bit word PIC10F/12F/16F operations.\n"
 		" k16 OPERATION [ARG]\n"
 		"\t\t16-bit word PIC18F operations.\n");
 
-	exit(EX_OK);
-}
-
-/*
- * k12 help
- */
-void
-usage_k12(struct k8048 *k, char *msg)
-{
-	printf("USAGE: k12 SELECT DEVICE OPERATION [ARG]\n");
-	printf("12-bit word PIC10F/12F/16F operations.\n\n");
-	if (msg)
-		printf("Error: %s.\n\n", msg);
-	printf("FILES:\n"
-		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
-
-	printf("EXAMPLES:\n");
-	printf(" k12 select\n"
-		"\t\tDump supported devices.\n");
-	printf(" k12 select PIC1XFXXX blank\n"
-		"\t\tBlank device (disable protection and bulk erase).\n");
-	printf(" k12 select PIC1XFXXX config\n"
-		"\t\tDisplay device configuration.\n");
-	printf(" k12 select PIC1XFXXX dump\n"
-		"\t\tDump device content (intel hex32 format).\n");
-	printf(" k12 select PIC1XFXXX flash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n");
-	printf(" k12 select PIC1XFXXX id\n"
-		"\t\tDisplay device identification.\n");
-	printf(" k12 select PIC1XFXXX osccal\n"
-		"\t\tDisplay oscillator calibration.\n");
-	printf(" k12 select PIC1XFXXX osccal 0x0c1a\n"
-		"\t\tRestore oscillator calibration as 0x0c1a.\n");
-	printf(" k12 select PIC1XFXXX program file.hex\n"
-		"\t\tProgram file.hex in flash (intel hex32 format).\n");
-	printf(" k12 select PIC1XFXXX verify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n");
-
-	if (msg)
-		exit(EX_USAGE);
 	exit(EX_OK);
 }
 
@@ -159,14 +116,12 @@ usage_k16(struct k8048 *k, char *msg)
 }
 
 /*
- * k12/k14/k16 help
+ * k14/k16 help
  */
 void
 usage(struct k8048 *k, char *execname, char *msg)
 {
-	if (strcmp("k12", execname) == 0) {
-		usage_k12(k, msg);
-	} else if (strcmp("k14", execname) == 0) {
+	if (strcmp("k14", execname) == 0) {
 		usage_k14(k, msg);
 	} else if (strcmp("k16", execname) == 0) {
 		usage_k16(k, msg);
@@ -229,10 +184,8 @@ main(int argc, char **argv)
 		}
 	}
 	
-	/* Command: k12 | k14 | k16 */
-	if (strcmp(execname, "k12") == 0)
-		k.arch = ARCH12BIT;	/* 12-bit word PIC10F/PIC12F/PIC16F */
-	else if (strcmp(execname, "k14") == 0)
+	/* Command: k14 | k16 */
+	if (strcmp(execname, "k14") == 0)
 		k.arch = ARCH14BIT;	/* 14-bit word PIC10F/PIC12F/PIC16F */
 	else if (strcmp(execname, "k16") == 0)
 		k.arch = ARCH16BIT;	/* 16-bit word PIC18F */
@@ -262,8 +215,6 @@ main(int argc, char **argv)
 		argv += 2;
 		if (argc < 2)
 			usage(&k, execname, "Missing arg(s)");
-	} else if (k.arch == ARCH12BIT) {
-		usage(&k, execname, "Missing select");
 	}
 
 	int words = 0;

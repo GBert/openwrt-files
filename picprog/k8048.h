@@ -37,6 +37,9 @@
 #define O_NDELAY O_NONBLOCK
 #endif
 
+#define CONFIG_ONLY (0)
+#define CONFIG_ALL (1)
+
 /*
  * LF device support
  *
@@ -94,8 +97,6 @@
 /*
  * device parameters
  */
-#define ARCH12BIT (0x0fff)
-#define MASK12BIT (ARCH12BIT)
 #define ARCH14BIT (0x3fff)
 #define MASK14BIT (ARCH14BIT)
 #define ARCH16BIT (0xffff)
@@ -133,7 +134,7 @@ struct k8048 {
 	unsigned char bitrules;	/* I/O bit rules */
 	int fd;			/* I/O handle (tty) */
 	int busy;		/* I/O busy cursor speed */
-	unsigned short arch;	/* architecture mask: 12, 14 or 16 bit */
+	unsigned short arch;	/* architecture mask: 14 or 16 bit */
 	char devicename[STRLEN];/* overridden PICMicro device name */
 	int sleep;		/* I/O bit time (default 1us) */
 	int fwsleep;		/* ICSPIO bit time */
@@ -145,7 +146,6 @@ struct k8048 {
  */
 #include "util.h"
 #include "inhx32.h"
-#include "pic12.h"
 #include "pic14.h"
 #include "pic16.h"
 #include "pic.h"
@@ -155,7 +155,6 @@ struct k8048 {
  */
 void usage_k8048(struct k8048 *);
 void usage_ktest(struct k8048 *, char *);
-void usage_k12(struct k8048 *, char *);
 void usage_k14(struct k8048 *, char *);
 void usage_k16(struct k8048 *, char *);
 void usage(struct k8048 *, char *, char *);

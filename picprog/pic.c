@@ -16,10 +16,6 @@ void
 pic_selector(struct k8048 *k)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_selector(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_selector(k); */
@@ -39,10 +35,6 @@ void
 pic_read_config(struct k8048 *k, int flag)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_read_config_memory(k, flag); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_read_config_memory(k); */
@@ -64,10 +56,6 @@ int
 pic_get_program_flash_size(struct k8048 *k)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* return pic12_get_program_flash_size(); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* return pic14_get_program_flash_size(); */
@@ -87,10 +75,6 @@ int
 pic_get_data_flash_size(struct k8048 *k)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* return pic12_get_data_flash_size(); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* return pic14_get_data_flash_size(); */
@@ -110,10 +94,6 @@ int
 pic_get_data_eeprom_size(struct k8048 *k)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* return pic12_get_data_eeprom_size(); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* return pic14_get_data_eeprom_size(); */
@@ -135,10 +115,6 @@ int
 pic_read_flash_memory_block(struct k8048 *k, unsigned short *data, int max)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* return pic12_read_flash_memory_block(k, data, max); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* return pic14_read_flash_memory_block(k, data, max); */
@@ -163,10 +139,6 @@ pic_read_eeprom_memory_block(struct k8048 *k, unsigned char *data, int max)
 {
 	switch (k->arch) {
 	default:
-	case ARCH12BIT:
-		printf("%s: information: EEPROM is not supported on this device\n",
-			__func__);
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* return pic14_read_eeprom_memory_block(k, data, max); */
@@ -202,10 +174,6 @@ pic_program_verify(struct k8048 *k, const char *fname, int mode)
 	pic_read_config(k, CONFIG_ONLY);
 
 	if (mode == PROGRAM) switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_program(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_program(k); */
@@ -217,10 +185,6 @@ pic_program_verify(struct k8048 *k, const char *fname, int mode)
 		break;
 	}
 	else /* mode == VERIFY */ switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* fail = pic12_verify(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* fail = pic14_verify(k); */
@@ -249,10 +213,6 @@ pic_blank(struct k8048 *k)
 	pic_read_config(k, CONFIG_ONLY);
 
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_bulk_erase(k, INTERNAL); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_bulk_erase(k, INTERNAL, INTERNAL); */
@@ -276,10 +236,6 @@ pic_dumpdeviceid(struct k8048 *k)
 	pic_read_config(k, CONFIG_ALL);
 
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_dumpdeviceid(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_dumpdeviceid(k); */
@@ -303,10 +259,6 @@ pic_dumpconfig(struct k8048 *k)
 	pic_read_config(k, CONFIG_ONLY);
 
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_dumpconfig(k, mode); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_dumpconfig(k, mode); */
@@ -326,9 +278,6 @@ void
 pic_writebandgap(struct k8048 *k, unsigned short bandgap)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_read_config_memory(k); */
@@ -349,11 +298,6 @@ void
 pic_dumposccal(struct k8048 *k)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_read_config_memory(k, CONFIG_ALL); */
-		/* pic12_dumposccal(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_read_config_memory(k); */
@@ -374,11 +318,6 @@ void
 pic_writeosccal(struct k8048 *k, unsigned short osccal)
 {
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_read_config_memory(k, CONFIG_ONLY); */
-		/* pic12_bulk_erase(k, osccal); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_read_config_memory(k); */
@@ -462,10 +401,6 @@ pic_dumpdevice(struct k8048 *k)
 
 	/* Dump userid/config */
 	switch (k->arch) {
-	case ARCH12BIT:
-		printf("%s: information: not implemented yet\n", __func__);
-		/* pic12_dumpdevice(k); */
-		break;
 	case ARCH14BIT:
 		printf("%s: information: not implemented yet\n", __func__);
 		/* pic14_dumpdevice(k); */
