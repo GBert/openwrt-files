@@ -137,6 +137,10 @@ int
 main(int argc, char **argv)
 {
 	struct k8048 k;
+	struct lpp_context_t context;
+
+	k.lpp_context=&context;
+
 	char *execdup, *execname;
 
 	/* Get exec name */

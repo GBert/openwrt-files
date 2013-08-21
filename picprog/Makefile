@@ -11,7 +11,7 @@ SYSTEM:=$(shell uname -s)
 RELEASE:=$(shell uname -r)
 PLATFORM:=$(shell uname -m)
 
-CC=gcc
+CC=mipsel-openwrt-linux-gcc
 CFLAGS=-std=c99 -I. -ggdb -Wall -Wno-implicit-function-declaration
 GCCVERSIONGTEQ4:=$(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4)
 ifeq "$(GCCVERSIONGTEQ4)" "1"
