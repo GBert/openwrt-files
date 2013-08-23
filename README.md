@@ -33,6 +33,7 @@ GPIOs 0-23, platform/10000600.gpio, 10000600.gpio:
 root@OpenWrt-MC-ICSP:~# ls -l /usr/bin/k\*
 lrwxrwxrwx    1 root     root            14 Aug 18 01:24 /usr/bin/k16 -> /usr/bin/k8048
 -rwxr-xr-x    1 root     root        115360 Aug 23 12:02 /usr/bin/k8048
+
 root@OpenWrt-MC-ICSP:~# k16 info
 [000000] [PROGRAM]     6000 WORDS
 [200000] [IDLOCATION1] FF
@@ -52,7 +53,8 @@ root@OpenWrt-MC-ICSP:~# k16 info
 [30000C] [CONFIG7]     400F
 [3FFFFE] [DEVICEID]    0EE7 DEV:EE0 (E:7) REV:7 PIC18F2585
 [F00000] [DATA]        0400 BYTES
-oot@OpenWrt-MC-ICSP:~# k16 blank
+
+root@OpenWrt-MC-ICSP:~# k16 blank
 Blank device: Are you sure [y/N]? y
 root@OpenWrt-MC-ICSP:~# k16 program 18f2585\_blink.hex 
 Total: 120
