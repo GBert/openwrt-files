@@ -170,7 +170,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.udly_pgc_hold = 0;
 	mc_icsp_pdata.udly_pgc_low_hold = 0;
 	mc_icsp_pdata.udly_cmd_to_data = 0;
-	mc_icsp_pdata.udly_pgm_to_mclr = 0;
+	mc_icsp_pdata.udly_pgm_to_mclr = 2;
 
 	pdev = platform_device_alloc("mc-icsp", 0);
 	if (!pdev) {
