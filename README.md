@@ -29,10 +29,33 @@ GPIOs 0-23, platform/10000600.gpio, 10000600.gpio:
  gpio-12  (MC ICSP PGD         ) out lo
  gpio-13  (MC ICSP PGM         ) out lo
  gpio-14  (MC ICSP MCLR        ) out lo
-root@OpenWrt-MC-ICSP:~# lpicp -x devid -d /dev/icsp0
-Found device (PIC18F2585)
-Device ID: E7.0E
-Done successfully in 0.000s</pre></code>
+
+root@OpenWrt-MC-ICSP:~# ls -l /usr/bin/k\*
+lrwxrwxrwx    1 root     root            14 Aug 21 23:14 /usr/bin/k12 -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Aug 18 01:24 /usr/bin/k16 -> /usr/bin/k8048
+-rwxr-xr-x    1 root     root        115360 Aug 23 12:02 /usr/bin/k8048
+root@OpenWrt-MC-ICSP:~# k16 info
+[000000] [PROGRAM]     6000 WORDS
+[200000] [IDLOCATION1] FF
+[200001] [IDLOCATION2] FF
+[200002] [IDLOCATION3] FF
+[200003] [IDLOCATION4] FF
+[200004] [IDLOCATION5] FF
+[200005] [IDLOCATION6] FF
+[200006] [IDLOCATION7] FF
+[200007] [IDLOCATION8] FF
+[300000] [CONFIG1]     0200
+[300002] [CONFIG2]     1E1F
+[300004] [CONFIG3]     8200
+[300006] [CONFIG4]     0085
+[300008] [CONFIG5]     C00F
+[30000A] [CONFIG6]     E00F
+[30000C] [CONFIG7]     400F
+[3FFFFE] [DEVICEID]    0EE7 DEV:EE0 (E:7) REV:7 PIC18F2585
+[F00000] [DATA]        0400 BYTES
+
+
+</pre></code>
 
 ### Todo
 
@@ -42,7 +65,6 @@ there are lots of todos:
 * module provides only some basic commands (4 bit command - 16 bit data) - should be be able
   to programm all sorts of modern PICs
 * timings aren't handled correctly
-* the programmer itself isn't ready (please have a look at: https://github.com/pavius/lpicp)
 * rmmod mc\_icsp\_gpio\_custom doesn't work properly
 
 ### Thanks
