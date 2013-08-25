@@ -41,4 +41,9 @@ define Package/picprog/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
 endef
 
+define Package/picprog/postinst
+	ln -sf /usr/bin/k16 $${IPKG_INSTROOT}/k8048
+endef
+
+
 $(eval $(call BuildPackage,picprog))
