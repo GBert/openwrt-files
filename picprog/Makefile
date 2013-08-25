@@ -1,103 +1,44 @@
+# Copyright (C) 2013 OpenWrt.org
 #
-# Velleman K8048 Programmer for FreeBSD and others.
-#
-# Copyright (c) 2005-2013 Darron Broad
-# All rights reserved.
-#
-# Licensed under the terms of the BSD license, see file LICENSE for details.
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
 #
 
-SYSTEM:=$(shell uname -s)
-RELEASE:=$(shell uname -r)
-PLATFORM:=$(shell uname -m)
+include $(TOPDIR)/rules.mk
 
-CC=mipsel-openwrt-linux-gcc
-CFLAGS=-std=c99 -I. -Os -Wall -Wno-implicit-function-declaration
-GCCVERSIONGTEQ4:=$(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4)
-ifeq "$(GCCVERSIONGTEQ4)" "1"
-CFLAGS+=-Wno-int-to-pointer-cast
-endif
+PKG_NAME:=picprog
+PKG_RELEASE:=1
 
-#DMALLOC
-#CFLAGS=-std=c99 -Wall -Wno-implicit-function-declaration -Wno-int-to-pointer-cast -I. -ggdb -I/usr/local/include -DDMALLOC
-#CLIB=-L/usr/local/lib -ldmalloc
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
-BINDIR=/usr/local/bin
+include $(INCLUDE_DIR)/package.mk
 
-CLIB1=$(CLIB)
-TARGET1=k8048
-#SOURCE1=k8048.c inhx32.c pic12.c pic14.c pic16.c pic.c util.c
-#HEADER1=k8048.h inhx32.h pic12.h pic14.h pic16.h pic.h util.h
-#OBJECT1=k8048.o inhx32.o pic12.o pic14.o pic16.o pic.o util.o
-SOURCE1=lpicp_icsp.c k8048.c inhx32.c io.c  pic16.c pic.c util.c
-HEADER1=lpicp_icsp.h k8048.h inhx32.h io.h pic16.h pic.h util.h
-OBJECT1=lpicp_icsp.o k8048.o inhx32.o io.o pic16.o pic.o util.o
+define Package/picprog
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=Microchip PIC Programmer
+endef
 
-#
-# COMMAND LINE TOOL
-#
-# DEBIAN:
-#  sudo apt-get install mercurial
-#  hg clone http://hg.kewl.org/pub/k8048/
-#  cd k8048
-#  make build
-#  sudo make install
-#
-build: $(TARGET1) $(TARGET2)
+define Package/picprog/description
+  Microchip PIC Programmer based on MC ICSP modul from Eran Duchan.
+  This is a modifed version of Darron Broads k8048 PIC Programmer.
+  Only some of PIC18F are supported so far.
+endef
 
-$(TARGET1):$(OBJECT1)
-	$(CC) $(CFLAGS) $(OBJECT1) -o $(TARGET1) $(CLIB1)
+define Build/Prepare
+	$(CP) ./src/* $(PKG_BUILD_DIR)
+endef
 
-$(TARGET2):$(OBJECT2)
-	$(CC) $(CFLAGS) $(OBJECT2) -o $(TARGET2) $(CLIB2)
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+		all
+endef
 
-$(OBJECT1):$(HEADER1)
+define Package/picprog/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
+endef
 
-$(OBJECT2):$(HEADER2)
-
-c.o:	$(CC) -c $< -o $@
-
-install:build
-	mkdir -p $(BINDIR)
-	cp $(TARGET1) $(BINDIR)/$(TARGET1)
-	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k12
-	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k14
-	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k16
-	cp $(TARGET2) $(BINDIR)/$(TARGET2)
-ifeq (,$(findstring CYGWIN,$(SYSTEM)))
-	chown 0:0 $(BINDIR)/$(TARGET1)
-	chmod u+s $(BINDIR)/$(TARGET1)
-	chown 0:0 $(BINDIR)/$(TARGET2)
-	chmod u+s $(BINDIR)/$(TARGET2)
-endif
-
-uninstall:
-	rm -f $(BINDIR)/$(TARGET1)
-	rm -f $(BINDIR)/k12
-	rm -f $(BINDIR)/k14
-	rm -f $(BINDIR)/k16
-	rm -f $(BINDIR)/$(TARGET2)
-
-clean:
-	rm -f $(TARGET1) $(TARGET2) *.o *~ .*~ etc/*~
-#
-# COMMAND LINE TOOL & ASSEMBLER DEMOS
-#
-# REQUIRES: gpasm gEDA gEDA-utils
-#
-# DEBIAN:
-#  sudo apt-get install gputils
-#  sudo apt-get install geda
-#  sudo apt-get install geda-utils
-#  sudo apt-get install libreadline-dev
-#  sudo apt-get install libncurses-dev
-#  make build-all
-#  sudo make install-all
-#
-build-all:build build-asm
-
-install-all:install install-asm
-
-uninstall-all:uninstall uninstall-asm
-
-clean-all:clean clean-asm
+$(eval $(call BuildPackage,picprog))
