@@ -18,6 +18,7 @@ define Package/picprog
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Microchip PIC Programmer
+  DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
 endef
 
 define Package/picprog/description
