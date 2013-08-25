@@ -44,7 +44,7 @@ define Package/picprog/install
 endef
 
 define Package/picprog/postinst
-	ln -sf /usr/bin/k16 $${IPKG_INSTROOT}/k8048
+	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k16
 endef
 
 
