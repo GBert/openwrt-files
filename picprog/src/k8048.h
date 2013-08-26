@@ -148,6 +148,7 @@ struct k8048 {
  */
 #include "util.h"
 #include "inhx32.h"
+#include "io.h"
 #include "pic14.h"
 #include "pic16.h"
 #include "pic.h"
