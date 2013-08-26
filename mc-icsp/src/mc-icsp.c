@@ -95,7 +95,7 @@ inline void mc_icsp_tx_command_4(const unsigned int xfer_cmd)
 }
 
 /* send a 4 bit command and read 16 bits */
-void mc_icsp_rx(unsigned int *xfer_cmd_and_data)
+void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
 {
     unsigned int read_bit_mask, current_bit, bits_left;
     unsigned long flags;
@@ -261,7 +261,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
             if (__get_user(xfer_data, (unsigned int __user *)data) == 0)
             {
                 /* data holds 12 bits 0, 4 bits command, 16 bits data */    
-                mc_icsp_rx(&xfer_data);
+                mc_icsp_rx_4_16(&xfer_data);
 
                 /* return the data to the user */
                 __put_user(xfer_data, (unsigned int __user *)data);
