@@ -166,6 +166,38 @@ struct pic16_config {
 #define PIC18F46K22  (0x5400)
 #define PIC18LF46K22 (0x5420)
 
+/*
+ * DS39972B
+ */
+#define DS39972B (39972)
+#define PIC18F66K80  (0x60e0)
+#define PIC18F46K80  (0x6100)
+#define PIC18F26K80  (0x6120)
+#define PIC18F65K80  (0x6140)
+#define PIC18F45K80  (0x6160)
+#define PIC18F25K80  (0x6180)
+#define PIC18LF66K80 (0x61c0)
+#define PIC18LF46K80 (0x61e0)
+#define PIC18LF26K80 (0x6200)
+#define PIC18LF65K80 (0x6220)
+#define PIC18LF45K80 (0x6240)
+#define PIC18LF25K80 (0x6260)
+
+/*
+ * DS41630B
+ */
+#define DS41630B (41630)
+#define PIC18F45K50  (0x5c00)
+#define PIC18LF45K50 (0x5c80)
+#define PIC18F25K50  (0x5c20)
+#define PIC18LF25K50 (0x5ca0)
+#define PIC18F24K50  (0x5c60)
+#define PIC18LF24K50 (0x5ce0)
+#define PIC18F26K50  (0x5d20)
+#define PIC18LF26K50 (0x5d60)
+#define PIC18F46K50  (0x5d00)
+#define PIC18LF46K50 (0x5d40)
+
 /* KB to number of words */
 #define WORD16(X) ((X) * 512)
 
@@ -179,6 +211,7 @@ struct pic16_dsmap
 	unsigned int datasheet;
 	unsigned char devid1rev4; /* DEVID1 REV4 used 0/1 */
 	unsigned char panelsize;
+	unsigned long key;
 };
 #define MAXPANELSIZE (64)
 
@@ -234,7 +267,7 @@ void pic16_bulk_erase(struct k8048 *);
 /* data (EEPROM) */
 void pic16_init_data_memory_access(struct k8048 *);
 void pic16_set_data_pointer(struct k8048 *, unsigned short);
-void pic16_inc_data_pointer(struct k8048 *);
+
 unsigned char pic16_read_data_memory(struct k8048 *);
 void pic16_write_data_memory(struct k8048 *, unsigned char);
 

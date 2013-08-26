@@ -8,6 +8,7 @@
  */
 
 #include "k8048.h"
+#include "lpicp_icsp.h"
 
 /******************************************************************************
  * CTRL-C signal handler
@@ -95,7 +96,7 @@ io_standby(struct k8048 *k)
  * Initialise board and device for Program/Verify Mode
  */
 void
-io_init_program_verify(struct k8048 *k)
+io_init_program_verify(struct k8048 *k, unsigned long key)
 {
 	io_cursor(k, '+');
 
@@ -104,5 +105,11 @@ io_init_program_verify(struct k8048 *k)
 
 	/* io_set_mclr(k, HIGH); */
 	io_usleep(k, 100000);	/* 100ms */
+
+	if (key != NOKEY) {
+		lpp_icsp_data_only(k->lpp_context,key);
+		/* io_word_out32(k, key); */
+		/* io_clock_out(k, k->sleep, LOW); 33 CLOCKS */
+	}
 }
 

@@ -135,7 +135,7 @@ void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
 }
 
-/* send 16 bits of data */
+/* send length (e.g. 16,24,32) bits of data */
 void mc_icsp_tx_data(const unsigned int xfer_cmd_and_data, const unsigned int length)
 {
     unsigned int current_bit_mask, bits_left;

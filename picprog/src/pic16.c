@@ -129,11 +129,44 @@ struct pic16_dsmap pic16_map[] =
 {"PIC18LF43K22",PIC18LF43K22,	4096,		256,	DS41398B,  0,		64},
 {"PIC18LF46K22",PIC18LF46K22,	32768,		1024,	DS41398B,  0,		64},
 #endif
+
+{"PIC18F65K80",	PIC18F65K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18F45K80",	PIC18F45K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18F25K80",	PIC18F25K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18F66K80",	PIC18F66K80,	32768,		1024,	DS39972B,  0,		64},
+{"PIC18F46K80",	PIC18F46K80,	32768,		1024,	DS39972B,  0,		64},
+{"PIC18F26K80",	PIC18F26K80,	32768,		1024,	DS39972B,  0,		64},
+#ifdef PICLF
+{"PIC18LF65K80",PIC18LF65K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18LF45K80",PIC18LF45K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18LF25K80",PIC18LF25K80,	16384,		1024,	DS39972B,  0,		64},
+{"PIC18LF66K80",PIC18LF66K80,	32768,		1024,	DS39972B,  0,		64},
+{"PIC18LF46K80",PIC18LF46K80,	32768,		1024,	DS39972B,  0,		64},
+{"PIC18LF26K80",PIC18LF26K80,	32768,		1024,	DS39972B,  0,		64},
+#endif
+
+{"PIC18F24K50",	PIC18F24K50,	8192,		256,	DS41630B,  0,		64},
+{"PIC18F25K50",	PIC18F25K50,	16384,		256,	DS41630B,  0,		64},
+{"PIC18F45K50",	PIC18F45K50,	16384,		256,	DS41630B,  0,		64},
+{"PIC18F26K50",	PIC18F26K50,	32768,		256,	DS41630B,  0,		64},
+{"PIC18F46K50",	PIC18F46K50,	32768,		256,	DS41630B,  0,		64},
+#ifdef PICLF
+{"PIC18LF24K50",PIC18LF24K50,	8192,		256,	DS41630B,  0,		64},
+{"PIC18LF25K50",PIC18LF25K50,	16384,		256,	DS41630B,  0,		64},
+{"PIC18LF45K50",PIC18LF45K50,	16384,		256,	DS41630B,  0,		64},
+{"PIC18LF26K50",PIC18LF26K50,	32768,		256,	DS41630B,  0,		64},
+{"PIC18LF46K50",PIC18LF46K50,	32768,		256,	DS41630B,  0,		64},
+#endif
+
 {"(null)",	0,		0,		0,	0,	   0,		0}
+/*Device name	Device id	Flash		EEPROM	Data-sheet DEVID1 REV4	Panel size*/
 };
 
 /* Selected device (defaults to (null) entry) */
-int pic16_index = (sizeof(pic16_map) / sizeof(struct pic16_dsmap)) - 1;
+unsigned int pic16_index = (sizeof(pic16_map) / sizeof(struct pic16_dsmap)) - 1;
+
+/* Selected device key for programming mode entry */
+unsigned long pic16_key = NOKEY;
 
 void
 pic16_selector(struct k8048 *k)
@@ -192,7 +225,7 @@ pic16_core_instruction_nopp(struct k8048 *k)
 	/* io_usleep(k, 5000);		 P9  */
 	/* io_set_pgc(k, LOW);		 */
 	/* io_usleep(k, 1);		 P10 */
-	lpp_icsp_data_only(k->lpp_context,0);
+	lpp_icsp_data_only_16(k->lpp_context,0);
 	/* io_word_out(k, 0); */
 }
 
@@ -210,7 +243,7 @@ pic16_core_instruction_nope(struct k8048 *k)
 	/* io_command_out(k, "0000"); */
 	lpp_icsp_delay_us(k->lpp_context,5001);
 	/* io_usleep(k, 5001);		 P10 + P11  */
-	lpp_icsp_data_only(k->lpp_context,0);
+	lpp_icsp_data_only_16(k->lpp_context,0);
 	/* io_word_out(k, 0); */
 }
 
@@ -368,8 +401,15 @@ pic16_table_write_start_programming(struct k8048 *k, unsigned short word)
 void
 pic16_init_code_memory_access(struct k8048 *k)
 {
-	pic16_core_instruction(k, 0x8EA6);	/* BSF EECON1, EEPGD	*/
-	pic16_core_instruction(k, 0x9CA6);	/* BCF EECON1, CFGS	*/
+	unsigned char eecon1 = 0xA6; /* @ 0x0FA6 */
+
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39972B:
+		eecon1 = 0x7F; /* @ 0x0F7F */
+	default:break;
+	}
+	pic16_core_instruction(k, 0x8E00 | eecon1);	/* BSF EECON1, EEPGD	*/
+	pic16_core_instruction(k, 0x9C00 | eecon1);	/* BCF EECON1, CFGS	*/
 }
 
 /*
@@ -378,8 +418,15 @@ pic16_init_code_memory_access(struct k8048 *k)
 void
 pic16_init_config_memory_access(struct k8048 *k)
 {
-	pic16_core_instruction(k, 0x8EA6);	/* BSF EECON1, EEPGD	*/
-	pic16_core_instruction(k, 0x8CA6);	/* BSF EECON1, CFGS	*/
+	unsigned char eecon1 = 0xA6; /* @ 0x0FA6 */
+
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39972B:
+		eecon1 = 0x7F; /* @ 0x0F7F */
+	default:break;
+	}
+	pic16_core_instruction(k, 0x8E00 | eecon1);	/* BSF EECON1, EEPGD	*/
+	pic16_core_instruction(k, 0x8C00 | eecon1);	/* BSF EECON1, CFGS	*/
 }
 
 /*
@@ -388,8 +435,15 @@ pic16_init_config_memory_access(struct k8048 *k)
 void
 pic16_init_data_memory_access(struct k8048 *k)
 {
-	pic16_core_instruction(k, 0x9EA6);	/* BCF EECON1, EEPGD	*/
-	pic16_core_instruction(k, 0x9CA6);	/* BCF EECON1, CFGS	*/
+	unsigned char eecon1 = 0xA6; /* @ 0x0FA6 */
+
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39972B:
+		eecon1 = 0x7F; /* @ 0x0F7F */
+	default:break;
+	}
+	pic16_core_instruction(k, 0x9E00 | eecon1);	/* BCF EECON1, EEPGD	*/
+	pic16_core_instruction(k, 0x9C00 | eecon1);	/* BCF EECON1, CFGS	*/
 }
 
 /*
@@ -401,10 +455,14 @@ pic16_set_table_pointer(struct k8048 *k, unsigned long address)
 	unsigned char addrl =  (address & 0x000000ff);		/*  7:0	 */
 	unsigned char addrh = ((address & 0x0000ff00) >> 8);	/* 15:8	 */
 	unsigned char addru = ((address & 0x003f0000) >> 16);	/* 21:16 */
-	pic16_core_instruction(k, 0x0E00 | addru);	/* MOVLW <Addr[21:16]> */
+
+	/* TBLPTRU @ 0x0FF8 */
+	pic16_core_instruction(k, 0x0E00 | addru);	/* MOVLW <Addr[21:16]>  */
 	pic16_core_instruction(k, 0x6EF8);		/* MOVWF TBLPTRU	*/
-	pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <Addr[15:8]>  */
+	/* TBLPTRH @ 0x0FF7 */
+	pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <Addr[15:8]>   */
 	pic16_core_instruction(k, 0x6EF7);		/* MOVWF TBLPTRH	*/
+	/* TBLPTRL @ 0x0FF6 */
 	pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr[7:0]>	*/
 	pic16_core_instruction(k, 0x6EF6);		/* MOVWF TBLPTRL	*/
 }
@@ -416,7 +474,9 @@ pic16_set_table_pointer(struct k8048 *k, unsigned long address)
  */
 void
 pic16_bulk_erase(struct k8048 *k)
-{	
+{
+	io_init_program_verify(k, pic16_key);
+
 	switch (pic16_map[pic16_index].datasheet) {	/* Erase entire device */
      /* case DS30500A: */
 	case DS39576B:
@@ -452,6 +512,7 @@ pic16_bulk_erase(struct k8048 *k)
 		break;
 
 	case DS41398B:
+	case DS41630B:
 		pic16_init_config_memory_access(k);	/* SWITCH TO CONFIG	*/
 		pic16_set_table_pointer(k, 0x3C0005);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(k, 0x0f0f);		/* BULK ERASE CHIP	*/
@@ -465,6 +526,8 @@ pic16_bulk_erase(struct k8048 *k)
         default:printf("%s: information: unimplemented\n", __func__);
                 break;
 	}
+
+	/* io_standby(k); */
 }
 
 /*****************************************************************************
@@ -482,12 +545,22 @@ pic16_read_config_memory(struct k8048 *k)
 	unsigned short deviceid, revision, error;
 	int i;
 
+	/* Device selected by user */
 	if (k->devicename[0]) {
-		printf("%s: fatal error: device select is not supported on this architecture.\n", __func__);
-		exit(EX_SOFTWARE);
+                for (i = 0; pic16_map[i].deviceid; i++) {
+                        if (strcasecmp(pic16_map[i].devicename, k->devicename) == 0) {
+				pic16_index = i; /* Datasheet    */
+				pic16_key = KEY; /* Key sequence */
+                                break;
+                        }
+                }
+                if (pic16_map[i].deviceid == 0) {
+                        printf("%s: fatal error: unknown device: [%s]\n", __func__, k->devicename);
+                        exit(EX_SOFTWARE); /* Panic */
+                }
 	}
 
-	io_init_program_verify(k);
+	io_init_program_verify(k, pic16_key);
 
 	pic16_init_code_memory_access(k);
 
@@ -595,7 +668,7 @@ pic16_read_flash_memory_block(struct k8048 *k, unsigned short *data, int max)
 	int i;
 
 	if (max) {
-		io_init_program_verify(k);
+		io_init_program_verify(k, pic16_key);
 
 		pic16_init_code_memory_access(k);
 
@@ -621,7 +694,7 @@ pic16_read_eeprom_memory_block(struct k8048 *k, unsigned char *data, int max)
 {
 	int i;
 
-	io_init_program_verify(k);
+	io_init_program_verify(k, pic16_key);
 
 	pic16_init_data_memory_access(k);
 	for (i = 0; i < max; i++) {
@@ -648,24 +721,25 @@ pic16_set_data_pointer(struct k8048 *k, unsigned short address)
 {
 	unsigned char addrl =  (address & 0x00ff);		/*  7:0	*/
 	unsigned char addrh = ((address & 0xff00) >> 8);	/* 15:8	*/
-	pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr>	*/
-	pic16_core_instruction(k, 0x6EA9);		/* MOVWF EEADR	*/
-	pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <AddrH>*/
-	pic16_core_instruction(k, 0x6EAA);		/* MOVWF EEADRH	*/
-}
 
-#if 0
-/*
- * INC DATA POINTER (EEPROM)
- */
-void
-pic16_inc_data_pointer(struct k8048 *k)
-{
-	pic16_core_instruction(k, 0x2AA9);		/* INCF EEADR	*/
-	pic16_core_instruction(k, 0xB4D8);		/* SKPNZ	*/
-	pic16_core_instruction(k, 0x2AAA);		/* INCF EEADRH	*/
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39972B:
+		/* EEADR  @ 0x0F74 */
+		pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr>	*/
+		pic16_core_instruction(k, 0x6E74);		/* MOVWF EEADR	*/
+	        /* EEADRH @ 0x0F75 */
+		pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <AddrH>*/
+		pic16_core_instruction(k, 0x6E75);		/* MOVWF EEADRH	*/
+		break;
+	default:/* EEADR  @ 0x0FA9 */
+		pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr>	*/
+		pic16_core_instruction(k, 0x6EA9);		/* MOVWF EEADR	*/
+	        /* EEADRH @ 0x0FAA */
+		pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <AddrH>*/
+		pic16_core_instruction(k, 0x6EAA);		/* MOVWF EEADRH	*/
+		break;
+	}
 }
-#endif
 
 /*
  * READ DATA MEMORY (EEPROM)
@@ -673,16 +747,33 @@ pic16_inc_data_pointer(struct k8048 *k)
 unsigned char
 pic16_read_data_memory(struct k8048 *k)
 {
-	pic16_core_instruction(k, 0x80A6);		/* BSF EECON1, RD	*/
-	pic16_core_instruction(k, 0x50A8);		/* MOVF EEDATA, W, 0	*/
-	pic16_core_instruction(k, 0x6EF5);		/* MOVWF TABLAT		*/
 	switch (pic16_map[pic16_index].datasheet) {
-	case DS39752A:
+	case DS39972B:
+		/* EECON1 @ 0x0F7F */
+		/* EEDATA @ 0x0F73 */
+		pic16_core_instruction(k, 0x807F);	/* BSF EECON1, RD	*/
+		pic16_core_instruction(k, 0x5073);	/* MOVF EEDATA, W, 0	*/
+		break;
+	default:/* EECON1 @ 0x0FA6 */
+		/* EEDATA @ 0x0FA8 */
+		pic16_core_instruction(k, 0x80A6);	/* BSF EECON1, RD	*/
+		pic16_core_instruction(k, 0x50A8);	/* MOVF EEDATA, W, 0	*/
+		break;
+	}
+
+	/* TABLAT @ 0x0FF5 */
+	pic16_core_instruction(k, 0x6EF5);		/* MOVWF TABLAT		*/
+
+	switch (pic16_map[pic16_index].datasheet) {
 	case DS39622K:
-	case DS41398B:
+	case DS39752A:
+	case DS39972B:
+	case DS41398B: /* PIC18F25K22 */
+	case DS41630B:
 		pic16_core_instruction(k, 0x0000);	/* NOP			*/
 		break;
 	}
+
 	return pic16_shift_out_tablat_register(k);
 }
 
@@ -693,38 +784,86 @@ void
 pic16_write_data_memory(struct k8048 *k, unsigned char data)
 {
 	pic16_core_instruction(k, 0x0E00 | data);	/* MOVLW <Data>		*/
-	pic16_core_instruction(k, 0x6EA8);		/* MOVWF EEDATA		*/
-	pic16_core_instruction(k, 0x84A6);		/* BSF EECON1, WREN	*/
 	switch (pic16_map[pic16_index].datasheet) {
-	case DS39576B:
-	case DS39592E:
+	case DS39972B:
+		/* EEDATA @ 0x0F73 */
+		/* EECON1 @ 0x0F7F */
+		pic16_core_instruction(k, 0x6E73);	/* MOVWF EEDATA		*/
+		pic16_core_instruction(k, 0x847F);	/* BSF EECON1, WREN	*/
+		break;
+	default:/* EEDATA @ 0x0FA8 */
+		/* EECON1 @ 0x0FA6 */
+		pic16_core_instruction(k, 0x6EA8);	/* MOVWF EEDATA		*/
+		pic16_core_instruction(k, 0x84A6);	/* BSF EECON1, WREN	*/
+		break;
+	}
+
+	switch (pic16_map[pic16_index].datasheet) {
+     /*	case DS30500A: */
+	case DS39576B: /* PIC18F252  */
+	case DS39592E: /* PIC18F1320 */
+		/* EECON2 @ 0x0FA7 */
 		pic16_core_instruction(k, 0x0E55);	/* MOVLW 0x55		*/
 		pic16_core_instruction(k, 0x6EA7);	/* MOVWF EECON2		*/
 		pic16_core_instruction(k, 0x0EAA);	/* MOVLW 0xAA		*/
 		pic16_core_instruction(k, 0x6EA7);	/* MOVWF EECON2		*/
 		break;
 	}
-	pic16_core_instruction(k, 0x82A6);		/* BSF EECON1, WR	*/
+
 	switch (pic16_map[pic16_index].datasheet) {
-	case DS41398B:
+	case DS39972B:
+		/* EECON1 @ 0x0F7F */
+		pic16_core_instruction(k, 0x827F);	/* BSF EECON1, WR	*/
+		break;
+	default:/* EECON1 @ 0x0FA6 */
+		pic16_core_instruction(k, 0x82A6);	/* BSF EECON1, WR	*/
+		break;
+	}
+
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39592E: /* PIC18F1320  */
+	case DS41398B: /* PIC18F25K22 */
 		pic16_core_instruction(k, 0x0000);	/* NOP			*/
 		pic16_core_instruction(k, 0x0000);	/* NOP			*/
 		break;
 	}
+
 	do	/* Until write complete */
 	{
-		pic16_core_instruction(k, 0x50A6);	/* MOVF EECON1, W, 0	*/
+		switch (pic16_map[pic16_index].datasheet) {
+		case DS39972B:
+			/* EECON1 @ 0x0F7F */
+			pic16_core_instruction(k, 0x507F);/* MOVF EECON1, W, 0	*/
+			break;
+		default:/* EECON1 @ 0x0FA6 */
+			pic16_core_instruction(k, 0x50A6);/* MOVF EECON1, W, 0	*/
+			break;
+		}
+
+		/* TABLAT @ 0x0FF5 */
 		pic16_core_instruction(k, 0x6EF5);	/* MOVWF TABLAT		*/
+
 		switch (pic16_map[pic16_index].datasheet) {
 		case DS39752A:
 		case DS39622K:
 		case DS41398B:
+		case DS39972B:
+		case DS41630B:
 		      pic16_core_instruction(k, 0x0000);/* NOP			*/
 		break;
 		}
 	}
 	while (pic16_shift_out_tablat_register(k) & 2);
-	pic16_core_instruction(k, 0x94A6);		/* BCF EECON1, WREN	*/
+
+	switch (pic16_map[pic16_index].datasheet) {
+	case DS39972B:
+		/* EECON1 @ 0x0F7F */
+		pic16_core_instruction(k, 0x947F);	/* BCF EECON1, WREN	*/
+		break;
+	default:/* EECON1 @ 0x0FA6 */
+		pic16_core_instruction(k, 0x94A6);	/* BCF EECON1, WREN	*/
+		break;
+	}
 }
 
 /*****************************************************************************
@@ -826,7 +965,7 @@ void
 pic16_goto100000(struct k8048 *k)
 {
 	pic16_core_instruction(k, 0xEF00);		/* GOTO 0x100000	*/
-	pic16_core_instruction(k, 0xf800);		/* GOTO 0x100000	*/
+	pic16_core_instruction(k, 0xF800);		/* GOTO 0x100000	*/
 }
 
 void
@@ -839,10 +978,11 @@ pic16_write_configreg(struct k8048 *k, unsigned long address, int index)
 	pic16_set_table_pointer(k, address);		/* Address must be even */
 	pic16_table_write_start_programming(k, data);
 	pic16_core_instruction_nopp(k);
+
 	switch (pic16_map[pic16_index].datasheet) {	/* Increment address */
 	case DS39576B:					/* INCF TBLPTRL */
 	case DS39592E:
-	default:
+	default:/* TBLPTRL @ 0x0FF6 */
 		pic16_core_instruction(k, 0x2AF6);
 		break;
 	case DS39752A:					/* TBLPTRL += 1 */
@@ -850,6 +990,7 @@ pic16_write_configreg(struct k8048 *k, unsigned long address, int index)
 		pic16_set_table_pointer(k, address + 1);
 		break;
 	}
+
 	pic16_table_write_start_programming(k, data);
 	pic16_core_instruction_nopp(k);
 }
@@ -999,11 +1140,12 @@ pic16_program(struct k8048 *k)
 	int new_region, current_region = PIC16_REGIONUNKNOWN;
 	int total = 0;
 
-	io_init_program_verify(k);
-
 	/* Initialise device for programming */
 	pic16_bulk_erase(k);
 	
+	/* Program device */
+	io_init_program_verify(k, pic16_key);
+
 	/* For each line */
 	for (i = 0; i < inhx32_count; i++) {
 		PC_address = inhx32_pdata[i]->address;
@@ -1047,7 +1189,8 @@ pic16_verify(struct k8048 *k)
 	int new_region, current_region = PIC16_REGIONUNKNOWN;
 	int fail = 0, total = 0;
 
-	io_init_program_verify(k);
+	/* Verify device */
+	io_init_program_verify(k, pic16_key);
 
 	/* For each line */
 	for (i = 0; i < inhx32_count; i++) {
@@ -1067,6 +1210,7 @@ pic16_verify(struct k8048 *k)
 			total++;
 		}
 	}
+
 	/* io_standby(k); */
 
 	printf("Total: %d Pass: %d Fail: %d\n", total, total-fail, fail);
@@ -1079,7 +1223,7 @@ pic16_verify(struct k8048 *k)
 void
 pic16_program_config(struct k8048 *k)
 {
-	io_init_program_verify(k);
+	io_init_program_verify(k, pic16_key);
 
 	pic16_write_config(k);
 

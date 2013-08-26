@@ -123,13 +123,37 @@ int lpp_icsp_command_only(struct lpp_context_t *context,
 }
 
 /* send only data */
-int lpp_icsp_data_only(struct lpp_context_t *context, 
+int lpp_icsp_data_only_16(struct lpp_context_t *context, 
                        const unsigned int data)
 {
     int ret;
 
     /* send only data */
     ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_16, data) == 0);
+
+    /* return result */
+    return ret;
+}
+
+int lpp_icsp_data_only_24(struct lpp_context_t *context, 
+                       const unsigned int data)
+{
+    int ret;
+
+    /* send only data */
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_24, data) == 0);
+
+    /* return result */
+    return ret;
+}
+
+int lpp_icsp_data_only_32(struct lpp_context_t *context, 
+                       const unsigned int data)
+{
+    int ret;
+
+    /* send only data */
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_32, data) == 0);
 
     /* return result */
     return ret;

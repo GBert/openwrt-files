@@ -81,6 +81,10 @@
 #define ERRNOTSUP   (4)
 #define ERRINVALID  (5)
 
+/* Programming entry key */
+#define NOKEY (0)
+#define KEY (0x0A12C2B2) /* MCHP (0x4D434850) reversed */
+
 /*
  * prototypes
  */

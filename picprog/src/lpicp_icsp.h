@@ -90,8 +90,16 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 int lpp_icsp_command_only(struct lpp_context_t *context, 
                           const struct mc_icsp_cmd_only_t *cmd_config);
 
-/* send only data */
-int lpp_icsp_data_only(struct lpp_context_t *context, 
+/* send only 16 bit data */
+int lpp_icsp_data_only_16(struct lpp_context_t *context, 
+                       const unsigned int data);
+
+/* send only 24 bit data */
+int lpp_icsp_data_only_24(struct lpp_context_t *context, 
+                       const unsigned int data);
+
+/* send only 32 bit data */
+int lpp_icsp_data_only_32(struct lpp_context_t *context, 
                        const unsigned int data);
 
 /* delay and return success */
