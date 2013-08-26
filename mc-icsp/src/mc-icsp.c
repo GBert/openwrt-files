@@ -136,7 +136,7 @@ void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
 }
 
 /* send 16 bits of data */
-void mc_icsp_tx_data_16(const unsigned int xfer_cmd_and_data)
+void mc_icsp_tx_data(const unsigned int xfer_cmd_and_data, const unsigned int length)
 {
     unsigned int current_bit_mask, bits_left;
     unsigned long flags;
@@ -145,7 +145,7 @@ void mc_icsp_tx_data_16(const unsigned int xfer_cmd_and_data)
     spin_lock_irqsave(&mc_icsp_lock, flags);
 
     /* pump out data */
-    for (current_bit_mask = (1 << 0), bits_left = 16; 
+    for (current_bit_mask = (1 << 0), bits_left = length; 
           bits_left; 
           --bits_left, current_bit_mask <<= 1)
     {
@@ -169,8 +169,8 @@ void mc_icsp_tx_4_16(const unsigned int xfer_cmd_and_data)
     /* wait a bit */
     mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
 
-    /* send the data */
-    mc_icsp_tx_data_16(xfer_cmd_and_data);
+    /* send the 16 bit data */
+    mc_icsp_tx_data(xfer_cmd_and_data,16);
 }
 
 /* send a command only */
@@ -285,7 +285,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         case MC_ICSP_IOC_DATA_ONLY:
         {
             /* send the data requested by the user */
-            mc_icsp_tx_data_16(data);
+            mc_icsp_tx_data(data,16);
         }
         break;
     }
