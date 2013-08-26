@@ -107,7 +107,7 @@ io_init_program_verify(struct k8048 *k, unsigned long key)
 	io_usleep(k, 100000);	/* 100ms */
 
 	if (key != NOKEY) {
-		lpp_icsp_data_only(k->lpp_context,key);
+		lpp_icsp_data_only_32(k->lpp_context,key);
 		/* io_word_out32(k, key); */
 		/* io_clock_out(k, k->sleep, LOW); 33 CLOCKS */
 	}
