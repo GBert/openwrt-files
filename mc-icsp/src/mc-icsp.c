@@ -281,20 +281,22 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         }
         break;
 
-        /* only send data */
+        /* only send 16 bit data */
         case MC_ICSP_IOC_DATA_ONLY_16:
         {
             /* send the 16 bit data requested by the user */
             mc_icsp_tx_data(data,16);
         }
         break;
+        /* only send 24 bit data */
         case MC_ICSP_IOC_DATA_ONLY_24:
         {
             /* send the 16 bit data requested by the user */
             mc_icsp_tx_data(data,24);
         }
         break;
-        case MC_ICSP_IOC_DATA_ONLY_16:
+        /* only send 32 bit data */
+        case MC_ICSP_IOC_DATA_ONLY_32:
         {
             /* send the 16 bit data requested by the user */
             mc_icsp_tx_data(data,32);
