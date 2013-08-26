@@ -218,7 +218,6 @@ pic_blank(struct k8048 *k)
 		/* pic14_bulk_erase(k, INTERNAL, INTERNAL); */
 		break;
 	case ARCH16BIT:
-		io_init_program_verify(k);
 		pic16_bulk_erase(k);
 		/* io_standby(k); */
 		break;
