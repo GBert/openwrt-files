@@ -28,7 +28,7 @@ GPIOs 0-23, platform/10000600.gpio, 10000600.gpio:
  gpio-11  (MC ICSP PGC         ) out lo
  gpio-12  (MC ICSP PGD         ) out lo
  gpio-13  (MC ICSP PGM         ) out lo
- gpio-14  (MC ICSP MCLR        ) out lo
+ gpio-14  (MC ICSP MCLR        ) out hi
 root@OpenWrt-MC-ICSP:~# ls -l /usr/bin/k\*
 lrwxrwxrwx    1 root     root            14 Aug 18 01:24 /usr/bin/k16 -> /usr/bin/k8048
 -rwxr-xr-x    1 root     root        115360 Aug 23 12:02 /usr/bin/k8048
@@ -71,4 +71,4 @@ there are lots of todos:
 
 ### Thanks
 
-Many hanks to Eran Duchan and Darron Broad for their help.
+Many thanks to Eran Duchan and Darron Broad for their help.
