@@ -71,4 +71,4 @@ there are lots of todos:
 
 ### Thanks
 
-Many hanks to Eran Duchan for his help.
+Many hanks to Eran Duchan and Darron Broad for their help.
