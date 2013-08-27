@@ -20,7 +20,7 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-PKG_UNPACK:=unzip -d $(PKG_BUILD_DIR)/ $(DL_DIR)/$(PKG_SOURCE)
+PKG_UNPACK:=unzip $(DL_DIR)/$(PKG_SOURCE)
 
 # Sart make install at build time
 
@@ -37,14 +37,14 @@ endef
 
 
 define Build/Prepare
-	$(CP) ./src/* $(PKG_BUILD_DIR)
+	$(PKG_UNPACK)
+	$(CP) $(PKG_NAME)$(PKG_VERSION)/src/* $(PKG_BUILD_DIR)
 endef
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-		all
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)"
 endef
 
 define Package/jalv2/install
