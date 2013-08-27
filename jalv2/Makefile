@@ -20,7 +20,7 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-PKG_UNPACK:=unzip $(DL_DIR)/$(PKG_SOURCE)
+PKG_UNPACK:=unzip -o $(DL_DIR)/$(PKG_SOURCE)
 
 # Sart make install at build time
 
