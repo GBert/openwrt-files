@@ -20,7 +20,7 @@ PKG_UNPACK:=unzip -d $(PKG_BUILD_DIR)/ $(DL_DIR)/$(PKG_SOURCE)
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
-define Package/picprog
+define Package/jalv2
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=jalv2
