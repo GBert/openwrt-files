@@ -1,0 +1,53 @@
+# Copyright (C) 2013 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=jalv2
+PKG_VERSION:=4p
+PKG_RELEASE:=1
+
+PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION)src.zip
+PKG_SOURCE_URL:=http://www.casadeyork.com/jalv2/archive
+PKG_MD5SUM:=5b99f723011aedcc26dffcf7e6655970
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)$(PKG_VERSION)
+PKG_UNPACK:=unzip -d $(PKG_BUILD_DIR)/ $(DL_DIR)/$(PKG_SOURCE)
+
+# Sart make install at build time
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
+
+define Package/picprog
+  SECTION:=utils
+  CATEGORY:=Utilities
+  TITLE:=jalv2
+  DEPENDS:=
+endef
+
+define Package/jalv2/description
+  JALv2 is a high-level language for a number of Microchip PIC
+endef
+
+include $(INCLUDE_DIR)/package.mk
+
+define Build/Prepare
+	$(CP) ./src/* $(PKG_BUILD_DIR)
+endef
+
+define Build/Compile
+	$(MAKE) -C $(PKG_BUILD_DIR) \
+		$(TARGET_CONFIGURE_OPTS) \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
+		all
+endef
+
+define Package/jalv2/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/jalv2 $(1)/usr/bin/
+endef
+
+
+$(eval $(call BuildPackage,jalv2))
