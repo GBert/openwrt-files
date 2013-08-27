@@ -14,11 +14,15 @@ PKG_SOURCE:=$(PKG_NAME)$(PKG_VERSION)src.zip
 PKG_SOURCE_URL:=http://www.casadeyork.com/jalv2/archive
 PKG_MD5SUM:=5b99f723011aedcc26dffcf7e6655970
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)$(PKG_VERSION)
+
+PKG_INSTALL:=1
+PKG_BUILD_PARALLEL:=1
+
+include $(INCLUDE_DIR)/package.mk
+
 PKG_UNPACK:=unzip -d $(PKG_BUILD_DIR)/ $(DL_DIR)/$(PKG_SOURCE)
 
 # Sart make install at build time
-PKG_INSTALL:=1
-PKG_BUILD_PARALLEL:=1
 
 define Package/jalv2
   SECTION:=utils
@@ -31,7 +35,6 @@ define Package/jalv2/description
   JALv2 is a high-level language for a number of Microchip PIC
 endef
 
-include $(INCLUDE_DIR)/package.mk
 
 define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)
