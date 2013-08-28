@@ -44,7 +44,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)"
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -ansi"
 endef
 
 define Package/jalv2/install
