@@ -38,18 +38,19 @@ endef
 
 define Build/Prepare
 	$(PKG_UNPACK)
-	$(CP) $(PKG_NAME)$(PKG_VERSION)/src/* $(PKG_BUILD_DIR)
+	mkdir -p $(PKG_BUILD_DIR)/bin
+	$(CP) $(PKG_NAME)$(PKG_VERSION)/src $(PKG_BUILD_DIR)
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/src \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)"
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -ansi"
 endef
 
 define Package/jalv2/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/jalv2 $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/jalv2 $(1)/usr/bin/
 endef
 
 
