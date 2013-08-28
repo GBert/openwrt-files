@@ -15,7 +15,6 @@ PKG_SOURCE_URL:=http://www.casadeyork.com/jalv2/archive
 PKG_MD5SUM:=5b99f723011aedcc26dffcf7e6655970
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)$(PKG_VERSION)
 
-PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
