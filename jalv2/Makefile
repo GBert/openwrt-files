@@ -39,11 +39,11 @@ endef
 define Build/Prepare
 	$(PKG_UNPACK)
 	mkdir -p $(PKG_BUILD_DIR)/bin
-	$(CP) $(PKG_NAME)$(PKG_VERSION)/src/* $(PKG_BUILD_DIR)
+	$(CP) $(PKG_NAME)$(PKG_VERSION)/src $(PKG_BUILD_DIR)
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	$(MAKE) -C $(PKG_BUILD_DIR)/src \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -ansi"
 endef
