@@ -38,6 +38,7 @@ endef
 
 define Build/Prepare
 	$(PKG_UNPACK)
+	mkdir -p $(PKG_BUILD_DIR)/bin
 	$(CP) $(PKG_NAME)$(PKG_VERSION)/src/* $(PKG_BUILD_DIR)
 endef
 
@@ -49,7 +50,6 @@ endef
 
 define Package/jalv2/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/jalv2 $(1)/usr/bin/
 endef
 
