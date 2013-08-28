@@ -18,10 +18,10 @@ define Package/can2udp
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=can2udp gateway
-  DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
+  DEPENDS:=
 endef
 
-define Package/picprog/description
+define Package/can2udp/description
   can2udp bridges CAN frames to UDP and vice versa
 endef
 
@@ -41,4 +41,4 @@ define Package/can2udp/install
 endef
 
 
-$(eval $(call BuildPackage,picprog))
+$(eval $(call BuildPackage,can2udp))
