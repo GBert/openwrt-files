@@ -48,9 +48,9 @@ define Build/Compile
 		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -ansi"
 endef
 
-define Package/install
+define Package/jalv2/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/jalv2 $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/jalv2 $(1)/usr/bin/
 endef
 
 
