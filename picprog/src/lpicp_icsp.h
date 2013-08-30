@@ -51,9 +51,11 @@ struct mc_icsp_cmd_only_t
 #define MC_ICSP_IOC_TX             _IO(MC_ICSP_IOC_MAGIC, 1)
 #define MC_ICSP_IOC_RX             _IOR(MC_ICSP_IOC_MAGIC, 2, unsigned int *)
 #define MC_ICSP_IOC_CMD_ONLY       _IOW(MC_ICSP_IOC_MAGIC, 3, struct mc_icsp_cmd_only_t *)
-#define MC_ICSP_IOC_DATA_ONLY_16   _IO(MC_ICSP_IOC_MAGIC, 4)
-#define MC_ICSP_IOC_DATA_ONLY_24   _IO(MC_ICSP_IOC_MAGIC, 5)
-#define MC_ICSP_IOC_DATA_ONLY_32   _IO(MC_ICSP_IOC_MAGIC, 6)
+#define MC_ICSP_IOC_MCLR_LOW	   _IO(MC_ICSP_IOC_MAGIC, 4)
+#define MC_ICSP_IOC_MCLR_HIGH	   _IO(MC_ICSP_IOC_MAGIC, 5)
+#define MC_ICSP_IOC_DATA_ONLY_16   _IO(MC_ICSP_IOC_MAGIC, 6)
+#define MC_ICSP_IOC_DATA_ONLY_24   _IO(MC_ICSP_IOC_MAGIC, 7)
+#define MC_ICSP_IOC_DATA_ONLY_32   _IO(MC_ICSP_IOC_MAGIC, 8)
 
 /* IO direction */
 #define MC_ICSP_IO_DIR_OUTPUT (0)
