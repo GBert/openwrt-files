@@ -109,7 +109,7 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 int lpp_icsp_mclr_set(struct lpp_context_t *context, const unsigned int data) 
 {
     int ret;
-    if (value) {
+    if (data) {
 	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_HIGH) == 0);
     } else {
 	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_LOW) == 0);
