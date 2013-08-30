@@ -106,6 +106,17 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
     return ret;
 }
 
+int lpp_icsp_mclr_set(struct lpp_context_t *context, unsigned char value) 
+{
+    int ret;
+    if (value) {
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_HIGH, cmd_config) == 0);
+    } else {
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_LOW, cmd_config) == 0);
+    }
+    return ret;
+}
+
 /* send only a command */
 int lpp_icsp_command_only(struct lpp_context_t *context, 
                           const struct mc_icsp_cmd_only_t *cmd_config)
