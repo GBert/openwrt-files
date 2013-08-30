@@ -90,6 +90,10 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
 int lpp_icsp_command_only(struct lpp_context_t *context, 
                           const struct mc_icsp_cmd_only_t *cmd_config);
 
+/* set MCLR for key handling */
+int lpp_icsp_mclr_set(struct lpp_context_t *context, 
+                       const unsigned int data);
+
 /* send only 16 bit data */
 int lpp_icsp_data_only_16(struct lpp_context_t *context, 
                        const unsigned int data);
