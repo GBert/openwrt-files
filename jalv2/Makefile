@@ -21,8 +21,6 @@ include $(INCLUDE_DIR)/package.mk
 
 PKG_UNPACK:=unzip -o $(DL_DIR)/$(PKG_SOURCE)
 
-# Sart make install at build time
-
 define Package/jalv2
   SECTION:=utils
   CATEGORY:=Utilities

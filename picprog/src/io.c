@@ -101,10 +101,10 @@ io_init_program_verify(struct k8048 *k, unsigned long key)
 	io_cursor(k, '+');
 
 	io_standby(k);
-	io_usleep(k, 100000);	/* 100ms */
+	io_usleep(k, 10000);	/* 10ms */
 
 	/* io_set_mclr(k, HIGH); */
-	io_usleep(k, 100000);	/* 100ms */
+	/* io_usleep(k, 10000);	10ms */
 	if (key != NOKEY) {
 		lpp_icsp_mclr_set(k->lpp_context, 0);
 		io_usleep(k, 2);
