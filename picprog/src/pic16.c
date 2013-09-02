@@ -523,8 +523,8 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_init_code_memory_access(k);	/* SWITCH TO CODE	*/
 		break;
 
-        default:printf("%s: information: unimplemented\n", __func__);
-                break;
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
 	}
 
 	/* io_standby(k); */
@@ -727,14 +727,14 @@ pic16_set_data_pointer(struct k8048 *k, unsigned short address)
 		/* EEADR  @ 0x0F74 */
 		pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr>	*/
 		pic16_core_instruction(k, 0x6E74);		/* MOVWF EEADR	*/
-	        /* EEADRH @ 0x0F75 */
+		/* EEADRH @ 0x0F75 */
 		pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <AddrH>*/
 		pic16_core_instruction(k, 0x6E75);		/* MOVWF EEADRH	*/
 		break;
 	default:/* EEADR  @ 0x0FA9 */
 		pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr>	*/
 		pic16_core_instruction(k, 0x6EA9);		/* MOVWF EEADR	*/
-	        /* EEADRH @ 0x0FAA */
+		/* EEADRH @ 0x0FAA */
 		pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <AddrH>*/
 		pic16_core_instruction(k, 0x6EAA);		/* MOVWF EEADRH	*/
 		break;
@@ -1244,15 +1244,15 @@ pic16_dumpdeviceid(struct k8048 *k)
 {
 	unsigned short deviceid, revision;
 
-        if (pic16_map[pic16_index].devid1rev4 == 0) {
-        	deviceid = (pic16_conf.index[PIC16_CONFIG_DEVICEID2] << 8) |
-                	(pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_IDMASK);
-               	revision = pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_REVMASK;
-        } else {
-        	deviceid = (pic16_conf.index[PIC16_CONFIG_DEVICEID2] << 8) |
-                	(pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_IDMASK_REV4);
-                revision = pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_REVMASK_REV4;
-        }
+	if (pic16_map[pic16_index].devid1rev4 == 0) {
+		deviceid = (pic16_conf.index[PIC16_CONFIG_DEVICEID2] << 8) |
+			(pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_IDMASK);
+		revision = pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_REVMASK;
+	} else {
+		deviceid = (pic16_conf.index[PIC16_CONFIG_DEVICEID2] << 8) |
+			(pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_IDMASK_REV4);
+		revision = pic16_conf.index[PIC16_CONFIG_DEVICEID1] & PIC16_DEVICEID1_REVMASK_REV4;
+	}
 	printf("[%06X] [PROGRAM]     %04X WORDS\n", PIC16_CODE_LOW, pic16_map[pic16_index].flash);
 	printf("[200000] [IDLOCATION1] %02X\n", pic16_conf.index[PIC16_CONFIG_IDLOCATION1]);
 	printf("[200001] [IDLOCATION2] %02X\n", pic16_conf.index[PIC16_CONFIG_IDLOCATION2]);
