@@ -478,15 +478,15 @@ pic16_erase_block(struct k8048 *k, unsigned long int block)
 	unsigned char datau = ((block & 0x003f0000) >> 16);   /* 21:16 */
 
 	pic16_set_table_pointer(k, 0x3C0004);
-	pic16_table_write(k, datal);		/* Write datal to 3C0004h       */
-	pic16_core_instruction(k, 0x0E05);	/* MOVLW 05h			*/
-	pic16_core_instruction(k, 0x6EF6);	/* MOVWF TBLPTRL		*/
-	pic16_table_write(k, datah);		/* Write datah to 3C0005h       */
-	pic16_core_instruction(k, 0x0E06);	/* MOVLW 06h                    */
-	pic16_core_instruction(k, 0x6EF6);	/* MOVWF TBLPTRL                */
-	pic16_table_write(k, datau);		/* Write datah to 3C0006h       */
-	pic16_core_instruction(k, 0x0000);      /* NOP				*/
-	pic16_core_instruction_nope(k);         /* NOP ERASE			*/
+	pic16_table_write(k, (datal << 8) | datal);	/* Write datal to 3C0004h       */
+	pic16_core_instruction(k, 0x0E05);		/* MOVLW 05h			*/
+	pic16_core_instruction(k, 0x6EF6);		/* MOVWF TBLPTRL		*/
+	pic16_table_write(k, (datah << 8) | datah );	/* Write datah to 3C0005h       */
+	pic16_core_instruction(k, 0x0E06);		/* MOVLW 06h                    */
+	pic16_core_instruction(k, 0x6EF6);		/* MOVWF TBLPTRL                */
+	pic16_table_write(k, (datau << 8) | datau);	/* Write datah to 3C0006h       */
+	pic16_core_instruction(k, 0x0000);		/* NOP				*/
+	pic16_core_instruction_nope(k);			/* NOP ERASE			*/
 }
 
 /*
