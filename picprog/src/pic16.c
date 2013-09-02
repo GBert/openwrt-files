@@ -239,6 +239,13 @@ pic16_core_instruction_nopp(struct k8048 *k)
 void
 pic16_core_instruction_nope(struct k8048 *k)
 {
+	struct mc_icsp_cmd_only_t cmd_config = {
+		.command = 0x00,
+		.pgc_value_after_cmd = 0,
+		.pgd_value_after_cmd = 0,
+		.mdelay = 1,
+		.udelay = 0
+	};
 	lpp_icsp_command_only(k->lpp_context,0);
 	/* io_command_out(k, "0000"); */
 	lpp_icsp_delay_us(k->lpp_context,5001);
