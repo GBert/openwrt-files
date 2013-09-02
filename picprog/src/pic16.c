@@ -561,7 +561,7 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_erase_block(k, 0x800204);	/* ERASE CODE BLOCK 2   */
 		pic16_erase_block(k, 0x800404);	/* ERASE CODE BLOCK 3   */
 		pic16_erase_block(k, 0x800804);	/* ERASE CODE BLOCK 4   */
-		break:
+		break;
 
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
