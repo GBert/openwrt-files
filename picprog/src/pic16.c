@@ -553,14 +553,13 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_init_code_memory_access(k);	/* SWITCH TO CODE	*/
 		break;
 	case DS39972B:
-		pic16_init_config_memory_access(k);	/* SWITCH TO CONFIG	*/
-		pic16_erase_block(k, 0x800004);	/* ERASE DATA EEPROM	*/
-		pic16_erase_block(k, 0x800005);	/* ERASE BOOT BLOCK	*/
-		pic16_erase_block(k, 0x800002);	/* ERASE CONFIG BITS	*/
-		pic16_erase_block(k, 0x800104);	/* ERASE CODE BLOCK 1	*/
-		pic16_erase_block(k, 0x800204);	/* ERASE CODE BLOCK 2   */
-		pic16_erase_block(k, 0x800404);	/* ERASE CODE BLOCK 3   */
-		pic16_erase_block(k, 0x800804);	/* ERASE CODE BLOCK 4   */
+		pic16_erase_block(k, 0x800004);		/* ERASE DATA EEPROM	*/
+		pic16_erase_block(k, 0x800005);		/* ERASE BOOT BLOCK	*/
+		pic16_erase_block(k, 0x800002);		/* ERASE CONFIG BITS	*/
+		pic16_erase_block(k, 0x800104);		/* ERASE CODE BLOCK 1	*/
+		pic16_erase_block(k, 0x800204);		/* ERASE CODE BLOCK 2   */
+		pic16_erase_block(k, 0x800404);		/* ERASE CODE BLOCK 3   */
+		pic16_erase_block(k, 0x800804);		/* ERASE CODE BLOCK 4   */
 		break;
 
 	default:printf("%s: information: unimplemented\n", __func__);
