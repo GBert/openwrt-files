@@ -475,7 +475,7 @@ pic16_erase_block(struct k8048 *k, unsigned long int block)
 {
 	unsigned char datal =  (block & 0x000000ff);          /*  7:0  */
 	unsigned char datah = ((block & 0x0000ff00) >> 8);    /* 15:8  */
-	unsigned char datau = ((block & 0x003f0000) >> 16);   /* 21:16 */
+	unsigned char datau = ((block & 0x00ff0000) >> 16);   /* 24:16 */
 
 	pic16_set_table_pointer(k, 0x3C0004);
 	pic16_table_write(k, (datal << 8) | datal);	/* Write datal to 3C0004h       */
