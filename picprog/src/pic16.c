@@ -468,6 +468,36 @@ pic16_set_table_pointer(struct k8048 *k, unsigned long address)
 }
 
 /*
+ * ERASE BLOCK / needed for DS39972B
+ * Description Data		(3C0006h:3C0004h)
+ * Erase Data EEPROM		800004h
+ * Erase Boot Block		800005h
+ * Erase Config Bits		800002h
+ * Erase Code EEPROM Block 0	800104h
+ * Erase Code EEPROM Block 1	800204h
+ * Erase Code EEPROM Block 2	800404h
+ * Erase Code EEPROM Block 3	800804h
+ */
+void
+pic16_erase_block(struct k8048 *k, unsigned long int block)
+{
+	unsigned char datal =  (address & 0x000000ff);          /*  7:0  */
+	unsigned char datah = ((address & 0x0000ff00) >> 8);    /* 15:8  */
+	unsigned char datau = ((address & 0x003f0000) >> 16);   /* 21:16 */
+
+	pic16_set_table_pointer(k, 0x3C0004);
+	pic16_table_write(k, datal);		/* Write datal to 3C0004h       */
+	pic16_core_instruction(k, 0x0E05);	/* MOVLW 05h			*/
+	pic16_core_instruction(k, 0x6EF6);	/* MOVWF TBLPTRL		*/
+	pic16_table_write(k, datah);		/* Write datah to 3C0005h       */
+	pic16_core_instruction(k, 0x0E06);	/* MOVLW 06h                    */
+	pic16_core_instruction(k, 0x6EF6);	/* MOVWF TBLPTRL                */
+	pic16_table_write(k, datau);		/* Write datah to 3C0006h       */
+	pic16_core_instruction(k, 0x0000);      /* NOP				*/
+	pic16_core_instruction_nope(k);         /* NOP ERASE			*/
+}
+
+/*
  * BLANK DEVICE
  *
  * DISABLE PROTECTION AND BULK ERASE
@@ -522,6 +552,16 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_core_instruction_nope(k);		/* NOP ERASE		*/
 		pic16_init_code_memory_access(k);	/* SWITCH TO CODE	*/
 		break;
+	case DS39972B:
+		pic16_init_config_memory_access(k);	/* SWITCH TO CONFIG	*/
+		pic16_erase_block(k, 0x800004h);	/* ERASE DATA EEPROM	*/
+		pic16_erase_block(k, 0x800005h);	/* ERASE BOOT BLOCK	*/
+		pic16_erase_block(k, 0x800002h);	/* ERASE CONFIG BITS	*/
+		pic16_erase_block(k, 0x800104h);	/* ERASE CODE BLOCK 1	*/
+		pic16_erase_block(k, 0x800204h);	/* ERASE CODE BLOCK 2   */
+		pic16_erase_block(k, 0x800404h);	/* ERASE CODE BLOCK 3   */
+		pic16_erase_block(k, 0x800804h);	/* ERASE CODE BLOCK 4   */
+		break:
 
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
