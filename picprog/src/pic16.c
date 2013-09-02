@@ -469,14 +469,6 @@ pic16_set_table_pointer(struct k8048 *k, unsigned long address)
 
 /*
  * ERASE BLOCK / needed for DS39972B
- * Description Data		(3C0006h:3C0004h)
- * Erase Data EEPROM		800004h
- * Erase Boot Block		800005h
- * Erase Config Bits		800002h
- * Erase Code EEPROM Block 0	800104h
- * Erase Code EEPROM Block 1	800204h
- * Erase Code EEPROM Block 2	800404h
- * Erase Code EEPROM Block 3	800804h
  */
 void
 pic16_erase_block(struct k8048 *k, unsigned long int block)
@@ -553,6 +545,14 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_init_code_memory_access(k);	/* SWITCH TO CODE	*/
 		break;
 	case DS39972B:
+		/* Description Data		(3C0006h:3C0004h)
+		 * Erase Data EEPROM		800004h
+		 * Erase Boot Block		800005h
+		 * Erase Config Bits		800002h
+		 * Erase Code EEPROM Block 0	800104h
+		 * Erase Code EEPROM Block 1	800204h
+		 * Erase Code EEPROM Block 2	800404h
+		 * Erase Code EEPROM Block 3	800804h */
 		pic16_erase_block(k, 0x800004);		/* ERASE DATA EEPROM	*/
 		pic16_erase_block(k, 0x800005);		/* ERASE BOOT BLOCK	*/
 		pic16_erase_block(k, 0x800002);		/* ERASE CONFIG BITS	*/
