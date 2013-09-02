@@ -481,9 +481,9 @@ pic16_set_table_pointer(struct k8048 *k, unsigned long address)
 void
 pic16_erase_block(struct k8048 *k, unsigned long int block)
 {
-	unsigned char datal =  (address & 0x000000ff);          /*  7:0  */
-	unsigned char datah = ((address & 0x0000ff00) >> 8);    /* 15:8  */
-	unsigned char datau = ((address & 0x003f0000) >> 16);   /* 21:16 */
+	unsigned char datal =  (block & 0x000000ff);          /*  7:0  */
+	unsigned char datah = ((block & 0x0000ff00) >> 8);    /* 15:8  */
+	unsigned char datau = ((block & 0x003f0000) >> 16);   /* 21:16 */
 
 	pic16_set_table_pointer(k, 0x3C0004);
 	pic16_table_write(k, datal);		/* Write datal to 3C0004h       */
@@ -554,13 +554,13 @@ pic16_bulk_erase(struct k8048 *k)
 		break;
 	case DS39972B:
 		pic16_init_config_memory_access(k);	/* SWITCH TO CONFIG	*/
-		pic16_erase_block(k, 0x800004h);	/* ERASE DATA EEPROM	*/
-		pic16_erase_block(k, 0x800005h);	/* ERASE BOOT BLOCK	*/
-		pic16_erase_block(k, 0x800002h);	/* ERASE CONFIG BITS	*/
-		pic16_erase_block(k, 0x800104h);	/* ERASE CODE BLOCK 1	*/
-		pic16_erase_block(k, 0x800204h);	/* ERASE CODE BLOCK 2   */
-		pic16_erase_block(k, 0x800404h);	/* ERASE CODE BLOCK 3   */
-		pic16_erase_block(k, 0x800804h);	/* ERASE CODE BLOCK 4   */
+		pic16_erase_block(k, 0x800004);	/* ERASE DATA EEPROM	*/
+		pic16_erase_block(k, 0x800005);	/* ERASE BOOT BLOCK	*/
+		pic16_erase_block(k, 0x800002);	/* ERASE CONFIG BITS	*/
+		pic16_erase_block(k, 0x800104);	/* ERASE CODE BLOCK 1	*/
+		pic16_erase_block(k, 0x800204);	/* ERASE CODE BLOCK 2   */
+		pic16_erase_block(k, 0x800404);	/* ERASE CODE BLOCK 3   */
+		pic16_erase_block(k, 0x800804);	/* ERASE CODE BLOCK 4   */
 		break:
 
 	default:printf("%s: information: unimplemented\n", __func__);
