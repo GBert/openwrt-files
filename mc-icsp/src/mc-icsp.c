@@ -68,6 +68,7 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
     mc_icsp_udelay(cfg->udly_pgc_low_hold);         \
     } while (0)
 
+
 /* send the command (expected at bits 16 - 19) */
 
 inline void mc_icsp_tx_command_4(const unsigned int xfer_cmd)
@@ -280,6 +281,19 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
             mc_icsp_command_only(&cmd_config);
         }
         break;
+
+        /* functions needed for key send */
+	case MC_ICSP_IOC_MCLR_LOW:
+	{
+	    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
+        }
+	break;
+	case MC_ICSP_IOC_MCLR_HIGH:
+	{
+	    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
+        }
+	break;
+
 
         /* only send 16 bit data */
         case MC_ICSP_IOC_DATA_ONLY_16:
