@@ -372,7 +372,7 @@ int mc_icsp_device_release(struct inode *inode, struct file *icsp_file)
 
     /* exit LVP */
     mc_icsp_platform->set_pgm(mc_icsp_platform->data, 0);
-    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
+    /* mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0); */
 
     /* call open callback */
     if (mc_icsp_platform->release != NULL) mc_icsp_platform->release(mc_icsp_platform->data);
