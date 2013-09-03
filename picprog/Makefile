@@ -41,6 +41,7 @@ endef
 define Package/picprog/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/set_mclr $(1)/usr/bin/
 endef
 
 define Package/picprog/postinst
