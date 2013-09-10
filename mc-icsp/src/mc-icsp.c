@@ -374,6 +374,10 @@ int mc_icsp_device_release(struct inode *inode, struct file *icsp_file)
     mc_icsp_platform->set_pgm(mc_icsp_platform->data, 0);
     mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
 
+    /* reset MCLR for start PIC program */
+    mdelay(1);
+    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
+
     /* call open callback */
     if (mc_icsp_platform->release != NULL) mc_icsp_platform->release(mc_icsp_platform->data);
 
