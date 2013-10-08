@@ -41,6 +41,7 @@ struct mc_icsp_cmd_only_t
     unsigned char command;
     unsigned char pgc_value_after_cmd;
     unsigned char pgd_value_after_cmd;
+    unsigned int  msleep;
     unsigned int  mdelay;
     unsigned int  udelay;
 };
