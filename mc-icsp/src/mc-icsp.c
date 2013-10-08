@@ -34,7 +34,7 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 #define mc_icsp_io_pgc_set_lo() mc_icsp_platform->set_pgc(mc_icsp_platform->data, 0)
 #define mc_icsp_io_pgd_set_hi() mc_icsp_platform->set_pgd(mc_icsp_platform->data, 1)
 #define mc_icsp_io_pgd_set_lo() mc_icsp_platform->set_pgd(mc_icsp_platform->data, 0)
-#define mc_icsp_io_pgd_get()     mc_icsp_platform->get_pgd(mc_icsp_platform->data)
+#define mc_icsp_io_pgd_get()    mc_icsp_platform->get_pgd(mc_icsp_platform->data)
 
 /* delay if not zero */
 #define mc_icsp_udelay(dly)     do {if (dly) udelay(dly);} while(0)
@@ -100,16 +100,16 @@ void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
 {
     unsigned int read_bit_mask, current_bit, bits_left;
     unsigned long flags;
-    
-    /* send the command */    
+
+    /* send the command */
     mc_icsp_tx_command_4(*xfer_cmd_and_data);
-        
+
     /* wait a bit */
     mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
-        
-    /* start read */    
+
+    /* start read */
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_INPUT);
-            
+
     /* lock interrupts */
     spin_lock_irqsave(&mc_icsp_lock, flags);
 
@@ -132,7 +132,7 @@ void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
     /* unlock interrupts */
     spin_unlock_irqrestore(&mc_icsp_lock, flags);
 
-    /* end read */    
+    /* end read */
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
 }
 
@@ -147,7 +147,7 @@ void mc_icsp_tx_data(const unsigned int xfer_cmd_and_data, const unsigned int le
 
     /* pump out data */
     for (current_bit_mask = (1 << 0), bits_left = length; 
-          bits_left; 
+          bits_left;
           --bits_left, current_bit_mask <<= 1)
     {
         if (xfer_cmd_and_data & current_bit_mask)     mc_icsp_io_output_one(mc_icsp_platform);
@@ -166,7 +166,7 @@ void mc_icsp_tx_4_16(const unsigned int xfer_cmd_and_data)
 {
     /* send the command */    
     mc_icsp_tx_command_4(xfer_cmd_and_data);
-    
+
     /* wait a bit */
     mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
 
@@ -202,7 +202,8 @@ void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
     /* unlock interrupts */
     spin_unlock_irqrestore(&mc_icsp_lock, flags);
 
-    /* delay 2 * P9 (1ms) */
+    /* delay P9/P9A + P5 or P10 + P11 */
+    if (cmd_config->msleep) msleep(cmd_config->msleep);
     if (cmd_config->mdelay) mdelay(cmd_config->mdelay);
     if (cmd_config->udelay) udelay(cmd_config->udelay);
 
@@ -210,9 +211,9 @@ void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
     mc_icsp_io_pgc_set_lo();
 }
 
-/** 
+/**
  * ICSP device routines
- */ 
+ */
 
 long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long data)
 {
@@ -231,7 +232,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
     /* Check type and command number */
     if (_IOC_TYPE(cmd) != MC_ICSP_IOC_MAGIC)
         return -ENOTTY;
-    
+
     /* check access for all commands */
     if (_IOC_DIR(cmd) & _IOC_READ)
         err = !access_ok(VERIFY_WRITE, (void __user *)data, _IOC_SIZE(cmd));
@@ -250,7 +251,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         /* transmit 16 bits, user data just holds 12 bits 0, 4 bits cmd, 16 bits data */
         case MC_ICSP_IOC_TX:
         {
-            /* data holds 12 bits 0, 4 bits command, 16 bits data */    
+            /* data holds 12 bits 0, 4 bits command, 16 bits data */
             mc_icsp_tx_4_16(data);
         }
         break;
@@ -275,25 +276,24 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         {
             /* copy configuration from userspace */
             struct mc_icsp_cmd_only_t cmd_config;
-                copy_from_user(&cmd_config, (unsigned int __user *)data, sizeof(cmd_config));
-
-            /* do the transaction */
-            mc_icsp_command_only(&cmd_config);
+            if (copy_from_user(&cmd_config, (unsigned int __user *)data, sizeof(cmd_config)) == 0) {
+                /* do the transaction */
+                mc_icsp_command_only(&cmd_config);
+            }
         }
         break;
 
         /* functions needed for key send */
-	case MC_ICSP_IOC_MCLR_LOW:
-	{
-	    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
+        case MC_ICSP_IOC_MCLR_LOW:
+        {
+            mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
         }
-	break;
-	case MC_ICSP_IOC_MCLR_HIGH:
-	{
-	    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
+        break;
+        case MC_ICSP_IOC_MCLR_HIGH:
+        {
+            mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
         }
-	break;
-
+        break;
 
         /* only send 16 bit data */
         case MC_ICSP_IOC_DATA_ONLY_16:
@@ -337,7 +337,6 @@ static int mc_icsp_device_open(struct inode *inode, struct file *icsp_file)
     }
 
     /* call open callback */
-    
     if (mc_icsp_platform->open != NULL) mc_icsp_platform->open(mc_icsp_platform->data);
 
     /* set pgd to output */
@@ -355,7 +354,7 @@ static int mc_icsp_device_open(struct inode *inode, struct file *icsp_file)
 
     /* start MCLR */
     mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
-    
+
     /* done */
     return 0;
 }
@@ -391,7 +390,7 @@ static const struct file_operations mc_icsp_device_fops =
     .owner              = THIS_MODULE,
     .open               = mc_icsp_device_open,
     .release            = mc_icsp_device_release,
-    .unlocked_ioctl     = mc_icsp_device_ioctl    
+    .unlocked_ioctl     = mc_icsp_device_ioctl
 };
 
 /** 
@@ -486,4 +485,3 @@ module_exit(mc_icsp_platform_exit);
 MODULE_AUTHOR("Eran Duchan <pavius@gmail.com>");
 MODULE_DESCRIPTION("Microchip ICSP bitbanging driver");
 MODULE_LICENSE("GPL");
-
