@@ -41,6 +41,7 @@ struct mc_icsp_cmd_only_t
     unsigned char command;
     unsigned char pgc_value_after_cmd;
     unsigned char pgd_value_after_cmd;
+    unsigned int  msleep;
     unsigned int  mdelay;
     unsigned int  udelay;
 };
@@ -68,8 +69,8 @@ struct mc_icsp_platform_data
     int  (*open) (void *data);
     int  (*release) (void *data);
     int  udly_pgd_val_to_clk_rise;
-    int  udly_pgc_hold;
-    int  udly_pgc_low_hold;
+    int  ndly_pgc_hold;
+    int  ndly_pgc_low_hold;
     int  udly_cmd_to_data;
     int  udly_pgm_to_mclr;
 };

@@ -38,15 +38,16 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 
 /* delay if not zero */
 #define mc_icsp_udelay(dly)     do {if (dly) udelay(dly);} while(0)
+#define mc_icsp_ndelay(dly)     do {if (dly) ndelay(dly);} while(0)
 
 /* clock out a bit with a value of 1 */
 #define mc_icsp_io_output_one(cfg)    do {          \
     mc_icsp_io_pgd_set_hi();                        \
     mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_udelay(cfg->udly_pgc_hold);             \
+    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_udelay(cfg->udly_pgc_low_hold);         \
+    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
     } while (0)
 
 /* clock out a bit with a value of 0 */
@@ -54,18 +55,18 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
     mc_icsp_io_pgd_set_lo();                        \
     mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_udelay(cfg->udly_pgc_hold);             \
+    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_udelay(cfg->udly_pgc_low_hold);         \
+    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
     } while (0)
 
 /* read a bit */
 #define mc_icsp_io_input(input_value, cfg) do {     \
     mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_udelay(cfg->udly_pgc_hold);             \
+    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     input_value = mc_icsp_io_pgd_get();             \
     mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_udelay(cfg->udly_pgc_low_hold);         \
+    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
     } while (0)
 
 

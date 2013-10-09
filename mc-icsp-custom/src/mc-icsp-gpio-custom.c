@@ -58,6 +58,32 @@
 
 #define BUS_PARM_DESC " config -> mclr,pgd,pgc,pgm"
 
+/*
+ * Timing parameters
+ */
+
+#if 0
+static int udly_pgd_val_to_clk_rise = 0;
+module_param(udly_pgd_val_to_clk_rise, int, 0644);
+MODULE_PARM_DESC(udly_pgd_val_to_clk_rise, "(default:0)");
+#endif
+
+static int P2B = 0; /* ndly_pgc_hold */
+module_param(P2B, int, 0644);
+MODULE_PARM_DESC(P2B, "DS39592F P2B TsclkH 40..400ns (default:0ns)");
+
+static int P2A = 0; /* ndly_pgc_low_hold */
+module_param(P2A, int, 0644);
+MODULE_PARM_DESC(P2A, "DS39592F P2A TsclkL 40..400ns (default:0ns)");
+
+static int P5 = 0; /* udly_cmd_to_data */
+module_param(P5, int, 0644);
+MODULE_PARM_DESC(P5, "DS39592F P5 Tdly1 20ns (default:0us)");
+
+static int P15 = 2; /* udly_pgm_to_mclr */
+module_param(P15, int, 0644);
+MODULE_PARM_DESC(P15, "DS39592F P15 Tset3 2us (default:2us)");
+
 static unsigned int mc_icsp[BUS_PARAM_COUNT] __initdata;
 static unsigned int bus_nump __initdata;
 static struct mc_icsp_gpio_platform_data pdata;
@@ -167,10 +193,10 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.open = NULL;
 	mc_icsp_pdata.release = NULL;
 	mc_icsp_pdata.udly_pgd_val_to_clk_rise = 0;
-	mc_icsp_pdata.udly_pgc_hold = 0;
-	mc_icsp_pdata.udly_pgc_low_hold = 0;
-	mc_icsp_pdata.udly_cmd_to_data = 0;
-	mc_icsp_pdata.udly_pgm_to_mclr = 2;
+	mc_icsp_pdata.ndly_pgc_hold = P2B;
+	mc_icsp_pdata.ndly_pgc_low_hold = P2A;
+	mc_icsp_pdata.udly_cmd_to_data = P5;
+	mc_icsp_pdata.udly_pgm_to_mclr = P15;
 
 	pdev = platform_device_alloc("mc-icsp", 0);
 	if (!pdev) {
