@@ -54,15 +54,21 @@ void
 pic_selector(struct k8048 *k)
 {
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_selector(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_selector(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_selector(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -75,15 +81,21 @@ void
 pic_read_config(struct k8048 *k, int flag)
 {
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_read_config_memory(k, flag);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_read_config_memory(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_read_config_memory(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -97,15 +109,28 @@ pic_read_config(struct k8048 *k, int flag)
 int
 pic_get_program_flash_size(struct k8048 *k)
 {
+	int size = -1;
+
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
-		return pic12_get_program_flash_size();
+		size = pic12_get_program_flash_size();
+		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
-		return pic14_get_program_flash_size();
+		size = pic14_get_program_flash_size();
+		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
-		return pic16_get_program_flash_size();
+		size = pic16_get_program_flash_size();
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
 	}
-	return -1;
+	return size;
 }
 
 /*
@@ -116,15 +141,28 @@ pic_get_program_flash_size(struct k8048 *k)
 int
 pic_get_data_flash_size(struct k8048 *k)
 {
+	int size = -1;
+
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
-		return pic12_get_data_flash_size();
+		size = pic12_get_data_flash_size();
+		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
-		return pic14_get_data_flash_size();
+		size = pic14_get_data_flash_size();
+		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
-		return pic16_get_data_flash_size();
+		size = pic16_get_data_flash_size();
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
 	}
-	return -1;
+	return size;
 }
 
 /*
@@ -135,15 +173,28 @@ pic_get_data_flash_size(struct k8048 *k)
 int
 pic_get_data_eeprom_size(struct k8048 *k)
 {
+	int size = -1;
+
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
-		return pic12_get_data_eeprom_size();
+		size = pic12_get_data_eeprom_size();
+		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
-		return pic14_get_data_eeprom_size();
+		size = pic14_get_data_eeprom_size();
+		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
-		return pic16_get_data_eeprom_size();
+		size = pic16_get_data_eeprom_size();
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
 	}
-	return -1;
+	return size;
 }
 
 /*
@@ -156,17 +207,28 @@ pic_get_data_eeprom_size(struct k8048 *k)
 int
 pic_read_flash_memory_block(struct k8048 *k, unsigned short *data, int max)
 {
+	int addr = -1;
+
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
-		return pic12_read_flash_memory_block(k, data, max);
+		addr = pic12_read_flash_memory_block(k, data, max);
+		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
-		return pic14_read_flash_memory_block(k, data, max);
+		addr = pic14_read_flash_memory_block(k, data, max);
+		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
-		return pic16_read_flash_memory_block(k, data, max);
+		addr = pic16_read_flash_memory_block(k, data, max);
+		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
-	return -1;
+	return addr;
 }
 
 /*
@@ -179,18 +241,28 @@ pic_read_flash_memory_block(struct k8048 *k, unsigned short *data, int max)
 int
 pic_read_eeprom_memory_block(struct k8048 *k, unsigned char *data, int max)
 {
+	int addr = -1;
+
 	switch (k->arch) {
-	default:
+#ifdef K12
 	case ARCH12BIT:
-		printf("%s: information: EEPROM is not supported on this device\n",
-			__func__);
+		printf("%s: information: EEPROM is not supported on this device\n", __func__);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
-		return pic14_read_eeprom_memory_block(k, data, max);
+		addr = pic14_read_eeprom_memory_block(k, data, max);
+		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
-		return pic16_read_eeprom_memory_block(k, data, max);
+		addr = pic16_read_eeprom_memory_block(k, data, max);
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
 	}
-	return -1;
+	return addr;
 }
  
 /*
@@ -218,28 +290,40 @@ pic_program_verify(struct k8048 *k, const char *fname, int mode)
 	pic_read_config(k, CONFIG_ONLY);
 
 	if (mode == PROGRAM) switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_program(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_program(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_program(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
 	else /* mode == VERIFY */ switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		fail = pic12_verify(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		fail = pic14_verify(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		fail = pic16_verify(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -261,15 +345,21 @@ pic_blank(struct k8048 *k)
 	pic_read_config(k, CONFIG_ONLY);
 
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_bulk_erase(k, INTERNAL);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_bulk_erase(k, INTERNAL, INTERNAL);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_bulk_erase(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -284,15 +374,21 @@ pic_dumpdeviceid(struct k8048 *k)
 	pic_read_config(k, CONFIG_ALL);
 
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_dumpdeviceid(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_dumpdeviceid(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_dumpdeviceid(k);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -309,15 +405,21 @@ pic_dumpconfig(struct k8048 *k)
 	pic_read_config(k, CONFIG_ONLY);
 
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_dumpconfig(k, mode);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_dumpconfig(k, mode);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_dumpconfig(k, mode);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -330,16 +432,22 @@ void
 pic_writebandgap(struct k8048 *k, unsigned short bandgap)
 {
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_read_config_memory(k);
 		pic14_bulk_erase(k, INTERNAL, bandgap);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -352,17 +460,23 @@ void
 pic_dumposccal(struct k8048 *k)
 {
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_read_config_memory(k, CONFIG_ALL);
 		pic12_dumposccal(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_read_config_memory(k);
 		pic14_dumposccal(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -375,17 +489,23 @@ void
 pic_writeosccal(struct k8048 *k, unsigned short osccal)
 {
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_read_config_memory(k, CONFIG_ONLY);
 		pic12_bulk_erase(k, osccal);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_read_config_memory(k);
 		pic14_bulk_erase(k, osccal, INTERNAL);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
 		break;
+#endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
@@ -469,14 +589,22 @@ pic_dumpdevice(struct k8048 *k)
 
 	/* Dump userid/config */
 	switch (k->arch) {
+#ifdef K12
 	case ARCH12BIT:
 		pic12_dumpdevice(k);
 		break;
+#endif
+#ifdef K14
 	case ARCH14BIT:
 		pic14_dumpdevice(k);
 		break;
+#endif
+#ifdef K16
 	case ARCH16BIT:
 		pic16_dumpdevice(k);
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
 

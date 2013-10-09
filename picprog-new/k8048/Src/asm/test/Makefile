@@ -69,6 +69,11 @@ ifneq "$(strip $(ASTEST))" ""
 AOBJECT+=pic18lf27j53.hex
 endif
 
+ASTEST:=$(shell gpasm -l | grep -i 18f26k80)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic18f26k80.hex
+endif
+
 AHEADER=../include/device.inc ../include/const.inc ../include/delay.inc \
 	../include/icspio.inc ../include/macro.inc ../include/shadow.inc \
 	../include/common.inc ../include/ampire-ac162d.inc ../include/ps2.inc

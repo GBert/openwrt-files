@@ -7,6 +7,13 @@
 # Licensed under the terms of the BSD license, see file LICENSE for details.
 #
 
+# build targets (enable:1 disable:0)
+K12=0
+K14=0
+K16=1
+KTEST=0
+KIO=0
+
 #FreeBSD IBMPC FreeBSD 9.0-RELEASE   amd64
 #Debian  IBMPC Linux   3.2.0-4-amd64 x86_64
 #Debian  R-PI  Linux   3.2.27+       armv6l
@@ -37,10 +44,35 @@ BINDIR=/usr/local/bin
 
 CLIB1=$(CLIB)
 TARGET1=k8048
-SOURCE1=k8048.c dotconf.c inhx32.c io.c pic12.c pic14.c pic16.c pic.c serial_posix.c util.c raspi.c mcp23017.c lpicp/lpicp_icsp.c
-OBJECT1=k8048.o dotconf.o inhx32.o io.o pic12.o pic14.o pic16.o pic.o serial_posix.o util.o raspi.o mcp23017.o lpicp/lpicp_icsp.o
-HEADER1=k8048.h dotconf.h inhx32.h io.h pic12.h pic14.h pic16.h pic.h serial_posix.h util.h raspi.h mcp23017.h lpicp/lpicp_icsp.h
+SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c serial_posix.c util.c raspi.c mcp23017.c lpicp/lpicp_icsp.c
+OBJECT1=k8048.o dotconf.o inhx32.o io.o pic.o serial_posix.o util.o raspi.o mcp23017.o lpicp/lpicp_icsp.o
+HEADER1=k8048.h dotconf.h inhx32.h io.h pic.h serial_posix.h util.h raspi.h mcp23017.h lpicp/lpicp_icsp.h
 HEADER1+=VERSION
+
+ifeq "$(K12)" "1"
+CFLAGS+=-DK12
+SOURCE1+=pic12.c
+OBJECT1+=pic12.o
+HEADER1+=pic12.h
+endif
+ifeq "$(K14)" "1"
+CFLAGS+=-DK14
+SOURCE1+=pic14.c
+OBJECT1+=pic14.o
+HEADER1+=pic14.h
+endif
+ifeq "$(K16)" "1"
+CFLAGS+=-DK16
+SOURCE1+=pic16.c
+OBJECT1+=pic16.o
+HEADER1+=pic16.h
+endif
+ifeq "$(KTEST)" "1"
+CFLAGS+=-DKTEST
+endif
+ifeq "$(KIO)" "1"
+CFLAGS+=-DKIO
+endif
 
 CLIB2=$(CLIB)
 TARGET2=kio
@@ -59,7 +91,11 @@ HEADER2+=VERSION
 #  make build
 #  sudo make install
 #
+ifeq "$(KIO)" "1"
 build: $(TARGET1) $(TARGET2)
+else
+build: $(TARGET1)
+endif
 
 $(TARGET1):$(OBJECT1)
 	$(CC) $(CFLAGS) $(OBJECT1) -o $(TARGET1) $(CLIB1)
@@ -76,16 +112,28 @@ c.o:	$(CC) -c $< -o $@
 install:build
 	mkdir -p $(BINDIR)
 	cp $(TARGET1) $(BINDIR)/$(TARGET1)
+ifeq "$(K12)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k12
+endif
+ifeq "$(K14)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k14
+endif
+ifeq "$(K16)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k16
+endif
+ifeq "$(KTEST)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/ktest
+endif
+ifeq "$(KIO)" "1"
 	cp $(TARGET2) $(BINDIR)/$(TARGET2)
+endif
 ifeq (,$(findstring CYGWIN,$(SYSTEM)))
 	chown 0:0 $(BINDIR)/$(TARGET1)
 	chmod u+s $(BINDIR)/$(TARGET1)
+ifeq "$(KIO)" "1"
 	chown 0:0 $(BINDIR)/$(TARGET2)
 	chmod u+s $(BINDIR)/$(TARGET2)
+endif
 endif
 
 uninstall:

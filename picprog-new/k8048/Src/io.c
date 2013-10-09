@@ -777,12 +777,13 @@ io_cursor(struct k8048 *k, char c)
 #undef ARROWLENGTH
 
 /******************************************************************************
- * HARDWARE TESTS
+ * Hardware test routines for `ktest'
  *****************************************************************************/
 
 /*
  * Test VPP, PGC or PGD
  */
+#ifdef KTEST
 void
 io_test0(struct k8048 *k, int pin, int t)
 {
@@ -1057,14 +1058,16 @@ io_test4(struct k8048 *k, int t)
 
 	io_signal_off();
 }
+#endif /* KTEST */
 
 /******************************************************************************
- * Test support routines for command I/O.
- */
+ * Software test routines for `kio' (ICSP I/O)
+ *****************************************************************************/
 
 /*
  * Start or stop firmware (Raspberry Pi only)
  */
+#ifdef KIO
 void
 io_test_run(struct k8048 *k, int run)
 {
@@ -1281,9 +1284,13 @@ io_test_err(int err)
 
 	return errmsg;
 }
+#endif /* KIO */
 
-/*****************************************************************************/
+/******************************************************************************
+ * Software test routines for `ktest'
+ *****************************************************************************/
 
+#if defined(KTEST) && defined(KIO)
 /*
  * Read and output switches.
  */
@@ -1340,8 +1347,6 @@ io_test_lasterror(struct k8048 *k, int t)
 	}
 }
 
-/*****************************************************************************/
-
 /*
  * Test LEDs and Switches
  */
@@ -1381,3 +1386,4 @@ io_test5(struct k8048 *k, int t)
 	
 	io_signal_off();
 }
+#endif /* KTEST && KIO */

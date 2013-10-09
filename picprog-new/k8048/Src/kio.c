@@ -208,14 +208,14 @@ main(int argc, char *argv[])
 	int err;
 	unsigned char cmd[STRLEN];
 
-	/* RUN/STOP/RESET */
+	/* RUN/STOP/RESTORE(RESET) */
 	if (strcasecmp(argv[1], "RUN") == 0) {
 		if (argc > 2)
 			usage(&k, execname, "Too many args");
 
 		io_init(&k);
 		io_test_run(&k, 1);
-		fprintf(stdout, "Run.\n");
+		fprintf(stdout, "RUN\n");
 		io_close(&k, 0);
 		exit(EX_OK);
 	} else if (strcasecmp(argv[1], "STOP") == 0) {
@@ -224,7 +224,7 @@ main(int argc, char *argv[])
 
 		io_init(&k);
 		io_test_run(&k, 0);
-		fprintf(stdout, "Stop.\n");
+		fprintf(stdout, "STOP\n");
 		io_close(&k, 0);
 		exit(EX_OK);
 	} else if (strcasecmp(argv[1], "RESET") == 0) {
@@ -234,7 +234,7 @@ main(int argc, char *argv[])
 		io_init(&k);
 		io_test_run(&k, 0);
 		io_test_run(&k, 1);
-		fprintf(stdout, "Reset.\n");
+		fprintf(stdout, "RESET\n");
 		io_close(&k, 0);
 		exit(EX_OK);
 	}

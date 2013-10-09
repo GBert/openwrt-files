@@ -17,21 +17,30 @@
 void
 usage_k8048(struct k8048 *k)
 {
-	printf("USAGE: k12 | k14 | k16 | ktest\n\n");
+	printf("USAGE: k8048\n\n");
 
 	printf("FILES:\n"
 		" %s\n"
 		"\t\tConfiguration.\n\n", k->dotfile);
 
 	printf("EXAMPLES:\n"
+#ifdef K12
 		" k12 SELECT DEVICE OPERATION [ARG]\n"
 		"\t\t12-bit word PIC10F/12F/16F operations.\n"
+#endif
+#ifdef K14
 		" k14 [SELECT DEVICE] OPERATION [ARG]\n"
 		"\t\t14-bit word PIC10F/12F/16F operations.\n"
+#endif
+#ifdef K16
 		" k16 OPERATION [ARG]\n"
 		"\t\t16-bit word PIC18F operations.\n"
+#endif
+#ifdef KTEST
 		" ktest TEST [ARG]\n"
-		"\t\tHardware tests.\n\n");
+		"\t\tHardware tests.\n"
+#endif
+		"\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
@@ -41,6 +50,7 @@ usage_k8048(struct k8048 *k)
 /*
  * ktest help
  */
+#ifdef KTEST
 void
 usage_ktest(struct k8048 *k, char *msg)
 {
@@ -71,8 +81,11 @@ usage_ktest(struct k8048 *k, char *msg)
 		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with 100 microseconds mark time.\n"
 		" ktest 4 100\n"
 		"\t\t16F627 debug test with 100 microseconds clock mark time.\n"
+#if defined(KTEST) && defined(KIO)
 		" ktest 5 100\n"
-		"\t\tICSPIO demo test with 100 microseconds clock mark time.\n\n");
+		"\t\tICSPIO demo test with 100 microseconds clock mark time.\n"
+#endif
+		"\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
@@ -80,10 +93,12 @@ usage_ktest(struct k8048 *k, char *msg)
 		exit(EX_USAGE);
 	exit(EX_OK);
 }
+#endif
 
 /*
  * k12 help
  */
+#ifdef K12
 void
 usage_k12(struct k8048 *k, char *msg)
 {
@@ -117,7 +132,8 @@ usage_k12(struct k8048 *k, char *msg)
 	printf(" k12 select PIC1XFXXX program file.hex\n"
 		"\t\tProgram file.hex in flash (intel hex32 format).\n");
 	printf(" k12 select PIC1XFXXX verify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n\n");
+		"\t\tVerify file.hex in flash (intel hex32 format).\n"
+		"\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
@@ -125,10 +141,12 @@ usage_k12(struct k8048 *k, char *msg)
 		exit(EX_USAGE);
 	exit(EX_OK);
 }
+#endif
 
 /*
  * k14 help
  */
+#ifdef K14
 void
 usage_k14(struct k8048 *k, char *msg)
 {
@@ -170,7 +188,8 @@ usage_k14(struct k8048 *k, char *msg)
 	printf(" k14 program file.hex\n"
 		"\t\tProgram file.hex in flash (intel hex32 format).\n");
 	printf(" k14 verify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n\n");
+		"\t\tVerify file.hex in flash (intel hex32 format).\n"
+		"\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
@@ -178,10 +197,12 @@ usage_k14(struct k8048 *k, char *msg)
 		exit(EX_USAGE);
 	exit(EX_OK);
 }
+#endif
 
 /*
  * k16 help
  */
+#ifdef K16
 void
 usage_k16(struct k8048 *k, char *msg)
 {
@@ -215,7 +236,8 @@ usage_k16(struct k8048 *k, char *msg)
 	printf(" k16 program file.hex\n"
 		"\t\tProgram file.hex in flash (intel hex32 format).\n");
 	printf(" k16 verify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n\n");
+		"\t\tVerify file.hex in flash (intel hex32 format).\n"
+		"\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
 
@@ -223,6 +245,7 @@ usage_k16(struct k8048 *k, char *msg)
 		exit(EX_USAGE);
 	exit(EX_OK);
 }
+#endif
 
 /*
  * k12/k14/k16 help
@@ -230,15 +253,19 @@ usage_k16(struct k8048 *k, char *msg)
 void
 usage(struct k8048 *k, char *execname, char *msg)
 {
-	if (strcmp("k12", execname) == 0) {
+#ifdef K12
+	if (strcmp("k12", execname) == 0)
 		usage_k12(k, msg);
-	} else if (strcmp("k14", execname) == 0) {
+#endif
+#ifdef K14
+	if (strcmp("k14", execname) == 0)
 		usage_k14(k, msg);
-	} else if (strcmp("k16", execname) == 0) {
+#endif
+#ifdef K16
+	if (strcmp("k16", execname) == 0)
 		usage_k16(k, msg);
-	} else {
-		usage_k8048(k);
-	}
+#endif
+	usage_k8048(k);
 }
 
 /*
@@ -289,10 +316,11 @@ main(int argc, char **argv)
 		default:msg = "Invalid I/O";
 			break;
 		}
+#ifdef KTEST
 		if (strcmp(execname, "ktest") == 0)
 			usage_ktest(&k, msg);
-		else
-			usage(&k, execname, msg);
+#endif
+		usage(&k, execname, msg);
 	}
 
 	/* Reset uid */
@@ -302,11 +330,12 @@ main(int argc, char **argv)
 			exit(EX_OSERR); /* Panic */
 		}
 	}
-	
+
+#ifdef KTEST
 	/* Command: ktest */
 	if (strcmp(execname, "ktest") == 0) {
 		if (k.iot == IOLPICP) {
-			printf("%s: fatal error: unsupported\n", __func__);
+			printf("%s: fatal error: lpicp icsp unsupported\n", __func__);
 			exit(EX_SOFTWARE); /* Panic */
 		}
 
@@ -338,7 +367,9 @@ main(int argc, char **argv)
 			case 2: io_test2(&k, testarg); break;
 			case 3: io_test3(&k, testarg); break;
 			case 4: io_test4(&k, testarg); break;
+#if defined(KTEST) && defined(KIO)
 			case 5: io_test5(&k, testarg); break;
+#endif
 			default:usage_ktest(&k, "Invalid arg");break;
 			}
 		} else {
@@ -347,6 +378,7 @@ main(int argc, char **argv)
 		io_close(&k, 1);
 		exit(EX_OK);
 	}
+#endif
 
 	/* Command: k12 | k14 | k16 */
 	if (strcmp(execname, "k12") == 0)
