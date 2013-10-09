@@ -1,0 +1,4 @@
+DEVICE=/dev/icsp0
+BITRULES=0x00
+BUSY=0
+DEBUG=1

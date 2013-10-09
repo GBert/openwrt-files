@@ -41,6 +41,7 @@ endef
 define Package/picprog-new/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
+	$(INSTALL_BIN) ./config/k8048 $(1)/root/.k8048
 endef
 
 define Package/picprog-new/postinst
