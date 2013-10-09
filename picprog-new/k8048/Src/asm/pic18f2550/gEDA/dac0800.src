@@ -1,0 +1,39 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=3600
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20070529 1
+name=DAC0800
+device=DAC0800
+refdes=U?
+footprint=DIP16
+description=D/A
+documentation=DAC0800.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	line	l		THRESOLD CONTROL VLC
+2		io	line	l		\_IOUT\_
+3		pwr	line	l		V-
+4		io	line	l		IOUT
+5		io	line	l		B1 MSB
+6		io	line	l		B2
+7		io	line	l		B3
+8		io	line	l		B4
+16		io	line	r		COMPENSATION
+15		io	line	r		VREF-
+14		io	line	r		VREF+
+13		pwr	line	r		V+
+12		io	line	r		B8 LSB
+11		io	line	r		B7
+10		io	line	r		B6
+9		io	line	r		B5

@@ -1,0 +1,16 @@
+Velleman K8048 Programmer for FreeBSD and others.
+-------------------------------------------------------------------------------
+
+ Copyright (c) 2005-2013 Darron Broad
+ All rights reserved.
+
+Licensed under the terms of the BSD license, see file LICENSE for details.
+-------------------------------------------------------------------------------
+
+For detailed information about installation on the R-Pi see:
+   http://dev.kewl.org/k8048/Src/README.tools
+
+1. There is problem reloading mc-icsp-gpio-custom after unloading
+   (sysfs duplicate directory).
+
+   FIX: none

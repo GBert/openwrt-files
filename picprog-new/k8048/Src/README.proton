@@ -1,0 +1,24 @@
+Velleman K8048 Programmer for FreeBSD and others.
+-------------------------------------------------------------------------------
+
+ Copyright (c) 2005-2013 Darron Broad
+ All rights reserved.
+
+Licensed under the terms of the BSD license, see file LICENSE for details.
+-------------------------------------------------------------------------------
+
+RS-232 SERIAL
+-------------
+        RX  TX     GND
+    1   2   3   4   5
+    x   x   x   x   x
+      x   x   x   x
+      6   7   8   9
+
+PROTON ICSP	VELLEMAN K8048 ICSP
+-----------	-------------------
+NC  x x	VPP	5 4 3 2 1
+NC  x x	NC	x x x x x
+GND x x	PGD	P P V V V
+GND x x	PGC	G G S D P
+GND x x	NC      C D S D P

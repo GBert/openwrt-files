@@ -1,0 +1,41 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=4400
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20070530 1
+name=PIC18F1320
+device=PIC18F1320
+refdes=U?
+footprint=DIP18
+description=Microcontroller
+documentation=DS39650F.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	line	l		RA0 AN0
+2		io	line	l		RA1 AN1 LVDIN
+3		io	line	l		RA4 T0CKI
+4		io	dot	l		\_MCLR\_ VPP RA5
+5		pwr	line	l	GND	VSS
+6		io	line	l		RA2 AN2 VREF-
+7		io	line	l		RA3 AN3 VREF+
+8		io	line	l		RB0 AN4 INT0
+9		io	line	l		RB1 AN5 TX CK INT1
+18		io	line	r		RB3 CCP1 P1A
+17		io	line	r		RB2 P1B INT2
+16		io	clk	r		OSC1 CLKI RA7
+15		io	line	r		OSC2 CLKO RA6
+14		pwr	line	r	Vcc	VDD
+13		io	line	r		RB7 PGD T1OSI P1D KBI3
+12		io	line	r		RB6 PGC T1OSO T13CKI P1C KBI2
+11		io	line	r		RB5 PGM KBI1
+10		io	line	r		RB4 AN6 RX DT KBI0

@@ -1,0 +1,9 @@
+config MC_ICSP_GPIO_CUSTOM
+    tristate "Microchip ICSP driver / GPIO customizing"
+    depends on GENERIC_GPIO MC_ICSP
+    select MC_ICSP_GPIO_CUSTOM
+    help
+      This is a GPIO lines Microchip ICSP Customizing tool. 
+
+      This support is also available as a module.  If so, the module
+      will be called mc-icsp-gpio-custom.
