@@ -14,7 +14,7 @@ To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt 
 <pre><code>src-git openwrtfiles git://github.com/GBert/openwrt-files</pre></code>
 and do
 <pre><code>script/feeds update
-script/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog</pre></code>
+script/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog-new</pre></code>
 in your OpenWrt source tree.
 
 ### Using
@@ -32,8 +32,8 @@ GPIOs 0-23, platform/10000600.gpio, 10000600.gpio:
  gpio-13  (MC ICSP PGM         ) out lo
  gpio-14  (MC ICSP MCLR        ) out hi
 root@OpenWrt-MC-ICSP:~# ls -l /usr/bin/k\*
-lrwxrwxrwx    1 root     root            14 Aug 18 01:24 /usr/bin/k16 -> /usr/bin/k8048
--rwxr-xr-x    1 root     root        115360 Aug 23 12:02 /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 10 13:26 /usr/bin/k16 -> /usr/bin/k8048
+-rwxr-xr-x    1 root     root        198391 Oct 10 13:26 /usr/bin/k8048
 root@OpenWrt-MC-ICSP:~# k16 info
 [000000] [PROGRAM]     6000 WORDS
 [200000] [IDLOCATION1] FF
