@@ -5,6 +5,8 @@ This Git contains an OpenWrt feed. The main purpose is an in system low-voltage 
 The mc-icsp module was written by Eran Duchan http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/ -
 I just added a GPIO customizing module (mc-icsp-gpio-custom).
 
+Use the picprog-new instead of picprog (deprecated).
+
 ### OpenWrt Compiling
 
 To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt root dir:
@@ -18,7 +20,7 @@ in your OpenWrt source tree.
 ### Using
 On the OpenWrt Router just install both modules:
 <pre><code>insmod mc-icsp
-insmod mc-icsp-gpio-custom mc\_icsp=14,12,11,13 P2B=400 P2A=0</pre></code>
+insmod mc-icsp-gpio-custom mc\_icsp=14,12,11,13 P2B=200 P2A=0</pre></code>
 and add the device:
 <pre><code>mknod /dev/icsp0 c 245 0</pre></code>
 ### Test
@@ -66,8 +68,8 @@ there are lots of todos:
 
 * module provides only some basic commands (4 bit command - 16 bit data) - should be be able
   to programm all sorts of modern PICs
-* timings aren't handled correctly
-* rmmod mc\_icsp\_gpio\_custom doesn't work properly
+* timings aren't handled correctly -> improvements under way
+* rmmod mc\_icsp\_gpio\_custom doesn't work properly - improved, but still GPIO/pinctrl issues
 
 ### Thanks
 
