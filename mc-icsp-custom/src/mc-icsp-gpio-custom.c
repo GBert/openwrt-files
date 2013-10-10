@@ -44,7 +44,7 @@
 
 #define DRV_NAME	"mc-icsp-gpio-custom"
 #define DRV_DESC	"Custom GPIO-based Microchip ICSP driver"
-#define DRV_VERSION	"0.0.1"
+#define DRV_VERSION	"0.2"
 
 #define PFX		DRV_NAME ": "
 
@@ -91,7 +91,7 @@ static struct mc_icsp_gpio_platform_data pdata;
 module_param_array(mc_icsp, uint, &bus_nump, 0);
 MODULE_PARM_DESC(mc_icsp, "mc_icsp" BUS_PARM_DESC);
 
-static struct platform_device *device;
+static struct platform_device *pdev;
 
 static void set_pgc(void *data, unsigned int state) {
         struct mc_icsp_gpio_platform_data *pdata = data;
@@ -133,12 +133,12 @@ static void mc_icsp_gpio_custom_cleanup(void) {
 	gpio_free(pdata.pgd_pin);
 	gpio_free(pdata.pgc_pin);
 	gpio_free(pdata.pgm_pin);
-	platform_device_put(device);
+	printk(KERN_INFO PFX "freeing data\n");
+	platform_device_unregister(pdev);
 }
 
 static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 {
-	struct platform_device *pdev;
 	struct mc_icsp_platform_data mc_icsp_pdata;
 
 	int err;
