@@ -11,31 +11,15 @@
 ; Pinout
 ; ------
 ; VDD VCC        1----8 VSS GND
-; RB5 OSC1 CLKIN 2    7 RB0 ICSPDAT
-; RB4 OSC2       3    6 RB1 ICSPCLK
-; RB3 !MCLR VPP  4----5 RB2 T0CKI
+; GP5 OSC1 CLKIN 2    7 GP0 ICSPDAT
+; GP4 OSC2       3    6 GP1 ICSPCLK
+; GP3 !MCLR VPP  4----5 GP2 T0CKI
 ;
 ; K8048 Pin
 ; ----- ---
-; LD1   RB2 (5)
-; LD2   RB4 (3)
-; SW1   RB5 (2)
-;
-;       7654 3210
-; TRISB XX10 X0XX
-;       LD1+LD2 O/P
-;       SW1     I/P
-;
-; K8048 PORTB probes
-; ------------------
-;     8PIN 14PIN 18PIN 28PIN
-;     ---- ----- ----- -----
-; GP0    7    13    13    28 PGD
-; GP1    6    12    12    27 PGC
-; GP2    5    10     6     2 LD1
-; GP3    4     4             VPP
-; GP4    3     9     7     3 LD2
-; GP5    2          17    21 SW1
+; LD1   GP2 (5)
+; LD2   GP4 (3)
+; SW1   GP5 (2)
 ;
 ; Program
 ; -------
@@ -71,7 +55,13 @@ ERRORLEVEL      -302
 ;
 ; Constants
 ;
-; __IDLOCS 0x1234
+; XXX GPASM ASSIGNS __IDLOCS TO 0x0400 IN ERROR
+; __IDLOCS 0xABCD                           ;0x0440..0x0443
+;
+ERRORLEVEL      -220
+                ORG     0x0440
+                DW      1,2,3,4
+ERRORLEVEL      +220
 ;
 ; INTRC_OSC = 8MHz
     CONSTANT CLOCK = 8000000
@@ -109,24 +99,22 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
                 GOTO    POWERUP
 
                 MOVLW   0xFF
-                XORWF   LATB,F
-                MOVF    LATB,W
-                MOVWF   PORTB
+                XORWF   LATIO,F
+                MOVF    LATIO,W
+                MOVWF   GPIO
                 GOTO    WATCHDOG            ;CONTINUE
 
-POWERUP         CLRF    LATB                ;INIT PORTB SHADOW
-                DECF    LATB,F
-                MOVF    LATB,W              ;INIT PORTB
-                MOVWF   PORTB
+POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW
+                CLRF    GPIO                ;INIT GPIO
 
 WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 
                 MOVLW   B'00001111'         ;WATCHDOG PRESCALE
                 OPTION
 
-                MOVLW   B'11101011'         ;PORTB SW1 I/P LD1+LD2 O/P
-                MOVWF   TRISB               ;INIT TRISB SHADOW
-                TRIS    PORTB               ;INIT TRIS
+                MOVLW   B'00100011'         ;GP5 SW1 I/P GP2/4 LD1+LD2 O/P
+                MOVWF   TRISIO              ;INIT TRIS B SHADOW
+                TRIS    GPIO                ;INIT TRIS
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -186,8 +174,8 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
                 IORLW   0x04
                 BTFSC   BUFFER,1
                 IORLW   0x10
-                MOVWF   LATB                ;UPDATE SHADOW
-                MOVWF   PORTB               ;UPDATE PORTB
+                MOVWF   LATIO               ;UPDATE SHADOW
+                MOVWF   GPIO                ;UPDATE PORTB
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;
@@ -197,7 +185,7 @@ DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
                 BC      IOERROR             ;TIME-OUT
 
                 MOVLW   0                   ;GET SW1
-                BTFSC   PORTB,5
+                BTFSC   GPIO,5
                 MOVLW   1
 
                 CALL    SENDBYTE            ;SEND SW1..SW4

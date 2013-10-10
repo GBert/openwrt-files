@@ -178,7 +178,6 @@ ERRORLEVEL      -302
 ;
 CBLOCK          0x00                        ;ACCESS RAM 0x00..0x5F
 ENDC
-#INCLUDE        "shadow.inc"                ;SHADOW I/O (FOR PORT E)
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

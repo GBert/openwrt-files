@@ -11,3 +11,6 @@ Changes:
 	replacement to busy waiting.
 	Adjusted timing which was too fast for reliable
 	operation on the R-PI.
+	Removed udly_pgd_val_to_clk_rise since no such value
+	exists in the datasheets.
+	Fixed module unload/reload issue with mc-icsp-custom.

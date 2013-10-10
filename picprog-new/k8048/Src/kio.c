@@ -29,9 +29,9 @@ usage(struct k8048 *k, char *execname, char *msg)
 		" SLEEP                           Sleep until watchdog time-out.\n"
 		" WATCHDOG  E|D                   Set watchdog enable/disable.\n"
 		" CLOCK     0..7                  Set internal RC clock divider.\n"
-		" DIRECTION A..E/G 0x00..0xFF     Set port data direction.\n"
-		" OUTPUT    A..E/G 0x00..0xFF     Set port data output.\n"
-		" INPUT     A..E/G                Get port data input, output on stdout.\n"
+		" DIRECTION A..D|G 0x00..0xFF     Set port data direction.\n"
+		" OUTPUT    A..D|G 0x00..0xFF     Set port data output.\n"
+		" INPUT     A..D|G                Get port data input, output on stdout.\n"
 		" ANALOG    0..N|D                Set analog channel enable/disable.\n"
 		" SAMPLE                          Get analog channel input.\n"
 		" EEREAD    0x00..0xFF            Get data EEPROM.\n"
@@ -132,17 +132,17 @@ getlongarg(struct k8048 *k, char *execname, char *args)
 /*
  * Get port arg
  *
- * Arg may be G (GPIO), A .. E
+ * Arg may be G (GPIO), A .. D
  */
 unsigned char
 getportarg(struct k8048 *k, char *execname, char *args)
 {
-	char p = toupper(args[0]);
+	char p = toupper((int)args[0]);
 
 	if (p == 'G')
 		return 0;
 
-	if (p >= 'A' && p <= 'E')
+	if (p >= 'A' && p <= 'D')
 		return p - 'A' + 1;
 
 		usage(k, execname, "Invalid arg [port]");
@@ -172,25 +172,7 @@ main(int argc, char *argv[])
 
 	/* Open device */
 	if (io_open(&k, 0) < 0) {
-		char *msg;
-		switch (k.iot) {
-		case IOTTY:	/* tty */
-			msg = "Can't open serial I/O";
-			break;
-		case IORPI:	/* rpi */
-			msg = "Can't open RPI I/O";
-			break;
-		case IOI2C:	/* mcp23017 i2c */
-			msg = "Can't open MCP23017 I2C I/O";
-			break;
-		case IOLPICP:	/* lpicp */
-			msg = "Can't open lpicp icsp I/O";
-			break;
-		case IONONE:	/* invalid */
-		default:msg = "Invalid I/O";
-			break;
-		}
-		usage(&k, execname, msg);
+		usage(&k, execname, io_error(&k));
 	}
 
 	/* Reset uid */

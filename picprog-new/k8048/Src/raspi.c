@@ -17,10 +17,7 @@
 int
 gpio_open(GPIO *gpio)
 {
-#if ENABLE_RPI==0
-	printf("%s: fatal error: raspberry pi support is disabled\n", __func__);
-	exit(EX_OSERR); /* Panic */
-#endif
+#ifdef RPI
 	/* Already open? */
 	if (gpio->fd >= 0)
 		return -1;
@@ -37,6 +34,9 @@ gpio_open(GPIO *gpio)
 		exit(EX_OSERR); /* Panic */
 	}
 	return 0;
+#else
+	return -1; /* Unsupported */
+#endif
 }
 
 void

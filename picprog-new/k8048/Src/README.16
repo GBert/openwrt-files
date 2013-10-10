@@ -308,7 +308,7 @@ Compatible ICSP devices:
   PIC18F4682 U PIC18F4685 U
 
  DS39752A
-  PIC18F1230 U PIC18F1330 T PIC18F1330-ICD U
+  PIC18F1230 U PIC18F1330 T PIC18F1330-ICD U (5)
 
  DS41398B (1)
   PIC18F23K22 U PIC18F24K22 U PIC18F25K22 T PIC18F26K22 U
@@ -348,3 +348,6 @@ Compatible ICSP devices:
  (3) Can only be programmed in LVP mode with VDD=3V3.
 
  (4) A PIC18LF27J53 has been tested in MCHP LVP mode with VDD at 3V3.
+ 
+ (5) Needs to be power cycled to enter PROG. mode after RUN on the Velleman
+     K8048.

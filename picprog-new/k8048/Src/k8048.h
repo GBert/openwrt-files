@@ -13,9 +13,6 @@
 /*
  * system includes
  */
-#ifndef __USE_ISOC99
-#define __USE_ISOC99
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +31,7 @@
 #include <errno.h> 
 #include <libgen.h>
 #include <fcntl.h>
+
 #ifndef O_NDELAY
 #define O_NDELAY O_NONBLOCK
 #endif
@@ -133,45 +131,65 @@
 #define PHCMKEY (0x0A12C2B2) /* MCHP (0x4D434850) REVERSED */
 
 /*
- * I/O type
+ * I/O backend types
  */
 #define IONONE  (0)
-#define IOTTY   (1)		/* TTY/TTYUSB */
-#define IORPI   (2)		/* RPI GPIO DIRECT/VELLEMAN K8048 */
-#define IOI2C   (3)		/* MCP23017 */
-#define IOLPICP (4)		/* LINUX PIC PROGRAMMER (PIC18 ONLY) */
+#define IOTTY   (1)	/* TTY/TTYUSB                     */
+#define IORPI   (2)	/* RPI GPIO DIRECT/VELLEMAN K8048 */
+#define IOI2C   (3)	/* MCP23017 I2C                   */
+#define IOLPICP (4)	/* LINUX PIC PROGRAMMER ICSP      */
+/*
+ * I/O backends
+ */
+#ifdef TTY
+#include "serial_posix.h"
+#endif
+#ifdef RPI
+#include "raspi.h"
+#endif
+#ifdef MCP23017
+#include "mcp23017.h"
+#endif
+#ifdef LPICP
+#include "lpicp/lpicp_icsp.h"
+#endif
 
 /*
- * session
+ * Session
  */
-#include "raspi.h"
-#include "lpicp/lpicp_icsp.h"
 struct k8048 {
 	char dotfile[STRLEN];		/* configuration */
 	char device[STRLEN];		/* I/O device name: tty or rpi */
-	unsigned char bitrules;		/* I/O bit rules */
-	int iot;			/* I/O type (tty, rpi or i2c) */
-	int fd;				/* I/O handle (tty) */
-	GPIO gpio;			/* I/O handle (rpi) */
-	int i2c;			/* I/O handle (i2c) */
-	struct lpp_context_t lpicp;	/* I/O handle (lpicp) */
-	int busy;			/* I/O busy cursor speed */
-	int mcp;			/* I2C (MCP23017) address */
-	unsigned short arch;		/* architecture mask: 12, 14 or 16 bit */
 	char devicename[STRLEN];	/* overridden PICMicro device name */
+	unsigned short arch;		/* architecture mask: 12, 14 or 16 bit */
+	unsigned char bitrules;		/* I/O bit rules */
+	unsigned int key;		/* MCHP LVP key */
+	int busy;			/* I/O busy cursor speed */
 	int sleep;			/* I/O bit time (default 1us) */
 	int fwsleep;			/* ICSPIO bit time */
 	int debug;			/* default 0 (no debugging) */
-	unsigned int key;		/* MCHP LVP key */
 	int run;			/* Auto-run after I/O standby on close */
+	/* Backends */
+	int iot;			/* I/O type (tty, rpi or i2c) */
+#ifdef TTY
+	int fd;				/* I/O handle (tty) */
+#endif
+#ifdef RPI
+	GPIO gpio;			/* I/O handle (rpi) */
+#endif
+#ifdef MCP23017
+	int i2c;			/* I/O handle (i2c) */
+	int mcp;			/* I2C (MCP23017) address */
+#endif
+#ifdef LPICP
+	struct lpp_context_t lpicp;	/* I/O handle (lpicp) */
+#endif
 };
 
 /*
- * local includes
+ * Local
  */
 #include "util.h"
-#include "serial_posix.h"
-#include "mcp23017.h"
 #include "dotconf.h"
 #include "inhx32.h"
 #include "io.h"
@@ -181,7 +199,7 @@ struct k8048 {
 #include "pic.h"
 
 /*
- * prototypes
+ * Prototypes
  */
 void usage_k8048(struct k8048 *);
 void usage_ktest(struct k8048 *, char *);

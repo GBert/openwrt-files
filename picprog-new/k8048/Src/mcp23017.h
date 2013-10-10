@@ -13,7 +13,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>
+#include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #ifdef __linux
 #include <linux/i2c-dev.h>
@@ -86,7 +88,7 @@
 /*
  * mcp23017 i2c address (default)
  */
-#define MCP23017 (0x020)
+#define MCP23017_ADDR (0x020)
 
 /*
  * i/o ports

@@ -7,30 +7,20 @@
 # Licensed under the terms of the BSD license, see file LICENSE for details.
 #
 
-# build targets (enable:1 disable:0)
-K12=0
-K14=0
-K16=1
-KTEST=0
-KIO=0
+# build targets and backend configuration
+include config.mk
 
-#FreeBSD IBMPC FreeBSD 9.0-RELEASE   amd64
-#Debian  IBMPC Linux   3.2.0-4-amd64 x86_64
-#Debian  R-PI  Linux   3.2.27+       armv6l
+#FreeBSD IBMPC: FreeBSD 9.0-RELEASE   amd64
+#Debian  IBMPC: Linux   3.2.0-4-amd64 x86_64
+#Debian  R-PI:  Linux   3.2.27+       armv6l
 SYSTEM:=$(shell uname -s)
 RELEASE:=$(shell uname -r)
 PLATFORM:=$(shell uname -m)
-ifeq "$(PLATFORM)" "armv6l"
-RASPI=1
-else
-RASPI=0
-endif
 
 CC=gcc
-CFLAGS=-std=c99 -DENABLE_RPI=$(RASPI) -I. -ggdb -Wall -Wno-implicit-function-declaration
-GCCVERSIONGTEQ4:=$(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4)
-ifeq "$(GCCVERSIONGTEQ4)" "1"
-CFLAGS+=-Wno-int-to-pointer-cast -Wno-char-subscripts
+CFLAGS=-Os -std=gnu99 -I. -Wall
+ifeq "$(GDB)" "1"
+CFLAGS+=-ggdb
 endif
 ifneq (,$(findstring CYGWIN,$(SYSTEM)))
 CFLAGS+=-D__USE_LINUX_IOCTL_DEFS
@@ -44,10 +34,10 @@ BINDIR=/usr/local/bin
 
 CLIB1=$(CLIB)
 TARGET1=k8048
-SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c serial_posix.c util.c raspi.c mcp23017.c lpicp/lpicp_icsp.c
-OBJECT1=k8048.o dotconf.o inhx32.o io.o pic.o serial_posix.o util.o raspi.o mcp23017.o lpicp/lpicp_icsp.o
-HEADER1=k8048.h dotconf.h inhx32.h io.h pic.h serial_posix.h util.h raspi.h mcp23017.h lpicp/lpicp_icsp.h
-HEADER1+=VERSION
+SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c util.c
+OBJECT1=k8048.o dotconf.o inhx32.o io.o pic.o util.o
+HEADER1=k8048.h dotconf.h inhx32.h io.h pic.h util.h
+HEADER1+=VERSION Makefile config.mk
 
 ifeq "$(K12)" "1"
 CFLAGS+=-DK12
@@ -76,10 +66,54 @@ endif
 
 CLIB2=$(CLIB)
 TARGET2=kio
-SOURCE2=kio.c   dotconf.c io.c serial_posix.c util.c raspi.c mcp23017.c lpicp/lpicp_icsp.c
-OBJECT2=kio.o   dotconf.o io.o serial_posix.o util.o raspi.o mcp23017.o lpicp/lpicp_icsp.o
-HEADER2=k8048.h dotconf.h io.h serial_posix.h util.h raspi.h mcp23017.h lpicp/lpicp_icsp.h
-HEADER2+=VERSION
+SOURCE2=kio.c   dotconf.c io.c util.c
+OBJECT2=kio.o   dotconf.o io.o util.o
+HEADER2=k8048.h dotconf.h io.h util.h
+HEADER2+=VERSION Makefile config.mk
+
+ifeq "$(TTY)" "1"
+CFLAGS+=-DTTY
+SOURCE1+=serial_posix.c
+OBJECT1+=serial_posix.o
+HEADER1+=serial_posix.h
+SOURCE2+=serial_posix.c
+OBJECT2+=serial_posix.o
+HEADER2+=serial_posix.h
+endif
+
+ifeq "$(RPI)" "1"
+ ifeq "$(PLATFORM)" "armv6l"
+ CFLAGS+=-DRPI
+ SOURCE1+=raspi.c
+ OBJECT1+=raspi.o
+ HEADER1+=raspi.h
+ SOURCE2+=raspi.c
+ OBJECT2+=raspi.o
+ HEADER2+=raspi.h
+ endif
+endif
+
+ifeq "$(SYSTEM)" "Linux"
+ ifeq "$(MCP23017)" "1"
+ CFLAGS+=-DMCP23017
+ SOURCE1+=mcp23017.c
+ OBJECT1+=mcp23017.o
+ HEADER1+=mcp23017.h
+ SOURCE2+=mcp23017.c
+ OBJECT2+=mcp23017.o
+ HEADER2+=mcp23017.h
+ endif
+
+ ifeq "$(LPICP)" "1"
+ CFLAGS+=-DLPICP
+ SOURCE1+=lpicp/lpicp_icsp.c
+ OBJECT1+=lpicp/lpicp_icsp.o
+ HEADER1+=lpicp/lpicp_icsp.h
+ SOURCE2+=lpicp/lpicp_icsp.c
+ OBJECT2+=lpicp/lpicp_icsp.o
+ HEADER2+=lpicp/lpicp_icsp.h
+ endif
+endif
 
 #
 # COMMAND LINE TOOL
@@ -99,15 +133,21 @@ endif
 
 $(TARGET1):$(OBJECT1)
 	$(CC) $(CFLAGS) $(OBJECT1) -o $(TARGET1) $(CLIB1)
+#ifneq "$(GDB)" "1"
+#	strip $(TARGET1)
+#endif
 
 $(TARGET2):$(OBJECT2)
 	$(CC) $(CFLAGS) $(OBJECT2) -o $(TARGET2) $(CLIB2)
+#ifneq "$(GDB)" "1"
+#	strip $(TARGET2)
+#endif
 
 $(OBJECT1):$(HEADER1)
 
 $(OBJECT2):$(HEADER2)
 
-c.o:	$(CC) -c $< -o $@
+c.o: $(CC) -c $< -o $@
 
 install:build
 	mkdir -p $(BINDIR)

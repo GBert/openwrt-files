@@ -17,11 +17,31 @@
 void
 usage_k8048(struct k8048 *k)
 {
-	printf("USAGE: k8048\n\n");
+	printf("USAGE: k8048\n");
+	printf("Usage information.\n\n");
 
 	printf("FILES:\n"
 		" %s\n"
 		"\t\tConfiguration.\n\n", k->dotfile);
+
+	printf("BACKENDS:\n"
+#ifdef TTY
+		" TTY\n"
+		"\t\tPOSIX serial.\n"
+#endif
+#ifdef RPI
+		" RPI\n"
+		"\t\tRaspberry Pi GPIO.\n"
+#endif
+#ifdef MCP23017
+		" MCP23017\n"
+		"\t\tLinux MCP23017 I2C.\n"
+#endif
+#ifdef LPICP
+		" LPICP\n"
+		"\t\tLinux PIC Programmer ICSP.\n"
+#endif
+		"\n");
 
 	printf("EXAMPLES:\n"
 #ifdef K12
@@ -29,11 +49,11 @@ usage_k8048(struct k8048 *k)
 		"\t\t12-bit word PIC10F/12F/16F operations.\n"
 #endif
 #ifdef K14
-		" k14 [SELECT DEVICE] OPERATION [ARG]\n"
+		" k14 [MCHP | SELECT 16F84] OPERATION [ARG]\n"
 		"\t\t14-bit word PIC10F/12F/16F operations.\n"
 #endif
 #ifdef K16
-		" k16 OPERATION [ARG]\n"
+		" k16 [MCHP] OPERATION [ARG]\n"
 		"\t\t16-bit word PIC18F operations.\n"
 #endif
 #ifdef KTEST
@@ -150,7 +170,7 @@ usage_k12(struct k8048 *k, char *msg)
 void
 usage_k14(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k14 [SELECT DEVICE] OPERATION [ARG]\n");
+	printf("USAGE: k14 [MCHP | SELECT 16F84] OPERATION [ARG]\n");
 	printf("14-bit word PIC10F/12F/16F operations.\n\n");
 
 	if (msg)
@@ -163,7 +183,7 @@ usage_k14(struct k8048 *k, char *msg)
 	printf("EXAMPLES:\n");
 	printf(" k14 select\n"
 		"\t\tDump supported devices.\n");
-	printf(" k14 select PIC16F84 OPERATION [ARG]\n"
+	printf(" k14 select 16F84 OPERATION [ARG]\n"
 		"\t\tSelect device PIC16F84.\n");
 	printf(" k14 mchp OPERATION [ARG]\n"
 		"\t\tMCHP LVP mode.\n");
@@ -206,7 +226,7 @@ usage_k14(struct k8048 *k, char *msg)
 void
 usage_k16(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k16 [SELECT] OPERATION [ARG]\n");
+	printf("USAGE: k16 [MCHP] OPERATION [ARG]\n");
 	printf("16-bit word PIC18F operations.\n\n");
 
 	if (msg)
@@ -298,29 +318,11 @@ main(int argc, char **argv)
 
 	/* Open device */
 	if (io_open(&k, 0) < 0) {
-		char *msg;
-		switch (k.iot) {
-		case IOTTY:	/* tty */
-			msg = "Can't open serial I/O";
-			break;
-		case IORPI:	/* rpi */
-			msg = "Can't open RPI I/O";
-			break;
-		case IOI2C:	/* mcp23017 i2c */
-			msg = "Can't open MCP23017 I2C I/O";
-			break;
-		case IOLPICP:	/* lpicp */
-			msg = "Can't open lpicp icsp I/O";
-			break;
-		case IONONE:	/* invalid */
-		default:msg = "Invalid I/O";
-			break;
-		}
 #ifdef KTEST
 		if (strcmp(execname, "ktest") == 0)
-			usage_ktest(&k, msg);
+			usage_ktest(&k, io_error(&k));
 #endif
-		usage(&k, execname, msg);
+		usage(&k, execname, io_error(&k));
 	}
 
 	/* Reset uid */
@@ -359,10 +361,12 @@ main(int argc, char **argv)
 		else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
 			int test = strtol(argv[1], NULL, 0);
 			switch (test) {
+#ifdef RPI
 			case 0: if (k.gpio.fd < 0)
 					usage_ktest(&k, "Invalid arg");
 				gpio_test(&k.gpio, testarg);
 				break;
+#endif
 			case 1: io_test1(&k, testarg); break;
 			case 2: io_test2(&k, testarg); break;
 			case 3: io_test3(&k, testarg); break;

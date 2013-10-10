@@ -424,6 +424,8 @@ Many thanks to Chaitanya Rogers who donated money toward development and to acqu
 <tr><td>Y</td><td>PIC18F4520</td><td>Darron Broad</td><td>&nbsp;</td><td>12.5</td><td>5</td><td>N</td><td>ICSP only.</td></tr>
 <tr><td>Y</td><td>PIC16F917</td><td>Darron Broad</td><td>&nbsp;</td><td>12</td><td>N</td><td>N</td><td>ICSP only.</td></tr>
 <tr><td>Y</td><td>PIC16F84</td><td>Ian Stoyle</td><td>&nbsp;</td><td>13</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
+<tr><td>Y</td><td>PIC18F1330</td><td>Darron Broad</td><td>&nbsp;</td><td>12.5</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
+<tr><td>Y</td><td>PIC18F2431</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>5</td><td>N</td><td>Incompatible (VDD on pin 7)</td></tr>
 <tr><td>N</td><td>PIC16F1847</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>N</td><td>PIC16F1936</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>N</td><td>PIC16F873A</td><td>Chris Williams</td><td>&nbsp;</td><td>13</td><td>5</td><td>N</td><td>&nbsp;</td></tr>
@@ -431,9 +433,7 @@ Many thanks to Chaitanya Rogers who donated money toward development and to acqu
 <tr><td>N</td><td>PIC18F25K50</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>N</td><td>PIC18F26K80</td><td>Darron Broad &amp;<br>Gerhard Bertelsmann</td><td>Gerhard Bertelsmann</td><td>9</td><td>N</td><td>5</td><td>Incompatible (timing).</td></tr>
 <tr><td>N</td><td>PIC18F14K50</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>5</td><td>N</td><td>Incompatible (PGC/PGD 3V3 limit).</td></tr>
-<tr><td>N</td><td>PIC18F2431</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>5</td><td>N</td><td>&nbsp;</td></tr>
 <tr><td>N</td><td>PIC18LF27J53</td><td>Darron Broad</td><td>&nbsp;</td><td>N</td><td>N</td><td>3V3</td><td>Incompatible (architecture).</td></tr>
-<tr><td>N</td><td>PIC18F1330</td><td>Darron Broad</td><td>&nbsp;</td><td>12.5</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
 <tr><td>N</td><td>PIC16F1825</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 </tbody>
 
@@ -617,7 +617,7 @@ Full support list is as follows.
   PIC18F4682 U PIC18F4685 U
 
  DS39752A
-  PIC18F1230 U PIC18F1330 T PIC18F1330-ICD U
+  PIC18F1230 U PIC18F1330 T PIC18F1330-ICD U (5)
 
  DS41398B (1)
   PIC18F23K22 U PIC18F24K22 U PIC18F25K22 T PIC18F26K22 U
@@ -655,6 +655,7 @@ Full support list is as follows.
 <li>Only tested in MCHP LVP mode with VDD at 3V3.
 <li>Can only be programmed in LVP mode with VDD at 3V3.
 <li>A PIC18LF27J53 has been tested in MCHP LVP mode with VDD at 3V3.
+<li>Needs to be power cycled to enter PROG. mode after RUN on the Velleman K8048.
 </ol>
 
 <a href="#toc">Table of contents</a><br>
@@ -686,6 +687,11 @@ Full support list is as follows.
 <p><u>24-bit word / 16-bit data architecture</u><p>
 <pre>
   dsPIC30F4013 (1)
+</pre>
+
+<p><u>32-bit architecture</u><p>
+<pre>
+  PIC32 MX150F128B (1)
 </pre>
 
 <p><u>Notes</u></p>
@@ -816,7 +822,7 @@ The options are as follows.
 </p>
 
 <pre>
-# I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or ICSP (LPICP)
+# I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or LPICP ICSP
 #
 #DEVICE=/dev/cuad0
 #DEVICE=/dev/ttyS0
@@ -833,7 +839,7 @@ DEVICE=RPI
 # When SLEEP is less than 100 a busy loop is utilised, otherwise
 # system usleep is invoked
 #
-# For ICSP (LPICP) SLEEP determines the kernel PROGRAM/ERASE
+# For LPICP ICSP SLEEP determines the kernel PROGRAM/ERASE
 # timing method with 0 for delay and 1 for sleep
 #
 # cuad/ttyS
@@ -846,7 +852,7 @@ DEVICE=RPI
 SLEEP=1
 # LINUX MCP23017 I2C
 #SLEEP=0
-# ICSP (LPICP)
+# LPICP ICSP
 #SLEEP=1
 
 # I/O bit rules. These determine the polarity of the control lines and whether
@@ -872,7 +878,7 @@ SLEEP=1
 BITRULES=0x10
 # LINUX MCP23017 I2C
 #BITRULES=0x10
-# ICSP (LPICP)
+# LPICP ICSP
 #BITRULES=0x00
 
 # I/O busy cursor speed (lower is faster)
@@ -1008,21 +1014,35 @@ There are multiple ways to run the k8048 application and it's mode of operation 
 <p><u>k8048 - Show usage of other modes of operation</u></p>
 <pre>
 $ k8048
-USAGE: k12 | k14 | k16 | ktest
+USAGE: k8048
+Usage information.
 
 FILES:
  /home/darron/.k8048
                 Configuration.
 
+BACKENDS:
+ TTY
+                POSIX serial.
+ RPI
+                Raspberry Pi GPIO.
+ MCP23017
+                Linux MCP23017 I2C.
+ LPICP
+                Linux PIC Programmer ICSP.
+
 EXAMPLES:
  k12 SELECT DEVICE OPERATION [ARG]
                 12-bit word PIC10F/12F/16F operations.
- k14 [SELECT DEVICE] OPERATION [ARG]
+ k14 [MCHP | SELECT 16F84] OPERATION [ARG]
                 14-bit word PIC10F/12F/16F operations.
- k16 OPERATION [ARG]
+ k16 [MCHP] OPERATION [ARG]
                 16-bit word PIC18F operations.
- ktest TEST ARG
+ ktest TEST [ARG]
                 Hardware tests.
+
+VERSION:
+ 2.15-dev
 </pre>
 
 <p><u>k12 - Perform operations on 12-bit word architecture devices</u></p>
@@ -1058,6 +1078,9 @@ EXAMPLES:
                 Program file.hex in flash (intel hex32 format).
  k12 select PIC1XFXXX verify file.hex
                 Verify file.hex in flash (intel hex32 format).
+
+VERSION:
+ 2.15-dev
 </pre>
 
 <p><u>k14 - Perform operations on 14-bit word architecture devices</u></p>
@@ -1069,7 +1092,7 @@ EXAMPLES:
 
 <pre>
 $ k14
-USAGE: k14 [SELECT DEVICE] OPERATION [ARG]
+USAGE: k14 [MCHP | SELECT 16F84] OPERATION [ARG]
 14-bit word PIC10F/12F/16F operations.
 
 Error: Missing arg(s).
@@ -1081,7 +1104,7 @@ FILES:
 EXAMPLES:
  k14 select
                 Dump supported devices.
- k14 select PIC16F84 OPERATION [ARG]
+ k14 select 16F84 OPERATION [ARG]
                 Select device PIC16F84.
  k14 mchp OPERATION [ARG]
                 MCHP LVP mode.
@@ -1107,6 +1130,9 @@ EXAMPLES:
                 Program file.hex in flash (intel hex32 format).
  k14 verify file.hex
                 Verify file.hex in flash (intel hex32 format).
+
+VERSION:
+ 2.15-dev
 </pre>
 
 <p><u>k16 - Perform operations on 16-bit word architecture devices</u></p>
@@ -1118,7 +1144,7 @@ EXAMPLES:
 
 <pre>
 $ k16
-USAGE: k16 OPERATION [ARG]
+USAGE: k16 [MCHP] OPERATION [ARG]
 16-bit word PIC18F operations.
 
 Error: Missing arg(s).
@@ -1148,6 +1174,9 @@ EXAMPLES:
                 Program file.hex in flash (intel hex32 format).
  k16 verify file.hex
                 Verify file.hex in flash (intel hex32 format).
+
+VERSION:
+ 2.15-dev
 </pre>
 
 <p><u>ktest - Perform various hardware and communication tests</u></p>
@@ -1169,8 +1198,8 @@ FILES:
                 Configuration.
 
 EXAMPLES:
- ktest VPP|PGC|PGD 5
-                VPP, PGC or PGD LOW-&gt;HIGH-&gt;LOW test with 5 seconds high time.
+ ktest VPP|PGC|PGD|PGM 5
+                VPP, PGC, PGD or PGM LOW-&gt;HIGH-&gt;LOW test with 5 seconds high time.
  ktest 0 10
                 R-PI GPIO test with 10 seconds mark time.
  ktest 1 10
@@ -1187,6 +1216,9 @@ EXAMPLES:
                 16F627 debug test with 100 microseconds clock mark time.
  ktest 5 100
                 ICSPIO demo test with 100 microseconds clock mark time.
+
+VERSION:
+ 2.15-dev
 </pre>
 
 <a href="#toc">Table of contents</a><br clear="all">

@@ -61,13 +61,6 @@
 /*
  * Timing parameters
  */
-
-#if 0
-static int udly_pgd_val_to_clk_rise = 0;
-module_param(udly_pgd_val_to_clk_rise, int, 0644);
-MODULE_PARM_DESC(udly_pgd_val_to_clk_rise, "(default:0)");
-#endif
-
 static int P2B = 0; /* ndly_pgc_hold */
 module_param(P2B, int, 0644);
 MODULE_PARM_DESC(P2B, "DS39592F P2B TsclkH 40..400ns (default:0ns)");
@@ -91,7 +84,7 @@ static struct mc_icsp_gpio_platform_data pdata;
 module_param_array(mc_icsp, uint, &bus_nump, 0);
 MODULE_PARM_DESC(mc_icsp, "mc_icsp" BUS_PARM_DESC);
 
-static struct platform_device *device;
+static struct platform_device *pdev;
 
 static void set_pgc(void *data, unsigned int state) {
         struct mc_icsp_gpio_platform_data *pdata = data;
@@ -105,12 +98,10 @@ static void set_pgd(void *data, unsigned int state) {
 
 static void set_pgd_dir(void *data, unsigned int dir) {
         struct mc_icsp_gpio_platform_data *pdata = data;
-	// printk(KERN_INFO PFX " set_pgd_dir %d\n",dir);
 	if (dir)
         	gpio_direction_input(pdata->pgd_pin);
         else
-		gpio_direction_output(pdata->pgd_pin,0);
-	// printk(KERN_INFO PFX " set_pgd_dir done\n");
+		gpio_direction_output(pdata->pgd_pin, 0);
 }
 
 static void set_pgm(void *data, unsigned int state) {
@@ -133,12 +124,11 @@ static void mc_icsp_gpio_custom_cleanup(void) {
 	gpio_free(pdata.pgd_pin);
 	gpio_free(pdata.pgc_pin);
 	gpio_free(pdata.pgm_pin);
-	platform_device_put(device);
+	platform_device_unregister(pdev);
 }
 
 static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 {
-	struct platform_device *pdev;
 	struct mc_icsp_platform_data mc_icsp_pdata;
 
 	int err;
@@ -192,7 +182,6 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.get_pgd = get_pgd;
 	mc_icsp_pdata.open = NULL;
 	mc_icsp_pdata.release = NULL;
-	mc_icsp_pdata.udly_pgd_val_to_clk_rise = 0;
 	mc_icsp_pdata.ndly_pgc_hold = P2B;
 	mc_icsp_pdata.ndly_pgc_low_hold = P2A;
 	mc_icsp_pdata.udly_cmd_to_data = P5;
@@ -202,7 +191,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	if (!pdev) {
 		printk(KERN_ERR PFX " can't alloc MC ICSP device\n");
 		err = -ENOMEM;
-		goto err_put;
+		goto err_alloc;
 	}
 
 	err = platform_device_add_data(pdev, &mc_icsp_pdata, sizeof(mc_icsp_pdata));
@@ -217,6 +206,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 
 err_put:
 	platform_device_put(pdev);
+err_alloc:
 	gpio_free(params[BUS_PARAM_PGM]);
 err_get_pgm:
 	gpio_free(params[BUS_PARAM_PGC]);
@@ -266,4 +256,3 @@ MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("Gerhard Bertelsmann <info@gerhard-bertelsmann.de");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
-

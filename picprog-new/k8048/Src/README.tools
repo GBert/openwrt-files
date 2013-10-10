@@ -127,6 +127,6 @@ $ depmod -a
 Load modules on target machine.
 
 $ modprobe mc-icsp
-$ modprobe mc-icsp-gpio-custom mc_icsp=4,24,25,22
+$ modprobe mc-icsp-gpio-custom mc_icsp=4,24,25,22 P2B=200 P2A=0
 $ mknod /dev/icsp0 c 245 0
 $ chmod 666 /dev/icsp0

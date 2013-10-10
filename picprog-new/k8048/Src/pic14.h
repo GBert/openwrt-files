@@ -477,25 +477,6 @@ struct pic14_dsmap
 
 void pic14_selector(struct k8048 *);
 
-/* hardware function prototypes */
-void pic14_begin_programming_001000(struct k8048 *, int);
-void pic14_begin_programming_011000(struct k8048 *, int);
-void pic14_end_programming_001110(struct k8048 *, int);
-void pic14_end_programming_010111(struct k8048 *, int);
-void pic14_load_configuration(struct k8048 *, unsigned short);
-void pic14_load_data_for_program_memory(struct k8048 *, unsigned short);
-void pic14_load_data_for_data_memory(struct k8048 *, unsigned short);
-void pic14_increment_address(struct k8048 *);
-unsigned short pic14_read_data_from_program_memory(struct k8048 *);
-unsigned char pic14_read_data_from_data_memory(struct k8048 *);
-void pic14_begin_erase_programming(struct k8048 *, int t);
-void pic14_chip_erase(struct k8048 *, int);
-void pic14_bulk_erase_program_memory(struct k8048 *, int);
-void pic14_bulk_erase_data_memory(struct k8048 *, int);
-void pic14_bulk_erase_setup1(struct k8048 *);
-void pic14_bulk_erase_setup2(struct k8048 *);
-
-/* compound functions */
 int pic14_get_program_flash_size(void);
 int pic14_get_data_flash_size(void);
 int pic14_get_data_eeprom_size(void);

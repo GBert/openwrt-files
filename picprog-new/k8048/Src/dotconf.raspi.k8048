@@ -11,7 +11,7 @@
 # Copy this file to ~/.k8048
 #
 
-# I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or ICSP (LPICP)
+# I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or LPICP ICSP
 #
 #DEVICE=/dev/cuad0
 #DEVICE=/dev/ttyS0
@@ -28,7 +28,7 @@ DEVICE=RPI
 # When SLEEP is less than 100 a busy loop is utilised, otherwise
 # system usleep is invoked
 #
-# For ICSP (LPICP) SLEEP determines the kernel PROGRAM/ERASE 
+# For LPICP ICSP SLEEP determines the kernel PROGRAM/ERASE 
 # timing method with 0 for delay and 1 for sleep
 #
 # cuad/ttyS
@@ -41,7 +41,7 @@ SLEEP=10
 #SLEEP=1
 # LINUX MCP23017 I2C
 #SLEEP=0
-# ICSP (LPICP)
+# LPICP ICSP
 #SLEEP=1
 
 # I/O bit rules. These determine the polarity of the control lines and whether
@@ -67,7 +67,7 @@ BITRULES=0x10
 #BITRULES=0x10
 # LINUX MCP23017 I2C
 #BITRULES=0x10
-# ICSP (LPICP)
+# LPICP ICSP
 #BITRULES=0x00
 
 # I/O busy cursor speed (lower is faster)

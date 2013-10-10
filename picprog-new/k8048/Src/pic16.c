@@ -559,10 +559,10 @@ pic16_bulk_erase(struct k8048 *k)
 	io_init_program_verify(k);
 
 	switch (pic16_map[pic16_index].datasheet) {	/* CHIP ERASE           */
-	case DS30500A: /* PIC18F2431 */
+	case DS30500A: /* PIC18F2431 DS30500A-page 9  */
 	case DS39576B: /* PIC18F252  */
-	case DS39592E: /* PIC18F1320 DS39562F-page 10 */
-		       /* PIC18F2320 DS39562F-page 10 */
+	case DS39592E: /* PIC18F1320 DS39592F-page 10 */
+		       /* PIC18F2320 DS39592F-page 10 */
 		pic16_set_table_pointer(k, 0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(k, 0x0080);		/* BULK ERASE CHIP	*/
 		pic16_core_instruction(k, 0x0000);	/* NOP			*/
@@ -650,7 +650,7 @@ pic16_bulk_erase(struct k8048 *k)
 void
 pic16_read_config_memory(struct k8048 *k)
 {
-	unsigned short deviceid, revision, error;
+	unsigned short deviceid = 0, revision = 0, error;
 	int i;
 
 	/* Device selected by user */
@@ -984,7 +984,7 @@ pic16_write_buffer(struct k8048 *k, unsigned long address, unsigned char buffer[
 	pic16_table_write_start_programming(k, (buffer[i + 1] << 8) | buffer[i]);
 	pic16_core_instruction_nopp(k);
 #if 0
-	pic16_write_disble(k);
+	pic16_write_disable(k);
 #endif
 }
 
@@ -1172,7 +1172,7 @@ pic16_writeregion(struct k8048 *k, unsigned long address, int region, unsigned c
 int
 pic16_verifyregion(struct k8048 *k, unsigned long address, int region, int index, unsigned char data)
 {
-	unsigned char vdata;
+	unsigned char vdata = 0;
 
 	switch (region) {
 	case PIC16_REGIONCODEID:

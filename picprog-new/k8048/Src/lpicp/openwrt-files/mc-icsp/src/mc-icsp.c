@@ -43,7 +43,6 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 /* clock out a bit with a value of 1 */
 #define mc_icsp_io_output_one(cfg)    do {          \
     mc_icsp_io_pgd_set_hi();                        \
-    mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \
@@ -53,7 +52,6 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 /* clock out a bit with a value of 0 */
 #define mc_icsp_io_output_zero(cfg) do {            \
     mc_icsp_io_pgd_set_lo();                        \
-    mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \

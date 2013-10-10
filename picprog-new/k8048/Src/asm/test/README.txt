@@ -178,6 +178,11 @@ INDEX   DEVICE      DATASHEETS
 N/A     30F4013     70138E  dsPIC30F4013 DataSheets
 		    70102H  dsPIC30F Flash Programming Specification
 
+N/A	MX150F128B  http://ww1.microchip.com/downloads/en/DeviceDoc/61168E.pdf
+		    http://ww1.microchip.com/downloads/en/DeviceDoc/80000531E.pdf
+		    http://ww1.microchip.com/downloads/en/DeviceDoc/60001145M.pdf
+		    http://ww1.microchip.com/downloads/en/DeviceDoc/RIPE_11_000301.zip
+
 OTHER
 -------------------------------------------------------------------------------
 INDEX   DEVICE      DATASHEETS

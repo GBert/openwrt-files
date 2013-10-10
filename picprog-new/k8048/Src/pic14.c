@@ -249,7 +249,7 @@ pic14_selector(struct k8048 *k)
  * LOAD CONFIGURATION
  *  PC <= CONFIG_LOW
  *
- * X00000
+ * X00000 = 0x00
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -273,10 +273,10 @@ pic14_selector(struct k8048 *k)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-void
+static inline void
 pic14_load_configuration(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "000000");
+	io_command_out(k, 0x00);
 	io_word_out14(k, word);
 }
 
@@ -285,7 +285,7 @@ pic14_load_configuration(struct k8048 *k, unsigned short word)
  *  PC <= CODE_LOW
  *  WR <= word
  *
- * X00010
+ * X00010 = 0x02
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -309,10 +309,10 @@ pic14_load_configuration(struct k8048 *k, unsigned short word)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-void
+static inline void
 pic14_load_data_for_program_memory(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "000010");
+	io_command_out(k, 0x02);
 	io_word_out14(k, word);
 }
 
@@ -321,7 +321,7 @@ pic14_load_data_for_program_memory(struct k8048 *k, unsigned short word)
  *  PC <= DATA_LOW
  *  WR <= word
  *
- * X00011
+ * X00011 = 0x03
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -339,10 +339,10 @@ pic14_load_data_for_program_memory(struct k8048 *k, unsigned short word)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-void
+static inline void
 pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "000011");
+	io_command_out(k, 0x03);
 	io_word_out14(k, word);
 }
 
@@ -350,7 +350,7 @@ pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
  * INCREMENT ADDRESS
  *  PC <= 1 + PC
  *
- * X00110
+ * X00110 = 0x06
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -374,17 +374,17 @@ pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-void
+static inline void
 pic14_increment_address(struct k8048 *k)
 {
-	io_command_out(k, "000110");
+	io_command_out(k, 0x06);
 }
 
 /*
  * READ DATA FROM PROGRAM MEMORY
  *  RETURN (PC)
  *
- * X00100
+ * X00100 = 0x04
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -408,10 +408,10 @@ pic14_increment_address(struct k8048 *k)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-unsigned short
+static inline unsigned short
 pic14_read_data_from_program_memory(struct k8048 *k)
 {
-	io_command_out(k, "000100");
+	io_command_out(k, 0x04);
 	return io_word_in14(k);
 }
 
@@ -419,7 +419,7 @@ pic14_read_data_from_program_memory(struct k8048 *k)
  * READ DATA FROM DATA MEMORY
  *  RETURN (PC)
  *
- * X00101
+ * X00101 = 0x05
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -437,18 +437,18 @@ pic14_read_data_from_program_memory(struct k8048 *k)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
  */
-unsigned char
+static inline unsigned char
 pic14_read_data_from_data_memory(struct k8048 *k)
 {
-	io_command_out(k, "000101");
-	return (unsigned char) (io_word_in14(k) & 0xff);
+	io_command_out(k, 0x05);
+	return (unsigned char)(io_word_in14(k));
 }
 
 /*
  * RESET ADDRESS
  *  PC <= 0
  *
- * X10110
+ * X10110 = 0x16
  *
  * DS41332D-page 13 16F726
  * DS41572D-page 11 10F320
@@ -457,10 +457,10 @@ pic14_read_data_from_data_memory(struct k8048 *k)
  * DS41397B-page 19 16F1936
  * DS41390D-page 13 16F1825
  */
-void
+static inline void
 pic14_reset_address(struct k8048 *k)
 {
-	io_command_out(k, "010110");
+	io_command_out(k, 0x16);
 }
 
 /*PROG************************************************************************/
@@ -469,7 +469,7 @@ pic14_reset_address(struct k8048 *k)
  * BEGIN ERASE / BEGIN ERASE PROGRAMMING
  *  (PC) <= WR
  *
- * 001000
+ * 001000 = 0x08
  *
  * DS30189D-page 4 16C84
  * DS30262E-page 4 16F84A  TERA+TPROG(4+4ms) OR 10ms INTERNAL/NO END
@@ -479,10 +479,10 @@ pic14_reset_address(struct k8048 *k)
  * DS39607C-page 9 16F88   TPROG2(1ms)               EXTERNAL
  * DS39603C-page 7 16F819  TPROG2(1ms)		     EXTERNAL
  */
-void
+static inline void
 pic14_begin_erase_programming(struct k8048 *k, int t)
 {
-	io_command_out(k, "001000");
+	io_command_out(k, 0x08);
 	io_usleep(k, t);
 }
 
@@ -490,7 +490,7 @@ pic14_begin_erase_programming(struct k8048 *k, int t)
  * BEGIN PROGRAMMING
  *  (PC) <= WR
  *
- * 001000
+ * 001000 = 0x08
  *
  * DS41196G-page 5  16F628A TPROG(4ms)   OR TDPROG(6ms DATA)         INTERNAL/NO END
  * DS41191B-page 4  16F676  TPROG1(3ms)  OR TPROG1(6ms DATA + ERASE) INTERNAL/NO END
@@ -505,10 +505,10 @@ pic14_begin_erase_programming(struct k8048 *k, int t)
  * DS41244F-page 12 16F917                                           INTERNAL/NO END
  * DS41390D-page 13 16F1825 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
  */
-void
+static inline void
 pic14_begin_programming_001000(struct k8048 *k, int t)
 {
-	io_command_out(k, "001000");
+	io_command_out(k, 0x08);
 	io_usleep(k, t);
 }
 
@@ -516,7 +516,7 @@ pic14_begin_programming_001000(struct k8048 *k, int t)
  * BEGIN PROGRAMMING
  *  (PC) <= WR
  *
- * 011000
+ * 011000 = 0x18
  *
  * DS30262E-page 4  16F84A  TPROG(8ms)    INTERNAL/NO END
  * DS30034D-page 4  16F627  TPROG(8ms)    INTERNAL/NO END
@@ -537,50 +537,47 @@ pic14_begin_programming_001000(struct k8048 *k, int t)
  * DS41244F-page 12 16F917                EXTERNAL
  * DS41390D-page 13 16F1825 TPEXT(2.1ms)  EXTERNAL
  */
-void
+static inline void
 pic14_begin_programming_011000(struct k8048 *k, int t)
 {
-	io_command_out(k, "011000");
+	io_command_out(k, 0x18);
 	io_usleep(k, t);
 }
 
 /*
  * END PROGRAMMING
  *
- * 010111
+ * 010111 = 0x17
  *
  * DS39589C-page 7 16F877A NDELAY
  * DS39607C-page 9 16F88   NDELAY
  * DS39603C-page 7 16F819  NDELAY
  */
-void
+static inline void
 pic14_end_programming_010111(struct k8048 *k, int t)
 {
-	io_command_out(k, "010111");
-#if 0
-	io_usleep(k, t);
-#endif
+	io_command_out(k, 0x17);
 }
 
 /*
  * END PROGRAMMING
  *
- * 001110
+ * 001110 = 0x0E
  *
  * DS40245B-page 5 16F716 TDIS(100us)
  * DS30324B-page 4 16F73  NDELAY
  */
-void
+static inline void
 pic14_end_programming_001110(struct k8048 *k, int t)
 {
-	io_command_out(k, "001110");
+	io_command_out(k, 0x0E);
 	io_usleep(k, t);
 }
 
 /*
  * END PROGRAMMING
  *
- * 001010
+ * 001010 = 0x0A
  *
  * DS41191B-page 4  16F676  TDIS(0.5us)
  * DS41204H-page 14 12F683  TDIS(100us)
@@ -594,10 +591,10 @@ pic14_end_programming_001110(struct k8048 *k, int t)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825 TDIS(300us)
  */
-void
+static inline void
 pic14_end_programming_001010(struct k8048 *k, int t)
 {
-	io_command_out(k, "001010");
+	io_command_out(k, 0x0A);
 	io_usleep(k, t);
 }
 
@@ -606,7 +603,7 @@ pic14_end_programming_001010(struct k8048 *k, int t)
 /*
  * BULK ERASE PROGRAM MEMORY (PRELOAD 0x3FFF)
  *
- * X01001
+ * X01001 = 0x09
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -629,17 +626,17 @@ pic14_end_programming_001010(struct k8048 *k, int t)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825 TERAB(5ms)
  */
-void
+static inline void
 pic14_bulk_erase_program_memory(struct k8048 *k, int t)
 {
-	io_command_out(k, "001001");
+	io_command_out(k, 0x09);
 	io_usleep(k, t);
 }
 
 /*
  * BULK ERASE DATA MEMORY (PRELOAD 0x3FFF)
  *
- * X01011
+ * X01011 = 0x0B
  *
  * DS30189D-page 4  16C84
  * DS30262E-page 4  16F84A
@@ -656,63 +653,63 @@ pic14_bulk_erase_program_memory(struct k8048 *k, int t)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825 TERAB(5ms)
  */
-void
+static inline void
 pic14_bulk_erase_data_memory(struct k8048 *k, int t)
 {
-	io_command_out(k, "001011");
+	io_command_out(k, 0x0B);
 	io_usleep(k, t);
 }
 
 /*
  * BULK ERASE SETUP 1 (TOGGLE SELECT EVEN ROWS)
  *
- * 000001
+ * 000001 = 0x01
  *
  * DS30262E-page 10 16F84A
  * DS30034D-page 4  16F627
  * DS39025F-page 6  16F872
  */
-void
+static inline void
 pic14_bulk_erase_setup1(struct k8048 *k)
 {
-	io_command_out(k, "000001");
+	io_command_out(k, 0x01);
 }
 
 /*
  * BULK ERASE SETUP 2 (TOGGLE SELECT EVEN ROWS)
  *
- * 000111
+ * 000111 = 0x07
  *
  * DS30262E-page 10 16F84A
  * DS30034D-page 4  16F627
  * DS39025F-page 6  16F872
  */
-void
+static inline void
 pic14_bulk_erase_setup2(struct k8048 *k)
 {
-	io_command_out(k, "000111");
+	io_command_out(k, 0x07);
 }
 
 /*
  * CHIP ERASE (PRELOAD 0x3FFF)
  *
- * X11111
+ * X11111 = 0x1F
  *
  * DS39589C-page 7 16F877A TPROG3(10ms)
  * DS39607C-page 9 16F88   TPROG4(10ms)
  * DS39603C-page 7 16F819  TPROG4(8ms)
  */
-void
+static inline void
 pic14_chip_erase(struct k8048 *k, int t)
 {
-	io_command_out(k, "011111");
+	io_command_out(k, 0x1F);
 	io_usleep(k, t);
 }
 
 /*
  * ROW ERASE PROGRAM MEMORY
  *
- * X10001
+ * X10001 = 0x11
  *
  * DS41204H-page 14 12F683  TERA(6ms)
  * DS41332D-page 13 16F726  TERAR(2.5ms)
@@ -725,10 +722,10 @@ pic14_chip_erase(struct k8048 *k, int t)
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825 TERAR(2.5ms)
  */
-void
+static inline void
 pic14_row_erase_program_memory(struct k8048 *k, int t)
 {
-	io_command_out(k, "010001");
+	io_command_out(k, 0x11);
 	io_usleep(k, t);
 }
 
@@ -1218,7 +1215,7 @@ pic14_write_config(struct k8048 *k, unsigned short config1)
 {
 	int i;
 	unsigned short config2 = pic14_conf.index[PIC14_CONFIG_WORD2];
-	unsigned short vdata1, vdata2;
+	unsigned short vdata1 = 0, vdata2 = 0;
 
 	io_init_program_verify(k);
 
@@ -1506,7 +1503,7 @@ void
 pic14_program(struct k8048 *k)
 {
 	int i, j;
-	unsigned short hex_address, PC_address, wdata;
+	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC14_REGIONUNKNOWN;
 	int total = 0;
 	int multiword = (pic14_map[pic14_index].latches > 1);
@@ -1575,7 +1572,7 @@ int
 pic14_verify(struct k8048 *k)
 {
 	int i, j;
-	unsigned short hex_address, PC_address, wdata;
+	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC14_REGIONUNKNOWN;
 	int fail = 0, total = 0;
 

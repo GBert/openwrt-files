@@ -18,7 +18,7 @@ in your OpenWrt source tree.
 ### Using
 On the OpenWrt Router just install both modules:
 <pre><code>insmod mc-icsp
-insmod mc-icsp-gpio-custom mc\_icsp=14,12,11,13</pre></code>
+insmod mc-icsp-gpio-custom mc\_icsp=14,12,11,13 P2B=400 P2A=0</pre></code>
 and add the device:
 <pre><code>mknod /dev/icsp0 c 245 0</pre></code>
 ### Test

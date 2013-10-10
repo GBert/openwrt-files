@@ -13,17 +13,15 @@
 SYSTEM:=$(shell uname -s)
 RELEASE:=$(shell uname -r)
 PLATFORM:=$(shell uname -m)
-ifeq "$(PLATFORM)" "armv6l"
-RASPI=1
-else
-RASPI=0
-endif
 
 CC=gcc
-CFLAGS=-std=c99 -DENABLE_RPI=$(RASPI) -I. -I../.. -ggdb -Wall -Wno-implicit-function-declaration
+CFLAGS=-Os -std=gnu99 -I. -ggdb -Wall
 GCCVERSIONGTEQ4:=$(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4)
 ifeq "$(GCCVERSIONGTEQ4)" "1"
-CFLAGS+=-Wno-int-to-pointer-cast
+CFLAGS+=-Wno-int-to-pointer-cast -Wno-char-subscripts
+endif
+ifneq (,$(findstring CYGWIN,$(SYSTEM)))
+CFLAGS+=-D__USE_LINUX_IOCTL_DEFS
 endif
 
 CLIB=-lm -lreadline -lncurses

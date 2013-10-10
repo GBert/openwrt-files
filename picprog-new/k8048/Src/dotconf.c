@@ -66,26 +66,16 @@ getconf(struct k8048 *k, char *e)
 	FILE *f1;
 	char line[STRLEN];
 
-	/* Set up defaults */
+	/* Configure defaults */
 	bzero(k, sizeof(struct k8048));
-	strncpy(k->device, SERIAL_DEVICE, STRLEN);
 	k->bitrules = (PGD_IN_PULLUP | PGD_OUT_FLIP | PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP);
 	k->busy = BUSY;
-	k->iot = IONONE;
-	k->fd = -1;
-	k->gpio.fd = -1;
-	k->i2c = -1;
-	k->gpio.vpp  = GPIO_VPP;  /* TX/!MCLR/VPP     */
-	k->gpio.pgm  = GPIO_PGM;  /* PGM              */
-	k->gpio.pgc  = GPIO_PGC;  /* RTS/PGC CLOCK    */
-	k->gpio.pgdo = GPIO_PGDO; /* DTR/PGD DATA_OUT */
-	k->gpio.pgdi = GPIO_PGDI; /* CTS/PGD DATA_IN  */
-	k->mcp = MCP23017;
-	k->lpicp.icsp_dev_name = NULL;
-	k->lpicp.icsp_dev_file = -1;
 	k->sleep = 1;
 	k->fwsleep = 1;
 	k->run = 0;
+
+	/* Configure I/O defaults */
+	io_config(k);
 
 	/* Load dot file if available */
 	getdotfile(k);
@@ -121,6 +111,7 @@ getconf(struct k8048 *k, char *e)
 #endif
 				k->busy = strtoul(&line[5], NULL, 0);
 			}
+#ifdef RPI
 			else if (mystrcasestr(line, "VPP=") == line) {
 #ifdef DEBUG
 				printf("%s: VPP=%s\n", __func__, &line[4]);
@@ -158,12 +149,15 @@ getconf(struct k8048 *k, char *e)
 #endif
 				k->gpio.pgdi = strtoul(&line[5], NULL, 0);
 			}
+#endif
+#ifdef MCP23017
 			else if (mystrcasestr(line, "MCP=") == line) {
 #ifdef DEBUG
 				printf("%s: MCP=%s\n", __func__, &line[4]);
 #endif
 				k->mcp = strtoul(&line[4], NULL, 0);
 			}
+#endif
 			else if (mystrcasestr(line, "RUN=") == line) {
 #ifdef DEBUG
 				printf("%s: RUN=%s\n", __func__, &line[4]);

@@ -41,7 +41,7 @@ mystrcasestr(const char *haystack, const char *needle)
 
 	for (i = 0; i <= hlen; i++) {
 		for (j = 0; j < nlen; j++) {
-			if (tolower(haystack[i + j]) != tolower(needle[j]))
+			if (tolower((int)haystack[i + j]) != tolower((int)needle[j]))
 				break;
 		}
 		if (j == nlen) {

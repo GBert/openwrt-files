@@ -110,13 +110,6 @@ struct pic12_dsmap
 
 void pic12_selector(struct k8048 *);
 
-void pic12_load_data_for_program_memory(struct k8048 *, unsigned short);
-unsigned short pic12_read_data_from_program_memory(struct k8048 *);
-void pic12_increment_address(struct k8048 *);
-void pic12_begin_programming(struct k8048 *);
-void pic12_end_programming(struct k8048 *);
-void pic12_bulk_erase_program_memory(struct k8048 *);
-
 unsigned short pic12_read_program_memory_increment(struct k8048 *);
 
 void pic12_read_config_word(struct k8048 *);

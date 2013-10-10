@@ -51,6 +51,7 @@ struct pic12_dsmap pic12_map[] =
 {"PIC12F519",	PIC12F519,	1024,	+64,	DS41316C,  0x0444,	0x07FF,	1},
 
 {"(null)",	0,		0,	0,	0,	   0,		0,	0}
+/*Device name	Device id 	Flash	Data	Data-sheet Backup OSC	Config 	Latches */
 };
 #define PIC12_SIZE ((sizeof(pic12_map) / sizeof(struct pic12_dsmap)) - 1)
 
@@ -91,7 +92,7 @@ pic12_selector(struct k8048 *k)
  *  PC <= 0x07FF (PIC16F505)
  *  WR <= word
  *
- * XX0010
+ * XX0010 = 0x02
  *
  * DS41226G-page 4 16F505
  * DS41227E-page 3 12F508
@@ -101,10 +102,10 @@ pic12_selector(struct k8048 *k)
  * DS41266C-page 3 10F220
  * DS41316C-page 3 12F519
  */
-void
+static inline void
 pic12_load_data_for_program_memory(struct k8048 *k, unsigned short word)
 {
-	io_command_out(k, "000010");
+	io_command_out(k, 0x02);
 	io_word_out14(k, word);
 }
 
@@ -112,7 +113,7 @@ pic12_load_data_for_program_memory(struct k8048 *k, unsigned short word)
  * READ DATA FROM PROGRAM MEMORY
  *  RETURN (PC)
  *
- * XX0100
+ * XX0100 = 0x04
  *
  * DS41226G-page 4 16F505
  * DS41227E-page 3 12F508
@@ -122,10 +123,10 @@ pic12_load_data_for_program_memory(struct k8048 *k, unsigned short word)
  * DS41266C-page 3 10F220
  * DS41316C-page 3 12F519
  */
-unsigned short
+static inline unsigned short
 pic12_read_data_from_program_memory(struct k8048 *k)
 {
-	io_command_out(k, "000100");
+	io_command_out(k, 0x04);
 	return io_word_in14(k) & MASK12BIT;
 }
 
@@ -133,7 +134,7 @@ pic12_read_data_from_program_memory(struct k8048 *k)
  * INCREMENT ADDRESS
  *  PC <= 1 + PC
  *
- * XX0110
+ * XX0110 = 0x06
  *
  * DS41226G-page 4 16F505
  * DS41227E-page 3 12F508
@@ -143,10 +144,10 @@ pic12_read_data_from_program_memory(struct k8048 *k)
  * DS41266C-page 3 10F220
  * DS41316C-page 3 12F519
  */
-void
+static inline void
 pic12_increment_address(struct k8048 *k)
 {
-	io_command_out(k, "000110");
+	io_command_out(k, 0x06);
 }
 
 /*PROG************************************************************************/
@@ -155,7 +156,7 @@ pic12_increment_address(struct k8048 *k)
  * BEGIN PROGRAMMING
  *  (PC) <= WR
  *
- * XX1000
+ * XX1000 = 0x08
  *
  * DS41226G-page 4 16F505 TPROG(2ms)
  * DS41227E-page 3 12F508 TPROG(2ms)
@@ -166,17 +167,17 @@ pic12_increment_address(struct k8048 *k)
  * DS41266C-page 3 10F220 TPROG(2ms)
  * DS41316C-page 3 12F519 TPROG(2ms)
  */
-void
+static inline void
 pic12_begin_programming(struct k8048 *k)
 {
-	io_command_out(k, "001000");
+	io_command_out(k, 0x08);
 	io_usleep(k, PIC12_TPROG_DEFAULT);
 }
 
 /*
  * END PROGRAMMING
  *
- * XX1110
+ * XX1110 = 0x0E
  *
  * DS41226G-page 4 16F505 TDIS(100us)
  * DS41227E-page 3 12F508 TDIS(100us)
@@ -187,10 +188,10 @@ pic12_begin_programming(struct k8048 *k)
  * DS41266C-page 3 10F220 TDIS(100us)
  * DS41316C-page 3 12F519 TDIS(100us)
  */
-void
+static inline void
 pic12_end_programming(struct k8048 *k)
 {
-	io_command_out(k, "001110");
+	io_command_out(k, 0x0E);
 	io_usleep(k, PIC12_TDISCHARGE_DEFAULT);
 }
 
@@ -199,7 +200,7 @@ pic12_end_programming(struct k8048 *k)
 /*
  * BULK ERASE PROGRAM MEMORY
  *
- * XX1001
+ * XX1001 = 0x09
  *
  * DS41226G-page 4 16F505 TERA(10ms)
  * DS41227E-page 3 12F508 TERA(10ms)
@@ -210,10 +211,10 @@ pic12_end_programming(struct k8048 *k)
  * DS41266C-page 3 10F220 TERA(10ms)
  * DS41316C-page 3 12F519 TERA(10ms)
  */
-void
+static inline void
 pic12_bulk_erase_program_memory(struct k8048 *k)
 {
-	io_command_out(k, "001001");
+	io_command_out(k, 0x09);
 	io_usleep(k, PIC12_TERASE_DEFAULT);
 }
 
@@ -264,20 +265,31 @@ pic12_bulk_erase(struct k8048 *k, unsigned short osccal)
 
 	io_init_program_verify(k);
 
-	if (pic12_map[pic12_index].datasheet == DS41316C) {
-		/* Erase program/data flash */
-		pic12_bulk_erase_program_memory(k);
+	if (pic12_map[pic12_index].datasheet == DS41316C) { /* PIC12F519 */
+		pic12_bulk_erase_program_memory(k); /* Erase config/program flash */
+
+		pic12_increment_address(k); /* Skip config word */
+
+		for (i = 0; i < pic12_map[pic12_index].flash; i++)
+			pic12_increment_address(k); /* Skip program flash */
+
+		pic12_bulk_erase_program_memory(k); /* Erase data flash */
+
+		for (i = 0; i < pic12_map[pic12_index].data; i++)
+			pic12_read_program_memory_increment(k); /* Skip data flash */
+
+		pic12_bulk_erase_program_memory(k); /* Erase id/osccal */
+	} else {
+		pic12_increment_address(k); /* Skip config word */
+
+		for (i = 0; i < pic12_map[pic12_index].flash; i++)
+			pic12_increment_address(k); /* Skip program flash */
+
+		for (i = 0; i < pic12_map[pic12_index].data; i++)
+			pic12_read_program_memory_increment(k); /* Skip data flash */
+
+		pic12_bulk_erase_program_memory(k); /* Erase device */
 	}
-
-	/* Access userid memory */
-	pic12_increment_address(k);			/* Skip config word */
-	for (i = 0; i < pic12_map[pic12_index].flash; i++)
-		pic12_increment_address(k);		/* Skip program flash memory */
-	for (i = 0; i < pic12_map[pic12_index].data; i++)
-		pic12_read_program_memory_increment(k); /* Skip data flash memory */
-
-	/* Erase all or user (DS41316C) */
-	pic12_bulk_erase_program_memory(k);
 
 	io_standby(k);
 
@@ -355,12 +367,12 @@ pic12_read_config_memory(struct k8048 *k, int f)
 	pic12_read_config_word(k);				/* Get config word */
 	if (f == CONFIG_ALL) {
 		for (i = 0; i < (pic12_map[pic12_index].flash - 1); i++) {
-			pic12_increment_address(k);		/* Skip program memory */
+			pic12_increment_address(k);		/* Skip program flash */
 		}
 		/* Get OSCCAL RESET */
 		pic12_conf.index[PIC12_CONFIG_OSCCAL_RESET] = pic12_read_program_memory_increment(k);
 		for (i = 0; i < pic12_map[pic12_index].data; i++)
-			pic12_read_program_memory_increment(k); /* Skip data memory */
+			pic12_read_program_memory_increment(k); /* Skip data flash */
 		/* Get USERID 0..3 */
 		pic12_conf.index[PIC12_CONFIG_USERID0] = pic12_read_program_memory_increment(k);
 		pic12_conf.index[PIC12_CONFIG_USERID1] = pic12_read_program_memory_increment(k);
@@ -727,7 +739,7 @@ void
 pic12_program(struct k8048 *k)
 {
 	int i, j;
-	unsigned short hex_address, PC_address, wdata;
+	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC12_REGIONUNKNOWN;
 	int total = 0;
 	int multiword = (pic12_map[pic12_index].latches > 1);
@@ -785,7 +797,7 @@ int
 pic12_verify(struct k8048 *k)
 {
 	int i, j;
-	unsigned short hex_address, PC_address, wdata;
+	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC12_REGIONUNKNOWN;
 	int fail = 0, total = 0;
 

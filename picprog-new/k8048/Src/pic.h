@@ -30,6 +30,7 @@ void pic_blank(struct k8048 *);
 void pic_dumpdeviceid(struct k8048 *);
 void pic_dumpconfig(struct k8048 *);
 void pic_writeconfig(struct k8048 *, unsigned short);
+void pic_writebandgap(struct k8048 *k, unsigned short);
 void pic_dumposccal(struct k8048 *);
 void pic_writeosccal(struct k8048 *, unsigned short);
 

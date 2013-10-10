@@ -243,11 +243,11 @@ DODIRECTION     CALL    SENDACK             ;COMMAND SUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-                MOVF    ARGUMENT,W
-                XORLW   5
-                BTFGS   STATUS,Z,DOPORTE_DIR
-#ENDIF
+;#IFDEF PORTE
+;               MOVF    ARGUMENT,W
+;               XORLW   5
+;               BTFGS   STATUS,Z,DOPORTE_DIR
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -340,20 +340,20 @@ ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-DOPORTE_DIR     MOVF    BUFFER,W
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL TRISE
-ENDIF
-                MOVWF   TRISE
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
-IF ARCH == BASELINE
-                TRIS    TRISE
-ENDIF
-                GOTO    DOEND               ;COMMAND COMPLETED
-#ENDIF
+;#IFDEF PORTE
+;DOPORTE_DIR    MOVF    BUFFER,W
+;IF ARCH == MIDRANGE || ARCH == ENHANCED
+;               BANKSEL TRISE
+;ENDIF
+;               MOVWF   TRISE
+;IF ARCH == MIDRANGE || ARCH == ENHANCED
+;               BANKSEL BANK0
+;ENDIF
+;IF ARCH == BASELINE
+;               TRIS    TRISE
+;ENDIF
+;               GOTO    DOEND               ;COMMAND COMPLETED
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -413,11 +413,11 @@ DOOUTPUT        CALL    SENDACK             ;COMMAND SUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-                MOVF    ARGUMENT,W
-                XORLW   5
-                BTFGS   STATUS,Z,DOPORTE_OUT
-#ENDIF
+;#IFDEF PORTE
+;               MOVF    ARGUMENT,W
+;               XORLW   5
+;               BTFGS   STATUS,Z,DOPORTE_OUT
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -510,23 +510,23 @@ ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-DOPORTE_OUT     MOVF    BUFFER,W
-IF ARCH == ENHANCED
-                BANKSEL LATE
-ENDIF
-                MOVWF   LATE
-IF ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
-IF ARCH == BASELINE || ARCH == MIDRANGE 
-                MOVWF   PORTE
-ENDIF
-IFDEF __18F25K22
-                MOVWF   PORTE
-ENDIF
-                GOTO    DOEND               ;COMMAND COMPLETED
-#ENDIF
+;#IFDEF PORTE
+;DOPORTE_OUT    MOVF    BUFFER,W
+;IF ARCH == ENHANCED
+;               BANKSEL LATE
+;ENDIF
+;               MOVWF   LATE
+;IF ARCH == ENHANCED
+;               BANKSEL BANK0
+;ENDIF
+;IF ARCH == BASELINE || ARCH == MIDRANGE 
+;               MOVWF   PORTE
+;ENDIF
+;IFDEF __18F25K22
+;               MOVWF   PORTE
+;ENDIF
+;               GOTO    DOEND               ;COMMAND COMPLETED
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -580,11 +580,11 @@ DOINPUT         CALL    SENDACK             ;COMMAND SUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-                MOVF    BUFFER,W
-                XORLW   5
-                BTFGS   STATUS,Z,DOPORTE_IN
-#ENDIF
+;#IFDEF PORTE
+;               MOVF    BUFFER,W
+;               XORLW   5
+;               BTFGS   STATUS,Z,DOPORTE_IN
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -628,9 +628,9 @@ DOPORTD_IN      MOVF    PORTD,W
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-#IFDEF PORTE
-DOPORTE_IN      MOVF    PORTE,W
-#ENDIF
+;#IFDEF PORTE
+;DOPORTE_IN     MOVF    PORTE,W
+;#ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

@@ -77,7 +77,8 @@ inhx32(char *filename)
 	int n;
 	unsigned char tt = TT_DATA, cc;
 	unsigned short aaaa;
-	inhx32_data *root = NULL, *inhx32;
+	void *root = NULL;
+	inhx32_data *inhx32 = NULL;
 
 	inhx32_count = 0;
 	inhx32_pdata = NULL;

@@ -95,8 +95,10 @@ void io_signal();
 void io_signal_on();
 void io_signal_off();
 
+void io_config(struct k8048 *);
 int io_open(struct k8048 *, int);
 void io_init(struct k8048 *);
+char *io_error(struct k8048 *);
 void io_close(struct k8048 *, int);
 
 void io_set_pgd(struct k8048 *, int);
@@ -115,7 +117,7 @@ void io_data_input_release(struct k8048 *);
 void io_clock_out(struct k8048 *, int, int);
 unsigned char io_clock_in(struct k8048 *, int);
 
-void io_command_out(struct k8048 *, char *);
+void io_command_out(struct k8048 *, unsigned char);
 
 void io_command_out16(struct k8048 *, unsigned char, unsigned short);
 

@@ -42,7 +42,7 @@ AOBJECT=pic16f84a.hex pic16f627.hex pic16f88.hex pic16f648a.hex \
 	pic16f57.hex pic16f54.hex pic16f506.hex pic10f220.hex \
 	pic16f887.hex pic12f519.hex pic16f73.hex pic16f886.hex \
 	pic18f4620.hex pic16f876a.hex pic18f4520.hex pic16f917.hex \
-	pic16f84.hex
+	pic16f84.hex pic18f1330.hex pic18f2431.hex
 
 ASTEST:=$(shell gpasm -l | grep -i 10f320)
 ifneq "$(strip $(ASTEST))" ""
