@@ -1,7 +1,7 @@
 /*
  *  Custom GPIO-based MC-ICSP platform define
  *
- *  Copyright (C) 2013 Gerhard Bertelsmann, Darron Broad
+ *  Copyright (C) 2013 Gerhard Bertelsmann
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2 as
@@ -44,7 +44,7 @@
 
 #define DRV_NAME	"mc-icsp-gpio-custom"
 #define DRV_DESC	"Custom GPIO-based Microchip ICSP driver"
-#define DRV_VERSION	"0.2"
+#define DRV_VERSION	"0.0.1"
 
 #define PFX		DRV_NAME ": "
 
@@ -72,10 +72,6 @@ MODULE_PARM_DESC(P2A, "DS39592F P2A TsclkL 40..400ns (default:0ns)");
 static int P5 = 0; /* udly_cmd_to_data */
 module_param(P5, int, 0644);
 MODULE_PARM_DESC(P5, "DS39592F P5 Tdly1 20ns (default:0us)");
-
-static int P15 = 2; /* udly_pgm_to_mclr */
-module_param(P15, int, 0644);
-MODULE_PARM_DESC(P15, "DS39592F P15 Tset3 2us (default:2us)");
 
 static unsigned int mc_icsp[BUS_PARAM_COUNT] __initdata;
 static unsigned int bus_nump __initdata;
@@ -124,7 +120,6 @@ static void mc_icsp_gpio_custom_cleanup(void) {
 	gpio_free(pdata.pgd_pin);
 	gpio_free(pdata.pgc_pin);
 	gpio_free(pdata.pgm_pin);
-	printk(KERN_INFO PFX "freeing data\n");
 	platform_device_unregister(pdev);
 }
 
@@ -142,7 +137,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 
 	printk(KERN_INFO PFX " requesting GPIOs\n");
 
-	err = gpio_request_one(params[BUS_PARAM_MCLR], GPIOF_OUT_INIT_HIGH, "MC ICSP MCLR");
+	err = gpio_request_one(params[BUS_PARAM_MCLR], GPIOF_OUT_INIT_LOW, "MC ICSP MCLR");
         if (err) {
 		printk(KERN_ERR PFX " didn't get GPIO %d for MCLR\n", params[BUS_PARAM_MCLR] );
 		goto err;
@@ -186,7 +181,6 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.ndly_pgc_hold = P2B;
 	mc_icsp_pdata.ndly_pgc_low_hold = P2A;
 	mc_icsp_pdata.udly_cmd_to_data = P5;
-	mc_icsp_pdata.udly_pgm_to_mclr = P15;
 
 	pdev = platform_device_alloc("mc-icsp", 0);
 	if (!pdev) {
@@ -254,6 +248,6 @@ subsys_initcall(mc_icsp_gpio_custom_probe);
 #endif /* MODULE*/
 
 MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Gerhard Bertelsmann <info@gerhard-bertelsmann.de , Darron Broad");
+MODULE_AUTHOR("Gerhard Bertelsmann <info@gerhard-bertelsmann.de");
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);

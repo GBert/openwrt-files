@@ -1,12 +1,16 @@
 /*
  * Microchip ICSP bitbanging driver
  *
- * Author: Eran Duchan <pavius@gmail.com>
+ * Original Author: Eran Duchan <pavius@gmail.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
  * Free Software Foundation;  either version 2 of the  License, or (at your
  * option) any later version.
+ *
+ * Copyright (C) 2013 Gerhard Bertelsmann & Darron M Broad
+ *  Refactored.
+ *  IOCTLs added for baseline/mid-range/enhanced mid-range support and bit I/O.
  */
 
 #include <linux/slab.h>
@@ -20,14 +24,21 @@
 #include <asm/uaccess.h>
 #include <linux/gpio.h>
 
+/* debugging */
+static int debug;
+module_param(debug, int, 0644);
+MODULE_PARM_DESC(debug, "enable debugging (default:0)");
+#define dprintk(args...) \
+    do { \
+        if (debug) \
+            printk(KERN_INFO "mc_icsp: " args); \
+    } while (0)
+
 /* major number */
 #define MC_ICSP_MAJOR_NUMBER (245)
 
 /* holds the current ICSP platform */
 static struct mc_icsp_platform_data *mc_icsp_platform = NULL;
-
-/* icsp lock */
-static DEFINE_SPINLOCK(mc_icsp_lock);
 
 /* bitbang macros that call platform callback */
 #define mc_icsp_io_pgc_set_hi() mc_icsp_platform->set_pgc(mc_icsp_platform->data, 1)
@@ -37,13 +48,12 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 #define mc_icsp_io_pgd_get()    mc_icsp_platform->get_pgd(mc_icsp_platform->data)
 
 /* delay if not zero */
-#define mc_icsp_udelay(dly)     do {if (dly) udelay(dly);} while(0)
 #define mc_icsp_ndelay(dly)     do {if (dly) ndelay(dly);} while(0)
+#define mc_icsp_udelay(dly)     do {if (dly) udelay(dly);} while(0)
 
 /* clock out a bit with a value of 1 */
 #define mc_icsp_io_output_one(cfg)    do {          \
     mc_icsp_io_pgd_set_hi();                        \
-    mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \
@@ -53,7 +63,6 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 /* clock out a bit with a value of 0 */
 #define mc_icsp_io_output_zero(cfg) do {            \
     mc_icsp_io_pgd_set_lo();                        \
-    mc_icsp_udelay(cfg->udly_pgd_val_to_clk_rise);  \
     mc_icsp_io_pgc_set_hi();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
     mc_icsp_io_pgc_set_lo();                        \
@@ -64,125 +73,69 @@ static DEFINE_SPINLOCK(mc_icsp_lock);
 #define mc_icsp_io_input(input_value, cfg) do {     \
     mc_icsp_io_pgc_set_hi();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
-    input_value = mc_icsp_io_pgd_get();             \
     mc_icsp_io_pgc_set_lo();                        \
     mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
+    input_value = mc_icsp_io_pgd_get();             \
     } while (0)
 
-
-/* send the command (expected at bits 16 - 19) */
-
-inline void mc_icsp_tx_command_4(const unsigned int xfer_cmd)
+/* read 1 to 32 bits */
+void mc_icsp_rx_bits(unsigned int *bits, const unsigned int nbits)
 {
-    unsigned int current_bit_mask, bits_left;
-    unsigned long flags;
+    unsigned int current_bit_mask = 1, current_bit, bits_left = nbits;
 
-    /* lock interrupts */
-    spin_lock_irqsave(&mc_icsp_lock, flags);
+    dprintk("%s(,%d)\n", __func__, nbits);
 
-    /* pump out command */
-    for (current_bit_mask = (1 << 16), bits_left = 4;
-          bits_left; 
-          --bits_left, current_bit_mask <<= 1)
-    {
-        if (xfer_cmd & current_bit_mask)     mc_icsp_io_output_one(mc_icsp_platform);
-        else                                 mc_icsp_io_output_zero(mc_icsp_platform);
-    }
-
-    /* make sure that pgd goes down after pumping out the command */
+    /* make sure that pgd goes down before pumping in the data */
     mc_icsp_io_pgd_set_lo();
-
-    /* unlock interrupts */
-    spin_unlock_irqrestore(&mc_icsp_lock, flags);
-}
-
-/* send a 4 bit command and read 16 bits */
-void mc_icsp_rx_4_16(unsigned int *xfer_cmd_and_data)
-{
-    unsigned int read_bit_mask, current_bit, bits_left;
-    unsigned long flags;
-
-    /* send the command */
-    mc_icsp_tx_command_4(*xfer_cmd_and_data);
-
-    /* wait a bit */
-    mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
 
     /* start read */
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_INPUT);
 
-    /* lock interrupts */
-    spin_lock_irqsave(&mc_icsp_lock, flags);
+    /* reset bits */
+    *bits = 0;
 
-    /* pump in data */
-    for (read_bit_mask = (1 << 0), bits_left = 16; 
-          bits_left; 
-          --bits_left, read_bit_mask <<= 1)
+    /* pump in bits */
+    while (bits_left--)
     {
         /* read a bit (1 if set, 0 otherwise) */
         mc_icsp_io_input(current_bit, mc_icsp_platform);
 
         /* is the current bit set? */
-        if (current_bit)
-        {
+        if (current_bit) {
             /* set in data */
-            *xfer_cmd_and_data |= read_bit_mask;
+            (*bits) |= current_bit_mask;
         }
+        current_bit_mask <<= 1;
     }
-
-    /* unlock interrupts */
-    spin_unlock_irqrestore(&mc_icsp_lock, flags);
 
     /* end read */
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
+
+    dprintk("%s()=0x%08X\n", __func__, *bits);
 }
 
-/* send length (e.g. 16,24,32) bits of data */
-void mc_icsp_tx_data(const unsigned int xfer_cmd_and_data, const unsigned int length)
+/* send 1 to 32 bits */
+void mc_icsp_tx_bits(const unsigned int bits, const unsigned int nbits)
 {
-    unsigned int current_bit_mask, bits_left;
-    unsigned long flags;
+    unsigned int current_bit_mask = 1, bits_left = nbits;
 
-    /* lock interrupts */
-    spin_lock_irqsave(&mc_icsp_lock, flags);
+    dprintk("%s(0x%08X, %d)\n", __func__, bits, nbits);
 
-    /* pump out data */
-    for (current_bit_mask = (1 << 0), bits_left = length; 
-          bits_left;
-          --bits_left, current_bit_mask <<= 1)
+    /* pump out bits */
+    while (bits_left--)
     {
-        if (xfer_cmd_and_data & current_bit_mask)     mc_icsp_io_output_one(mc_icsp_platform);
-        else                                          mc_icsp_io_output_zero(mc_icsp_platform);
+        if (bits & current_bit_mask)
+            mc_icsp_io_output_one(mc_icsp_platform);
+        else
+            mc_icsp_io_output_zero(mc_icsp_platform);
+
+        current_bit_mask <<= 1;
     }
-
-    /* make sure that pgd goes down after pumping out the data */
-    mc_icsp_io_pgd_set_lo();
-
-    /* unlock interrupts */
-    spin_unlock_irqrestore(&mc_icsp_lock, flags);
-}
-
-/* send a 4 bit command and send 16 bits */
-void mc_icsp_tx_4_16(const unsigned int xfer_cmd_and_data)
-{
-    /* send the command */    
-    mc_icsp_tx_command_4(xfer_cmd_and_data);
-
-    /* wait a bit */
-    mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
-
-    /* send the 16 bit data */
-    mc_icsp_tx_data(xfer_cmd_and_data,16);
 }
 
 /* send a command only */
 void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
 {
-    unsigned long flags;
-
-    /* lock interrupts */
-    spin_lock_irqsave(&mc_icsp_lock, flags);
-
     /* 3 clocks outputting 0 */
     mc_icsp_io_output_zero(mc_icsp_platform);
     mc_icsp_io_output_zero(mc_icsp_platform);
@@ -200,16 +153,16 @@ void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
         mc_icsp_io_output_zero(mc_icsp_platform);
     }
 
-    /* unlock interrupts */
-    spin_unlock_irqrestore(&mc_icsp_lock, flags);
-
     /* delay P9/P9A + P5 or P10 + P11 */
     if (cmd_config->msleep) msleep(cmd_config->msleep);
     if (cmd_config->mdelay) mdelay(cmd_config->mdelay);
     if (cmd_config->udelay) udelay(cmd_config->udelay);
 
     /* make sure pgc is low */
-    mc_icsp_io_pgc_set_lo();
+    if (cmd_config->pgc_value_after_cmd)
+    {
+        mc_icsp_io_pgc_set_lo();
+    }
 }
 
 /**
@@ -219,7 +172,11 @@ void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
 long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long data)
 {
     int err;
-    unsigned int xfer_data;
+    unsigned int xfer_data = 0;
+    unsigned short xfer_word = 0;
+    unsigned char xfer_byte = 0;
+
+    dprintk("%s(0x%p,0x%08X,0x%lX)\n", __func__, filep, cmd, data);
 
     /* check if initialized */
     if (mc_icsp_platform == NULL) {
@@ -249,79 +206,176 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
     /* by command type */
     switch (cmd)
     {
-        /* transmit 16 bits, user data just holds 12 bits 0, 4 bits cmd, 16 bits data */
-        case MC_ICSP_IOC_TX:
-        {
-            /* data holds 12 bits 0, 4 bits command, 16 bits data */
-            mc_icsp_tx_4_16(data);
-        }
-        break;
 
-        /* receive 16 bits */
-        case MC_ICSP_IOC_RX:
-        {
-            /* get data holding the command id */
-            if (__get_user(xfer_data, (unsigned int __user *)data) == 0)
-            {
-                /* data holds 12 bits 0, 4 bits command, 16 bits data */    
-                mc_icsp_rx_4_16(&xfer_data);
+    /*********************************************************************
+      PIC18          00000000 0000CCCC DDDDDDDD DDDDDDDD C=COMMAND D=DATA
+     *********************************************************************/
 
-                /* return the data to the user */
-                __put_user(xfer_data, (unsigned int __user *)data);
-            }
-        }
-        break;
+    /* transmit 16 bits, user data just holds 12 bits 0, 4 bits cmd, 16 bits data */
+    case MC_ICSP_IOC_TX:
+    {
+        /* send the command */    
+        mc_icsp_tx_bits(data >> 16, 4);
 
-        /* only send a command, not data. used in several cases */
-        case MC_ICSP_IOC_CMD_ONLY:
-        {
-            /* copy configuration from userspace */
-            struct mc_icsp_cmd_only_t cmd_config;
-            if (copy_from_user(&cmd_config, (unsigned int __user *)data, sizeof(cmd_config)) == 0) {
-                /* do the transaction */
-                mc_icsp_command_only(&cmd_config);
-            }
-        }
-        break;
+        /* wait a bit */
+        mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
 
-        /* functions needed for key send */
-        case MC_ICSP_IOC_MCLR_LOW:
-        {
-            mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
-        }
-        break;
-        case MC_ICSP_IOC_MCLR_HIGH:
-        {
-            mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
-        }
-        break;
-
-        /* only send 16 bit data */
-        case MC_ICSP_IOC_DATA_ONLY_16:
-        {
-            /* send the 16 bit data requested by the user */
-            mc_icsp_tx_data(data,16);
-        }
-        break;
-        /* only send 24 bit data */
-        case MC_ICSP_IOC_DATA_ONLY_24:
-        {
-            /* send the 16 bit data requested by the user */
-            mc_icsp_tx_data(data,24);
-        }
-        break;
-        /* only send 32 bit data */
-        case MC_ICSP_IOC_DATA_ONLY_32:
-        {
-            /* send the 16 bit data requested by the user */
-            mc_icsp_tx_data(data,32);
-        }
-        break;
+        /* send the 16 bit data */
+        mc_icsp_tx_bits(data, 16);
     }
+    break;
 
-    /* pull down lines after the transaction */
-    mc_icsp_platform->set_pgc(mc_icsp_platform->data, 0);
-    mc_icsp_platform->set_pgd(mc_icsp_platform->data, 0);
+    /* receive 16 bits */
+    case MC_ICSP_IOC_RX:
+    {
+        /* get data holding the command id */
+        if (__get_user(xfer_data, (unsigned int __user *)data) == 0)
+        {
+            /* send the command */
+            mc_icsp_tx_bits(xfer_data >> 16, 4);
+
+            /* wait a bit */
+            mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
+
+            /* receive the 16 bit data */
+            mc_icsp_rx_bits(&xfer_data, 16);
+
+            /* return the data to the user */
+            __put_user(xfer_data, (unsigned int __user *)data);
+        }
+    }
+    break;
+
+    /* only send a command, not data. used for program & erase */
+    case MC_ICSP_IOC_CMD_ONLY:
+    {
+        struct mc_icsp_cmd_only_t cmd_config;
+
+        /* copy configuration from userspace */
+        if (copy_from_user(&cmd_config, (unsigned int __user *)data,
+            sizeof(cmd_config)) == 0)
+        {
+            /* do operation */
+            mc_icsp_command_only(&cmd_config);
+        }
+    }
+    break;
+
+    /* only send data */
+    case MC_ICSP_IOC_DATA_ONLY:
+    {
+        /* send the data requested by the user */
+        mc_icsp_tx_bits(data, 16);
+    }
+    break;
+
+    /*********************************************************************
+      BASELINE / MID-RANGE / ENHANCED MID-RANGE
+     *********************************************************************/
+
+    case MC_ICSP_IOC_CMD_6:
+    {
+        mc_icsp_tx_bits(data, 6);
+    }
+    break;
+
+    /*********************************************************************
+      SET BIT
+     *********************************************************************/
+
+    case MC_ICSP_IOC_SET_PGC:
+    {
+        mc_icsp_platform->set_pgc(mc_icsp_platform->data, data);
+    }
+    break;
+
+    case MC_ICSP_IOC_SET_PGD:
+    {
+        mc_icsp_platform->set_pgd(mc_icsp_platform->data, data);
+    }
+    break;
+
+    case MC_ICSP_IOC_SET_PGD_DIR:
+    {
+        mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, data);
+    }
+    break;
+
+    case MC_ICSP_IOC_SET_PGM:
+    {
+        mc_icsp_platform->set_pgm(mc_icsp_platform->data, data);
+    }
+    break;
+
+    case MC_ICSP_IOC_SET_MCLR:
+    {
+        mc_icsp_platform->set_mclr(mc_icsp_platform->data, data);
+    }
+    break;
+
+    /*********************************************************************
+      GET BIT
+     *********************************************************************/
+
+    case MC_ICSP_IOC_GET_PGD:
+    {
+        if (__get_user(xfer_byte, (unsigned char __user *)data) == 0)
+        {
+            xfer_byte = mc_icsp_platform->get_pgd(mc_icsp_platform->data);
+            __put_user(xfer_byte, (unsigned char __user *)data);
+        }
+    }
+    break;
+
+    /*********************************************************************
+     SEND BITS
+     *********************************************************************/
+
+    case MC_ICSP_IOC_SEND_32:
+    {
+        mc_icsp_tx_bits(data, 32);
+    }
+    break;
+
+    /*********************************************************************
+     READ BITS
+     *********************************************************************/
+
+    case MC_ICSP_IOC_READ_16:
+    {
+        if (__get_user(xfer_word, (unsigned short __user *)data) == 0)
+        {
+            mc_icsp_rx_bits(&xfer_data, 16);
+            xfer_word = xfer_data;
+            __put_user(xfer_word, (unsigned short __user *)data);
+        }
+    }
+    break;
+
+    /*********************************************************************
+     CLOCK BIT IN/OUT
+     *********************************************************************/
+
+    case MC_ICSP_IOC_CLK_OUT:
+    {
+        if (data)
+            mc_icsp_io_output_one(mc_icsp_platform);
+        else
+            mc_icsp_io_output_zero(mc_icsp_platform);
+    }
+    break;
+
+    case MC_ICSP_IOC_CLK_IN:
+    {
+        if (__get_user(xfer_byte, (unsigned char __user *)data) == 0)
+        {
+            mc_icsp_io_input(xfer_byte, mc_icsp_platform);
+            __put_user(xfer_byte, (unsigned char __user *)data);
+        }
+    }
+    break;
+
+    }
 
     /* done */
     return 0;
@@ -331,11 +385,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 static int mc_icsp_device_open(struct inode *inode, struct file *icsp_file)
 {
     /* check if initialized */
-    if (mc_icsp_platform == NULL)
-    {
-        printk(KERN_ERR "    mc_icsp_platform not defined\n");
-        return -ENODEV;
-    }
+    if (mc_icsp_platform == NULL) return -ENODEV;
 
     /* call open callback */
     if (mc_icsp_platform->open != NULL) mc_icsp_platform->open(mc_icsp_platform->data);
@@ -343,42 +393,17 @@ static int mc_icsp_device_open(struct inode *inode, struct file *icsp_file)
     /* set pgd to output */
     mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
 
-    /* pull down lines initially */
-    mc_icsp_platform->set_pgc(mc_icsp_platform->data, 0);
-    mc_icsp_platform->set_pgd(mc_icsp_platform->data, 0);
-
-    /* enter LVP */
-    mc_icsp_platform->set_pgm(mc_icsp_platform->data, 1);
-
-    /* wait a bit */
-    mc_icsp_udelay(mc_icsp_platform->udly_pgm_to_mclr);
-
-    /* start MCLR */
-    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
-
     /* done */
     return 0;
 }
 
-/* close driver */
+/* file close */
 int mc_icsp_device_release(struct inode *inode, struct file *icsp_file)
 {
     /* check if initialized */
     if (mc_icsp_platform == NULL) return -ENODEV;
 
-    /* pull down lines initially */
-    mc_icsp_platform->set_pgc(mc_icsp_platform->data, 0);
-    mc_icsp_platform->set_pgd(mc_icsp_platform->data, 0);
-
-    /* exit LVP */
-    mc_icsp_platform->set_pgm(mc_icsp_platform->data, 0);
-    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 0);
-
-    /* reset MCLR for start PIC program */
-    mdelay(1);
-    mc_icsp_platform->set_mclr(mc_icsp_platform->data, 1);
-
-    /* call open callback */
+    /* call close callback */
     if (mc_icsp_platform->release != NULL) mc_icsp_platform->release(mc_icsp_platform->data);
 
     /* done */
@@ -486,3 +511,7 @@ module_exit(mc_icsp_platform_exit);
 MODULE_AUTHOR("Eran Duchan <pavius@gmail.com>");
 MODULE_DESCRIPTION("Microchip ICSP bitbanging driver");
 MODULE_LICENSE("GPL");
+
+/*
+ * vim: shiftwidth=4 tabstop=4 softtabstop=4 expandtab
+ */
