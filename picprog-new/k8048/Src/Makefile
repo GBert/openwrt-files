@@ -133,15 +133,15 @@ endif
 
 $(TARGET1):$(OBJECT1)
 	$(CC) $(CFLAGS) $(OBJECT1) -o $(TARGET1) $(CLIB1)
-ifneq "$(GDB)" "1"
-	strip $(TARGET1)
-endif
+# ifneq "$(GDB)" "1"
+# 	strip $(TARGET1)
+# endif
 
 $(TARGET2):$(OBJECT2)
 	$(CC) $(CFLAGS) $(OBJECT2) -o $(TARGET2) $(CLIB2)
-ifneq "$(GDB)" "1"
-	strip $(TARGET2)
-endif
+# ifneq "$(GDB)" "1"
+# 	strip $(TARGET2)
+# endif
 
 $(OBJECT1):$(HEADER1)
 
