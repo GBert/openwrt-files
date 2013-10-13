@@ -35,7 +35,7 @@ io_signal_off()
 }
 
 /******************************************************************************
- * I/O configure defaults/open/init/get error/close
+ * I/O configure defaults/open/init/get error/get fault/close
  *****************************************************************************/
 
 void
@@ -199,6 +199,19 @@ io_error(struct k8048 *k)
 	return msg;
 }
 
+char *
+io_fault(struct k8048 *k, int errorcode)
+{
+	static char *msg;
+
+	if (errorcode == 0)
+		msg = "device not detected";
+	else
+		msg = "device not compatible";
+
+	return msg;
+}
+
 void
 io_close(struct k8048 *k, int standby)
 {
@@ -273,6 +286,7 @@ io_set_pgd(struct k8048 *k, int pgd)
 #endif
 #ifdef LPICP
 	case IOLPICP:	/* lpicp */
+		lpp_icsp_set_pgd(&k->lpicp, pgd);
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
@@ -308,6 +322,7 @@ io_set_pgc(struct k8048 *k, int pgc)
 #endif
 #ifdef LPICP
 	case IOLPICP:	/* lpicp */
+		lpp_icsp_set_pgc(&k->lpicp, pgc);
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
@@ -347,6 +362,8 @@ io_set_pgd_pgc(struct k8048 *k, int pgd, int pgc)
 #endif
 #ifdef LPICP
 	case IOLPICP:	/* lpicp */
+		lpp_icsp_set_pgd(&k->lpicp, pgd);
+		lpp_icsp_set_pgc(&k->lpicp, pgc);
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
@@ -386,7 +403,8 @@ io_set_vpp_pgm(struct k8048 *k, int vpp, int pgm)
 #endif
 #ifdef LPICP
 	case IOLPICP:	/* lpicp */
-		lpp_icsp_mclr_set(&k->lpicp, vpp);
+		lpp_icsp_set_pgm(&k->lpicp, pgm);
+		lpp_icsp_set_mclr(&k->lpicp, vpp);
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
@@ -421,6 +439,11 @@ io_get_pgd(struct k8048 *k)
 #endif
 #ifdef LPICP
 	case IOLPICP:	/* lpicp */
+		{
+		unsigned char data;
+		lpp_icsp_get_pgd(&k->lpicp, &data);
+		pgd = (data) ? HIGH : LOW;
+		}
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
@@ -514,14 +537,13 @@ io_init_program_verify(struct k8048 *k)
 #endif
 #if defined(K14)
 	if (k->key == MCHPKEY) {
-#ifdef LPICP
-		if (k->iot == IOLPICP) {
-			printf("%s: fatal error: unsupported\n", __func__);
-               		exit(EX_SOFTWARE); /* Panic */
-		}
-#endif
 		/* PIC16F1XXX 33 clock pulses */
-		io_clock_in(k, k->sleep);
+#ifdef LPICP
+		if (k->iot == IOLPICP) 
+			lpp_icsp_clock_out(&k->lpicp, 0);
+		else
+#endif
+		io_clock_out(k, k->sleep, 0);
 	} else {
 		io_set_vpp_pgm(k, HIGH, HIGH);
 	}
@@ -533,33 +555,31 @@ io_init_program_verify(struct k8048 *k)
 
 /*
  * Acquire data input
- *
- * Flip data direction on R-PI when data in = data out,
- * else pull data output high for data input.
  */
 void
 io_data_input_acquire(struct k8048 *k)
 {
+	if (k->bitrules & PGD_IN_PULLUP) {
+		io_set_pgd(k, HIGH);
+	} else {
+		io_set_pgd(k, LOW);
+	}
 #ifdef RPI
 	if (k->iot == IORPI && k->gpio.pgdi == k->gpio.pgdo) {
-		gpio_reselect_input(&k->gpio, k->gpio.pgdi);
+		gpio_reselect_input(&k->gpio, k->gpio.pgdo);
+		return;
 	}
-	else
 #endif
-	{
-		if (k->bitrules & PGD_IN_PULLUP) {
-			io_set_pgd(k, HIGH);
-		} else {
-			io_set_pgd(k, LOW);
-		}
+#ifdef LPICP
+	if (k->iot == IOLPICP) {
+		lpp_icsp_set_pgd_dir(&k->lpicp, MC_ICSP_IO_DIR_INPUT);
+		return;
 	}
+#endif
 }
 
 /*
  * Release data input
- *
- * Flip data direction on R-PI when data in = data out,
- * else do nothing.
  */
 void
 io_data_input_release(struct k8048 *k)
@@ -567,6 +587,13 @@ io_data_input_release(struct k8048 *k)
 #ifdef RPI
 	if (k->iot == IORPI && k->gpio.pgdi == k->gpio.pgdo) {
 		gpio_reselect_output(&k->gpio, k->gpio.pgdo);
+		return;
+	}
+#endif
+#ifdef LPICP
+	if (k->iot == IOLPICP) {
+		lpp_icsp_set_pgd_dir(&k->lpicp, MC_ICSP_IO_DIR_OUTPUT);
+		return;
 	}
 #endif
 }
@@ -645,6 +672,10 @@ io_command_out(struct k8048 *k, unsigned char command)
 {
 	io_cursor(k, 'o');
 
+	if (k->debug >= 15) {
+		printf("%s: command [0x%02X]\n", __func__, command);
+	}
+
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -654,50 +685,44 @@ io_command_out(struct k8048 *k, unsigned char command)
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		lpp_icsp_command_6(&k->lpicp, command);
 		break;
 #endif
-	}
-	if (k->debug >= 15) {
-		printf("%s: command [0x%02X]\n", __func__, command);
 	}
 }
 
 /*
- * Output [START bit:14 bit word out:STOP bit] (12/14-bit word)
+ * Output [START bit:14-bit word:STOP bit] (12/14-bit word)
  */
 void
 io_word_out14(struct k8048 *k, unsigned short word)
 {
 	io_cursor(k, 'o');
 
+	if (k->debug >= 15) {
+		printf("%s: word [0x%04X]\n", __func__, word);
+	}
+
+	/* Add start and stop bits to word */
+	word = 0x8001 | (word << 1);
+
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
-		/* Clock out start bit */
-		io_clock_out(k, k->sleep, HIGH);
-
-		/* Clock out 14 bits */
-		io_clock_out_bits(k, word, 14);
-	
-		/* Clock out stop bit */
-		io_clock_out(k, k->sleep, HIGH);
+		io_clock_out_bits(k, word, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		lpp_icsp_data_only(&k->lpicp, word);
 		break;
 #endif
 	}
 }
 
 /*
- * Input [START bit:14 bit word in:STOP bit] (12/14-bit word)
+ * Input [START bit:14-bit word:STOP bit] (12/14-bit word)
  */
 unsigned short
 io_word_in14(struct k8048 *k)
@@ -710,29 +735,23 @@ io_word_in14(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
-		/* Prepare data input */
 		io_data_input_acquire(k);
-
-		/* Clock in start bit */
-		io_clock_in(k, k->sleep);
-
-		/* Clock in 14 bits */
-		word = io_clock_in_bits(k, 14);
-
-		/* Clock in stop bit */
-		io_clock_in(k, k->sleep);
-
-		/* Release data input */
+		word = io_clock_in_bits(k, 16);
 		io_data_input_release(k);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		lpp_icsp_read_16(&k->lpicp, &word);
 		break;
 #endif
+	}
+
+	/* Remove start and stop bits from word */
+	word = (word & 0x7FFE) >> 1;
+
+	if (k->debug >= 15) {
+		printf("%s: word [0x%04X]\n", __func__, word);
 	}
 
 	return word;
@@ -748,21 +767,24 @@ io_word_in14(struct k8048 *k)
  */
 #if defined(K14) || defined(K16)
 void
-io_word_out32(struct k8048 *k, unsigned long word)
+io_word_out32(struct k8048 *k, unsigned int word)
 {
 	io_cursor(k, 'o');
+
+	if (k->debug >= 15) {
+		printf("%s: word [0x%04X]\n", __func__, word);
+	}
 
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
 		io_clock_out_bits(k, word, 32);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		lpp_icsp_data_only_32(&k->lpicp, word);
+		lpp_icsp_send_32(&k->lpicp, word);
 		break;
 #endif
 	}
@@ -782,15 +804,16 @@ io_command_out16(struct k8048 *k, unsigned char command, unsigned short word)
 {
 	io_cursor(k, 'o');
 
+	if (k->debug >= 15) {
+		printf("%s: command [0x%02X] word [0x%04X]\n",
+			__func__, command, word);
+	}
+
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
-		/* Clock out 4 bits */
 		io_clock_out_bits(k, command, 4);
-
-		/* Clock out 16 bits */
         	io_word_out16(k, word);
 		break;
 #ifdef LPICP
@@ -800,104 +823,87 @@ io_command_out16(struct k8048 *k, unsigned char command, unsigned short word)
 		break;
 #endif
 	}
-	if (k->debug >= 15) {
-		printf("%s: command [0x%02X] data [0x%04X]\n", __func__,
-			command, word);
-	}
 }
 
 /*
  * Output programming NOP (16-bit word)
  */
 void
-io_command_program(struct k8048 *k, unsigned int delay)
+io_command_program(struct k8048 *k, unsigned int high, unsigned int low)
 {
 	io_cursor(k, 'o');
+
+	if (k->debug >= 15) {
+		printf("%s: command [NOP] HIGH=%d LOW=%d\n",
+			__func__, high, low);
+	}
 
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_set_pgc(k, HIGH);  		/* 0 CLOCK HIGH */
-		io_usleep(k, delay);		/* P9/P9A       */
-		io_set_pgc(k, LOW);		/* 0 CLOCK LOW  */
-		io_usleep(k, k->sleep);         /* P5           */
+		io_clock_out_bits(k, 0, 3);
+		io_set_pgc(k, HIGH);  		/* CLOCK HIGH */
+		io_usleep(k, high);		/* delay HIGH */
+		io_set_pgc(k, LOW);		/* CLOCK LOW  */
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
 		{
-		struct mc_icsp_cmd_only_t cmd_config = {
-                	.command = 0x00,
-                	.pgc_value_after_cmd = 1,
-                	.pgd_value_after_cmd = 0,
-			.msleep = 0,
-                	.mdelay = 0,
-                	.udelay = 0
-        	};
+		struct mc_icsp_cmd_only_t cmd_config = {0};
+		/* CLOCK HIGH */
+               	cmd_config.pgc_value_after_cmd = 1;
+		/* delay HIGH */
 		if (k->sleep)
-			cmd_config.msleep = 1 + (delay / 1000);
+			cmd_config.msleep = 1 + (high / 1000);
 		else
-			cmd_config.udelay = delay;
+			cmd_config.udelay = high;
 		lpp_icsp_command_only(&k->lpicp, &cmd_config);
+		/* CLOCK LOW */
 		}
 		break;
 #endif
 	}
+	/* delay LOW */
+	io_usleep(k, low);
 	/* Clock out 16 bits (0x0000) */
 	io_word_out16(k, 0);
-	if (k->debug >= 15) {
-		printf("%s: command [NOP]\n", __func__);
-	}
 }
 
 /*
  * Output erase NOP (16-bit word)
  */
 void
-io_command_erase(struct k8048 *k, unsigned int delay)
+io_command_erase(struct k8048 *k, unsigned int p10, unsigned int p11)
 {
 	io_cursor(k, 'o');
+
+	if (k->debug >= 15) {
+		printf("%s: command [NOP] P10=%d P11=%d\n",
+			__func__, p10, p11);
+	}
 
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_clock_out(k, k->sleep, LOW);	/* 0 */
-		io_usleep(k, delay);		/* P11 + P10 + P5 */
+		io_clock_out_bits(k, 0, 4);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
 		{
-		struct mc_icsp_cmd_only_t cmd_config = {
-                	.command = 0x00,
-                	.pgc_value_after_cmd = 0,
-                	.pgd_value_after_cmd = 0,
-			.msleep = 0,
-                	.mdelay = 0,
-                	.udelay = 0
-        	};
-		if (k->sleep)
-			cmd_config.msleep = 1 + (delay / 1000);
-		else
-			cmd_config.udelay = delay;
+		struct mc_icsp_cmd_only_t cmd_config = {0};
 		lpp_icsp_command_only(&k->lpicp, &cmd_config);
 		}
 		break;
 #endif
 	}
+	/* delay P11 + P10 */
+	io_usleep(k, p11 + p10);
 	/* Clock out 16 bits (0x0000) */
 	io_word_out16(k, 0);
-	if (k->debug >= 15) {
-		printf("%s: command [NOP]\n", __func__);
-	}
 }
 
 /*
@@ -914,11 +920,7 @@ io_command_in8(struct k8048 *k, unsigned char command)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
-		/* Clock out 4 bits */
 		io_clock_out_bits(k, command, 4);
-
-		/* Clock in 8 bits */
 		byte = io_byte_in(k);
 		break;
 #ifdef LPICP
@@ -928,9 +930,10 @@ io_command_in8(struct k8048 *k, unsigned char command)
 		break;
 #endif
 	}
+
 	if (k->debug >= 15) {
-		printf("%s: command [0x%02X] data [0x%02X]\n", __func__,
-			command, byte);
+		printf("%s: command [0x%02X] byte [0x%02X]\n",
+			__func__, command, byte);
 	}
 
 	return byte;
@@ -944,6 +947,10 @@ io_word_out16(struct k8048 *k, unsigned short word)
 {
 	io_cursor(k, 'o');
 
+	if (k->debug >= 15) {
+		printf("%s: word [0x%04X]\n", __func__, word);
+	}
+
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -953,14 +960,14 @@ io_word_out16(struct k8048 *k, unsigned short word)
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		lpp_icsp_data_only_16(&k->lpicp, word);
+		lpp_icsp_data_only(&k->lpicp, word);
 		break;
 #endif
 	}
 }
 
 /*
- * Input [8 bit zero out:8 bit byte in] (16-bit word)
+ * Input [8 bit byte in:8 bit byte in] (16-bit word)
  */
 unsigned char
 io_byte_in(struct k8048 *k)
@@ -973,28 +980,28 @@ io_byte_in(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-
-		/* Clock out 8 bits (0x00) */
-		io_clock_out_bits(k, 0, 8);
-
-		/* Prepare data input */
+#if 1
 		io_data_input_acquire(k);
-#ifdef TTY
-		/* Critical delay for ttyUSB */
-		if (k->iot == IOTTY)
+		io_clock_in_bits(k, 8);
+#else
+		io_clock_out_bits(k, 0, 8);
+		io_data_input_acquire(k);
+		if (k->iot == IOTTY) {
+			/* critical ttyusb delay */
 			io_usleep(k, k->sleep);
+		}
 #endif
-		/* Clock in 8 bits */
 		byte = io_clock_in_bits(k, 8);
-
-		/* Release data input */
 		io_data_input_release(k);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		{
+		unsigned short word;
+		lpp_icsp_read_16(&k->lpicp, &word);
+		byte = (word >> 8);
+		}
 		break;
 #endif
 	}
@@ -1235,9 +1242,9 @@ io_test3(struct k8048 *k, int t)
  * Test 16F627
  *
  * Program:
- *	k14 p asm/pic16f627/debug.hex
+ *	k14 program asm/pic16f627/debug.hex
  *
- * Note: This is the PIC which came with the K8048.
+ * Note: This is the PIC which came with the Velleman K8048.
  */
 void
 io_test4(struct k8048 *k, int t)
@@ -1313,7 +1320,7 @@ io_test4(struct k8048 *k, int t)
  *****************************************************************************/
 
 /*
- * Start or stop firmware (Raspberry Pi only)
+ * Start or stop firmware (not Velleman K8048)
  */
 #ifdef KIO
 void
@@ -1483,7 +1490,7 @@ io_test_command(struct k8048 *k, int t1, int t2, unsigned char *cmdarg, int cmda
 			}
 		}
 
-		/* Get check sum */
+		/* Get check-sum */
 		err = io_test_in(k, t1, t2, &byte);
 		if (err != ERRNONE) {
 			return err;
@@ -1596,7 +1603,7 @@ io_test_lasterror(struct k8048 *k, int t)
 }
 
 /*
- * Test LEDs and Switches
+ * Test LEDs and switches
  */
 void
 io_test5(struct k8048 *k, int t)
@@ -1609,7 +1616,7 @@ io_test5(struct k8048 *k, int t)
 
 	io_signal_on();
 
-	io_set_vpp_pgm(k, LOW, LOW);
+	io_set_vpp_pgm(k, HIGH, LOW);
 	io_set_pgd_pgc(k, LOW, LOW);
 
 	while (!io_stop) {

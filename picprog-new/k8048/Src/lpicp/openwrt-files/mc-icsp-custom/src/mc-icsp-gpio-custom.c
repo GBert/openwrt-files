@@ -73,10 +73,6 @@ static int P5 = 0; /* udly_cmd_to_data */
 module_param(P5, int, 0644);
 MODULE_PARM_DESC(P5, "DS39592F P5 Tdly1 20ns (default:0us)");
 
-static int P15 = 2; /* udly_pgm_to_mclr */
-module_param(P15, int, 0644);
-MODULE_PARM_DESC(P15, "DS39592F P15 Tset3 2us (default:2us)");
-
 static unsigned int mc_icsp[BUS_PARAM_COUNT] __initdata;
 static unsigned int bus_nump __initdata;
 static struct mc_icsp_gpio_platform_data pdata;
@@ -141,7 +137,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 
 	printk(KERN_INFO PFX " requesting GPIOs\n");
 
-	err = gpio_request_one(params[BUS_PARAM_MCLR], GPIOF_OUT_INIT_HIGH, "MC ICSP MCLR");
+	err = gpio_request_one(params[BUS_PARAM_MCLR], GPIOF_OUT_INIT_LOW, "MC ICSP MCLR");
         if (err) {
 		printk(KERN_ERR PFX " didn't get GPIO %d for MCLR\n", params[BUS_PARAM_MCLR] );
 		goto err;
@@ -185,7 +181,6 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.ndly_pgc_hold = P2B;
 	mc_icsp_pdata.ndly_pgc_low_hold = P2A;
 	mc_icsp_pdata.udly_cmd_to_data = P5;
-	mc_icsp_pdata.udly_pgm_to_mclr = P15;
 
 	pdev = platform_device_alloc("mc-icsp", 0);
 	if (!pdev) {

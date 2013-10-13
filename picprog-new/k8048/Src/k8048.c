@@ -87,8 +87,10 @@ usage_ktest(struct k8048 *k, char *msg)
 	printf("EXAMPLES:\n"
 		" ktest VPP|PGC|PGD|PGM 5\n"
 		"\t\tVPP, PGC, PGD or PGM LOW->HIGH->LOW test with 5 seconds high time.\n"
+#ifdef RPI
 		" ktest 0 10\n"
 		"\t\tR-PI GPIO test with 10 seconds mark time.\n"
+#endif
 		" ktest 1 10\n"
 		"\t\tD-SUB-9 test with 10 seconds per step.\n"
 		" ktest 2 10\n"
@@ -336,11 +338,6 @@ main(int argc, char **argv)
 #ifdef KTEST
 	/* Command: ktest */
 	if (strcmp(execname, "ktest") == 0) {
-		if (k.iot == IOLPICP) {
-			printf("%s: fatal error: lpicp icsp unsupported\n", __func__);
-			exit(EX_SOFTWARE); /* Panic */
-		}
-
 		if (argc < 3)
 			usage_ktest(&k, "Missing args");
 		else if (argc > 3)
@@ -396,7 +393,8 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage(&k, execname, "Missing arg(s)");
 
-	if (argv[1][0] == 's') {	/* Select device */
+	int argv1 = tolower((int)argv[1][0]);
+	if (argv1 == 's') { /* Select device */
 		if (argc < 3) {
 			pic_selector(&k);
 			io_close(&k, 1);
@@ -420,7 +418,8 @@ main(int argc, char **argv)
 		usage(&k, execname, "Missing select");
 	}
 
-	if (argv[1][0] == 'm') {	/* MCHP LVP mode */
+	argv1 = tolower((int)argv[1][0]);
+	if (argv1 == 'm') { /* MCHP LVP mode */
 		if (k.arch == ARCH14BIT) {
 			k.key = MCHPKEY;
 		} else if (k.arch == ARCH16BIT) {
@@ -436,10 +435,9 @@ main(int argc, char **argv)
 		k.key = NOKEY;
 	}
 
-	int words = 0;
-	char *filename;
 	io_init(&k);
-	switch (argv[1][0]) {
+	argv1 = tolower((int)argv[1][0]);
+	switch (argv1) {
 	case 'b':	if (argc > 2)
 				usage(&k, execname, "Too many args [blank]");
 			if (areyousure("Blank device"))
@@ -464,7 +462,9 @@ main(int argc, char **argv)
 			pic_dumpeeprom(&k);
 			break;
 
-	case 'f':	if (argc > 3)
+	case 'f':	{
+			int words = 0;
+			if (argc > 3)
 				usage(&k, execname, "Too many args [flash]");
 			if (argc == 3) {
 				words = strtol(argv[2], NULL, 0);
@@ -472,6 +472,7 @@ main(int argc, char **argv)
 					usage(&k, execname, "Invalid arg [flash]");
 			}
 			pic_dumpflash(&k, words);
+			}
 			break;
 
 	case 'i':	if (argc > 2)
@@ -487,30 +488,50 @@ main(int argc, char **argv)
 				pic_writeosccal(&k, strtoul(argv[2], NULL, 0));
 			break;
 
-	case 'p':	if (argc < 3)
+	case 'p':	{
+			int blank = 1;
+			if (argc < 3)
 				usage(&k, execname, "Missing arg [program]");
-			else if (argc > 3)
+			if (argc > 4)
 				usage(&k, execname, "Too many args [program]");
+			if (argc == 4) switch (argv[3][0]) {
+				case 'n':
+				case 'N':
+				case '0': blank = 0;
+					break;
+				case 'y':
+				case 'Y':
+				case '1': blank = 1;
+					break;
+				default:usage(&k, execname, "Invalid arg [program]");
+					break;
+			}
+			pic_program(&k, argv[2], blank);
+			}
+			break;
 
-			filename = getarg(argv[2]);
-			if (filename != NULL) {
-				pic_program_verify(&k, filename, PROGRAM);
-				free(filename);
-			} else
-				usage(&k, execname, "Missing filename [program]");
+	case 'r':	{
+			int addr;
+			char prompt[STRLEN];
+			if (argc < 3)
+				usage(&k, execname, "Missing arg [row]");
+			if (argc > 3)
+				usage(&k, execname, "Too many args [row]");
+			addr = strtol(argv[2], NULL, 0) & (-64);
+			if (addr < 0)
+				usage(&k, execname, "Invalid arg [row]");
+			snprintf(prompt, STRLEN, "Erase row %d at address 0x%04X",
+				addr / 64, addr);
+			if (areyousure(prompt))
+				pic_erase(&k, addr);
+			}
 			break;
 
 	case 'v':	if (argc < 3)
 				usage(&k, execname, "Missing arg [verify]");
-			else if (argc > 3)
+			if (argc > 3)
 				usage(&k, execname, "Too many args [verify]");
-
-			filename = getarg(argv[2]);
-			if (filename != NULL) {
-				pic_program_verify(&k, filename, VERIFY);
-				free(filename);
-			} else
-				usage(&k, execname, "Missing filename [verify]");
+			pic_verify(&k, argv[2]);
 			break;
 
 	default:	usage(&k, execname, "Unknown operation");

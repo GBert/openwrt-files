@@ -9,6 +9,7 @@
 # REQUIRES: gpasm gEDA gEDA-utils
 #
 build:
+	cd debug       && $(MAKE)
 	cd include     && $(MAKE)
 	cd microchip   && $(MAKE)
 	cd mouse       && $(MAKE)
@@ -21,6 +22,7 @@ build:
 	cd velleman    && $(MAKE)
 
 install:
+	cd debug       && $(MAKE) install
 	cd include     && $(MAKE) install
 	cd microchip   && $(MAKE) install
 	cd mouse       && $(MAKE) install
@@ -33,6 +35,7 @@ install:
 	cd velleman    && $(MAKE) install
 
 uninstall:
+	cd debug       && $(MAKE) uninstall
 	cd include     && $(MAKE) uninstall
 	cd microchip   && $(MAKE) uninstall
 	cd mouse       && $(MAKE) uninstall
@@ -45,6 +48,7 @@ uninstall:
 	cd velleman    && $(MAKE) uninstall
 
 clean:
+	cd debug       && $(MAKE) clean
 	cd include     && $(MAKE) clean
 	cd microchip   && $(MAKE) clean
 	cd mouse       && $(MAKE) clean

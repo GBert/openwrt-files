@@ -57,7 +57,7 @@ unsigned char inhx32_gethexn(char);
 unsigned char inhx32_gethexb(char *);
 int inhx32_compare(const void *, const void *);
 void inhx32_order(const void *, VISIT, int); 
-int inhx32(char *);
+int inhx32(const char *);
 void inhx32_free(void);
 
 #endif /* !_INHX32_H */

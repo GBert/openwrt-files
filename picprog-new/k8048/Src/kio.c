@@ -221,11 +221,9 @@ main(int argc, char *argv[])
 		exit(EX_OK);
 	}
 	
-	if (k.iot == IOLPICP) {
-		printf("%s: fatal error: unsupported\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
-
+	/*
+ 	 * ICSPIO
+	 */
 	if (strcasecmp(argv[1], "LED") == 0)
 	{
 		if (argc < 3)

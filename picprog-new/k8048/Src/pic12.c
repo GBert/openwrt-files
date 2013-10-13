@@ -312,6 +312,7 @@ pic12_bulk_erase(struct k8048 *k, unsigned short osccal)
 void
 pic12_read_config_word(struct k8048 *k)
 {
+	unsigned short fault;
 	int i;
 
 	if (!k->devicename[0]) {
@@ -330,23 +331,17 @@ pic12_read_config_word(struct k8048 *k)
 	}
 
 	pic12_conf.index[PIC12_CONFIG_WORD] = pic12_read_program_memory_increment(k);
-	
+
 	/*
-	 * k8048 SWITCH IN STANDBY [0000]
-	 * k8048 NO POWER          [3fff]
-	 * k0848 SWITCH IN RUN     [3fff]
+	 * VELLEMAN K8048 SWITCH IN STANDBY [0000]
+	 * VELLEMAN K8048 NO POWER          [3FFF]
+	 * VELLEMAN K0848 SWITCH IN RUN     [3FFF]
 	 */
-	switch (pic12_conf.index[PIC12_CONFIG_WORD]) {
-	case 0x0000:
-		printf("%s: fatal error: switch is on standby, or device is not a PIC10F/PIC12F/PIC16F.\n",
-			__func__);
+	fault = pic12_conf.index[PIC12_CONFIG_WORD];
+	if (fault == 0x0000 || fault == 0x3FFF) {
+		printf("%s: fatal error: %s.\n",
+			__func__, io_fault(k, fault));
 		exit(EX_SOFTWARE); /* Panic */
-		break;
-	case 0x3fff:
-		printf("%s: fatal error: switch is on run, or no power is supplied, or no device is installed.\n",
-			__func__);
-		exit(EX_SOFTWARE); /* Panic */
-	default:break;
 	}
 
 	pic12_index = i; /* Device recognised */
@@ -736,7 +731,7 @@ pic12_verifyregion(struct k8048 *k, unsigned short address, int region, unsigned
  * PROGRAM DEVICE USING GLOBAL INHX32 DATA
  */
 void
-pic12_program(struct k8048 *k)
+pic12_program(struct k8048 *k, int blank)
 {
 	int i, j;
 	unsigned short hex_address, PC_address = 0, wdata;
@@ -745,7 +740,8 @@ pic12_program(struct k8048 *k)
 	int multiword = (pic12_map[pic12_index].latches > 1);
 
 	/* Initialise device for programming */
-	pic12_bulk_erase(k, INTERNAL);
+	if (blank)
+		pic12_bulk_erase(k, INTERNAL);
 
 	/* For each line */
 	for (i = 0; i < inhx32_count; i++) {
@@ -786,7 +782,9 @@ pic12_program(struct k8048 *k)
 	io_standby(k);
 	
 	/* Finalise device programming (write config word) */
-	pic12_write_config(k, pic12_conf.index[PIC12_CONFIG_WORD]);
+	if (blank)
+		pic12_write_config(k, pic12_conf.index[PIC12_CONFIG_WORD]);
+
 	printf("Total: %d\n", total);
 }
 

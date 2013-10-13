@@ -69,7 +69,7 @@ inhx32_order(const void *entry, VISIT order, int level)
  * Return program data line count
  */
 int
-inhx32(char *filename)
+inhx32(const char *filename)
 {
 	FILE *f1;
 	char *line;

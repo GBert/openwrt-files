@@ -8,6 +8,9 @@
  * it under the terms of the GNU General Public License, version 2, as
  * published by the Free Software Foundation.
  *
+ * Copyright (C) 2013 Gerhard Bertelsmann & Darron M Broad
+ *  Refactored.
+ *  IOCTLs added for baseline/mid-range/enhanced mid-range support and bit I/O.
  */
 
 #include <stdio.h>
@@ -15,9 +18,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include "lpicp_icsp.h"
-
-/* simulate. TODO: proper */
-/* #define ioctl(x, y, z) (0) */
 
 /* open access to driver */
 int lpp_icsp_init(struct lpp_context_t *context, char *icsp_dev_name)
@@ -34,10 +34,6 @@ int lpp_icsp_init(struct lpp_context_t *context, char *icsp_dev_name)
     }
     else
     {
-#if 0
-        /* failed */
-        printf("Failed to open ICSP driver @ %s\n", icsp_dev_name);
-#endif
         /* failed */
         goto err_icsp_open;
     }
@@ -68,15 +64,15 @@ int lpp_icsp_destroy(struct lpp_context_t *context)
     return 1;
 }
 
+/*********************************************************************
+  PIC18          00000000 0000CCCC DDDDDDDD DDDDDDDD C=COMMAND D=DATA
+ *********************************************************************/
+
 /* execute a command via ICSP driver */
-int lpp_icsp_write_16(struct lpp_context_t *context, 
-                      const unsigned char command, 
-                      const unsigned short data)
+int lpp_icsp_write_16(struct lpp_context_t *context, const unsigned char command,
+    const unsigned short data)
 {
     unsigned int xfer_command = 0;
-
-    /* log write, if applicable */
-    /* lpp_log_command(context, command, data); */
 
     /* encode the xfer */
     MC_ICSP_ENCODE_XFER(command, data, xfer_command);
@@ -86,9 +82,8 @@ int lpp_icsp_write_16(struct lpp_context_t *context,
 }
 
 /* Read 8 bits via ICSP driver */
-int lpp_icsp_read_8(struct lpp_context_t *context, 
-                    const unsigned char command, 
-                    unsigned char *data)
+int lpp_icsp_read_8(struct lpp_context_t *context, const unsigned char command,
+    unsigned char *data)
 {
     unsigned int xfer_command = 0;
     int ret;
@@ -100,85 +95,155 @@ int lpp_icsp_read_8(struct lpp_context_t *context,
     ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_RX, &xfer_command) == 0);
 
     /* get LSB */
-    *data = ((xfer_command >> 8) & 0xFF);
+    *data = (xfer_command >> 8);
 
-    /* log read, if applicable */
-    /* lpp_log_command(context, command, (unsigned short)*data); */
-
-    /* return result */
-    return ret;
-}
-
-int lpp_icsp_mclr_set(struct lpp_context_t *context, const unsigned int data) 
-{
-    int ret;
-    if (data) {
-	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_HIGH) == 0);
-    } else {
-	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_MCLR_LOW) == 0);
-    }
     return ret;
 }
 
 /* send only a command */
 int lpp_icsp_command_only(struct lpp_context_t *context, 
-                          const struct mc_icsp_cmd_only_t *cmd_config)
+    const struct mc_icsp_cmd_only_t *cmd_config)
 {
     int ret;
 
-    /*  */
     ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_CMD_ONLY, cmd_config) == 0);
 
-    /* log as a nop, if applicable */
-    /* if (ret) lpp_log_command(context, 0, 0); */
-
-    /* return result */
     return ret;
 }
 
 /* send only data */
-int lpp_icsp_data_only_16(struct lpp_context_t *context, 
-                       const unsigned int data)
+int lpp_icsp_data_only(struct lpp_context_t *context, const unsigned int data)
 {
     int ret;
 
-    /* send only data */
-    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_16, data) == 0);
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY, data) == 0);
 
-    /* return result */
     return ret;
 }
 
-int lpp_icsp_data_only_24(struct lpp_context_t *context, 
-                       const unsigned int data)
+/*********************************************************************
+  BASELINE / MID-RANGE / ENHANCED MID-RANGE
+ *********************************************************************/
+
+int lpp_icsp_command_6(struct lpp_context_t *context, const unsigned char command)
 {
     int ret;
 
-    /* send only data */
-    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_24, data) == 0);
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_CMD_6, command) == 0);
 
-    /* return result */
     return ret;
 }
 
-int lpp_icsp_data_only_32(struct lpp_context_t *context, 
-                       const unsigned int data)
+/*********************************************************************
+  SET BIT
+ *********************************************************************/
+
+int lpp_icsp_set_pgc(struct lpp_context_t *context, const unsigned char data) 
 {
     int ret;
 
-    /* send only data */
-    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_DATA_ONLY_32, data) == 0);
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGC, data) == 0);
 
-    /* return result */
     return ret;
 }
 
-/* delay and return success */
-int lpp_icsp_delay_us(struct lpp_context_t *context, const unsigned int delay_us)
+int lpp_icsp_set_pgd(struct lpp_context_t *context, const unsigned char data) 
 {
-    /* delay */
-    usleep(delay_us);
+    int ret;
 
-    /* success */
-    return 1;
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGD, data) == 0);
+
+    return ret;
 }
+
+int lpp_icsp_set_pgd_dir(struct lpp_context_t *context, const unsigned char data) 
+{
+    int ret;
+
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGD_DIR, data) == 0);
+
+    return ret;
+}
+
+int lpp_icsp_set_pgm(struct lpp_context_t *context, const unsigned char data) 
+{
+    int ret;
+
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGM, data) == 0);
+
+    return ret;
+}
+
+int lpp_icsp_set_mclr(struct lpp_context_t *context, const unsigned char data) 
+{
+    int ret;
+
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_MCLR, data) == 0);
+
+    return ret;
+}
+
+/*********************************************************************
+  GET BIT
+ *********************************************************************/
+
+int lpp_icsp_get_pgd(struct lpp_context_t *context, unsigned char *data)
+{
+    int ret;
+
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_GET_PGD, data) == 0);
+
+    return ret;
+}
+
+/*********************************************************************
+  SEND BITS
+ *********************************************************************/
+
+int lpp_icsp_send_32(struct lpp_context_t *context, const unsigned int data)
+{
+    int ret;
+
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SEND_32, data) == 0);
+
+    return ret;
+}
+
+/*********************************************************************
+  READ BITS
+ *********************************************************************/
+
+int lpp_icsp_read_16(struct lpp_context_t *context, unsigned short *data)
+{
+    int ret;
+
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_READ_16, data) == 0);
+
+    return ret;
+}
+
+/*********************************************************************
+  CLOCK BIT IN/OUT
+ *********************************************************************/
+
+int lpp_icsp_clock_out(struct lpp_context_t *context, const unsigned char data)
+{
+    int ret;
+
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_CLK_OUT, data) == 0);
+
+    return ret;
+}
+
+int lpp_icsp_clock_in(struct lpp_context_t *context, unsigned char *data)
+{
+    int ret;
+
+    ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_CLK_IN, data) == 0);
+
+    return ret;
+}
+
+/*
+ * vim: shiftwidth=4 tabstop=4 softtabstop=4 expandtab
+ */

@@ -1,5 +1,5 @@
 ;
-; R-PI 3V3 PIC18F26K80 TODO
+; R-PI 3V3 PIC18F26K80
 ;
 ; Copyright (c) 2005-2013 Darron Broad
 ; All rights reserved.
@@ -34,10 +34,15 @@
                 LIST    P=PIC18F26K80
 ERRORLEVEL      -302
 #INCLUDE        "p18f26k80.inc"
+#INCLUDE        "device.inc"                ;DEVICE CONFIG
+#INCLUDE        "const.inc"                 ;CONSTANTS
+#INCLUDE        "macro.inc"                 ;MACROS
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; R-PI 3V3 PIC18F26K80 TODO
+; R-PI 3V3 PIC18F26K80
+;
+; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -122,21 +127,15 @@ ERRORLEVEL      -302
 ;
 ; Constants
 ;
-; __IDLOCS _IDLOC0,8
-; __IDLOCS _IDLOC1,7
-; __IDLOCS _IDLOC2,6
-; __IDLOCS _IDLOC3,5
-; __IDLOCS _IDLOC4,4
-; __IDLOCS _IDLOC5,3
-; __IDLOCS _IDLOC6,2
-; __IDLOCS _IDLOC7,1
+; HFINTOSC = 16MHz PLL X4 (16 MIPS)
+    CONSTANT CLOCK = 64000000
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Data EEPROM
+; Variables
 ;
-                ORG     0xF00000
-                DE      "PIC18F26K80",0
+CBLOCK          0x00                        ;ACCESS RAM 0x00..0x5F
+ENDC
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -149,6 +148,15 @@ ERRORLEVEL      -302
                 ORG     0x0018
                 GOTO    INTLOW              ;When IPEN=1
                 ORG     0x0020
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; ICSP I/O
+;
+NPINS           SET     .28                 ;28-PIN PDIP
+#INCLUDE        "delay.inc"                 ;DELAY COUNTERS
+#INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -168,13 +176,43 @@ INTLOW
 ;
 ; Initialise
 ;
-INIT
+INIT            BCF     RCON,IPEN           ;DISABLE PRIORITY INTERRUPTS
+                MOVLB   0x0F                ;SFR ACCESS IN BANKED MODE
+
+                BSF     OSCTUNE,PLLEN       ;INIT CLOCK 16MHZ HFINTOSC PLL X4
+                MOVLW   b'01110000'
+                MOVWF   OSCCON
+INITHFIOFS      BTFSS   OSCCON,HFIOFS       ;WAIT FOR HFINTOSC FREQUENCY STABLE
+                GOTO    INITHFIOFS
+
+                BTFSC   RCON,NOT_TO         ;WATCHDOG TIME-OUT?
+                GOTO    POWERUP
+
+                MOVLW   0xFF                ;WATCHDOG TIMED OUT
+                XORWF   LATA,F
+                GOTO    WATCHDOG            ;CONTINUE
+
+POWERUP         SETF    LATA                ;INIT PORT A
+
+WATCHDOG        CLRF    ADCON0              ;DISABLE A/D
+                CLRF    ANCON0
+                CLRF    ANCON1
+
+                MOVLW   b'00000000'         ;PORT A ALL O/P
+                MOVWF   TRISA
+
+                CLRWDT                      ;INIT WATCHDOG TIMER
+                BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Main loop
 ;
-MAIN            GOTO    MAIN
+                CLRF    LASTERROR
+;
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
+
+                GOTO    UNSUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

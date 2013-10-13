@@ -129,7 +129,7 @@ BUSY=50
 MCP=0x20
 
 # AUTO-RUN AFTER I/O STANDBY ON CLOSE
-#RUN=1
+RUN=1
 
 # ICSP I/O per half-bit sleep time for `kio'.
 FWSLEEP=30

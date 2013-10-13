@@ -278,6 +278,7 @@ struct pic16_dsmap
 	unsigned int datasheet;
 	unsigned char devid1rev4;	/* DEVID1 REV4 used 0/1 */
 	unsigned char panelsize;
+	unsigned int p9, p9a;		/* Program delay times P9 and P9A in us */
 	unsigned int p10, p11;		/* Erase delay times P10 and P11 in us */
 	unsigned int configaddr;        /* CONFIG ADDRESS */
 	unsigned int configsize;        /* CONFIG SIZE    */
@@ -336,12 +337,16 @@ void pic16_init_code_memory_access(struct k8048 *);
 
 void pic16_write_enable(struct k8048 *);
 void pic16_write_disable(struct k8048 *);
+void pic16_free(struct k8048 *);
+void pic16_write(struct k8048 *);
 
 /* machine code block utilities */
 void pic16_set_table_pointer(struct k8048 *, unsigned long);
 
 void pic16_erase_block(struct k8048 *, unsigned long int);
+void pic16_erase_row(struct k8048 *, unsigned long int, int);
 void pic16_bulk_erase(struct k8048 *);
+void pic16_row_erase(struct k8048 *, unsigned long int);
 
 /* data (EEPROM) */
 void pic16_init_data_memory_access(struct k8048 *);
@@ -372,7 +377,7 @@ unsigned char pic16_programregion(struct k8048 *, int, unsigned long, unsigned c
 void pic16_write_buffer(struct k8048 *, unsigned long, unsigned char *);
 void pic16_write_buffered(struct k8048 *, unsigned long, unsigned char, int);
 
-void pic16_program(struct k8048 *);
+void pic16_program(struct k8048 *, int);
 int pic16_verify(struct k8048 *);
 void pic16_program_config(struct k8048 *);
 

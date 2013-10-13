@@ -25,8 +25,10 @@ int pic_get_data_eeprom_size(struct k8048 *);
 int pic_read_flash_memory_block(struct k8048 *, unsigned short *, int);
 int pic_read_eeprom_memory_block(struct k8048 *, unsigned char *, int);
 
-int  pic_program_verify(struct k8048 *, const char *, int);
+void pic_program(struct k8048 *, const char *, int);
+int pic_verify(struct k8048 *, const char *);
 void pic_blank(struct k8048 *);
+void pic_erase(struct k8048 *, int);
 void pic_dumpdeviceid(struct k8048 *);
 void pic_dumpconfig(struct k8048 *);
 void pic_writeconfig(struct k8048 *, unsigned short);

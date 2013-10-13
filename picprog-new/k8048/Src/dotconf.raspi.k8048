@@ -72,7 +72,7 @@ BITRULES=0x10
 
 # I/O busy cursor speed (lower is faster)
 # 
-BUSY=50
+BUSY=0
 
 # RPI GPIO VELLEMAN K8048 (README.raspi)
 #

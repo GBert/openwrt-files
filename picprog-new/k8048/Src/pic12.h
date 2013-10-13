@@ -135,7 +135,8 @@ void pic12_dumpconfig(struct k8048 *, int);
 void pic12_dumpdevice(struct k8048 *);
 
 void pic12_programregion(struct k8048 *, unsigned short, int, unsigned short);
-void pic12_program(struct k8048 *);
+
+void pic12_program(struct k8048 *, int);
 int pic12_verify(struct k8048 *);
 
 #endif

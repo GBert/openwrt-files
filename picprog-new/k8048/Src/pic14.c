@@ -207,7 +207,6 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16LF1825",	PIC16LF1825,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
 {"PIC16LF1829",	PIC16LF1829,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
 #endif
-
 {"(null)",	0,		0,	0,	0,	0,	   0,      0, 0, 0,	0}
 /*Device name	Device id	Flash	EEPROM	Data	Data-sheet Configuration Latches*/
 };
@@ -896,8 +895,8 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 void
 pic14_read_config_memory(struct k8048 *k)
 {
+	unsigned short deviceid, fault;
 	int i;
-	unsigned short deviceid;
 
 	io_init_program_verify(k);
 
@@ -928,23 +927,18 @@ pic14_read_config_memory(struct k8048 *k)
 		}
 		if (pic14_map[i].deviceid == 0) {
 			/*
-			 * k8048 SWITCH IN STANDBY [0000]
-			 * k8048 NO POWER	   [3fff]
-			 * k0848 SWITCH IN RUN	   [3fff]
-			 * k0848 SWITCH IN PROG	   [XXXX]
+			 * VELLEMAN K8048 SWITCH IN STANDBY [0000]
+			 * VELLEMAN K8048 NO POWER          [3FFF]
+			 * VELLEMAN K0848 SWITCH IN RUN     [3FFF]
+			 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 			 */
-			switch (pic14_conf.index[PIC14_CONFIG_DEVICEID]) {
-			case 0x0000:
-				printf("%s: fatal error: switch is on standby, or device is not a PIC10F/12F/16F.\n",
-					__func__);
-				break;
-			case 0x3fff:
-				printf("%s: fatal error: switch is on run, or no power is supplied, or no device is installed.\n",
-					__func__);
-				break;
-			default:printf("%s: fatal error: unknown device: %04X [%04X]\n", __func__, deviceid,
-					pic14_conf.index[PIC14_CONFIG_DEVICEID]);
-				break;
+			fault = pic14_conf.index[PIC14_CONFIG_DEVICEID];
+			if (fault == 0x0000 || fault == 0x3FFF) {
+				printf("%s: fatal error: %s.\n",
+					__func__, io_fault(k, fault));
+			} else {
+				printf("%s: fatal error: device unknown: %04X [%04X]\n",
+					__func__, deviceid, fault);
 			}
 			exit(EX_SOFTWARE); /* Panic */
 		}
@@ -1500,7 +1494,7 @@ pic14_verifyregion(struct k8048 *k, unsigned short address, int region, unsigned
  * PROGRAM DEVICE USING GLOBAL INHX32 DATA
  */
 void
-pic14_program(struct k8048 *k)
+pic14_program(struct k8048 *k, int blank)
 {
 	int i, j;
 	unsigned short hex_address, PC_address = 0, wdata;
@@ -1508,14 +1502,9 @@ pic14_program(struct k8048 *k)
 	int total = 0;
 	int multiword = (pic14_map[pic14_index].latches > 1);
 
-	/*
-	 * Initialise device for programming
-	 *
-	 * On supported devices OSCCAL will be restored in bulk_erase but
-	 * BANDGAP will not. BANDGAP will be restored during finalisation
-	 * as part of the config word.
-	 */
-	pic14_bulk_erase(k, INTERNAL, NOINTERNAL);
+	/* Initialise device for programming */
+	if (blank)
+		pic14_bulk_erase(k, INTERNAL, NOINTERNAL);
 
 	/* For each line */
 	for (i = 0; i < inhx32_count; i++) {
@@ -1556,7 +1545,9 @@ pic14_program(struct k8048 *k)
 	io_standby(k);
 
 	/* Finalise device programming (write config word(s)) */
-	pic14_write_config(k, pic14_conf.index[PIC14_CONFIG_WORD1]);
+	if (blank)
+		pic14_write_config(k, pic14_conf.index[PIC14_CONFIG_WORD1]);
+
 	printf("Total: %d\n", total);
 
 	if (pic14_map[pic14_index].datasheet == DS40245B) {

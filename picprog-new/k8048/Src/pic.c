@@ -266,49 +266,59 @@ pic_read_eeprom_memory_block(struct k8048 *k, unsigned char *data, int max)
 }
  
 /*
- * PROGRAM/VERIFY DEVICE
- *
- * RETURN NUMBER OF VERIFY ERRORS
+ * PROGRAM
  */
-int
-pic_program_verify(struct k8048 *k, const char *fname, int mode)
+void
+pic_program(struct k8048 *k, const char *filename, int blank)
 {
-	char *filename = getarg(fname);
-	int fail = 0;
-	
-	if (filename == NULL) {
-		printf("%s: error: invalid filename\n", __func__);
-		return 0;
-	}
-
 	inhx32(filename);
 	if (inhx32_count <= 0) {
-		free(filename);
-		return 0;
+		return;
 	}
 
 	pic_read_config(k, CONFIG_ONLY);
 
-	if (mode == PROGRAM) switch (k->arch) {
+	switch (k->arch) {
 #ifdef K12
 	case ARCH12BIT:
-		pic12_program(k);
+		pic12_program(k, blank);
 		break;
 #endif
 #ifdef K14
 	case ARCH14BIT:
-		pic14_program(k);
+		pic14_program(k, blank);
 		break;
 #endif
 #ifdef K16
 	case ARCH16BIT:
-		pic16_program(k);
+		pic16_program(k, blank);
 		break;
 #endif
 	default:printf("%s: information: unimplemented\n", __func__);
 		break;
 	}
-	else /* mode == VERIFY */ switch (k->arch) {
+
+	inhx32_free();
+}
+
+/*
+ * VERIFY DEVICE
+ *
+ * RETURN NUMBER OF VERIFY ERRORS
+ */
+int
+pic_verify(struct k8048 *k, const char *filename)
+{
+	int fail = 0;
+	
+	inhx32(filename);
+	if (inhx32_count <= 0) {
+		return 0;
+	}
+
+	pic_read_config(k, CONFIG_ONLY);
+
+	switch (k->arch) {
 #ifdef K12
 	case ARCH12BIT:
 		fail = pic12_verify(k);
@@ -329,7 +339,6 @@ pic_program_verify(struct k8048 *k, const char *fname, int mode)
 	}
 
 	inhx32_free();
-	free(filename);
 
 	return fail;
 }
@@ -358,6 +367,35 @@ pic_blank(struct k8048 *k)
 #ifdef K16
 	case ARCH16BIT:
 		pic16_bulk_erase(k);
+		break;
+#endif
+	default:printf("%s: information: unimplemented\n", __func__);
+		break;
+	}
+}
+
+/*
+ * ERASE A ROW
+ */
+void
+pic_erase(struct k8048 *k, int row)
+{
+	pic_read_config(k, CONFIG_ONLY);
+
+	switch (k->arch) {
+#ifdef K12
+	case ARCH12BIT:
+		printf("%s: information: unsupported\n", __func__);
+		break;
+#endif
+#ifdef K14
+	case ARCH14BIT:
+		printf("%s: information: unimplemented\n", __func__);
+		break;
+#endif
+#ifdef K16
+	case ARCH16BIT:
+		pic16_row_erase(k, row);
 		break;
 #endif
 	default:printf("%s: information: unimplemented\n", __func__);

@@ -9,10 +9,10 @@
 
 # build targets (enable:1 disable:0)
 K12=0
-K14=0
+K14=1
 K16=1
-KTEST=0
-KIO=0
+KTEST=1
+KIO=1
 
 # backends (where available) (enable:1 disable:0)
 TTY=0

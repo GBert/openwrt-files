@@ -54,6 +54,7 @@ mystrcasestr(const char *haystack, const char *needle)
 /*
  * Get quoted command line argument
  */
+#if 0
 char *
 getarg(const char *line)
 {
@@ -89,3 +90,4 @@ getarg(const char *line)
 
 	return arg;
 }
+#endif

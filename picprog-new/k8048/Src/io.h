@@ -98,6 +98,7 @@ void io_signal_off();
 void io_config(struct k8048 *);
 int io_open(struct k8048 *, int);
 void io_init(struct k8048 *);
+char *io_fault(struct k8048 *, int);
 char *io_error(struct k8048 *);
 void io_close(struct k8048 *, int);
 
@@ -121,8 +122,8 @@ void io_command_out(struct k8048 *, unsigned char);
 
 void io_command_out16(struct k8048 *, unsigned char, unsigned short);
 
-void io_command_program(struct k8048 *, unsigned int);
-void io_command_erase(struct k8048 *, unsigned int);
+void io_command_program(struct k8048 *, unsigned int, unsigned int);
+void io_command_erase(struct k8048 *, unsigned int, unsigned int);
 
 unsigned char io_command_in8(struct k8048 *, unsigned char);
 
@@ -130,7 +131,7 @@ void io_word_out14(struct k8048 *, unsigned short);
 unsigned short io_word_in14(struct k8048 *);
 
 void io_word_out16(struct k8048 *, unsigned short);
-void io_word_out32(struct k8048 *, unsigned long);
+void io_word_out32(struct k8048 *, unsigned int);
 unsigned char io_byte_in(struct k8048 *);
 
 void io_cursor(struct k8048 *, char);

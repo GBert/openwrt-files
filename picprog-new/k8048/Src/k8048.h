@@ -52,12 +52,6 @@
 #include "dmalloc.h"
 #endif
 
-/*
- * operating mode defined in cli args
- */
-#define PROGRAM (1)
-#define VERIFY  (2)
-
 /* 
  * operation success return codes (nb: to update counters)
  */

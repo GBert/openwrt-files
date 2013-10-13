@@ -504,7 +504,8 @@ int pic14_verifyregion(struct k8048 *, unsigned short, int, unsigned short);
 
 /* program/verify */
 void pic14_programregion(struct k8048 *, unsigned short, int, unsigned short);
-void pic14_program(struct k8048 *);
+
+void pic14_program(struct k8048 *, int);
 int pic14_verify(struct k8048 *);
 
 /* diagnostics */

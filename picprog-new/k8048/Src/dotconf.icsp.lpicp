@@ -42,7 +42,7 @@ DEVICE=/dev/icsp0
 # LINUX MCP23017 I2C
 #SLEEP=0
 # LPICP ICSP
-#SLEEP=1
+SLEEP=1
 
 # I/O bit rules. These determine the polarity of the control lines and whether
 #                data input requires data output pulled high.
@@ -129,10 +129,10 @@ BUSY=0
 #MCP=0x20
 
 # AUTO-RUN AFTER I/O STANDBY ON CLOSE
-#RUN=1
+RUN=1
 
 # ICSP I/O per half-bit sleep time for `kio'.
-#FWSLEEP=30
+FWSLEEP=30
 
 # Debug level (0=NONE, 1=ERROR, 10=INFO)
 DEBUG=1
