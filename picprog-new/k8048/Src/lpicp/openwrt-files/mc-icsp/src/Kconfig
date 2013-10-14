@@ -1,7 +1,0 @@
-config MC_ICSP
-    tristate "Microchip ICSP driver"
-    depends on GENERIC_GPIO
-    select MC_ICSP
-    help
-      This is a Microchip ICSP driver used to programm
-      Microchip PIC Controllers
