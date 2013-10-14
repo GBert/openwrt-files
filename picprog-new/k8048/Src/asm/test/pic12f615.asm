@@ -23,7 +23,7 @@
 ; K8048 Pin
 ; ----- ---
 ; LD1   GP2 (5)
-; LD2   GP3 (3)
+; LD2   GP4 (3)
 ; SW1   GP5 (2)
 ;
 ;        7654 3210
@@ -61,7 +61,7 @@ ERRORLEVEL      -302
 ;
 ; This demonstrates how we may receive commands from the host computer
 ; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the LED to that
+; The first command takes one argument which sets two LEDs to that
 ; value and the second command takes no argument yet demonstrates how
 ; we may send a value back to the host which, in this case, is the
 ; current status of the first switch.
@@ -96,7 +96,7 @@ ENDC
                 ORG     0x0000
                 GOTO    INIT
                 ORG     0x0004
-                GOTO    INTSR
+                RETFIE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -105,6 +105,7 @@ ENDC
 NPINS           SET     .8                  ;8-PIN PDIP
 #INCLUDE        "delay.inc"                 ;DELAY COUNTERS
 #INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -152,17 +153,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
                 CLRF    LASTERROR
 ;
-MAINLOOP        CLRF    CHECKSUM            ;START SESSION
-                CALL    GETBYTE             ;GET COMMAND
-                BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
-
-                CLRWDT                      ;UPDATE WATCHDOG
-;
-; COMMAND VALIDATE
-;
-                MOVF    BUFFER,W            ;IS SLEEP?
-                XORLW   CMD_SLEEP
-                BZ      DOSLEEP
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
                 MOVF    BUFFER,W            ;IS LED?
                 XORLW   CMD_LED
@@ -172,24 +163,9 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 XORLW   CMD_SWITCH
                 BZ      DOSWITCH
 
-                MOVF    BUFFER,W            ;IS ERROR?
-                XORLW   CMD_ERROR
-                BZ      DOERROR
+                GOTO    UNSUPPORTED
 ;
-; COMMAND UNSUPPORTED
-;
-                CALL    SENDNAK             ;COMMAND UNSUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Standby
-;
-DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
-                GOTO    INIT                ;RESET ON WAKE-UP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1+LD2
 ;
@@ -209,6 +185,8 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Get SW1
 ;
 DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
@@ -222,35 +200,6 @@ DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    DOEND               ;COMMAND COMPLETED
-;
-; Get last error
-;
-DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                MOVF    LASTERROR,W
-                CLRF    LASTERROR
-                CALL    SENDBYTE
-                BC      IOERROR
-;
-; Command completed
-;
-DOEND           CALL    SENDSUM             ;CLOSE SESSION
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Time-out, protocol or parity error
-;
-IOERROR         MOVWF   LASTERROR
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Interrupt service routine (unused)
-;
-INTSR           RETFIE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

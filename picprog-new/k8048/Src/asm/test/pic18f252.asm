@@ -162,9 +162,10 @@ ENDC
                 ORG     0x0000
                 GOTO    INIT
                 ORG     0x0008
-                GOTO    INTHIGH
+                RETFIE
                 ORG     0x0018
-                GOTO    INTLOW
+                RETFIE
+                ORG     0x0020
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -173,6 +174,7 @@ ENDC
 NPINS           SET     .28                 ;28-PIN PDIP
 #INCLUDE        "delay.inc"                 ;DELAY COUNTERS
 #INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -207,17 +209,7 @@ WATCHDOG        CLRWDT                      ;RESET WATCHDOG
 ;
                 CLRF    LASTERROR
 ;
-MAINLOOP        CLRF    CHECKSUM            ;START SESSION
-                CALL    GETBYTE             ;GET COMMAND
-                BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
-
-                CLRWDT                      ;RESET WATCHDOG
-;
-; COMMAND VALIDATE
-;
-                MOVF    BUFFER,W            ;IS SLEEP?
-                XORLW   CMD_SLEEP
-                BZ      DOSLEEP
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
                 MOVF    BUFFER,W            ;IS LED?
                 XORLW   CMD_LED
@@ -227,25 +219,9 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 XORLW   CMD_SWITCH
                 BZ      DOSWITCH
 
-                MOVF    BUFFER,W            ;IS ERROR?
-                XORLW   CMD_ERROR
-                BZ      DOERROR
+                GOTO    UNSUPPORTED
 ;
-; COMMAND UNSUPPORTED
-;
-                CALL    SENDNAK             ;COMMAND UNSUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Standby
-;
-DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                CLRF    OSCCON              ;SET SLEEP MODE
-                SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
-                GOTO    INIT                ;RESET ON WAKE-UP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1..LD6
 ;
@@ -261,50 +237,22 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Get SW1..SW4
 ;
 DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
                 BC      IOERROR             ;TIME-OUT
 
                 MOVF    PORTB,W             ;GET SW1..SW3
+                ANDLW   B'00000111'
                 BTFSC   PORTB,4             ;GET SW4
                 IORLW   B'00001000'
-                ANDLW   B'00001111'
 
                 CALL    SENDBYTE            ;SEND SW1..SW4
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    DOEND               ;COMMAND COMPLETED
-;
-; Get last error
-;
-DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                MOVF    LASTERROR,W
-                CALL    SENDBYTE
-                BC      IOERROR
-;
-; Command completed
-;
-DOEND           CALL    SENDSUM             ;CLOSE SESSION
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Time-out, protocol or parity error
-;
-IOERROR         MOVWF   LASTERROR
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Interrupt service routine
-;
-INTHIGH
-INTLOW
-                RETFIE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

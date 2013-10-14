@@ -8,6 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; 1024 words Flash (12-bit)
+; 41 bytes RAM
+; 64 bytes data flash
+;
 ; Pinout
 ; ------
 ; VDD VCC        1----8 VSS GND
@@ -20,6 +24,22 @@
 ; LD1   GP2 (5)
 ; LD2   GP4 (3)
 ; SW1   GP5 (2)
+;
+;        7654 3210
+; TRISIO XX10 X0XX
+;        LD1+LD2 O/P
+;        SW1     I/P
+;
+; K8048 GPIO probes
+; -----------------
+;     8PIN 14PIN 18PIN 28PIN
+;     ---- ----- ----- -----
+; GP0    7    13    13    28 PGD
+; GP1    6    12    12    27 PGC
+; GP2    5    10     6     2 LD1
+; GP3    4     4             VPP
+; GP4    3     9     7     3 LD2
+; GP5    2          17    21 SW1
 ;
 ; Program
 ; -------
@@ -34,18 +54,18 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC12F519 ICSPIO Demo Test (Receive commands, send data).
 ;
 ; This demonstrates how we may receive commands from the host computer
 ; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the six LEDs to that
+; The first command takes one argument which sets two LEDs to that
 ; value and the second command takes no argument yet demonstrates how
 ; we may send a value back to the host which, in this case, is the
-; current status of the four switches.
+; current status of the first switch.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -55,9 +75,8 @@ ERRORLEVEL      -302
 ;
 ; Constants
 ;
-; XXX GPASM ASSIGNS __IDLOCS TO 0x0400 IN ERROR
+; GPASM ASSIGNS __IDLOCS TO 0x0400 IN ERROR
 ; __IDLOCS 0xABCD                           ;0x0440..0x0443
-;
 ERRORLEVEL      -220
                 ORG     0x0440
                 DW      1,2,3,4
@@ -88,6 +107,7 @@ ENDC
 NPINS           SET     .8                  ;8-PIN PDIP
 #INCLUDE        "delay.inc"                 ;DELAY COUNTERS
 #INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -112,8 +132,8 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
                 MOVLW   B'00001111'         ;WATCHDOG PRESCALE
                 OPTION
 
-                MOVLW   B'00100011'         ;GP5 SW1 I/P GP2/4 LD1+LD2 O/P
-                MOVWF   TRISIO              ;INIT TRIS B SHADOW
+                MOVLW   B'11101011'         ;GPIO SW1 I/P LD1+LD2 O/P
+                MOVWF   TRISIO              ;INIT TRISIO SHADOW
                 TRIS    GPIO                ;INIT TRIS
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -122,17 +142,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
                 CLRF    LASTERROR
 ;
-MAINLOOP        CLRF    CHECKSUM            ;START SESSION
-                CALL    GETBYTE             ;GET COMMAND
-                BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
-
-                CLRWDT                      ;UPDATE WATCHDOG
-;
-; COMMAND VALIDATE
-;
-                MOVF    BUFFER,W            ;IS SLEEP?
-                XORLW   CMD_SLEEP
-                BZ      DOSLEEP
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
                 MOVF    BUFFER,W            ;IS LED?
                 XORLW   CMD_LED
@@ -142,24 +152,9 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 XORLW   CMD_SWITCH
                 BZ      DOSWITCH
 
-                MOVF    BUFFER,W            ;IS ERROR?
-                XORLW   CMD_ERROR
-                BZ      DOERROR
+                GOTO    UNSUPPORTED
 ;
-; COMMAND UNSUPPORTED
-;
-                CALL    SENDNAK             ;COMMAND UNSUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Standby
-;
-DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
-NOTREACHED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1+LD2
 ;
@@ -175,9 +170,11 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
                 BTFSC   BUFFER,1
                 IORLW   0x10
                 MOVWF   LATIO               ;UPDATE SHADOW
-                MOVWF   GPIO                ;UPDATE PORTB
+                MOVWF   GPIO                ;UPDATE GPIO
 
                 GOTO    DOEND               ;COMMAND COMPLETED
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Get SW1
 ;
@@ -188,33 +185,10 @@ DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
                 BTFSC   GPIO,5
                 MOVLW   1
 
-                CALL    SENDBYTE            ;SEND SW1..SW4
+                CALL    SENDBYTE            ;SEND SW1+SW2
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    DOEND               ;COMMAND COMPLETED
-;
-; Get last error
-;
-DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                MOVF    LASTERROR,W
-                CLRF    LASTERROR
-                CALL    SENDBYTE
-                BC      IOERROR
-;
-; Command completed
-;
-DOEND           CALL    SENDSUM             ;CLOSE SESSION
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Time-out, protocol or parity error
-;
-IOERROR         MOVWF   LASTERROR
-
-                GOTO    MAINLOOP            ;CONTINUE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

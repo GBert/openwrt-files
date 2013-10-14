@@ -22,7 +22,7 @@
 ; RC4 C2OUT TX CK          6     9 RC1 AN5 C2IN-
 ; RC3 AN7                  7-----8 RC2 AN6
 ;
-; k8048 Pin
+; K8048 Pin
 ; ----- ---
 ; LD1   RC0 (10)
 ; LD2   RC1 (9)

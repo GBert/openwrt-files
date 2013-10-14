@@ -22,7 +22,7 @@
 ; K8048 Pin
 ; ----- ---
 ; LD1   GP2 (5)
-; LD2   GP3 (3)
+; LD2   GP4 (3)
 ; SW1   GP5 (2)
 ;
 ;        7654 3210
@@ -60,7 +60,7 @@ ERRORLEVEL      -302
 ;
 ; This demonstrates how we may receive commands from the host computer
 ; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the LED to that
+; The first command takes one argument which sets two LEDs to that
 ; value and the second command takes no argument yet demonstrates how
 ; we may send a value back to the host which, in this case, is the
 ; current status of the first switch.

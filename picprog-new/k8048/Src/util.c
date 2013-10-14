@@ -21,7 +21,7 @@ areyousure(const char *s)
 {
 	int c;
 
-	printf("%s: Are you sure [y/N]? ", s);
+	printf("%s: are you sure [y/N]? ", s);
 	c = fgetc(stdin);
 	if (c == 'y' || c == 'Y')
 		return 1;

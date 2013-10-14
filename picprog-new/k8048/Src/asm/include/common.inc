@@ -74,6 +74,8 @@ COMMON          MACRO   DONE, WAKEUP
                 BTFGS   STATUS,Z,DOVREF
 #ENDIF
 #IFDEF EEDATA
+    IF ARCH != BASELINE
+
                 MOVF    BUFFER,W            ;IS EEREAD?
                 XORLW   CMD_EEREAD
                 BTFGS   STATUS,Z,DOEEREAD
@@ -81,6 +83,7 @@ COMMON          MACRO   DONE, WAKEUP
                 MOVF    BUFFER,W            ;IS EEWRITE?
                 XORLW   CMD_EEWRITE
                 BTFGS   STATUS,Z,DOEEWRITE
+    ENDIF ; !BASELINE
 #ENDIF
 #IFDEF EEDATH
                 MOVF    BUFFER,W            ;IS READW?
@@ -649,8 +652,8 @@ DOSAMPLEW       CALL    SENDACK             ;COMMAND SUPPORTED
 IF ARCH == ENHANCED
                 BANKSEL ADCON0              ;BANK1
 ENDIF
-                BSF     ADCON0,GO           ;A/D GO!
-DOSAMPLEWWAIT   BTFSC   ADCON0,GO           ;A/D DONE?
+                BSF     ADCON0,GO_NOT_DONE  ;A/D GO!
+DOSAMPLEWWAIT   BTFSC   ADCON0,GO_NOT_DONE  ;A/D DONE?
                 GOTO    DOSAMPLEWWAIT       ;NOT DONE...
 IF ARCH == MIDRANGE
                 BANKSEL ADRESL              ;BANK1
@@ -710,6 +713,7 @@ ENDIF
 ; EEPROM Read/Write
 ;
 #IFDEF EEDATA
+    IF ARCH != BASELINE
 DOEEREAD        CALL    SENDACK             ;COMMAND SUPPORTED
                 BTFGS   STATUS,C,IOERROR    ;TIME-OUT
 
@@ -800,6 +804,7 @@ IF ARCH == MIDRANGE || ARCH == ENHANCED
                 BANKSEL BANK0
 ENDIF
                 GOTO    DOEND               ;COMMAND COMPLETED
+    ENDIF ; !BASELINE
 #ENDIF ; EEDATA
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
