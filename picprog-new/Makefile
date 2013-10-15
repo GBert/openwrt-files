@@ -41,6 +41,7 @@ endef
 define Package/picprog-new/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kio $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/root
 	$(INSTALL_BIN) ./config/k8048 $(1)/root/.k8048
 endef
@@ -48,7 +49,6 @@ endef
 define Package/picprog-new/postinst
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k14
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k16
-	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/kio
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/ktest
 endef
 
