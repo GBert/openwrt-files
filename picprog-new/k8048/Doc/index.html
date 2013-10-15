@@ -12,9 +12,9 @@ Licensed under the terms of the BSD license, see file LICENSE for details.
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <title>Microchip PIC programmer for UNIX, Cygwin and Raspberry Pi.</title>
+  <title>Microchip PIC programmer for UNIX, Cygwin, and Raspberry Pi.</title>
   <meta name="description" content="Microchip PIC programmer">
-  <meta name="keywords" content="Microchip,PIC,Velleman,K8048,K8076,Raspberry Pi,R-PI">
+  <meta name="keywords" content="Microchip,PIC,Velleman,K8048,K8076,Raspberry Pi,R-PI,OpenWRT,GPIO">
   <meta name="author" content="Darron M Broad">
   <style type="text/css">
   <!--
@@ -91,7 +91,8 @@ Licensed under the terms of the BSD license, see file LICENSE for details.
 <ul>
   <li><a href="#introduction">Introduction</a>
   <li><a href="#thanks">Credits and thanks</a>
-  <li><a href="#supported">Supported devices</a>
+  <li><a href="#backends">Supported interfaces</a>
+  <li><a href="#supported">Supported PIC devices</a>
   <li><a href="#later">Devices that may be supported later</a>
   <li><a href="#install">Installing the application</a>
   <li><a href="#config">Configuring the application</a>
@@ -114,15 +115,15 @@ Licensed under the terms of the BSD license, see file LICENSE for details.
 <h3><a name="introduction" id="introduction"><u>Introduction</u></a></h3>
 
 <p>
-The application found here (k8048) has been written to allow programming of PICMicro devices in FreeBSD, NetBSD, Linux, Cygwin (Windows) and MACOS/X or any UNIX/POSIX based system, which includes the Raspberry Pi.
+The application found here (k8048) has been written to allow programming of PICMicro devices in FreeBSD, NetBSD, Linux, Cygwin (Windows) and MACOS/X or any UNIX/POSIX based system, which includes the Raspberry Pi and embedded devices running OpenWRT.
 </p>
 
 <p>
-All systems support programming PICMicros with the Velleman K8048 or K8076 kits, however, other kits may be supported by adjustment of the I/O rules.
+All systems support programming PICMicros with the Velleman K8048 or K8076 kits, however, other kits and circuits may be supported by adjustment of the I/O rules.
 </p>
 
 <p>
-Support is also available to program `low voltage programming' compatible PICMicros directly from a Raspberry Pi with no need for either a Velleman K8048 or K8076 kit. Devices marked LVP or MCHP LVP in the supported devices list should work. The compilation of compatible devices is work in progress, please refer to the Microchip documentation for LVP mode support for your particular device.
+Support is also available to program `low voltage programming' compatible PICMicros directly from a Raspberry Pi or OpenWRT enabled router with no need for either a Velleman K8048 or K8076 kit. Devices marked LVP or MCHP LVP in the supported PIC devices list should work. The compilation of compatible devices is work in progress, please refer to the Microchip documentation for LVP mode support for your particular device.
 </p>
 
 <div class="image">
@@ -135,29 +136,87 @@ In order to use this program in Cygwin for Windows you must first install and se
 </p>
 
 <p>
-Three back-end methods are built-in to program PICMicros.
-</p>
-<ol>
-<li>The POSIX RS-232 serial protocol for the Velleman K8048 and K8076 kits.
-<li>The Raspberry Pi GPIO interface for the Velleman kits or direct to breadboard.
-<li>Linux MCP23017 I2C direct to breadboard (tested on the R-PI Slice of PI/O).
-</ol>
-
-<p>
-RS-232 is available on every platform but R-PI GPIO is only available and only tested on RASPBIAN for the Raspberry Pi. The MCP23017 I2C method has only been tested on the R-PI utilising a `Slice of PI/O' expansion board.
+Before you download and use this application you should read the LICENSE found <a href="../LICENSE">here</a>. This license details the rights and liabilities of using the application and it should be especially understood that I, the author, will not accept any responsibility for any side effects of running it. IE. Do not download and run this program unless you are willing to accept the consequences of it failing for any reason.
 </p>
 
+<div class="image"> 
+<a href="../Images/10f220.jpg"><img width="256" border="0" src="../Images/10f220.jpg" ALT="10f220" TITLE="10f220"></a>
+<p>A PIC10F220 connected via ICSP.</p>
+</div>
+
+<div class="image"> 
+<a href="../Images/18f4550.jpg"><img width="256" border="0" src="../Images/18f4550.jpg" ALT="18F4550" TITLE="18F4550"></a>
+<p>A PIC18F4550 connected via ICSP.</p>
+</div>
+
+<div class="image"> 
+<a href="../Images/16f648a.jpg"><img width="256" border="0" src="../Images/16f648a.jpg" ALT="16f648a" TITLE="16f648a"></a>
+<p>A PIC16F648A connected via ICSP.</p>
+</div>
+
 <p>
-R-PI GPIO requires voltage level shifters when connected to the Velleman K8048 or K8076 kits. An example circuit for the Velleman K8048 is demonstrated in <a href="#rpiace">Appendix B</a>.
+At this time, the application is still work in progress and a limited number of devices are supported. This is because I do not have access to many devices for evaluation and testing. The known supported PIC devices are listed later in this document.
 </p>
 
 <p>
-For the R-PI GPIO direct connection to a PICMicro on a breadboard see <a href="#rpigpio">Appendix C</a>.
+If you have no success with this application then it is most likely due to the above but you may find it easy to add support for your own device by editing a small number of source files, else you are welcome to send to me a sample device for testing and I will add it to the list of supported devices as soon as possible.
 </p>
 
 <p>
-Linux MCP23017 I2C is demonstrated on a R-PI with a `Slice of PI/O' expansion in <a href="#rpii2c">Appendix D</a>.
+Please contact darron at kewl org with any diffs you have made to add support for another PICMicro device or alternatively contact me for details about where to send a sample. If you do send a sample device it will not be returned as it would be required for future debugging work.
 </p>
+
+
+<a href="#toc">Table of contents</a><br>
+
+<hr>
+
+<h3><a name="thanks" id="thanks"><u>Credits and thanks</u></a></h3>
+
+<div class="image">
+  <a href="../Images/proton.jpg"><img width="256" border="0" src="../Images/proton.jpg" ALT="PROTON MKII" TITLE="PROTON MKII"></a>
+  <p>Proton MKII ICSP.</p>
+</div>
+
+<p>
+This application was written by Darron M Broad in 2005, 2007, 2012 and 2013 and is an ongoing effort.
+</p>
+
+<p>
+Thanks go to Ian Stoyle who supplied a patch which added support for the 16F84 device and others that do not have an embedded device ID within their configuration. The patch was used to add a feature overriding the device probe and instead supplying the device name of the target.
+</p>
+
+<p>
+Kristoffer Myskja reported that he had great success with the Windows tool on a laptop without serial I/O by using a cardbus serial interface. He did mean to test Linux at a later time, but it would seem that such an interface could be the best option for any laptop without a UART.
+</p>
+
+<p>
+Johan Ahlander notified me that the application worked fine in NetBSD.
+</p>
+
+<p>
+Working with keen linux user and PIC coder Paul Van Gelder I added support for the Velleman K8076 kit and 16F84A PICMicro. Thanks Paul! To use the application with the Velleman K8076 see the BITRULES option for the dot file <a href="#config">below</a>.
+</p>
+
+<p>
+Many thanks to Chaitanya Rogers who donated money toward development and to acquire new PICmicros. All the PICMicros acquired with that donation are now supported, thank you.
+</p>
+
+<p>Thank you Josef Larsson for reporting that the 16F690 is compatible with this application using ICSP. This device may also be used in the 14P socket with pins 8 to 13 unconnected.</p>
+
+<p>Thanks go to David at RK Education as I now have a PIC18LF27J53 to investigate. This was sent free of charge with a RKP28sb PIC kit. This PIC Micro isn't compatible with the Velleman K8048 but is usable in a direct connection to a Raspberry Pi with 3V3 low voltage programming.</p>
+
+<p>Thank you Gerhard Bertelsmann for adding erase support for the PIC18F26K80 and for the addition of OpenWRT GPIO support with the Linux PIC Programmer ICSP kernel modules. The PIC18F26K80 is one of a limited number of devices which are available to program using a newly added MCHP LVP mode of operation.</p>
+
+<p>I recently bought a PIC16F84 on ebay for testing purposes. The seller generously sent an extra as a spare part, thank you for that Dawn.</p>
+
+<p>Lastly, thank you to Microchip for creating these versatile microcontrollers and also for their sample program which has supplied seven different devices.</p>
+
+<a href="#toc">Table of contents</a><br>
+
+<hr>
+
+<h3><a name="backends" id="backends"><u>Supported interfaces</u></a></h3>
 
 <div class="image">
   <a href="../Images/pci.jpg"><img width="256" border="0" src="../Images/pci.jpg" ALT="PCI" TITLE="PCI"></a>
@@ -183,6 +242,32 @@ Linux MCP23017 I2C is demonstrated on a R-PI with a `Slice of PI/O' expansion in
 <a href="../Images/mcp23017.jpg"><img width="256" border="0" src="../Images/mcp23017.jpg" ALT="RPI MCP" TITLE="RPI MCP"></a>
 <p>Linux (R-PI) MCP23017 I2C.</p>
 </div>
+
+<p>
+Four back-end methods are built-in to program PICMicros.
+</p>
+<ol>
+<li>The POSIX RS-232 serial protocol for the Velleman K8048 and K8076 kits.
+<li>The Raspberry Pi GPIO interface for the Velleman kits or direct to breadboard.
+<li>Linux MCP23017 I2C direct to breadboard (tested on the R-PI Slice of PI/O).
+<li>Linux PIC Programmer ICSP direct to breadboard (tested on the R-PI and with OpenWRT).
+</ol>
+
+<p>
+RS-232 is available on every platform but R-PI GPIO is only available and only tested on RASPBIAN for the Raspberry Pi. The MCP23017 I2C method has only been tested on the R-PI utilising a `Slice of PI/O' expansion board.
+</p>
+<p>
+R-PI GPIO requires voltage level shifters when connected to the Velleman K8048 or K8076 kits. An example circuit for the Velleman K8048 is demonstrated in <a href="#rpiace">Appendix B</a>.
+</p>
+<p>
+For the R-PI GPIO direct connection to a PICMicro on a breadboard see <a href="#rpigpio">Appendix C</a>.
+</p>
+<p>
+Linux MCP23017 I2C is demonstrated on a R-PI with a `Slice of PI/O' expansion in <a href="#rpii2c">Appendix D</a>.
+</p>
+<p>
+Linux PIC Programmer ICSP kernel module installation for the R-PI is documented in README.lpicp found in <a href="#rpii2c">Appendix F</a>. OpenWRT kernel module installation is not covered in this document, instead, please refer to your OpenWRT documentation and see the Src/lpics/modules directory. For connection to the target device, please refer to `R-PI GPIO direct connection' using LPICP in <a href="#rpigpio">Appendix C</a> which is indentical in this regard.
+</p>
 
 <p>
 Below is the current status of interface support.
@@ -239,6 +324,11 @@ Below is the current status of interface support.
   <td>Works slowly, also limited target support</td>
   <td>Slice of PI/O</td>
 </tr>
+<tr>
+  <td>Linux PIC Programmer ICSP</td>
+  <td>Works perfectly and very fast</td>
+  <td>Breadboard at 3V3</td>
+</tr>
 </tbody>
 
 </table>
@@ -247,87 +337,11 @@ Below is the current status of interface support.
 For RS232 testing with a standard serial UART has been done on FreeBSD and Linux, and a Prolific PL-2303 USB to serial adapter has been tested on MACOS/X by Tobias Braun who reported success (Thank you Tobias). I have also tested the Prolific along with Fred Marquis and we both report success with this device in Linux. However, although the Prolific device works, it is very slow and this is not resolvable due to usb control messages for this device taking a minimum of 3ms.
 </p>
 
-<p>
-Before you download and use this application you should read the LICENSE found <a href="../LICENSE">here</a>. This license details the rights and liabilities of using the application and it should be especially understood that I, the author, will not accept any responsibility for any side effects of running it. IE. Do not download and run this program unless you are willing to accept the consequences of it failing for any reason.
-</p>
-
-<div class="image"> 
-<a href="../Images/10f220.jpg"><img width="256" border="0" src="../Images/10f220.jpg" ALT="10f220" TITLE="10f220"></a>
-<p>A PIC10F220 connected via ICSP.</p>
-</div>
-
-<div class="image"> 
-<a href="../Images/18f4550.jpg"><img width="256" border="0" src="../Images/18f4550.jpg" ALT="18F4550" TITLE="18F4550"></a>
-<p>A PIC18F4550 connected via ICSP.</p>
-</div>
-
-<div class="image"> 
-<a href="../Images/16f648a.jpg"><img width="256" border="0" src="../Images/16f648a.jpg" ALT="16f648a" TITLE="16f648a"></a>
-<p>A PIC16F648A connected via ICSP.</p>
-</div>
-
-<p>
-At this time, the application is still work in progress, and a limited number of devices are supported. This is because I do not have access to many devices for evaluation and testing. The known supported devices are listed later in this document.
-</p>
-
-<p>
-If you have no success with this application then it is most likely due to the above but you may find it easy to add support for your own device by editing a small number of source files, else you are welcome to send to me a sample device for testing and I will add it to the list of supported devices as soon as possible.
-</p>
-
-<p>
-Please contact darron at kewl org with any diffs you have made to add support for another PICMicro device or alternatively contact me for details about where to send a sample. If you do send a sample device it will not be returned as it would be required for future debugging work.
-</p>
-
 <a href="#toc">Table of contents</a><br>
 
 <hr>
 
-<h3><a name="thanks" id="thanks"><u>Credits and thanks</u></a></h3>
-
-<div class="image">
-  <a href="../Images/proton.jpg"><img width="256" border="0" src="../Images/proton.jpg" ALT="PROTON MKII" TITLE="PROTON MKII"></a>
-  <p>Proton MKII ICSP.</p>
-</div>
-
-<p>
-This application was written by Darron M Broad in 2005, 2007, 2012 and 2013 and is an ongoing effort.
-</p>
-
-<p>
-Thanks go to Ian Stoyle who supplied a patch which added support for the 16F84 device and others that do not have an embedded device ID within their configuration. The patch was used to add a feature overriding the device probe and instead supplying the device name of the target.
-</p>
-
-<p>
-Kristoffer Myskja reported that he had great success with the Windows tool on a laptop without serial I/O by using a cardbus serial interface. He did mean to test Linux at a later time, but it would seem that such an interface could be the best option for any laptop without a UART.
-</p>
-
-<p>
-Johan Ahlander notified me that the application worked fine in NetBSD.
-</p>
-
-<p>
-Working with keen linux user and PIC coder Paul Van Gelder I added support for the Velleman K8076 kit and 16F84A PICMicro. Thanks Paul! To use the application with the Velleman K8076 see the BITRULES option for the dot file <a href="#config">below</a>.
-</p>
-
-<p>
-Many thanks to Chaitanya Rogers who donated money toward development and to acquire new PICmicros. All the PICMicros acquired with that donation are now supported, thank you.
-</p>
-
-<p>Thank you Josef Larsson for reporting that the 16F690 is compatible with this application using ICSP. This device may also be used in the 14P socket with pins 8 to 13 unconnected.</p>
-
-<p>Thanks go to David at RK Education as I now have a PIC18LF27J53 to investigate. This was sent free of charge with a RKP28sb PIC kit. This PIC Micro isn't compatible with the Velleman K8048 but is usable in a direct connection to a Raspberry Pi with 3V3 low voltage programming.</p>
-
-<p>Thank you Gerhard Bertelsmann for adding erase support for the PIC18F26K80. This is also one of a limited number of devices which are available to program using a newly added MCHP LVP mode of operation.</p>
-
-<p>I recently bought a PIC16F84 on ebay for testing purposes. The seller generously sent an extra as a spare part, thank you for that Dawn.</p>
-
-<p>Lastly, thank you to Microchip for creating these versatile microcontrollers and also for their sample program which has supplied seven different devices.</p>
-
-<a href="#toc">Table of contents</a><br>
-
-<hr>
-
-<h3><a name="supported" id="supported"><u>Supported Devices</u></a></h3>
+<h3><a name="supported" id="supported"><u>Supported PIC devices</u></a></h3>
 
 <div class="image">
 <a href="../Images/PICMicros.jpg"><img width="256" border="0" src="../Images/PICMicros.jpg" ALT="MICROCHIPS" TITLE="MICROCHIPS"></a>
@@ -1566,14 +1580,13 @@ The single input drives the fourth remaining gate.
 
 <p>Low Voltage Programming with VPP at 3V3</p>
 
-<p><u>Breadboard connections</u></p>
-
 <p>
 The following connections refer to the R-PI GPIO header directly. Ensure that power is only ever applied from GPIO 3V3 on PIN 1 and never 5V. The resistor is 1000 ohms.
 </p>
 
+<p><u>Separate data I/O connections (RPI)</u></p>
 <pre>
-R-PI                              PICMicro	GPIO header	.k8048	Cable colour (above left)
+R-PI                              PICMicro	GPIO header	.k8048 	Cable colour (above left)
 ====                              ========	===========	======	============
 
 3V3-------------------------------VDD		PIN 1 (P1-01)		RED
@@ -1589,15 +1602,35 @@ GPIO24-----------1KR------+-------PGD		PIN 18		PGDO=24	BLACK
 GPIO23--------------------+			PIN 16		PGDI=23	BROWN
 
 GPIO22----------------------------PGM (1)	PIN 15		PGM=22  BLUE
-
-(1) Not used by all LVP compatible devices.
 </pre>
+
+<p><u>Single common data I/O connection (RPI or LPICP)</u></p>
+<pre>
+R-PI                              PICMicro	GPIO header	.k8048 (RPI)
+====                              ========	===========	============
+
+3V3-------------------------------VDD		PIN 1 (P1-01)
+
+GND-------------------------------VSS		PIN 6
+
+GPIO04----------------------------VPP		PIN 7		VPP=4
+
+GPIO25----------------------------PGC		PIN 22		PGC=25
+
+GPIO24----------------------------PGD		PIN 18		PGD=24
+
+GPIO22----------------------------PGM (1)	PIN 15		PGM=22
+</pre>
+
+<p><u>Notes</u></p>
+<ol class="outer">
+<li>Not used by all LVP compatible devices.
+</ol>
 
 <p>The full R-PI GPIO header is described <a href="http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29">here</a>.
 
-<p><u>Display device identity</u></p>
+<p><u>Display LVP device identity (with and without PGM)</u></p>
 
-<p><a href="http://www.microchip.com/wwwproducts/Devices.aspx?dDocName=en548695">PIC18LF27J53</a></p>
 <pre>
 $ k16 mchp id
 [000000] [PROGRAM]    10000 WORDS
@@ -1608,7 +1641,6 @@ $ k16 mchp id
 [3FFFFE] [DEVICEID]    5A61 DEV:5A60 (5A:3) REV:1 PIC18LF27J53
 </pre>
 
-<p><a href="http://www.microchip.com/wwwproducts/Devices.aspx?dDocName=en026562">PIC16F886</a></p>
 <pre>
 $ k14 id
 [0000] [PROGRAM]  2000 WORDS
@@ -1625,9 +1657,8 @@ $ k14 id
 [2100] [DATA]     0100 BYTES
 </pre>
 
-<p><u>Program and verify device</u></p>
+<p><u>Program and verify LVP device (with PGM)</u></p>
 
-<p><a href="http://www.microchip.com/wwwproducts/Devices.aspx?dDocName=en026562">PIC16F886</a></p>
 <pre>
 $ cd Src &amp;&amp; make build-asm
 $ k14 program asm/test/pic16f886.hex
@@ -1659,12 +1690,11 @@ $ kio stop
 
 <p>Low Voltage Programming with VPP at 3V3 or 5V</p>
 
-<p><u>Breadboard connections</u></p>
-
 <p>
 The following connections are as per the image above. The resistor is 1000 ohms.
 </p>
 
+<p><u>Separate data I/O connections (only supported option)</u></p>
 <pre>
 SLICE OF PI/O                     PICMicro
 =============                     ========
@@ -1682,9 +1712,13 @@ A2---------------1KR------+-------PGD
 A3------------------------+
 
 A4--------------------------------PGM (1)
-
-(1) Not used by all LVP compatible devices.
 </pre>
+
+<p><u>Notes</u></p>
+<ol class="outer">
+<li>Not used by all LVP compatible devices.
+</ol>
+
 
 <a href="#toc">Table of contents</a><br>
 
@@ -1728,6 +1762,7 @@ A4--------------------------------PGM (1)
 <tr><td><a href="../Src/README.i2c">README.i2c</a></td><td>Linux (R-PI) MCP23017 I2C</td></tr>
 <tr><td><a href="../Src/README.icspio">README.icspio</a></td><td>Multi-architecture ICSP communications</td></tr>
 <tr><td><a href="../Src/README.k8048">README.k8048</a></td><td>Velleman K8048 I.C. socket cross reference and ICSP pin-out</td></tr>
+<tr><td><a href="../Src/README.lpicp">README.lpicp</a></td><td>How to use LPICP on the R-PI</td></tr>
 <tr><td><a href="../Src/README.proton">README.proton</a></td><td>Proton MKII ICSP</td></tr>
 <tr><td><a href="../Src/README.raspi">README.raspi</a></td><td>Information about using a R-PI</td></tr>
 <tr><td><a href="../Src/README.rkp28sb">README.rkp28sb</a></td><td>RKP28sb reference guide</td></tr>

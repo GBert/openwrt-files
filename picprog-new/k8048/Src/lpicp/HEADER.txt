@@ -7,5 +7,4 @@ Velleman K8048 Programmer for FreeBSD and others.
 Licensed under the terms of the BSD license, see file LICENSE for details.
 -------------------------------------------------------------------------------
 
-For detailed information about installation on the R-Pi see:
-   http://dev.kewl.org/k8048/Src/README.tools
+For information about installing LPICP on the R-PI see ../README.lpicp

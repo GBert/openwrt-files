@@ -9,6 +9,7 @@ Licensed under the terms of the BSD license, see file LICENSE for details.
 
 gputils
 =======
+
 $ cd /usr/src
 $ wget http://downloads.sourceforge.net/project/gputils/gputils/1.2.0/gputils-1.2.0.tar.gz
 $ tar zxvf gputils-1.2.0.tar.gz
@@ -20,6 +21,7 @@ $ make install
 
 sdcc
 ====
+
 $ cd /usr/src
 $ wget http://downloads.sourceforge.net/project/sdcc/sdcc/3.3.0/sdcc-src-3.3.0.tar.bz2
 $ tar jxvf sdcc-src-3.3.0.tar.bz2
@@ -29,8 +31,9 @@ $ ./configure --prefix=/usr/local --enable-libgc
 $ make 
 $ make install
 
-raspbian emulator
-=================
+sdcc for the R-PI using a raspbian emulator
+===========================================
+
 It is not possible to build sdcc natively on a raspberry pi model A due to
 memory contraints but we may build it on a high powered machine using an
 emulator.
@@ -64,69 +67,3 @@ $ dpkg-reconfigure locales
 
 Compile gputils in the emulator and install, afterwards compile sdcc and copy
 both builds for installation on the target machine.
-
-raspbian kernel module mc-icsp and mc-icsp-gpio-custom
-======================================================
-Determine the running kernel and it's config on the Raspberry Pi target machine.
-
-$  uname -a
-Linux pi3 3.6.11+ #538 PREEMPT Fri Aug 30 20:42:08 BST 2013 armv6l GNU/Linux
-$ zgrep "* firmware as of" /usr/share/doc/raspberrypi-bootloader/changelog.Debian.gz | head -1 | awk '{ print $5 }'
-d4f5315cfac4e
-$ zcat /proc/config.gz > d4f5315cfac4e.config
-
-On the build host fetch the equivalent R-PI firmware.
-
-$ mkdir -p /embedded/raspbian/build/
-$ cd /embedded/raspbian/build/
-$ git clone https://github.com/raspberrypi/firmware
-$ cd /embedded/raspbian/build/firmware
-$ git checkout d4f5315cfac4e
-$ git reset --hard
-
-Determine the kernel hash for this firmware.
-
-$ cat /embedded/raspbian/build/firmware/extra/git_hash 
-1587f775d0a3c437485262ba951afc5e30be69fa
-
-Fetch the kernel source for this hash.
-
-$ cd /embedded/raspbian/build/
-$ git clone https://github.com/raspberrypi/linux.git
-$ cd /embedded/raspbian/build/linux
-$ git checkout 1587f775d0a3c437485262ba951afc5e30be69fa
-$ git reset --hard
-
-Fetch the kernel build tools.
-
-$ cd /embedded/raspbian/build/
-$ git clone git://github.com/raspberrypi/tools.git
-
-Build the kernel using the tools.
-
-$ cd /embedded/raspbian/build/linux
-$ scp pi@pi:d4f5315cfac4e.config .
-$ cp d4f5315cfac4e.config .config
-$ make ARCH=arm oldconfig
-$ make ARCH=arm CROSS_COMPILE=/embedded/raspbian/build/tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- -j 8
-
-Build the ICSP modules from the k8048 build directory.
-
-$ cd $HOME/k8048/Src/lpicp/openwrt-files/
-$ ln -sf Makefile.raspbian Makefile
-$ make 
-$ find . -name "*.ko" -exec scp {} pi@pi: \;
-
-Install the modules on the Raspberry Pi target machine.
-
-$ mkdir -p /lib/modules/3.6.11+/kernel/local/
-$ cp mc-icsp*ko /lib/modules/3.6.11+/kernel/local/
-$ chown -R 0:0 /lib/modules/3.6.11+/kernel/local/
-$ depmod -a
-
-Load modules on target machine.
-
-$ modprobe mc-icsp
-$ modprobe mc-icsp-gpio-custom mc_icsp=4,24,25,22 P2B=200 P2A=0
-$ mknod /dev/icsp0 c 245 0
-$ chmod 666 /dev/icsp0
