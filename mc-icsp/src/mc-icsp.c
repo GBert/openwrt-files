@@ -319,11 +319,8 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_GET_PGD:
     {
-        if (__get_user(xfer_byte, (unsigned char __user *)data) == 0)
-        {
-            xfer_byte = mc_icsp_platform->get_pgd(mc_icsp_platform->data);
-            __put_user(xfer_byte, (unsigned char __user *)data);
-        }
+        xfer_byte = mc_icsp_platform->get_pgd(mc_icsp_platform->data);
+        __put_user(xfer_byte, (unsigned char __user *)data);
     }
     break;
 
@@ -343,12 +340,9 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_READ_16:
     {
-        if (__get_user(xfer_word, (unsigned short __user *)data) == 0)
-        {
-            mc_icsp_rx_bits(&xfer_data, 16);
-            xfer_word = xfer_data;
-            __put_user(xfer_word, (unsigned short __user *)data);
-        }
+        mc_icsp_rx_bits(&xfer_data, 16);
+        xfer_word = xfer_data;
+        __put_user(xfer_word, (unsigned short __user *)data);
     }
     break;
 
@@ -367,11 +361,8 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_CLK_IN:
     {
-        if (__get_user(xfer_byte, (unsigned char __user *)data) == 0)
-        {
-            mc_icsp_io_input(xfer_byte, mc_icsp_platform);
-            __put_user(xfer_byte, (unsigned char __user *)data);
-        }
+        mc_icsp_io_input(xfer_byte, mc_icsp_platform);
+        __put_user(xfer_byte, (unsigned char __user *)data);
     }
     break;
 
