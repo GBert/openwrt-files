@@ -10,7 +10,7 @@
 ;
 ; 512 words Flash (12-bit)
 ; 25 bytes RAM
-; 0 bytes daa flash
+; 0 bytes data flash
 ;
 ; Pinout
 ; ------
@@ -117,6 +117,7 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
                 XORWF   LATIO,F
                 MOVF    LATIO,W
                 MOVWF   GPIO
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW

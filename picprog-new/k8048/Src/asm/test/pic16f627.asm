@@ -53,7 +53,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC16F627 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -64,7 +64,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -125,6 +125,7 @@ INIT            BANKSEL BANK0
                 XORWF   LATB,F
                 MOVF    LATB,W
                 MOVWF   PORTB
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA SHADOW

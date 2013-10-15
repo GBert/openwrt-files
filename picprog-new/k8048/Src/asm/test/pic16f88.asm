@@ -8,6 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; 4096 words Flash (14-bit)
+; 368 bytes RAM
+; 256 bytes EEPROM
+;
 ; Pinout
 ; ------
 ; RA2 AN2 VREF- CVREF 1----18 RA1 AN1
@@ -75,7 +79,7 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC16F88 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -86,7 +90,7 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -140,10 +144,12 @@ NPINS           SET     .18                 ;18-PIN PDIP
 ; Initialise
 ;
 INIT            BANKSEL BANK1
+
                 MOVLW   b'01110000'         ;INIT CLOCK 8MHZ INTRC
                 MOVWF   OSCCON
 INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    INITIOFS
+
                 BANKSEL BANK0
 
                 BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
@@ -153,6 +159,7 @@ INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 XORWF   LATB,F
                 MOVF    LATB,W
                 MOVWF   PORTB
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA SHADOW
@@ -170,6 +177,7 @@ WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
                 CLRF    ADRESH              ;A/D CLEAR HIGH
 
                 BANKSEL BANK1
+
                 CLRF    ANSEL               ;A/D AN0..AN6 DISABLED
                 CLRF    ADRESL              ;A/D CLEAR LOW
 
@@ -186,6 +194,7 @@ WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
                 MOVWF   TRISB
 
                 BANKSEL BANK2
+
                 CLRWDT                      ;INIT WATCHDOG TIMER
                 BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
 

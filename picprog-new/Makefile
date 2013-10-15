@@ -24,7 +24,7 @@ endef
 define Package/picprog-new/description
   Microchip PIC Programmer based on MC ICSP modul from Eran Duchan.
   This is a modifed version of Darron Broads k8048 PIC Programmer.
-  Only some of PIC18F are supported so far.
+  Only LVP PICs are supported
 endef
 
 define Build/Prepare
@@ -34,7 +34,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DKIO -DKTEST -DLPICP -DPICLF" \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DKIO -DKTEST -DLPICP" \
 		build
 endef
 

@@ -8,12 +8,9 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This assembly file was tested with gpasm-0.15.0 only.
+; Not pin compatible with the VELLEMAN K8048.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Not pin compatible with the K8048.
-; Not VPP compatible with the K8048 (use resistor divider or 9V1 zener).
 ;
 ; 256 words Flash (14-bit)
 ; 32 bytes RAM
@@ -94,7 +91,7 @@ ENDC
                 ORG     0x0000
                 GOTO    INIT
                 ORG     0x0004
-                GOTO    INTSR
+                RETFIE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -117,6 +114,7 @@ INIT            BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
 
                 MOVLW   0xFF
                 XORWF   LATA,F
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA
@@ -148,7 +146,9 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
 
                 CLRWDT                      ;UPDATE WATCHDOG
 ;
-; COMMAND VALIDATE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Validate command
 ;
                 MOVF    BUFFER,W            ;IS SLEEP?
                 XORLW   CMD_SLEEP
@@ -162,12 +162,16 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 XORLW   CMD_ERROR
                 BZ      DOERROR
 ;
-; COMMAND UNSUPPORTED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Unsupported command
 ;
                 CALL    SENDNAK             ;COMMAND UNSUPPORTED
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    MAINLOOP            ;CONTINUE
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Standby
 ;
@@ -176,6 +180,8 @@ DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
 
                 SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
                 GOTO    INIT                ;RESET ON WAKE-UP
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1
 ;
@@ -192,6 +198,8 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Get last error
 ;
 DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
@@ -202,6 +210,8 @@ DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
                 CALL    SENDBYTE
                 BC      IOERROR
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Command completed
 ;
 DOEND           CALL    SENDSUM             ;CLOSE SESSION
@@ -209,17 +219,13 @@ DOEND           CALL    SENDSUM             ;CLOSE SESSION
 
                 GOTO    MAINLOOP            ;CONTINUE
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Time-out, protocol or parity error
 ;
 IOERROR         MOVWF   LASTERROR
 
                 GOTO    MAINLOOP            ;CONTINUE
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Interrupt service routine (unused)
-;
-INTSR           RETFIE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

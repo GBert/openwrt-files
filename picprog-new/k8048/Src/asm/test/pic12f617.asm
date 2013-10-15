@@ -8,10 +8,6 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This assembly file was tested with gpasm-0.15.0 only.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
 ; 2048 words Flash (14-bit)
 ; 128 bytes RAM
 ; 0 bytes EEPROM
@@ -124,6 +120,7 @@ INIT            BANKSEL BANK0
                 XORWF   LATIO,F
                 MOVF    LATIO,W
                 MOVWF   GPIO
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW

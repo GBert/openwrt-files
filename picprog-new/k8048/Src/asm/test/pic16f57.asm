@@ -8,7 +8,9 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Not pin compatible with the K8048.
+; Not pin compatible with the VELLEMAN K8048.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Pinout
 ; ------
@@ -71,7 +73,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC16F57 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -82,7 +84,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of two switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -133,6 +135,7 @@ INIT            BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
                 XORWF   LATB,F
                 MOVF    LATB,W
                 MOVWF   PORTB
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA SHADOW

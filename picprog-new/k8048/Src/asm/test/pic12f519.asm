@@ -122,6 +122,7 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
                 XORWF   LATIO,F
                 MOVF    LATIO,W
                 MOVWF   GPIO
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW

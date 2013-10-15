@@ -46,7 +46,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC16F819 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -57,7 +57,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -120,10 +120,12 @@ NPINS           SET     .18                 ;18-PIN PDIP
 ; Initialise
 ;
 INIT            BANKSEL BANK1
+
                 MOVLW   b'01110000'         ;INIT CLOCK 8MHZ INTRC
                 MOVWF   OSCCON
 INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    INITIOFS
+
                 BANKSEL BANK0
 
                 BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
@@ -133,6 +135,7 @@ INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 XORWF   LATB,F
                 MOVF    LATB,W
                 MOVWF   PORTB
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORT A SHADOW

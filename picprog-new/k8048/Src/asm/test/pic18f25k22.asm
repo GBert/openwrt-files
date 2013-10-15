@@ -8,9 +8,9 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This file may be assembled with gpasm-0.15.0 and later.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 16384 words Flash (16-bit)
+; 1536 bytes RAM
+; 256 bytes EEPROM
 ;
 ; Pinout
 ; ------
@@ -55,9 +55,9 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
-; K8048 PIC18F25K22 (DS39599G) ICSPIO Demo Test (Receive commands, send data).
+; K8048 PIC18F25K22 ICSPIO Demo Test (Receive commands, send data).
 ;
 ; This demonstrates how we may receive commands from the host computer
 ; via the ISCP port and execute them. Two commands are implemented.
@@ -66,7 +66,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -205,6 +205,7 @@ NPINS           SET     .28                 ;28-PIN PDIP
 ; Initialise
 ;
 INIT            MOVLB   0x0F                ;SFR ACCESS IN BANKED MODE
+
                 CLRF    OSCCON2             ;INIT CLOCK 16MHZ HFINTOSC PLL X4
                 BSF     OSCTUNE,PLLEN
                 MOVLW   b'01110000'
@@ -217,6 +218,7 @@ INITHFIOFS      BTFSS   OSCCON,HFIOFS       ;WAIT FOR HFINTOSC FREQUENCY STABLE
 
                 MOVLW   0xFF                ;WATCHDOG TIMED OUT
                 XORWF   LATA,F
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         SETF    LATA                ;INIT PORT A

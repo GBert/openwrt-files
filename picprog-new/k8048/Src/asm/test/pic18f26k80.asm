@@ -8,6 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; 32768 words Flash (16-bit)
+; 3648 bytes RAM
+; 1024 bytes EEPROM
+;
 ; Pinout
 ; ------
 ; !MCLR        1-----28 RB7
@@ -38,13 +42,13 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; R-PI 3V3 PIC18F26K80
 ;
 ; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -190,6 +194,7 @@ INITHFIOFS      BTFSS   OSCCON,HFIOFS       ;WAIT FOR HFINTOSC FREQUENCY STABLE
 
                 MOVLW   0xFF                ;WATCHDOG TIMED OUT
                 XORWF   LATA,F
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         SETF    LATA                ;INIT PORT A

@@ -8,12 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This assembly file was tested with gpasm-0.15.0 only.
+; Not pin compatible with the VELLEMAN K8048, however, this device may be used
+; in the 14P socket with pins 8 to 13 unconnected.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Not pin compatible with the K8048, however, this device may be used in the
-; 14P socket with pins 8 to 13 unconnected.
 ;
 ; 2048 words Flash (14-bit)
 ; 128 bytes RAM
@@ -71,7 +69,7 @@ ERRORLEVEL      -302
 ;
 ; Config
 ;
-  __CONFIG _CONFIG1, _FOSC_INTOSC & _WDTE_ON & _PWRTE_ON & _MCLRE_ON & _CP_OFF & _BOREN_OFF & _CLKOUTEN_OFF 
+  __CONFIG _CONFIG1, _FOSC_INTOSC & _WDTE_SWDTEN & _PWRTE_ON & _MCLRE_ON & _CP_OFF & _BOREN_OFF & _CLKOUTEN_OFF 
   __CONFIG _CONFIG2, _WRT_OFF & _STVREN_ON  & _BORV_LO & _LPBOR_OFF & _LVP_ON 
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -127,6 +125,7 @@ ENDC
 ; Initialise
 ;
 INIT            BANKSEL BANK1
+
                 MOVLW   b'01111010'         ;INIT CLOCK 16MHZ INTRC
                 MOVWF   OSCCON
 INITHFIOFS      BTFSS   OSCSTAT,HFIOFS      ;WAIT FOR INTRC FREQUENCY STABLE
@@ -139,15 +138,14 @@ INITHFIOFS      BTFSS   OSCSTAT,HFIOFS      ;WAIT FOR INTRC FREQUENCY STABLE
 
                 MOVLW   0xFF
                 XORWF   LATC,F
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA
                 CLRF    LATC                ;INIT PORTC
                 DECF    LATC,F
 
-WATCHDOG        CLRWDT                      ;INIT WATCHDOG
-
-                BANKSEL BANK0
+WATCHDOG        BANKSEL BANK0
 
                 CLRF    INTCON              ;DISABLE INTERRUPTS
 
@@ -174,6 +172,11 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 
                 CLRF    WPUA                ;CLEAR WEAK PULLUPS
                 CLRF    WPUB                ;CLEAR WEAK PULLUPS
+
+                BANKSEL BANK1
+
+                CLRWDT                      ;INIT WATCHDOG TIMER
+                BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
 
                 BANKSEL BANK0
 ;

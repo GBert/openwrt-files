@@ -841,7 +841,7 @@ IF ARCH == MIDRANGE || ARCH == ENHANCED
                 BANKSEL EECON1
 ENDIF
                 BSF     EECON1,EEPGD
-                BSF     EECON1,RD           ;READ EEPROM DATA
+                BSF     EECON1,RD           ;READ FLASH DATA
                 NOP
                 NOP
 IF ARCH == MIDRANGE || ARCH == ENHANCED

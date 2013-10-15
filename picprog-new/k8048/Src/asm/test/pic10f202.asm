@@ -8,7 +8,13 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Not pin compatible with the K8048.
+; Not pin compatible with the VELLEMAN K8048.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 512 words Flash (12-bit)
+; 24 bytes RAM
+; 0 bytes data flash
 ;
 ; Pinout
 ; ------
@@ -48,7 +54,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC10F202 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -56,7 +62,7 @@ ERRORLEVEL      -302
 ; via the ISCP port and execute them. One command is implemented.
 ; The command takes one argument which sets the LED to that value.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -107,6 +113,7 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
                 XORWF   LATIO,F
                 MOVF    LATIO,W
                 MOVWF   GPIO
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW

@@ -724,6 +724,20 @@ pic14_chip_erase(struct k8048 *k, int t)
 static inline void
 pic14_row_erase_program_memory(struct k8048 *k, int t)
 {
+#if 0
+	switch (pic14_map[pic14_index].datasheet) {
+	case DS41204G:  /* PIC12F6XX/16F6XX     */
+	case DS41332D:	/* PIC16F726            */
+	case DS41284E:	/* PIC12F615            */
+	case DS41287D:  /* PIC16F887            */
+	case DS41572D:	/* PIC10F320            */
+	case DS41573C:  /* PIC16F1507           */
+	case DS41439A:	/* PIC16F1847           */
+	case DS41397B:	/* PIC16F1936           */
+	case DS41244F:	/* PIC16F917            */
+ 	case DS41390D:	/* PIC16F1825           */
+	}
+#endif
 	io_command_out(k, 0x11);
 	io_usleep(k, t);
 }

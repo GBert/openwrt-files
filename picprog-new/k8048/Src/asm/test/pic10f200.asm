@@ -8,7 +8,13 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Not pin compatible with the K8048.
+; Not pin compatible with the VELLEMAN K8048.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 256 words Flash (12-bit)
+; 16 bytes RAM
+; 0 bytes data flash
 ;
 ; Pinout
 ; ------
@@ -48,7 +54,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC10F200 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -56,7 +62,7 @@ ERRORLEVEL      -302
 ; via the ISCP port and execute them. One command is implemented.
 ; The command takes one argument which sets the LED to that value.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -107,6 +113,7 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
                 XORWF   LATIO,F
                 MOVF    LATIO,W
                 MOVWF   GPIO
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATIO               ;INIT GPIO SHADOW
@@ -135,7 +142,9 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
 
                 CLRWDT                      ;UPDATE WATCHDOG
 ;
-; COMMAND VALIDATE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Validate command
 ;
                 MOVF    BUFFER,W            ;IS SLEEP?
                 XORLW   CMD_SLEEP
@@ -149,12 +158,16 @@ MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 XORLW   CMD_ERROR
                 BZ      DOERROR
 ;
-; COMMAND UNSUPPORTED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Unsupported command
 ;
                 CALL    SENDNAK             ;COMMAND UNSUPPORTED
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    MAINLOOP            ;CONTINUE
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Standby
 ;
@@ -163,6 +176,8 @@ DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
 
                 SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
 NOTREACHED
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1
 ;
@@ -180,6 +195,8 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Get last error
 ;
 DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
@@ -190,12 +207,16 @@ DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
                 CALL    SENDBYTE
                 BC      IOERROR
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Command completed
 ;
 DOEND           CALL    SENDSUM             ;CLOSE SESSION
                 BC      IOERROR             ;TIME-OUT
 
                 GOTO    MAINLOOP            ;CONTINUE
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Time-out, protocol or parity error
 ;

@@ -117,6 +117,7 @@ INIT            BANKSEL BANK0
                 XORWF   LATC,F
                 MOVF    LATC,W
                 MOVWF   PORTC
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA SHADOW

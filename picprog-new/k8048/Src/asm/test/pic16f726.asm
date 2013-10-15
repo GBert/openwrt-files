@@ -8,8 +8,6 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Not VPP compatible with the K8048 (use resistor divider or 9V1 zener).
-;
 ; 8192 words Flash (14-bit)
 ; 368 bytes RAM
 ; 0 bytes EEPROM
@@ -57,7 +55,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC16F726 ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -68,7 +66,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -115,10 +113,12 @@ NPINS           SET     .28                 ;28-PIN PDIP
 ; Initialise
 ;
 INIT            BANKSEL BANK1
+
                 MOVLW   b'00110000'         ;INIT CLOCK 16MHZ INTRC
                 MOVWF   OSCCON
 INITICSS        BTFSS   OSCCON,ICSS         ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    INITICSS
+
                 BANKSEL BANK0
 
                 BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
@@ -128,6 +128,7 @@ INITICSS        BTFSS   OSCCON,ICSS         ;WAIT FOR INTRC FREQUENCY STABLE
                 XORWF   LATA,F
                 MOVF    LATA,W
                 MOVWF   PORTA
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORT A SHADOW

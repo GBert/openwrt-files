@@ -65,7 +65,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; K8048 PIC18F1320 (DS39599G) ICSPIO Demo Test (Receive commands, send data).
 ;
@@ -76,7 +76,7 @@ ERRORLEVEL      -302
 ; we may send a value back to the host which, in this case, is the
 ; current status of the four switches.
 ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;******************************************************************************
 ;
 ; Config
 ;
@@ -206,6 +206,7 @@ INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 XORWF   LATA,F              ;TOGGLE RA2 RA3
                 MOVLW   b'00110011'
                 XORWF   LATB,F              ;TOGGLE RB0 RB1 RB4 RB5
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         MOVLW   b'00001100'         ;INIT PORTA

@@ -74,6 +74,26 @@ ifneq "$(strip $(ASTEST))" ""
 AOBJECT+=pic18f26k80.hex
 endif
 
+ASTEST:=$(shell gpasm -l | grep -i 16f1825)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic16f1825.hex
+endif
+
+ASTEST:=$(shell gpasm -l | grep -i 16f1936)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic16f1936.hex
+endif
+
+ASTEST:=$(shell gpasm -l | grep -i 16f1847)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic16f1847.hex
+endif
+
+ASTEST:=$(shell gpasm -l | grep -i 18f25k50)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic18f25k50.hex
+endif
+
 AHEADER=../include/device.inc ../include/const.inc ../include/delay.inc \
 	../include/icspio.inc ../include/macro.inc ../include/shadow.inc \
 	../include/common.inc ../include/ampire-ac162d.inc ../include/ps2.inc

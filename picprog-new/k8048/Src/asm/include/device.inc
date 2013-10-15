@@ -69,6 +69,18 @@ ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; Data low-byte renamed
+;
+IFNDEF EEDATA
+
+IFDEF EEDATL
+EEDATA          EQU     EEDATL
+ENDIF
+
+ENDIF
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; .vimrc:
 ;  " GPASM Include
 ;  augroup module

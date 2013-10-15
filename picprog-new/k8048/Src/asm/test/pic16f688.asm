@@ -109,12 +109,14 @@ NPINS           SET     .14                 ;14-PIN PDIP
 ; Initialise
 ;
 INIT            BANKSEL OSCCON
+
                 MOVLW   b'01110000'         ;INIT CLOCK 8MHZ INTRC
                 MOVWF   OSCCON
 INITHTS         BTFSS   OSCCON,HTS          ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    INITHTS
 
                 BANKSEL BANK0
+
                 BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
                 GOTO    POWERUP
 
@@ -122,6 +124,7 @@ INITHTS         BTFSS   OSCCON,HTS          ;WAIT FOR INTRC FREQUENCY STABLE
                 XORWF   LATC,F
                 MOVF    LATC,W
                 MOVWF   PORTC
+
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORTA SHADOW
