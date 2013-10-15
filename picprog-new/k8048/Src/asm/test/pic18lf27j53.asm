@@ -36,10 +36,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
                 LIST    P=PIC18LF27J53
+ERRORLEVEL      -302
+#INCLUDE        "p18lf27j53.inc"
+#INCLUDE        "device.inc"                ;DEVICE CONFIG
+#INCLUDE        "const.inc"                 ;CONSTANTS
+#INCLUDE        "macro.inc"                 ;MACROS
 ;
 ;******************************************************************************
 ;
 ; R-PI 3V3 PIC18LF27J53 TODO
+;
+; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
 ;******************************************************************************
 ;
@@ -100,6 +107,20 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; Constants
+;
+; HFINTOSC = TODO
+    CONSTANT CLOCK = 48000000
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Variables
+;
+CBLOCK          0x00                        ;ACCESS RAM 0x00..0x5F
+ENDC
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Begin
 ;
                 ORG     0x0000
@@ -109,6 +130,15 @@
                 ORG     0x0018
                 GOTO    INTLOW              ;When IPEN=1
                 ORG     0x0020
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; ICSP I/O
+;
+NPINS           SET     .28                 ;28-PIN PDIP
+#INCLUDE        "delay.inc"                 ;DELAY COUNTERS
+#INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -128,13 +158,17 @@ INTLOW
 ;
 ; Initialise
 ;
-INIT
+INIT            ;TODO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Main loop
 ;
-MAIN            GOTO    MAIN
+                CLRF    LASTERROR
+;
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
+
+                GOTO    UNSUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

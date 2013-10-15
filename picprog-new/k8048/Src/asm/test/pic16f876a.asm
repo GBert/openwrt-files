@@ -8,6 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; 8192 words Flash (14-bit)
+; 368 bytes RAM
+; 256 bytes EEPROM
+;
 ; Pinout
 ; ------
 ; !MCLR VPP           1-----28 RB7 PGD
@@ -25,18 +29,18 @@
 ; RC2 CCP1            13    16 RC5 SDO
 ; RC3 SCK SCL         14----15 RC4 SDI SDA
 ; 
-; Function Pin Note
-; -------- --- ----
-; LD1      RA0
-; LD2      RA1
-; LD3      RA2
-; LD4      RA3
-; LD5      RA4 OPEN DRAIN
-; LD6      RA5
-; SW1      RB0
-; SW2      RB1
-; SW3      RB2
-; SW4      RB4
+; K8048 Pin Note
+; ----- --- ----
+; LD1   RA0
+; LD2   RA1
+; LD3   RA2
+; LD4   RA3
+; LD5   RA4 OPEN DRAIN
+; LD6   RA5
+; SW1   RB0
+; SW2   RB1
+; SW3   RB2
+; SW4   RB4
 
 ; Program
 ; -------

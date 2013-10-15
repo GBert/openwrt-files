@@ -8,6 +8,10 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; 16384 words Flash (16-bit)
+; 2048 bytes RAM
+; 256 bytes EEPROM
+;
 ; Pinout
 ; ------
 ; !MCLR/VPP RE3            1-----40 RB7/PGD KBI3
@@ -70,7 +74,7 @@ ERRORLEVEL      -302
 ;
 ; This demonstrates how we may receive commands from the host computer
 ; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets eight LEDs to that
+; The first command takes one argument which sets the eight LEDs to that
 ; value and the second command takes no argument yet demonstrates how
 ; we may send a value back to the host which, in this case, is the
 ; current status of switch 13.

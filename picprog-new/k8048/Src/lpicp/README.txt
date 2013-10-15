@@ -23,4 +23,5 @@ Changes:
 	IOCTL as per the original.
 	Changed input timing in mc-icsp to make it more reliable
 	with P5B=0, however, on the R-PI P5B must be >0 and
-	the delay overhead is long.
+	the delay is long since there is no ndelay on this
+	platform AFAICT.
