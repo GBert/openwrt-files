@@ -173,8 +173,6 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 {
     int err;
     unsigned int xfer_data = 0;
-    unsigned short xfer_word = 0;
-    unsigned char xfer_byte = 0;
 
     dprintk("%s(0x%p,0x%08X,0x%lX)\n", __func__, filep, cmd, data);
 
@@ -319,7 +317,10 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_GET_PGD:
     {
-        xfer_byte = mc_icsp_platform->get_pgd(mc_icsp_platform->data);
+        unsigned char xfer_byte;
+
+        xfer_data = mc_icsp_platform->get_pgd(mc_icsp_platform->data);
+        xfer_byte = (xfer_data != 0);
         __put_user(xfer_byte, (unsigned char __user *)data);
     }
     break;
@@ -340,8 +341,10 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_READ_16:
     {
+        unsigned short xfer_word;
+
         mc_icsp_rx_bits(&xfer_data, 16);
-        xfer_word = xfer_data;
+        xfer_word = (xfer_data & 0xFFFF);
         __put_user(xfer_word, (unsigned short __user *)data);
     }
     break;
@@ -361,7 +364,10 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
 
     case MC_ICSP_IOC_CLK_IN:
     {
-        mc_icsp_io_input(xfer_byte, mc_icsp_platform);
+        unsigned char xfer_byte;
+
+        mc_icsp_io_input(xfer_data, mc_icsp_platform);
+        xfer_byte = (xfer_data != 0);
         __put_user(xfer_byte, (unsigned char __user *)data);
     }
     break;
