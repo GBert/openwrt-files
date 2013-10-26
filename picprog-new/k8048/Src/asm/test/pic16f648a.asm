@@ -160,7 +160,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

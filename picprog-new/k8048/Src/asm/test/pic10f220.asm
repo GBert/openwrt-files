@@ -136,7 +136,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        CLRF    CHECKSUM            ;START SESSION
                 CALL    GETBYTE             ;GET COMMAND

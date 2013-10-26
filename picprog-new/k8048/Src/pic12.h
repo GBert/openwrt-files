@@ -113,8 +113,6 @@ void pic12_selector(struct k8048 *);
 unsigned short pic12_read_program_memory_increment(struct k8048 *);
 
 void pic12_read_config_word(struct k8048 *);
-#define CONFIG_ONLY (0)
-#define CONFIG_ALL (1)
 void pic12_read_config_memory(struct k8048 *, int);
 
 void pic12_bulk_erase(struct k8048 *, unsigned short);

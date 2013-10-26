@@ -199,6 +199,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tDump device content (intel hex32 format).\n");
 	printf(" k14 eeprom\n"
 		"\t\tDisplay data EEPROM content.\n");
+	printf(" k14 erase flash | id | row [n]\n"
+		"\t\tErase program flash, id or flash at row for n rows.\n");
 	printf(" k14 flash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n");
 	printf(" k14 id\n"
@@ -251,6 +253,8 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tDump device content (intel hex32 format).\n");
 	printf(" k16 eeprom\n"
 		"\t\tDisplay data EEPROM content.\n");
+	printf(" k16 erase flash | id | row [n]\n"
+		"\t\tErase program flash, id or flash at row for n rows.\n");
 	printf(" k16 flash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n");
 	printf(" k16 id\n"
@@ -437,6 +441,7 @@ main(int argc, char **argv)
 
 	io_init(&k);
 	argv1 = tolower((int)argv[1][0]);
+	int argv11 = tolower((int)argv[1][1]);
 	switch (argv1) {
 	case 'b':	if (argc > 2)
 				usage(&k, execname, "Too many args [blank]");
@@ -457,9 +462,45 @@ main(int argc, char **argv)
 			pic_dumpdevice(&k);
 			break;
 
-	case 'e':	if (argc > 2)
-				usage(&k, execname, "Too many args [eeprom]");
-			pic_dumpeeprom(&k);
+	case 'e':	if (argv11 != 'r') { /* EEPROM */
+				if (argc > 2)
+					usage(&k, execname, "Too many args [eeprom]");
+				pic_dumpeeprom(&k);
+			} else {	     /* ERASE FLASH | ID | ROW[NROWS] */
+				unsigned int row = 0, nrows = 1;
+				char prompt[STRLEN] = {0}, *endptr = NULL;
+
+				if (argc < 3)
+					usage(&k, execname, "Missing arg [erase]");
+				if (argc > 4)
+					usage(&k, execname, "Too many args [erase]");
+				
+				int argv2 = tolower((int)argv[2][0]);
+				switch (argv2) {
+				case 'f': /* flash */
+					nrows = UINT_MAX;
+					strncpy(prompt, "Erase program flash", STRLEN);
+					break;
+				case 'i': /* idlocs */
+					row = PIC_ID_ERASE;
+					strncpy(prompt, "Erase id locations", STRLEN);
+					break;
+				default:  /* flash row */
+					row = strtoul(argv[2], &endptr, 0);
+					if (endptr == argv[2])
+						usage(&k, execname, "Invalid arg [erase]");
+					if (argc == 4) {
+						nrows = strtoul(argv[3], NULL, 0);
+						if (nrows == 0)
+							usage(&k, execname, "Invalid arg [erase]");
+					}
+					snprintf(prompt, STRLEN, "Erase %d row(s) at row %d",
+						nrows, row);
+					break;
+				}
+				if (areyousure(prompt))
+					pic_erase(&k, row, nrows);
+			}
 			break;
 
 	case 'f':	{
@@ -510,23 +551,6 @@ main(int argc, char **argv)
 			}
 			break;
 
-	case 'r':	{
-			int addr;
-			char prompt[STRLEN];
-			if (argc < 3)
-				usage(&k, execname, "Missing arg [row]");
-			if (argc > 3)
-				usage(&k, execname, "Too many args [row]");
-			addr = strtol(argv[2], NULL, 0) & (-64);
-			if (addr < 0)
-				usage(&k, execname, "Invalid arg [row]");
-			snprintf(prompt, STRLEN, "Erase row %d at address 0x%04X",
-				addr / 64, addr);
-			if (areyousure(prompt))
-				pic_erase(&k, addr);
-			}
-			break;
-
 	case 'v':	if (argc < 3)
 				usage(&k, execname, "Missing arg [verify]");
 			if (argc > 3)
@@ -537,6 +561,8 @@ main(int argc, char **argv)
 	default:	usage(&k, execname, "Unknown operation");
 			break;
 	}
+
 	io_close(&k, 1);
+	free(execdup);
 	exit(EX_OK);
 }

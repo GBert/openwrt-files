@@ -228,7 +228,7 @@ WATCHDOG        MOVLW   b'00000000'         ;DISABLE A/D
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

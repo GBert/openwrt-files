@@ -15,6 +15,7 @@ build:$(OBJECT)
 	cd gEDA && $(MAKE)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:build

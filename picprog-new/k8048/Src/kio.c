@@ -9,7 +9,7 @@
 
 #include "VERSION"
 
-#include "k8048.h"
+#include "kio.h"
 
 void
 usage(struct k8048 *k, char *execname, char *msg)
@@ -242,7 +242,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -263,7 +263,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", sw);
@@ -284,7 +284,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -315,7 +315,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -338,7 +338,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -362,7 +362,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -386,7 +386,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -412,7 +412,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -464,7 +464,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%04X\n", sample);
@@ -489,7 +489,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", data);
@@ -514,7 +514,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -540,7 +540,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%04X\n", data);
@@ -569,7 +569,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -594,7 +594,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
@@ -622,7 +622,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
@@ -651,7 +651,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
@@ -681,7 +681,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
@@ -705,7 +705,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 	}
@@ -728,7 +728,7 @@ main(int argc, char *argv[])
 					fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, io_test_err(err), err);
 				}		
-				io_usleep(&k, RESYNCTIME);
+				io_usleep(&k, RESYNC * k.fwsleep);
 			}
 		} while (err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", le);

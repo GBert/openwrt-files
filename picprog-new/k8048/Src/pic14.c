@@ -25,190 +25,222 @@ struct pic14_config pic14_conf;
  *****************************************************************************/
 struct pic14_dsmap pic14_map[] =
 {
-/*Device name	Device id	Flash	EEPROM	Data	Data-sheet Configuration Latches*/
-#if 0
-/* No test device available */
-{"PIC16C84",	PIC16C84,	1024,	64,	0,	DS30189D,  0x2000, 1, 0, 1,	1},
-#endif
-{"PIC16F83",	PIC16F83,	512,	64,	0,	DS30262E,  0x2000, 1, 0, 1,	1},
-{"PIC16F84",	PIC16F84,	1024,	64,	0,	DS30262E,  0x2000, 1, 0, 1,	1},
-{"PIC16F84A",	PIC16F84A,	1024,	64,	0,	DS30262E,  0x2000, 1, 0, 1,	1},
+/*Device name	Device id	Flash	EEPROM	Data	Data-sheet Config/n/ncalib  Latches/id/erase*/
+{"PIC16C84",	PIC16C84,	1024,	64,	0,	DS30189D,  0x2000, 1, 0,    1,1,0},
 
-{"PIC16F627",	PIC16F627,	1024,	128,	0,	DS30034D,  0x2000, 1, 0, 1,	1},
-{"PIC16F628",	PIC16F628,	2048,	128,	0,	DS30034D,  0x2000, 1, 0, 1,	1},
+{"PIC16F83",	PIC16F83,	512,	64,	0,	DS30262E,  0x2000, 1, 0,    1,1,0},
+{"PIC16F84",	PIC16F84,	1024,	64,	0,	DS30262E,  0x2000, 1, 0,    1,1,0},
+{"PIC16F84A",	PIC16F84A,	1024,	64,	0,	DS30262E,  0x2000, 1, 0,    1,1,0},
 
-{"PIC16F870",	PIC16F870,	2048,	64,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F871",	PIC16F871,	2048,	64,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F872",	PIC16F872,	2048,	64,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F873",	PIC16F873,	4096,	128,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F874",	PIC16F874,	4096,	128,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F876",	PIC16F876,	8192,	256,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
-{"PIC16F877",	PIC16F877,	8192,	256,	0,	DS39025F,  0x2000, 1, 0, 1,	1},
+{"PIC16F627",	PIC16F627,	1024,	128,	0,	DS30034D,  0x2000, 1, 0,    1,1,0},
+{"PIC16F628",	PIC16F628,	2048,	128,	0,	DS30034D,  0x2000, 1, 0,    1,1,0},
 
-{"PIC16F873A",	PIC16F873A,	4096,	128,	0,	DS39589B,  0x2000, 1, 0, 8,	4},
-{"PIC16F874A",	PIC16F874A,	4096,	128,	0,	DS39589B,  0x2000, 1, 0, 8,	4},
-{"PIC16F876A",	PIC16F876A,	8192,	256,	0,	DS39589B,  0x2000, 1, 0, 8,	4},
-{"PIC16F877A",	PIC16F877A,	8192,	256,	0,	DS39589B,  0x2000, 1, 0, 8,	4},
+{"PIC16F870",	PIC16F870,	2048,	64,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F871",	PIC16F871,	2048,	64,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F872",	PIC16F872,	2048,	64,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F873",	PIC16F873,	4096,	128,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F874",	PIC16F874,	4096,	128,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F876",	PIC16F876,	8192,	256,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F877",	PIC16F877,	8192,	256,	0,	DS39025F,  0x2000, 1, 0,    1,1,0},
+
+{"PIC16F873A",	PIC16F873A,	4096,	128,	0,	DS39589C,  0x2000, 1, 0,    8,4,0},
+{"PIC16F874A",	PIC16F874A,	4096,	128,	0,	DS39589C,  0x2000, 1, 0,    8,4,0},
+{"PIC16F876A",	PIC16F876A,	8192,	256,	0,	DS39589C,  0x2000, 1, 0,    8,4,0},
+{"PIC16F877A",	PIC16F877A,	8192,	256,	0,	DS39589C,  0x2000, 1, 0,    8,4,0},
 
 /* These devices have two config words at 2007 & 2008 */
-{"PIC16F87",	PIC16F87,	4096,	256,	0,	DS39607B,  0x2000, 2, 0, 4,	4},
-{"PIC16F88",	PIC16F88,	4096,	256,	0,	DS39607B,  0x2000, 2, 0, 4,	4},
+{"PIC16F87",	PIC16F87,	4096,	256,	0,	DS39607B,  0x2000, 2, 0,    4,4,0},
+{"PIC16F88",	PIC16F88,	4096,	256,	0,	DS39607B,  0x2000, 2, 0,    4,4,0},
 
-{"PIC12F629",	PIC12F629,	1024,	128,	0,	DS41191C,  0x2000, 1, 0, 1,	1},
-{"PIC12F675",	PIC12F675,	1024,	128,	0,	DS41191C,  0x2000, 1, 0, 1,	1},
+{"PIC12F629",	PIC12F629,	1024,	128,	0,	DS41191C,  0x2000, 1, 0,    1,1,0},
+{"PIC12F675",	PIC12F675,	1024,	128,	0,	DS41191C,  0x2000, 1, 0,    1,1,0},
+{"PIC16F630",	PIC16F630,	1024,	128,	0,	DS41191C,  0x2000, 1, 0,    1,1,0},
+{"PIC16F676",	PIC16F676,	1024,	128,	0,	DS41191C,  0x2000, 1, 0,    1,1,0},
 
-{"PIC16F630",	PIC16F630,	1024,	128,	0,	DS41191C,  0x2000, 1, 0, 1,	1},
-{"PIC16F676",	PIC16F676,	1024,	128,	0,	DS41191C,  0x2000, 1, 0, 1,	1},
+{"PIC16F627A",	PIC16F627A,	1024,	128,	0,	DS41196F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F628A",	PIC16F628A,	2048,	128,	0,	DS41196F,  0x2000, 1, 0,    1,1,0},
+{"PIC16F648A",	PIC16F648A,	4096,	256,	0,	DS41196F,  0x2000, 1, 0,    1,1,0},
 
-{"PIC16F627A",	PIC16F627A,	1024,	128,	0,	DS41196F,  0x2000, 1, 0, 1,	1},
-{"PIC16F628A",	PIC16F628A,	2048,	128,	0,	DS41196F,  0x2000, 1, 0, 1,	1},
-{"PIC16F648A",	PIC16F648A,	4096,	256,	0,	DS41196F,  0x2000, 1, 0, 1,	1},
+{"PIC16F818",	PIC16F818,	1024,	128,	0,	DS39603C,  0x2000, 1, 0,    4,4,0},
+{"PIC16F819",	PIC16F819,	2048,	256,	0,	DS39603C,  0x2000, 1, 0,    4,4,0},
 
-{"PIC16F818",	PIC16F818,	1024,	128,	0,	DS39603C,  0x2000, 1, 0, 4,	4},
-{"PIC16F819",	PIC16F819,	2048,	256,	0,	DS39603C,  0x2000, 1, 0, 4,	4},
-
-{"PIC16F716",	PIC16F716,	2048,	0,	0,	DS40245B,  0x2000, 1, 0, 4,	1},
+{"PIC16F716",	PIC16F716,	2048,	0,	0,	DS40245B,  0x2000, 1, 0,    4,1,0},
 
 /* These devices have one config word at 2007 and up to two calibration words at 2008 & 2009 */
-{"PIC16F631",	PIC16F631,	1024,	128,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F677",	PIC16F677,	2048,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F685",	PIC16F685,	4096,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F687",	PIC16F687,	2048,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F689",	PIC16F689,	4096,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F690",	PIC16F690,	4096,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC12F635",	PIC12F635,	1024,	128,	0,	DS41204G,  0x2000, 1, 2, 4,	1},
-{"PIC16F636",	PIC16F636,	2048,	256,	0,	DS41204G,  0x2000, 1, 2, 4,	1},
-{"PIC16F639",	PIC16F639,	2048,	256,	0,	DS41204G,  0x2000, 1, 2, 4,	1},
-{"PIC12F683",	PIC12F683,	2048,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F684",	PIC16F684,	2048,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
-{"PIC16F688",	PIC16F688,	4096,	256,	0,	DS41204G,  0x2000, 1, 1, 4,	1},
+{"PIC16F631",	PIC16F631,	1024,	128,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F677",	PIC16F677,	2048,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F685",	PIC16F685,	4096,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F687",	PIC16F687,	2048,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F689",	PIC16F689,	4096,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F690",	PIC16F690,	4096,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC12F635",	PIC12F635,	1024,	128,	0,	DS41204G,  0x2000, 1, 2,    4,1,16},
+{"PIC16F636",	PIC16F636,	2048,	256,	0,	DS41204G,  0x2000, 1, 2,    4,1,16},
+{"PIC16F639",	PIC16F639,	2048,	256,	0,	DS41204G,  0x2000, 1, 2,    4,1,16},
+{"PIC12F683",	PIC12F683,	2048,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F684",	PIC16F684,	2048,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
+{"PIC16F688",	PIC16F688,	4096,	256,	0,	DS41204G,  0x2000, 1, 1,    4,1,16},
 
 /* These devices have two config words at 2007 & 2008 and two calibration words at 2009 & 200A */
-{"PIC16F722",	PIC16F722,	2048,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F722A",	PIC16F722A,	2048,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F723",	PIC16F723,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F723A",	PIC16F723A,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F724",	PIC16F724,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F726",	PIC16F726,	8192,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16F727",	PIC16F727,	8192,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
+{"PIC16F722",	PIC16F722,	2048,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F722A",	PIC16F722A,	2048,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F723",	PIC16F723,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F723A",	PIC16F723A,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F724",	PIC16F724,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F726",	PIC16F726,	8192,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16F727",	PIC16F727,	8192,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
 #ifdef PICLF
-{"PIC16LF722",	PIC16LF722,	2048,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF722A",	PIC16LF722A,	2048,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF723",	PIC16LF723,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF723A",	PIC16LF723A,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF724",	PIC16LF724,	4096,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF726",	PIC16LF726,	8192,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
-{"PIC16LF727",	PIC16LF727,	8192,	0,	0,	DS41332D,  0x2000, 2, 2, 8,	1},
+{"PIC16LF722",	PIC16LF722,	2048,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF722A",	PIC16LF722A,	2048,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF723",	PIC16LF723,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF723A",	PIC16LF723A,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF724",	PIC16LF724,	4096,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF726",	PIC16LF726,	8192,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+{"PIC16LF727",	PIC16LF727,	8192,	0,	0,	DS41332D,  0x2000, 2, 2,    8,1,32},
+#endif
+
+/* These devices have two config words at 2007 & 2008 and two calibration words at 2009 & 200A */
+{"PIC16F720",	PIC16F720,	2048,	0,	0,	DS41409B,  0x2000, 2, 2,    32,1,32},
+{"PIC16F721",	PIC16F721,	4096,	0,	0,	DS41409B,  0x2000, 2, 2,    32,1,32},
+#ifdef PICLF
+{"PIC16LF720",	PIC16LF720,	2048,	0,	0,	DS41409B,  0x2000, 2, 2,    32,1,32},
+{"PIC16LF721",	PIC16LF721,	4096,	0,	0,	DS41409B,  0x2000, 2, 2,    32,1,32},
+#endif
+
+/* These devices have two config words at 2007 & 2008 and two calibration words at 2009 & 200A */
+{"PIC16F707",	PIC16F707,	8192,	0,	0,	DS41405A,  0x2000, 2, 2,    8,1,32},
+#ifdef PICLF
+{"PIC16LF707",	PIC16LF707,	8192,	0,	0,	DS41405A,  0x2000, 2, 2,    8,1,32},
 #endif
 
 /* These devices have one config word at 2007 and one calibration word at 2008 */
-{"PIC12F609",	PIC12F609,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-{"PIC12HV609",	PIC12HV609,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-{"PIC12F615",	PIC12F615,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-{"PIC12HV615",	PIC12HV615,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-/* */
-{"PIC16F610",	PIC16F610,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-{"PIC16HV610",	PIC16HV610,	1024,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-{"PIC16F616",	PIC16F616,	2048,	0,	0,	DS41284E,  0x2000, 1, 1, 4,	1},
-{"PIC16HV616",	PIC16HV616,	2048,	0,	0,	DS41284E,  0x2000, 1, 1, 1,	1},
-/* */
-{"PIC12F617",	PIC12F617,	2048,	0,	0,	DS41284E,  0x2000, 1, 1, 4,	1},
+{"PIC12F609",	PIC12F609,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC12HV609",	PIC12HV609,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC12F615",	PIC12F615,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC12HV615",	PIC12HV615,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC16F610",	PIC16F610,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC16HV610",	PIC16HV610,	1024,	0,	0,	DS41284E,  0x2000, 1, 1,    1,1,0},
+{"PIC16F616",	PIC16F616,	2048,	0,	0,	DS41284E,  0x2000, 1, 1,    4,1,16},
+{"PIC16HV616",	PIC16HV616,	2048,	0,	0,	DS41284E,  0x2000, 1, 1,    4,1,16},
+{"PIC12F617",	PIC12F617,	2048,	0,	0,	DS41284E,  0x2000, 1, 1,    4,1,16},
 
 /* These devices have two config words at 2007 & 2008 and one calibration word at 2009 */
-{"PIC16F882",	PIC16F882,	2048,	128,	0,	DS41287D,  0x2000, 2, 1, 8,	1},
-{"PIC16F883",	PIC16F883,	4096,	256,	0,	DS41287D,  0x2000, 2, 1, 8,	1},
-{"PIC16F884",	PIC16F884,	4096,	256,	0,	DS41287D,  0x2000, 2, 1, 8,	1},
-{"PIC16F886",	PIC16F886,	8192,	256,	0,	DS41287D,  0x2000, 2, 1, 8,	1},
-{"PIC16F887",	PIC16F887,	8192,	256,	0,	DS41287D,  0x2000, 2, 1, 8,	1},
+{"PIC16F882",	PIC16F882,	2048,	128,	0,	DS41287D,  0x2000, 2, 1,    8,1,16},
+{"PIC16F883",	PIC16F883,	4096,	256,	0,	DS41287D,  0x2000, 2, 1,    8,1,16},
+{"PIC16F884",	PIC16F884,	4096,	256,	0,	DS41287D,  0x2000, 2, 1,    8,1,16},
+{"PIC16F886",	PIC16F886,	8192,	256,	0,	DS41287D,  0x2000, 2, 1,    8,1,16},
+{"PIC16F887",	PIC16F887,	8192,	256,	0,	DS41287D,  0x2000, 2, 1,    8,1,16},
 
-{"PIC16F73",	PIC16F73,	4096,	0,	0,	DS30324B,  0x2000, 1, 0, 2,	1},
-{"PIC16F74",	PIC16F74,	4096,	0,	0,	DS30324B,  0x2000, 1, 0, 2,	1},
-{"PIC16F76",	PIC16F76,	8192,	0,	0,	DS30324B,  0x2000, 1, 0, 2,	1},
-{"PIC16F77",	PIC16F77,	8192,	0,	0,	DS30324B,  0x2000, 1, 0, 2,	1},
+{"PIC16F73",	PIC16F73,	4096,	0,	0,	DS30324B,  0x2000, 1, 0,    2,1,0},
+{"PIC16F74",	PIC16F74,	4096,	0,	0,	DS30324B,  0x2000, 1, 0,    2,1,0},
+{"PIC16F76",	PIC16F76,	8192,	0,	0,	DS30324B,  0x2000, 1, 0,    2,1,0},
+{"PIC16F77",	PIC16F77,	8192,	0,	0,	DS30324B,  0x2000, 1, 0,    2,1,0},
 
 /* These devices have one config word at 2007 and two calibration words at 2008 & 2009 */
-{"PIC10F320",	PIC10F320,	256,	0,	0,	DS41572D,  0x2000, 1, 2, 16,	1},
-{"PIC10F322",	PIC10F322,	512,	0,	0,	DS41572D,  0x2000, 1, 2, 16,	1},
+{"PIC10F320",	PIC10F320,	256,	0,	0,	DS41572D,  0x2000, 1, 2,    16,1,16},
+{"PIC10F322",	PIC10F322,	512,	0,	0,	DS41572D,  0x2000, 1, 2,    16,1,16},
 #ifdef PICLF
-{"PIC10LF320",	PIC10LF320,	256,	0,	0,	DS41572D,  0x2000, 1, 2, 16,	1},
-{"PIC10LF322",	PIC10LF322,	512,	0,	0,	DS41572D,  0x2000, 1, 2, 16,	1},
+{"PIC10LF320",	PIC10LF320,	256,	0,	0,	DS41572D,  0x2000, 1, 2,    16,1,16},
+{"PIC10LF322",	PIC10LF322,	512,	0,	0,	DS41572D,  0x2000, 1, 2,    16,1,16},
 #endif
 
 /* These devices have two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
-{"PIC12F1501",	PIC12F1501,	1024,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
-{"PIC16F1503",	PIC16F1503,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2, 16,	1},
-{"PIC16F1507",	PIC16F1507,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2, 16,	1},
-{"PIC16F1508",	PIC16F1508,	4096,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
-{"PIC16F1509",	PIC16F1509,	8192,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
+{"PIC12F1501",	PIC12F1501,	1024,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1503",	PIC16F1503,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2,    16,1,16},
+{"PIC16F1507",	PIC16F1507,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2,    16,1,16},
+{"PIC16F1508",	PIC16F1508,	4096,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1509",	PIC16F1509,	8192,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
 #ifdef PICLF
-{"PIC12LF1501",	PIC12LF1501,	1024,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1503",	PIC16LF1503,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2, 16,	1},
-{"PIC16LF1507",	PIC16LF1507,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2, 16,	1},
-{"PIC16LF1508",	PIC16LF1508,	4096,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1509",	PIC16LF1509,	8192,	0,	-128,	DS41573C,  0x8000, 2, 2, 32,	1},
+{"PIC12LF1501",	PIC12LF1501,	1024,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1503",	PIC16LF1503,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2,    16,1,16},
+{"PIC16LF1507",	PIC16LF1507,	2048,	0,	-128,	DS41573C,  0x8000, 2, 2,    16,1,16},
+{"PIC16LF1508",	PIC16LF1508,	4096,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1509",	PIC16LF1509,	8192,	0,	-128,	DS41573C,  0x8000, 2, 2,    32,1,32},
 #endif
 
 /* These devices have two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
-{"PIC12F1840",	PIC12F1840,	4096,	256,	0,	DS41439A,  0x8000, 2, 2, 32,	1},
-{"PIC16F1847",	PIC16F1847,	8192,	256,	0,	DS41439A,  0x8000, 2, 2, 32,	1},
+{"PIC12F1840",	PIC12F1840,	4096,	256,	0,	DS41439A,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1847",	PIC16F1847,	8192,	256,	0,	DS41439A,  0x8000, 2, 2,    32,1,32},
 #ifdef PICLF
-{"PIC12LF1840",	PIC12LF1840,	4096,	256,	0,	DS41439A,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1847",	PIC16LF1847,	8192,	256,	0,	DS41439A,  0x8000, 2, 2, 32,	1},
+{"PIC12LF1840",	PIC12LF1840,	4096,	256,	0,	DS41439A,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1847",	PIC16LF1847,	8192,	256,	0,	DS41439A,  0x8000, 2, 2,    32,1,32},
 #endif
 
 /* These devices have two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
-{"PIC16F1933",	PIC16F1933,	4096,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1934",	PIC16F1934,	4096,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1936",	PIC16F1936,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1937",	PIC16F1937,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1938",	PIC16F1938,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1939",	PIC16F1939,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1946",	PIC16F1946,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16F1947",	PIC16F1947,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
+{"PIC16F1933",	PIC16F1933,	4096,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1934",	PIC16F1934,	4096,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1936",	PIC16F1936,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1937",	PIC16F1937,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1938",	PIC16F1938,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1939",	PIC16F1939,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1946",	PIC16F1946,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16F1947",	PIC16F1947,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
 #ifdef PICLF
-{"PIC16LF1933",	PIC16LF1933,	4096,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1934",	PIC16LF1934,	4096,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1936",	PIC16LF1936,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1937",	PIC16LF1937,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1938",	PIC16LF1938,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1939",	PIC16LF1939,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1946",	PIC16LF1946,	8192,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1947",	PIC16LF1947,	16384,	256,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-/* */
-{"PIC16LF1902",	PIC16LF1902,	2048,	0,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1903",	PIC16LF1903,	4096,	0,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1904",	PIC16LF1904,	4096,	0,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1906",	PIC16LF1906,	8192,	0,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1907",	PIC16LF1907,	8192,	0,	0,	DS41397B,  0x8000, 2, 2, 8,	1},
+{"PIC16LF1933",	PIC16LF1933,	4096,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1934",	PIC16LF1934,	4096,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1936",	PIC16LF1936,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1937",	PIC16LF1937,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1938",	PIC16LF1938,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1939",	PIC16LF1939,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1946",	PIC16LF1946,	8192,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1947",	PIC16LF1947,	16384,	256,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1902",	PIC16LF1902,	2048,	0,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1903",	PIC16LF1903,	4096,	0,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1904",	PIC16LF1904,	4096,	0,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1906",	PIC16LF1906,	8192,	0,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
+{"PIC16LF1907",	PIC16LF1907,	8192,	0,	0,	DS41397B,  0x8000, 2, 2,    8,1,32},
 #endif
 
-{"PIC16F917",	PIC16F917,	8192,	256,	0,	DS41244F,  0x2000, 1, 2, 8,	1},
-{"PIC16F916",	PIC16F916,	8192,	256,	0,	DS41244F,  0x2000, 1, 2, 8,	1},
-{"PIC16F914",	PIC16F914,	4096,	256,	0,	DS41244F,  0x2000, 1, 2, 8,	1},
-{"PIC16F913",	PIC16F913,	4096,	256,	0,	DS41244F,  0x2000, 1, 2, 8,	1},
-{"PIC16F946",	PIC16F946,	16384,	256,	0,	DS41244F,  0x2000, 1, 2, 8,	1},
+{"PIC16F917",	PIC16F917,	8192,	256,	0,	DS41244F,  0x2000, 1, 2,    8,1,16},
+{"PIC16F916",	PIC16F916,	8192,	256,	0,	DS41244F,  0x2000, 1, 2,    8,1,16},
+{"PIC16F914",	PIC16F914,	4096,	256,	0,	DS41244F,  0x2000, 1, 2,    8,1,16},
+{"PIC16F913",	PIC16F913,	4096,	256,	0,	DS41244F,  0x2000, 1, 2,    8,1,16},
+{"PIC16F946",	PIC16F946,	16384,	256,	0,	DS41244F,  0x2000, 1, 2,    8,1,16},
 
 /* These devices have two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
-{"PIC12F1822",	PIC12F1822,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 16,	1},
-{"PIC16F1823",	PIC16F1823,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 16,	1},
-{"PIC16F1826",	PIC16F1826,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 8,	1},
-{"PIC16F1827",	PIC16F1827,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 8,	1},
-{"PIC16F1824",	PIC16F1824,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16F1828",	PIC16F1828,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16F1825",	PIC16F1825,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16F1829",	PIC16F1829,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
+{"PIC12F1822",	PIC12F1822,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    16,1,16},
+{"PIC16F1823",	PIC16F1823,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    16,1,16},
+{"PIC16F1826",	PIC16F1826,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    8, 1,32},
+{"PIC16F1827",	PIC16F1827,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    8, 1,32},
+{"PIC16F1824",	PIC16F1824,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1828",	PIC16F1828,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1825",	PIC16F1825,	8192,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16F1829",	PIC16F1829,	8192,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
 #ifdef PICLF
-{"PIC12LF1822",	PIC12LF1822,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 16,	1},
-{"PIC16LF1823",	PIC16LF1823,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 16,	1},
-{"PIC16LF1826",	PIC16LF1826,	2048,	256,	0,	DS41390D,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1827",	PIC16LF1827,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 8,	1},
-{"PIC16LF1824",	PIC16LF1824,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1828",	PIC16LF1828,	4096,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1825",	PIC16LF1825,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
-{"PIC16LF1829",	PIC16LF1829,	8192,	256,	0,	DS41390D,  0x8000, 2, 2, 32,	1},
+{"PIC12LF1822",	PIC12LF1822,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    16,1,16},
+{"PIC16LF1823",	PIC16LF1823,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    16,1,16},
+{"PIC16LF1826",	PIC16LF1826,	2048,	256,	0,	DS41390D,  0x8000, 2, 2,    8, 1,32},
+{"PIC16LF1827",	PIC16LF1827,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    8, 1,32},
+{"PIC16LF1824",	PIC16LF1824,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1828",	PIC16LF1828,	4096,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1825",	PIC16LF1825,	8192,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
+{"PIC16LF1829",	PIC16LF1829,	8192,	256,	0,	DS41390D,  0x8000, 2, 2,    32,1,32},
 #endif
-{"(null)",	0,		0,	0,	0,	0,	   0,      0, 0, 0,	0}
-/*Device name	Device id	Flash	EEPROM	Data	Data-sheet Configuration Latches*/
+
+/* These devices have two config words at 2007 & 2008 */
+{"PIC16F737",	PIC16F737,	4096,	0,	0,	DS30492B,  0x2000, 2, 0,    2,2,0},
+{"PIC16F747",	PIC16F747,	4096,	0,	0,	DS30492B,  0x2000, 2, 0,    2,2,0},
+{"PIC16F767",	PIC16F767,	8192,	0,	0,	DS30492B,  0x2000, 2, 0,    2,2,0},
+{"PIC16F777",	PIC16F777,	8192,	0,	0,	DS30492B,  0x2000, 2, 0,    2,2,0},
+
+/* These devices have two config words at 8007 & 8008 and multiple calibration words from 8009 onward */
+{"PIC16F1782",	PIC16F1782,	2048,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1783",	PIC16F1783,	4096,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1784",	PIC16F1784,	4096,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1786",	PIC16F1786,	8192,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1787",	PIC16F1787,	8192,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1788",	PIC16F1788,	16384,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16F1789",	PIC16F1789,	16384,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+#ifdef PICLF
+{"PIC16LF1782",	PIC16LF1782,	2048,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1783",	PIC16LF1783,	4096,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1784",	PIC16LF1784,	4096,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1786",	PIC16LF1786,	8192,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1787",	PIC16LF1787,	8192,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1788",	PIC16LF1788,	16384,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+{"PIC16LF1789",	PIC16LF1789,	16384,	256,	0,	DS41457E,  0x8000, 2,11,    32,1,32},
+#endif
+{"(null)",	0,		0,	0,	0,	0,	   0,      0, 0,    0,0,0}
+/*Device name	Device id	Flash	EEPROM	Data	Data-sheet Config/n/ncalib  Latches/id/erase*/
 };
 #define PIC14_SIZE ((sizeof(pic14_map) / sizeof(struct pic14_dsmap)) - 1)
 
@@ -263,6 +295,7 @@ pic14_selector(struct k8048 *k)
  * DS41204H-page 14 12F683
  * DS41332D-page 13 16F726
  * DS41284E-page 8  12F615
+ * DS41284E-page 8  12F617
  * DS41287D-page 13 16F886
  * DS30324B-page 4  16F73
  * DS41572D-page 11 10F320
@@ -271,6 +304,8 @@ pic14_selector(struct k8048 *k)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS30492B-page 7  16F767
+ * DS41457E-page 19 16F1788
  */
 static inline void
 pic14_load_configuration(struct k8048 *k, unsigned short word)
@@ -299,6 +334,7 @@ pic14_load_configuration(struct k8048 *k, unsigned short word)
  * DS41204H-page 14 12F683
  * DS41332D-page 13 16F726
  * DS41284E-page 8  12F615
+ * DS41284E-page 8  12F617
  * DS41287D-page 13 16F886
  * DS30324B-page 4  16F73
  * DS41572D-page 11 10F320
@@ -307,6 +343,8 @@ pic14_load_configuration(struct k8048 *k, unsigned short word)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS30492B-page 7  16F767
+ * DS41457E-page 19 16F1788
  */
 static inline void
 pic14_load_data_for_program_memory(struct k8048 *k, unsigned short word)
@@ -337,6 +375,7 @@ pic14_load_data_for_program_memory(struct k8048 *k, unsigned short word)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS41457E-page 19 16F1788
  */
 static inline void
 pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
@@ -364,6 +403,7 @@ pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
  * DS41204H-page 14 12F683
  * DS41332D-page 13 16F726
  * DS41284E-page 8  12F615
+ * DS41284E-page 8  12F617
  * DS41287D-page 13 16F886
  * DS30324B-page 4  16F73
  * DS41572D-page 11 10F320
@@ -372,6 +412,8 @@ pic14_load_data_for_data_memory(struct k8048 *k, unsigned short word)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS30492B-page 7  16F767
+ * DS41457E-page 19 16F1788
  */
 static inline void
 pic14_increment_address(struct k8048 *k)
@@ -398,6 +440,7 @@ pic14_increment_address(struct k8048 *k)
  * DS41204H-page 14 12F683
  * DS41332D-page 13 16F726
  * DS41284E-page 8  12F615
+ * DS41284E-page 8  12F617
  * DS41287D-page 13 16F886
  * DS30324B-page 4  16F73
  * DS41572D-page 11 10F320
@@ -406,6 +449,8 @@ pic14_increment_address(struct k8048 *k)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS30492B-page 7  16F767
+ * DS41457E-page 19 16F1788
  */
 static inline unsigned short
 pic14_read_data_from_program_memory(struct k8048 *k)
@@ -435,6 +480,7 @@ pic14_read_data_from_program_memory(struct k8048 *k)
  * DS41397B-page 19 16F1936
  * DS41244F-page 12 16F917
  * DS41390D-page 13 16F1825
+ * DS41457E-page 19 16F1788
  */
 static inline unsigned char
 pic14_read_data_from_data_memory(struct k8048 *k)
@@ -455,6 +501,7 @@ pic14_read_data_from_data_memory(struct k8048 *k)
  * DS41439A-page 11 16F1847
  * DS41397B-page 19 16F1936
  * DS41390D-page 13 16F1825
+ * DS41457E-page 19 16F1788
  */
 static inline void
 pic14_reset_address(struct k8048 *k)
@@ -501,8 +548,10 @@ pic14_begin_erase_programming(struct k8048 *k, int t)
  * DS41573C-page 15 16F1507 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
  * DS41439A-page 11 16F1847 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
  * DS41397B-page 19 16F1936 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
- * DS41244F-page 12 16F917                                           INTERNAL/NO END
+ * DS41244F-page 12 16F917  TPROG1(3ms)  OR TPROG1(6ms DATA)         INTERNAL/NO END
  * DS41390D-page 13 16F1825 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
+ * DS30492B-page 7  16F767  TPROG(1ms)                               EXTERNAL
+ * DS41457E-page 19 16F1788 TPINT(2.5ms) OR TPINT(5ms CONFIG)        INTERNAL/NO END
  */
 static inline void
 pic14_begin_programming_001000(struct k8048 *k, int t)
@@ -512,7 +561,7 @@ pic14_begin_programming_001000(struct k8048 *k, int t)
 }
 
 /*
- * BEGIN PROGRAMMING
+ * BEGIN PROGRAMMING / BEGIN PROGRAMMING ONLY
  *  (PC) <= WR
  *
  * 011000 = 0x18
@@ -528,13 +577,15 @@ pic14_begin_programming_001000(struct k8048 *k, int t)
  * DS41204H-page 14 12F683  TPROG2(3ms)   EXTERNAL
  * DS41332D-page 13 16F726  TPEXT(2.1ms)  EXTERNAL
  * DS41284E-page 8  12F615  TPROG(3ms)    EXTERNAL
+ * DS41284E-page 8  12F617  TPROG(3ms)    EXTERNAL
  * DS41287D-page 13 16F886  TPROG2(2.5ms) EXTERNAL
  * DS41572D-page 11 10F320  TPEXT(2.1ms)  EXTERNAL
  * DS41573C-page 15 16F1507 TPEXT(2.1ms)  EXTERNAL
  * DS41439A-page 11 16F1847 TPEXT(2.1ms)  EXTERNAL
  * DS41397B-page 19 16F1936 TPEXT(2.1ms)  EXTERNAL (NOT CONFIG)
- * DS41244F-page 12 16F917                EXTERNAL
+ * DS41244F-page 12 16F917  TPROG2(3ms)   EXTERNAL
  * DS41390D-page 13 16F1825 TPEXT(2.1ms)  EXTERNAL
+ * DS41457E-page 19 16F1788 TPEXT(2.1ms)  EXTERNAL
  */
 static inline void
 pic14_begin_programming_011000(struct k8048 *k, int t)
@@ -565,6 +616,7 @@ pic14_end_programming_010111(struct k8048 *k, int t)
  *
  * DS40245B-page 5 16F716 TDIS(100us)
  * DS30324B-page 4 16F73  NDELAY
+ * DS30492B-page 7 16F767
  */
 static inline void
 pic14_end_programming_001110(struct k8048 *k, int t)
@@ -582,13 +634,15 @@ pic14_end_programming_001110(struct k8048 *k, int t)
  * DS41204H-page 14 12F683  TDIS(100us)
  * DS41332D-page 13 16F726  TDIS(100us)
  * DS41284E-page 8  12F615  TDIS(100us)
+ * DS41284E-page 8  12F617  TDIS(100us)
  * DS41287D-page 13 16F886  TDIS(100us)
  * DS41572D-page 11 10F320  TDIS(100us)
  * DS41573C-page 15 16F1507 TDIS(300us)
  * DS41439A-page 11 16F1847 TDIS(100us)
  * DS41397B-page 19 16F1936 TDIS(300us)
- * DS41244F-page 12 16F917
+ * DS41244F-page 12 16F917  TDIS(100us)
  * DS41390D-page 13 16F1825 TDIS(300us)
+ * DS41457E-page 19 16F1788 TDIS(300us)
  */
 static inline void
 pic14_end_programming_001010(struct k8048 *k, int t)
@@ -616,14 +670,17 @@ pic14_end_programming_001010(struct k8048 *k, int t)
  * DS41204H-page 14 12F683  TERA(6ms)
  * DS41332D-page 13 16F726  TERAB(5ms)
  * DS41284E-page 8  12F615  TERA(6ms)
+ * DS41284E-page 8  12F617  TERA(6ms)
  * DS41287D-page 13 16F886  TERA(6ms)
  * DS30324B-page 4  16F73   TERA(30ms)
  * DS41572D-page 11 10F320  TERAB(5ms)
  * DS41573C-page 15 16F1507 TERAB(5ms)
  * DS41439A-page 11 16F1847 TERAB(5ms)
  * DS41397B-page 19 16F1936 TERAB(5ms)
- * DS41244F-page 12 16F917
+ * DS41244F-page 12 16F917  TERA(6ms)
  * DS41390D-page 13 16F1825 TERAB(5ms)
+ * DS30492B-page 7  16F767  TERA(30ms)
+ * DS41457E-page 19 16F1788 TERAB(5ms)
  */
 static inline void
 pic14_bulk_erase_program_memory(struct k8048 *k, int t)
@@ -649,8 +706,9 @@ pic14_bulk_erase_program_memory(struct k8048 *k, int t)
  * DS41287D-page 13 16F886  TERA(6ms)
  * DS41439A-page 11 16F1847 TERAB(5ms)
  * DS41397B-page 19 16F1936 TERAB(5ms)
- * DS41244F-page 12 16F917
+ * DS41244F-page 12 16F917  TERA(6ms)
  * DS41390D-page 13 16F1825 TERAB(5ms)
+ * DS41457E-page 19 16F1788 TERAB(5ms)
  */
 static inline void
 pic14_bulk_erase_data_memory(struct k8048 *k, int t)
@@ -710,34 +768,22 @@ pic14_chip_erase(struct k8048 *k, int t)
  *
  * X10001 = 0x11
  *
- * DS41204H-page 14 12F683  TERA(6ms)
- * DS41332D-page 13 16F726  TERAR(2.5ms)
- * DS41284E-page 8  12F615  TERA(6ms)
- * DS41287D-page 13 16F886  TERA(6ms)
- * DS41572D-page 11 10F320  TERAR(2.5ms)
- * DS41573C-page 15 16F1507 TERAR(2.5ms)
- * DS41439A-page 11 16F1847 TERAR(2.5ms)
- * DS41397B-page 19 16F1936 TERAR(2.5ms)
- * DS41244F-page 12 16F917
- * DS41390D-page 13 16F1825 TERAR(2.5ms)
+ * DS41204H-page 14 12F683  TERA(6ms)    OK
+ * DS41332D-page 13 16F726  TERAR(2.5ms) OK
+ * DS41284E-page 8  12F615  TERA(6ms)	 NON-FUNCTIONAL
+ * DS41284E-page 8  12F617  TERA(6ms)	 OK
+ * DS41287D-page 13 16F886  TERA(6ms)    OK
+ * DS41572D-page 11 10F320  TERAR(2.5ms) NOT TESTED
+ * DS41573C-page 15 16F1507 TERAR(2.5ms) OK
+ * DS41439A-page 11 16F1847 TERAR(2.5ms) OK
+ * DS41397B-page 19 16F1936 TERAR(2.5ms) OK
+ * DS41244F-page 12 16F917  TERA(6ms)    NOT TESTED
+ * DS41390D-page 13 16F1825 TERAR(2.5ms) OK
+ * DS41457E-page 19 16F1788 TERAR(2.5ms) OK
  */
 static inline void
 pic14_row_erase_program_memory(struct k8048 *k, int t)
 {
-#if 0
-	switch (pic14_map[pic14_index].datasheet) {
-	case DS41204G:  /* PIC12F6XX/16F6XX     */
-	case DS41332D:	/* PIC16F726            */
-	case DS41284E:	/* PIC12F615            */
-	case DS41287D:  /* PIC16F887            */
-	case DS41572D:	/* PIC10F320            */
-	case DS41573C:  /* PIC16F1507           */
-	case DS41439A:	/* PIC16F1847           */
-	case DS41397B:	/* PIC16F1936           */
-	case DS41244F:	/* PIC16F917            */
- 	case DS41390D:	/* PIC16F1825           */
-	}
-#endif
 	io_command_out(k, 0x11);
 	io_usleep(k, t);
 }
@@ -813,6 +859,7 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 	io_init_program_verify(k);
 
 	switch (pic14_map[pic14_index].datasheet) {
+	case DS30189D:	/* PIC16C84        */
 	case DS30262E:  /* PIC16F83/84/84A */
 	case DS30034D:  /* PIC16F62X       */
 	case DS39025F:  /* PIC16F87X       */
@@ -840,7 +887,7 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 			}
 			break;
 
-	case DS39589B:  /* PIC16F87XA    */
+	case DS39589C:  /* PIC16F87XA    */
 	case DS39603C:  /* PIC16F818/819 */
 	case DS39607B:  /* PIC16F87/88   */
 			pic14_load_configuration(k, 0x3fff);
@@ -857,6 +904,7 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 	case DS41397B:	/* PIC16F1936           */
 	case DS41244F:	/* PIC16F917            */
  	case DS41390D:	/* PIC16F1825           */
+ 	case DS41457E:	/* PIC16F1788           */
 			pic14_load_configuration(k, 0x3fff);
 			/* DISABLE PROTECTION & ERASE PROGRAM FLASH */
 			pic14_bulk_erase_program_memory(k, PIC14_TERASE_DEFAULT);
@@ -867,14 +915,19 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 			/* HAS NO DATA EEPROM            */
 	case DS40245B:  /* PIC16F716  DEFAULT ERASE TIME */
 	case DS41332D:	/* PIC16F726                     */
-	case DS41284E:	/* PIC12F615                     */
+	case DS41409B:  /* PIC16F720/721                 */
+	case DS41405A:	/* PIC16F707                     */
+	case DS41284E:	/* PIC12F615/617                 */
 	case DS41572D:	/* PIC10F320                     */
 	case DS41573C:  /* PIC16F1507                    */
 			pic14_load_configuration(k, 0x3fff);
 			/* ERASE PROGRAM FLASH */
 			pic14_bulk_erase_program_memory(k, PIC14_TERASE_DEFAULT);
 			break;
+
+			/* HAS NO DATA EEPROM            */
 	case DS30324B:  /* PIC16F73   30MS ERASE TIME    */
+	case DS30492B:  /* PIC16F767  30MS ERASE TIME    */
 			pic14_load_configuration(k, 0x3fff);
 			/* DISABLE PROTECTION & ERASE PROGRAM FLASH */
 			pic14_bulk_erase_program_memory(k, PIC14_TERASE_30MS);
@@ -895,6 +948,61 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 			pic14_write_config(k, bandgap);
 		}
 	}
+}
+
+/*
+ * ROW ERASE
+ */
+void
+pic14_row_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
+{
+	if (pic14_map[pic14_index].erasesize == 0) {
+		printf("%s: information: unsupported\n", __func__);
+		return;
+	}
+
+	if (row == PIC_ID_ERASE) {
+		io_init_program_verify(k);
+
+		pic14_load_configuration(k, 0x3FFF);
+
+		/* ERASE USERID & CONFIG */
+		pic14_row_erase_program_memory(k, 6000); /* 6ms */
+
+		io_standby(k);
+		return;
+	}
+
+	unsigned int maxrows = pic14_map[pic14_index].flash / pic14_map[pic14_index].erasesize;
+	if (row >= maxrows) {
+		printf("%s: information: row out of range\n", __func__);
+		return;
+	}
+
+	unsigned int numrows = maxrows - row;
+	if (nrows > numrows) {
+		nrows = numrows;
+	}
+
+	unsigned int address = row * pic14_map[pic14_index].erasesize, PC_address = 0;
+
+	io_init_program_verify(k);
+
+	pic14_load_data_for_program_memory(k, 0x3FFF);
+
+	while (nrows--) {
+		while (address > PC_address) {
+			PC_address++;
+			pic14_increment_address(k);
+		}
+
+		/* ERASE PROGRAM FLASH */
+		pic14_row_erase_program_memory(k, 6000); /* 6ms */
+
+		address += pic14_map[pic14_index].erasesize;
+	}
+
+	io_standby(k);
 }
 
 /*****************************************************************************
@@ -933,7 +1041,12 @@ pic14_read_config_memory(struct k8048 *k)
 			exit(EX_SOFTWARE); /* Panic */
 		}
 	} else {
-		deviceid = pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK;
+		if ((pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK3) == PIC14_DEVICEID_MASK3) {
+			/* PIC16F1788/9 */
+			deviceid = pic14_conf.index[PIC14_CONFIG_DEVICEID];
+		} else {
+			deviceid = pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK;
+		}
 		for (i = 0; pic14_map[i].deviceid; i++) {
 			if (pic14_map[i].deviceid == deviceid) {
 				break;
@@ -1047,46 +1160,55 @@ int
 pic14_write_word(struct k8048 *k)
 {
 	switch (pic14_map[pic14_index].datasheet) {
-	case DS30262E:  /* PIC16F84A		BEGIN PROGRAMMING ONLY CYCLE */
-	case DS30034D:  /* PIC16F62X */
-	case DS39025F:  /* PIC16F87X */
+	case DS30262E:  /* PIC16F83/84/84A  */
+	case DS30034D:  /* PIC16F62X        */
+	case DS39025F:  /* PIC16F87X            BEGIN PROGRAMMING ONLY CYCLE */
 			pic14_begin_programming_011000(k, PIC14_TPROG_DEFAULT);
 			break;
 
 	case DS39607B:  /* PIC16F87/88		BEGIN PROGRAMMING ONLY CYCLE */
-	case DS39589B:  /* PIC16F87XA           BEGIN PROGRAMMING ONLY CYCLE */
+	case DS39589C:  /* PIC16F87XA           BEGIN PROGRAMMING ONLY CYCLE */
 	case DS39603C:  /* PIC16F818/819        BEGIN PROGRAMMING ONLY CYCLE */
 			pic14_begin_programming_011000(k, PIC14_TPROG_DEFAULT);
+			/*                      END PROGRAMMING   */
 			pic14_end_programming_010111(k, PIC14_TDISCHARGE_DEFAULT);
 			break;
 
 	case DS40245B:  /* PIC16F716 		BEGIN PROGRAMMING */
 			pic14_begin_programming_011000(k, PIC14_TPROG_DEFAULT);
+			/*                      END PROGRAMMING   */
 			pic14_end_programming_001110(k, PIC14_TDISCHARGE_DEFAULT);
 			break;
 
+	case DS30189D:  /* PIC16C84             BEGIN PROGRAMMING INTERNAL   */
 	case DS41196F:  /* PIC16F627A/628A/648A BEGIN PROGRAMMING ONLY CYLCE */
 	case DS41204G:  /* PIC12F6XX/16F6XX */
-	case DS41572D:  /* PIC10F320  */
-	case DS41287D:  /* PIC16F887  */
-	case DS41332D:  /* PIC16F726  */
-	case DS41573C:  /* PIC16F1507 */
-	case DS41439A:  /* PIC16F1847 */
-	case DS41397B:	/* PIC16F1936 */
-	case DS41244F:  /* PIC16F917  */
- 	case DS41390D:	/* PIC16F1825           BEGIN PROGRAMMING INTERNAL */
+	case DS41572D:  /* PIC10F320        */
+	case DS41287D:  /* PIC16F887        */
+	case DS41332D:  /* PIC16F726        */
+	case DS41409B:  /* PIC16F720/721    */
+	case DS41405A:	/* PIC16F707        */
+	case DS41573C:  /* PIC16F1507       */
+	case DS41439A:  /* PIC16F1847       */
+	case DS41397B:	/* PIC16F1936       */
+	case DS41244F:  /* PIC16F917        */
+ 	case DS41390D:	/* PIC16F1825       */
+ 	case DS41457E:	/* PIC16F1788           BEGIN PROGRAMMING INTERNAL   */
 			pic14_begin_programming_001000(k, PIC14_TPROG_DEFAULT);
 			break;
 
 	case DS30324B:  /* PIC16F73             BEGIN PROGRAMMING */
+	case DS30492B:	/* PIC16F767            BEGIN PROGRAMMING */
 			pic14_begin_programming_001000(k, PIC14_TPROG_DEFAULT);
+			/*                      END PROGRAMMING   */
 			pic14_end_programming_001110(k, PIC14_TDISCHARGE_DEFAULT);
 			break;
 			
-	case DS41284E:	/* PIC12F615 		BEGIN PROGRAMMING */
+	case DS41284E:	/* PIC12F615/617 	BEGIN PROGRAMMING */
 	case DS41191C:  /* PIC12F629/675        BEGIN PROGRAMMING */
 			/* PIC16F630/676	BEGIN PROGRAMMING */
 			pic14_begin_programming_011000(k, PIC14_TPROG_DEFAULT);
+			/*                      END PROGRAMMING   */
 			pic14_end_programming_001010(k, PIC14_TDISCHARGE_DEFAULT);
 			break;
 
@@ -1129,10 +1251,11 @@ pic14_read_osccal(struct k8048 *k)
 	osccal = pic14_read_flash_memory_increment(k);
 
 	io_standby(k);
-
+#ifdef DEBUG
 	if (k->debug >= 10) {
 		printf("%s: information: OSCCAL read: word [%04X]\n", __func__, osccal);
 	}
+#endif
 	return osccal;
 }
 
@@ -1151,11 +1274,11 @@ pic14_write_osccal(struct k8048 *k, unsigned short osccal)
 	}
 
 	io_init_program_verify(k);
-
+#ifdef DEBUG
 	if (k->debug >= 10) {
 		printf("%s: information: OSCCAL write: word [%04X]\n", __func__, osccal);
 	}
-
+#endif
 	pic14_load_data_for_program_memory(k, osccal);
 	for (i = 0; i < OSCCALADDR; i++)
 		pic14_increment_address(k);
@@ -1187,11 +1310,11 @@ pic14_write_calib1(struct k8048 *k, unsigned short calib1)
 	}
 
 	io_init_program_verify(k);
-	
+#ifdef DEBUG
 	if (k->debug >= 10) {
 		printf("%s: information: CALIB1 write: word [%04X]\n", __func__, calib1);
 	}
-
+#endif
 	pic14_load_configuration(k, calib1);
 	for (i = 0; i < 8; i++)
 		pic14_increment_address(k);
@@ -1225,53 +1348,57 @@ pic14_write_config(struct k8048 *k, unsigned short config1)
 	unsigned short config2 = pic14_conf.index[PIC14_CONFIG_WORD2];
 	unsigned short vdata1 = 0, vdata2 = 0;
 
-	io_init_program_verify(k);
-
+#ifdef DEBUG
 	if (k->debug >= 10) {
-		printf("%s: information: CONFIG1 write: word [%04X]\n",
-			__func__, config1);
+		printf("%s: information: CONFIG1 [%04X] CONFIG2 [%04X]\n",
+			__func__, config1, config2);
 	}
+#endif
+	io_init_program_verify(k);
 
 	pic14_load_configuration(k, config1);
 	for (i = 0; i < 7; i++) {
 		pic14_increment_address(k);
 	}
 	switch (pic14_map[pic14_index].datasheet) {
-	case DS39589B:	/* PIC16F87XA		BEGIN ERASE/PROGRAMMING CYCLE */
+			/*
+			 * ONE CONFIG WORD
+			 */
+	case DS39589C:	/* PIC16F87XA		BEGIN ERASE/PROGRAMMING CYCLE */
 			pic14_begin_erase_programming(k, PIC14_TERASE_DEFAULT);
 			vdata1 = pic14_read_data_from_program_memory(k);
 			break;
-
+			/*
+			 * ONE CONFIG WORD
+			 */
 	case DS30324B:	/* PIC16F73		LOAD DATA FOR PROGRAM MEMORY */
-	case DS41196F:	/* PIC16F627A/628A/648A */
+	case DS41196F:	/* PIC16F627A/628A/648A LOAD DATA FOR PROGRAM MEMORY */
 			pic14_load_data_for_program_memory(k, config1);
 			pic14_write_word(k);
 			vdata1 = pic14_read_data_from_program_memory(k);
 			break;
-
 			/*
 			 * TWO CONFIG WORDS
 			 */
-	case DS39607B:	/* PIC16F87/88 */
-	case DS41287D:	/* PIC16F887   */
-	case DS41332D:	/* PIC16F726   */
-	case DS41573C:	/* PIC16F1507  */
-	case DS41439A:  /* PIC16F1847  */
-	case DS41397B:	/* PIC16F1936  */
-	case DS41390D:	/* PIC18F1825  */
+	case DS39607B:	/* PIC16F87/88   */
+	case DS41287D:	/* PIC16F887     */
+	case DS41332D:	/* PIC16F726     */
+	case DS41409B:  /* PIC16F720/721 */
+	case DS41405A:	/* PIC16F707     */
+	case DS41573C:	/* PIC16F1507    */
+	case DS41439A:  /* PIC16F1847    */
+	case DS41397B:	/* PIC16F1936    */
+	case DS41390D:	/* PIC18F1825    */
+	case DS30492B:	/* PIC16F767     */
+ 	case DS41457E:	/* PIC16F1788    */
 			pic14_load_data_for_program_memory(k, config1);
 			pic14_write_word(k);
 			vdata1 = pic14_read_data_from_program_memory(k);
 			pic14_increment_address(k);
-			if (k->debug >= 10) {
-				printf("%s: information: CONFIG2 write: word [%04X]\n",
-					__func__, config2);
-			}
 			pic14_load_data_for_program_memory(k, config2);
 			pic14_write_word(k);
 			vdata2 = pic14_read_data_from_program_memory(k);
 			break;
-
 			/*
 			 * ONE CONFIG WORD
 			 */
@@ -1286,20 +1413,23 @@ pic14_write_config(struct k8048 *k, unsigned short config1)
 		vdata1 &= CONFIGMASK;
 		config1 &= CONFIGMASK;
 	}
+
 	if (vdata1 != config1) {
 		printf("%s: error: CONFIG1 write failed: read [%04X] expected [%04X]\n",
 			__func__, vdata1, config1);
-		return 0;
+		return 0; /* FAILED */
 	}
-	if (pic14_map[pic14_index].nconfig == 2) {
-		if (vdata2 != config2) {
-			printf("%s: error: CONFIG2 write failed: read [%04X] expected [%04X]\n",
-				__func__, vdata2, config2);
-			return 0;
-		}
-		return 2;
+
+	if (pic14_map[pic14_index].nconfig == 1)
+		return 1; /* ONE WORD WRITTEN */
+
+	if (vdata2 != config2) {
+		printf("%s: error: CONFIG2 write failed: read [%04X] expected [%04X]\n",
+			__func__, vdata2, config2);
+		return 0; /* FAILED */
 	}
-	return 1;
+
+	return 2; /* TWO WORDS WRITTEN */
 }
 
 /*****************************************************************************
@@ -1393,6 +1523,13 @@ pic14_loadregion(struct k8048 *k, int region, unsigned short word)
 void
 pic14_programregion(struct k8048 *k, unsigned short address, int region, unsigned short data)
 { 
+	static int write_pending = 0;
+
+#ifdef DEBUG
+	if (k->debug >= 10) {
+		printf("%s(,%04X,%d,%04X)\n", __func__, address, region, data);
+	}
+#endif
 	/*
 	 * Cache config word(s)
 	 */
@@ -1403,16 +1540,20 @@ pic14_programregion(struct k8048 *k, unsigned short address, int region, unsigne
 			if (pic14_map[pic14_index].datasheet == DS41191C) {
 				data = (data & CONFIGMASK) | (pic14_conf.index[PIC14_CONFIG_WORD1] & BANDGAPMASK);
 			}
+#ifdef DEBUG
 			if (k->debug >= 10) {
 				printf("%s: information: CONFIG1 cache: word [%04X]\n", __func__, data);
 			}
+#endif
 			pic14_conf.index[PIC14_CONFIG_WORD1] = data;
 			return;
 		}
 		if (ofs == PIC14_CONFIG_WORD2 && pic14_map[pic14_index].nconfig == 2) {
+#ifdef DEBUG
 			if (k->debug >= 10) {
 				printf("%s: information: CONFIG2 cache: word [%04X]\n", __func__, data);
 			}
+#endif
 			pic14_conf.index[PIC14_CONFIG_WORD2] = data;
 			return;
 		}
@@ -1422,28 +1563,23 @@ pic14_programregion(struct k8048 *k, unsigned short address, int region, unsigne
 	}
 	
 	/*
-	 * Ignore OSCCAL
-	 *
-	 * OSCCAL address is on a multi-word boundary but the devices are not multi-word
+	 * Write single or multi-word code
 	 */
-	if (pic14_map[pic14_index].datasheet == DS41191C) {
-		if (address == OSCCALADDR) {
-			printf("%s: warning: OSCCAL word ignored: word [%04X] address [%04X]\n",
-				__func__, data, address);
-			return;
-		}
-	}
-
-	/*
-	 * Write multi-word code
-	 */
-	static int write_pending = 0;
-	int multiword = (pic14_map[pic14_index].latches > 1);
-	if (multiword && region == PIC14_REGIONCODE) {
+	if (region == PIC14_REGIONCODE) {
 		if (data != MW_NODATA) {
-			pic14_loadregion(k, region, data);
+			/* Ignore OSCCAL */
+			if (pic14_map[pic14_index].datasheet == DS41191C) {
+				if (address == OSCCALADDR) {
+					printf("%s: warning: OSCCAL word ignored: word [%04X] address [%04X]\n",
+						__func__, data, address);
+					return;
+				}
+			}
+			/* Cache */
+			pic14_loadregion(k, PIC14_REGIONCODE, data);
 			write_pending = 1;
 		}
+		/* Flush */
 		unsigned int mask = pic14_map[pic14_index].latches - 1;
 		if ((address & mask) == mask) {
 			if (write_pending) {
@@ -1455,7 +1591,7 @@ pic14_programregion(struct k8048 *k, unsigned short address, int region, unsigne
 	}
 	
 	/*
-	 * Write single word code, data or userid
+	 * Write single word data EEPROM or USERID
 	 */
 
 	/* Store data in working register */
@@ -1514,7 +1650,6 @@ pic14_program(struct k8048 *k, int blank)
 	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC14_REGIONUNKNOWN;
 	int total = 0;
-	int multiword = (pic14_map[pic14_index].latches > 1);
 
 	/* Initialise device for programming */
 	if (blank)
@@ -1528,7 +1663,7 @@ pic14_program(struct k8048 *k, int blank)
 			continue;
 
 		if (new_region != current_region) {
-			if (multiword && current_region == PIC14_REGIONCODE)
+			if (current_region == PIC14_REGIONCODE)
 				pic14_programregion(k, MW_FLUSH, PIC14_REGIONCODE, MW_NODATA);
 			io_init_program_verify(k);  /* Reset P.C. */
 			PC_address = pic14_initregion(k, new_region);
@@ -1537,7 +1672,7 @@ pic14_program(struct k8048 *k, int blank)
 
 		/* Skip over unused P.C. locations */
 		while (hex_address > PC_address) {
-			if (multiword && current_region == PIC14_REGIONCODE)
+			if (current_region == PIC14_REGIONCODE)
 				pic14_programregion(k, PC_address, PIC14_REGIONCODE, MW_NODATA);
 			PC_address++;
 			pic14_increment_address(k);
@@ -1553,7 +1688,7 @@ pic14_program(struct k8048 *k, int blank)
 			total++;
 		}
 	}
-	if (multiword && current_region == PIC14_REGIONCODE)
+	if (current_region == PIC14_REGIONCODE)
 		pic14_programregion(k, MW_FLUSH, PIC14_REGIONCODE, MW_NODATA);
 
 	io_standby(k);
@@ -1628,35 +1763,61 @@ void
 pic14_dumpdeviceid(struct k8048 *k)
 {
 	int i;
-	unsigned char u;
-	unsigned short deviceid = pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK;
+	unsigned char c;
 	unsigned short dataaddr = (pic14_map[pic14_index].configaddr == PIC14_CONFIG_MIDRANGE) ?
 		PIC14_DATA_MIDRANGE : PIC14_DATA_ENHANCED;
 	
-	printf("[%04X] [PROGRAM]  %04X WORDS\n",
+	printf("[%04X] [PROGRAM]  %04X WORDS",
 		PIC14_CODE_LOW, pic14_map[pic14_index].flash);
+	if (pic14_map[pic14_index].erasesize) {
+		printf(" (%04X ROWS OF %04X WORDS)",
+			pic14_map[pic14_index].flash / pic14_map[pic14_index].erasesize,
+			pic14_map[pic14_index].erasesize);
+	}
+	printf("\n");
+
 	if (pic14_map[pic14_index].datasheet == DS41191C)
 		pic14_dumposccal(k);
-	for (i = 0; i < 6; i++) {
-		if (i < 4) {
-			printf("[%04X] [USERID%d]  ",
-				pic14_map[pic14_index].configaddr + i, i);
-		} else {
-			printf("[%04X] [RESERVED] ",
-				pic14_map[pic14_index].configaddr + i);
-		}
-		u = pic14_conf.index[i] & 0xff;
-		printf("%04X %c\n", pic14_conf.index[i],
-			(u >= 32 && u < 127) ? u : '.');
+
+	for (i = 0; i < 4; i++) {
+		printf("[%04X] [USERID%d]  ", pic14_map[pic14_index].configaddr + i, i);
+		c = pic14_conf.index[i] & 0xFF;
+		printf("%04X %c\n", pic14_conf.index[i], (c >= 32 && c < 127) ? (c) : ('.'));
 	}
-	printf("[%04X] [DEVICEID] %04X DEV:%X (%X) REV:%X",
-		pic14_map[pic14_index].configaddr + PIC14_CONFIG_DEVICEID,
-		pic14_conf.index[PIC14_CONFIG_DEVICEID],
-		deviceid,
-		deviceid >> 5,
-		pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEREV_MASK);
+
+	printf("[%04X] [RESERVED] %04X\n",
+		pic14_map[pic14_index].configaddr + 4,
+		pic14_conf.index[PIC14_CONFIG_RESERVED4]);
+
+	if (k->devicename[0]) {
+		printf("[%04X] [RESERVED] %04X\n",
+			pic14_map[pic14_index].configaddr + 5,
+			pic14_conf.index[PIC14_CONFIG_RESERVED4]);
+		printf("       [DEVICEID]");
+	} else if ((pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK3) == PIC14_DEVICEID_MASK3) {
+		/* PIC16F1788/9 */
+		printf("[%04X] [REVISION] %04X REV:%03X\n",
+			pic14_map[pic14_index].configaddr + 5,
+			pic14_conf.index[PIC14_CONFIG_REVISIONID],
+			pic14_conf.index[PIC14_CONFIG_REVISIONID] & PIC14_DEVICEREV_MASK2);
+		printf("[%04X] [DEVICEID] %04X",
+			pic14_map[pic14_index].configaddr + 6,
+			pic14_conf.index[PIC14_CONFIG_DEVICEID]);
+	} else {
+		printf("[%04X] [RESERVED] %04X\n",
+			pic14_map[pic14_index].configaddr + 5,
+			pic14_conf.index[PIC14_CONFIG_RESERVED5]);
+		printf("[%04X] [DEVICEID] %04X DEV:%04X (%03X) REV:%02X",
+			pic14_map[pic14_index].configaddr + 6,
+			pic14_conf.index[PIC14_CONFIG_DEVICEID],
+			pic14_conf.index[PIC14_CONFIG_DEVICEID]  & PIC14_DEVICEID_MASK,
+			(pic14_conf.index[PIC14_CONFIG_DEVICEID] & PIC14_DEVICEID_MASK) >> 5,
+			pic14_conf.index[PIC14_CONFIG_DEVICEID]  & PIC14_DEVICEREV_MASK);
+	}
 	printf(" %s\n", pic14_map[pic14_index].devicename);
+
 	pic14_dumpconfig(k, BRIEF);
+
 	if (pic14_map[pic14_index].eeprom > 0) {
 		printf("[%04X] [DATA]     %04X BYTES\n", dataaddr,
 			pic14_map[pic14_index].eeprom);
@@ -1693,18 +1854,21 @@ pic14_dumpconfig(struct k8048 *k, int mode)
 		printf("[%04X] [CONFIG%d]  %04X\n",
 			addr++, i + 1, pic14_conf.index[ofs++]);
 	}
+
 	if (pic14_map[pic14_index].ncalib == 1) {
-		printf("[%04X] [CALIB]    %04X\n",
-			addr++, pic14_conf.index[ofs++]);
+		printf("[%04X] [CALIB]    %04X\n", addr++, pic14_conf.index[ofs++]);
 	} else for (i = 0; i < pic14_map[pic14_index].ncalib; ++i) {
-		printf("[%04X] [CALIB%d]   %04X\n",
-			addr++, i + 1, pic14_conf.index[ofs++]);
+		if (i < 9)
+			printf("[%04X] [CALIB%d]   %04X\n", addr++, i + 1, pic14_conf.index[ofs++]);
+		else 
+			printf("[%04X] [CALIB%d]  %04X\n", addr++, i + 1, pic14_conf.index[ofs++]);
 	}
+
 	/* VERBOSE */
 	if (mode == VERBOSE) switch (pic14_map[pic14_index].datasheet) {
 	case DS30034D:	pic14_dumpconfig_16f627(pic14_conf.index[PIC14_CONFIG_WORD1]);
 			break;
-	case DS39589B:	pic14_dumpconfig_16f877a(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS39589C:	pic14_dumpconfig_16f877a(pic14_conf.index[PIC14_CONFIG_WORD1]);
 			break;
 	case DS41191C:	pic14_dumpconfig_12f675(pic14_conf.index[PIC14_CONFIG_WORD1]);
 			break;

@@ -15,10 +15,9 @@ RELEASE:=$(shell uname -r)
 PLATFORM:=$(shell uname -m)
 
 CC=gcc
-CFLAGS=-Os -std=gnu99 -I. -ggdb -Wall
-GCCVERSIONGTEQ4:=$(shell expr `gcc -dumpversion | cut -f1 -d.` \>= 4)
-ifeq "$(GCCVERSIONGTEQ4)" "1"
-CFLAGS+=-Wno-int-to-pointer-cast -Wno-char-subscripts
+CFLAGS=-Os -std=gnu99 -I. -Wall
+ifeq "$(GDB)" "1"
+CFLAGS+=-ggdb
 endif
 ifneq (,$(findstring CYGWIN,$(SYSTEM)))
 CFLAGS+=-D__USE_LINUX_IOCTL_DEFS
@@ -28,7 +27,7 @@ CLIB=-lm -lreadline -lncurses
 
 CTARGET=notetable
 CSOURCE=notetable.c
-COBJECT=notetable.o
+COBJECT=$(CSOURCE:.c=.o)
 CHEADER=
 
 AS=gpasm -a inhx32 -e on -r dec -w 1 -I ../include/ -I ./include/
@@ -39,17 +38,21 @@ AHEADER=./include/notetable.inc
 build:$(AOBJECT) $(COBJECT) $(CTARGET)
 	cd gEDA && $(MAKE)
 
-$(AOBJECT):$(AHEADER)
-
-$(COBJECT):$(CHEADER)
-
-$(CTARGET):$(COBJECT)
-	$(CC) $(CFLAGS) $(COBJECT) -o $(CTARGET) $(CLIB)
+$(AOBJECT):$(AHEADER) Makefile
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
-c.o:    $(CC) -c $< -o $@
+$(CTARGET):$(COBJECT)
+	@echo -n "[LINK] "
+	$(CC) $(CFLAGS) $(COBJECT) -o $(CTARGET) $(CLIB)
+
+$(COBJECT):$(CHEADER) Makefile
+
+%.o:%.c
+	@echo -n "[CC] "
+	$(CC) $(CFLAGS) -c $< -o $@
 
 install:build
 	cd gEDA && $(MAKE) install

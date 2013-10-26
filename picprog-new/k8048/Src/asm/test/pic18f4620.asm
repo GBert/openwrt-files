@@ -239,7 +239,7 @@ WATCHDOG        MOVLW   b'00000111'         ;DISABLE COMPARATORS
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

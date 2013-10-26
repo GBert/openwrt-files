@@ -84,8 +84,6 @@ ERRORLEVEL      -220
                 DE      'B' ;[8001] USERID1
                 DE      'C' ;[8002] USERID2
                 DE      'D' ;[8003] USERID3
-                DE      'E' ;[8004] RESERVED
-                DE      'F' ;[8005] RESERVED
 ERRORLEVEL      +220
 ;
 ; INTOSC = 16MHz
@@ -184,7 +182,7 @@ WATCHDOG        BANKSEL BANK0
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

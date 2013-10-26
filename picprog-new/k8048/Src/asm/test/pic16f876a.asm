@@ -41,7 +41,7 @@
 ; SW2   RB1
 ; SW3   RB2
 ; SW4   RB4
-
+;
 ; Program
 ; -------
 ; k14 program pic16f876a.hex
@@ -165,7 +165,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
@@ -207,6 +207,9 @@ DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
                 ANDLW   B'00000111'
                 BTFSC   PORTB,4             ;GET SW4
                 IORLW   B'00001000'
+
+                CALL    SENDBYTE            ;SEND SW1..SW4
+                BC      IOERROR             ;TIME-OUT
 
                 GOTO    DOEND               ;COMMAND COMPLETED
 ;

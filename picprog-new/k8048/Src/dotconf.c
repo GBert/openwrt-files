@@ -9,10 +9,6 @@
 
 #include "k8048.h"
 
-#if 0
-#define DEBUG
-#endif
-
 /*
  * Dot file
  */

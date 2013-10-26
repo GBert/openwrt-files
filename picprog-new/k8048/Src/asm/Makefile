@@ -18,6 +18,8 @@ build:
 	cd pic18f1320  && $(MAKE)
 	cd pic18f2550  && $(MAKE)
 	cd pic18f25k22 && $(MAKE)
+	cd pic30       && $(MAKE)
+	cd rkp28sb     && $(MAKE)
 	cd test        && $(MAKE)
 	cd velleman    && $(MAKE)
 
@@ -31,6 +33,8 @@ install:
 	cd pic18f1320  && $(MAKE) install
 	cd pic18f2550  && $(MAKE) install
 	cd pic18f25k22 && $(MAKE) install
+	cd pic30       && $(MAKE) install
+	cd rkp28sb     && $(MAKE) install
 	cd test        && $(MAKE) install
 	cd velleman    && $(MAKE) install
 
@@ -44,6 +48,8 @@ uninstall:
 	cd pic18f1320  && $(MAKE) uninstall
 	cd pic18f2550  && $(MAKE) uninstall
 	cd pic18f25k22 && $(MAKE) uninstall
+	cd pic30       && $(MAKE) uninstall
+	cd rkp28sb     && $(MAKE) uninstall
 	cd test        && $(MAKE) uninstall
 	cd velleman    && $(MAKE) uninstall
 
@@ -57,6 +63,8 @@ clean:
 	cd pic18f1320  && $(MAKE) clean
 	cd pic18f2550  && $(MAKE) clean
 	cd pic18f25k22 && $(MAKE) clean
+	cd pic30       && $(MAKE) clean
+	cd rkp28sb     && $(MAKE) clean
 	cd test        && $(MAKE) clean
 	cd velleman    && $(MAKE) clean
 	rm -f *~

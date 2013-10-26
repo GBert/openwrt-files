@@ -10,6 +10,8 @@
 #ifndef _K8048_H
 #define _K8048_H
 
+#undef DEBUG
+
 /*
  * system includes
  */
@@ -31,6 +33,7 @@
 #include <errno.h> 
 #include <libgen.h>
 #include <fcntl.h>
+#include <limits.h>
 
 #ifndef O_NDELAY
 #define O_NDELAY O_NONBLOCK

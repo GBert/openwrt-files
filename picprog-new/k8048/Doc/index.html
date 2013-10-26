@@ -210,7 +210,7 @@ Many thanks to Chaitanya Rogers who donated money toward development and to acqu
 
 <p>I recently bought a PIC16F84 on ebay for testing purposes. The seller generously sent an extra as a spare part, thank you for that Dawn.</p>
 
-<p>Lastly, thank you to Microchip for creating these versatile microcontrollers and also for their sample program which has supplied seven different devices.</p>
+<p>Lastly, thank you to Microchip for creating these versatile microcontrollers and also for their sample program which has supplied nine different devices.</p>
 
 <a href="#toc">Table of contents</a><br>
 
@@ -266,7 +266,7 @@ For the R-PI GPIO direct connection to a PICMicro on a breadboard see <a href="#
 Linux MCP23017 I2C is demonstrated on a R-PI with a `Slice of PI/O' expansion in <a href="#rpii2c">Appendix D</a>.
 </p>
 <p>
-Linux PIC Programmer ICSP kernel module installation for the R-PI is documented in README.lpicp found in <a href="#rpii2c">Appendix F</a>. OpenWRT kernel module installation is not covered in this document, instead, please refer to your OpenWRT documentation and see the Src/lpics/modules directory. For connection to the target device, please refer to `R-PI GPIO direct connection' using LPICP in <a href="#rpigpio">Appendix C</a> which is indentical in this regard.
+Linux PIC Programmer ICSP kernel module installation for the R-PI or OpenWRT is documented in README.lpicp found in <a href="#readme">Appendix F</a>. For connection to the target device, please refer to `R-PI GPIO direct - Single common data I/O connection' in <a href="#rpigpio">Appendix C</a>.
 </p>
 
 <p>
@@ -316,7 +316,7 @@ Below is the current status of interface support.
 </tr>
 <tr>
   <td>Raspberry Pi GPIO Direct</td>
-  <td>Works but limited target support</td>
+  <td>Works well but limited target support</td>
   <td>Breadboard at 3V3</td>
 </tr>
 <tr>
@@ -326,7 +326,7 @@ Below is the current status of interface support.
 </tr>
 <tr>
   <td>Linux PIC Programmer ICSP</td>
-  <td>Works perfectly and very fast</td>
+  <td>Works well but limited target support</td>
   <td>Breadboard at 3V3</td>
 </tr>
 </tbody>
@@ -440,15 +440,19 @@ For RS232 testing with a standard serial UART has been done on FreeBSD and Linux
 <tr><td>Y</td><td>PIC16F84</td><td>Ian Stoyle</td><td>&nbsp;</td><td>13</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
 <tr><td>Y</td><td>PIC18F1330</td><td>Darron Broad</td><td>&nbsp;</td><td>12.5</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
 <tr><td>Y</td><td>PIC18F2431</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>5</td><td>N</td><td>Incompatible (VDD on pin 7)</td></tr>
-<tr><td>Y</td><td>PIC18F26K80</td><td>Darron Broad &amp;<br>Gerhard Bertelsmann</td><td>Gerhard Bertelsmann</td><td>9</td><td>N</td><td>5</td><td>Incompatible (timing).</td></tr>
+<tr><td>Y</td><td>PIC18F26K80</td><td>Darron Broad &amp;<br>Gerhard Bertelsmann</td><td>Gerhard Bertelsmann</td><td>9</td><td>N</td><td>5</td><td>Incompatible (VPP tolerance).</td></tr>
 <tr><td>Y</td><td>PIC16F1825</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>Y</td><td>PIC16F1936</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>Y</td><td>PIC16F1847</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>Y</td><td>PIC18F25K50</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
-<tr><td>N</td><td>PIC18F14K50</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>5</td><td>N</td><td>Incompatible (PGC/PGD 3V3 limit).</td></tr>
-<tr><td>N</td><td>PIC18LF27J53</td><td>Darron Broad</td><td>&nbsp;</td><td>N</td><td>N</td><td>3V3</td><td>Incompatible (architecture).</td></tr>
+<tr><td>Y</td><td>PIC18F14K50</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>5</td><td>N</td><td>Incompatible (PGC/PGD 3V3 limit).</td></tr>
+<tr><td>Y</td><td>PIC18LF27J53</td><td>Darron Broad</td><td>&nbsp;</td><td>N</td><td>N</td><td>3V3</td><td>Incompatible (architecture).</td></tr>
+<tr><td>Y</td><td>PIC16F690</td><td>Darron Broad</td><td>Josef Larsson</td><td>13</td><td>N</td><td>N</td><td>Use 14P socket.</td></tr>
+<tr><td>Y</td><td>PIC12F510</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
+<tr><td>Y</td><td>PIC16F59</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>N</td><td>N</td><td>ICSP only.</td></tr>
+<tr><td>Y</td><td>PIC16F767</td><td>Darron Broad</td><td>&nbsp;</td><td>13</td><td>N</td><td>N</td><td>&nbsp;</td></tr>
+<tr><td>Y</td><td>PIC16F1788</td><td>Darron Broad</td><td>&nbsp;</td><td>9</td><td>N</td><td>5</td><td>VPP 9V.</td></tr>
 <tr><td>N</td><td>PIC16F873A</td><td>Chris Williams</td><td>&nbsp;</td><td>13</td><td>5</td><td>N</td><td>&nbsp;</td></tr>
-<tr><td>N</td><td>PIC16F690</td><td>Darron Broad</td><td>Josef Larsson</td><td>13</td><td>N</td><td>N</td><td>Use 14P socket.</td></tr>
 </tbody>
 
 </table>
@@ -469,7 +473,7 @@ Full support list is as follows.
   PIC12F508 T PIC12F509 U PIC16F505 T
   
  DS41257B
-  PIC12F510 U
+  PIC12F510 T
 
  DS41258C
   PIC16F506 T
@@ -487,7 +491,7 @@ Full support list is as follows.
   PIC16F57 T
 
  DS41243B
-  PIC16F59 U
+  PIC16F59 T
 
  DS41316C
   PIC12F519 T
@@ -509,8 +513,11 @@ Full support list is as follows.
 </div>
 
 <pre>
+ DS30189D
+  PIC16C84 U
+
  DS30262E
-  PIC16F83  U PIC16F84 T PIC16F84A T
+  PIC16F83 U PIC16F84 T PIC16F84A T
 
  DS30277D
   PIC16F627 T PIC16F628 U
@@ -546,6 +553,12 @@ Full support list is as follows.
   PIC16F722 U PIC16F722A U PIC16F723 U PIC16F723A U
   PIC16F724 U PIC16F726  T PIC16F727 U
 
+ DS41409B (3)
+  PIC16F720 U PIC16F721 U 
+
+ DS41405A (3)
+  PIC16F707 U
+
  DS41284E
   PIC12F615  T PIC12HV615 U PIC12F617  T PIC16F616 U
   PIC16HV616 U PIC12F609  U PIC12HV609 U PIC16F610 U
@@ -580,6 +593,13 @@ Full support list is as follows.
   PIC16F1826 U PIC16F1827 U PIC16F1823 U PIC12F1822 U
   PIC16F1824 U PIC16F1825 T PIC16F1828 U PIC16F1829 U
 
+ DS30492B
+  PIC16F737 U PIC16F747 U PIC16F767 T PIC16F777 U
+
+ DS41457E (3)
+  PIC16F1782 U PIC16F1783 U PIC16F1784 U PIC16F1786 U
+  PIC16F1787 U PIC16F1788 T PIC16F1789 U
+
  T=TESTED
  U=UNTESTED
 </pre>
@@ -597,7 +617,7 @@ Full support list is as follows.
 </li>
 <li>These devices must be flashed with VPP at 9V. The simplest means to do this on a Velleman K8048 is to either connect a 9V1 zener diode or 6K8 resistor between pins 4 and 8 on the 8-pin PIC socket. See <a href="#hvp">Appendix E</a>.</li>
 <li>These devices are not pin compatible with the Velleman K8048 and must be programmed via the ICSP header.</li>
-<li>Early revisions of these devices fail to bulk erase in LVP mode. A partial solution will be implemented at a later time.
+<li>Early revisions of these devices fail to bulk erase in LVP mode.</li>
 </ol>
 
 <p><u>16-bit word / 8-bit data architecture</u></p>
@@ -700,17 +720,18 @@ Full support list is as follows.
  
 <p><u>24-bit word / 16-bit data architecture</u></p>
 <pre>
-  dsPIC30F4013 (1)
+  dsPIC30F4013
+  PIC24FJ64GA002
 </pre>
 
 <p><u>32-bit architecture</u></p>
 <pre>
-  PIC32 MX150F128B (1)
+  PIC32MX150F128B
 </pre>
 
 <p><u>Notes</u></p>
 <ol class="outer">
-<li>Compiler support on the R-PI will be investigated and support added if available and working.
+<li>N/A
 </ol>
 
 <a href="#toc">Table of contents</a><br>
@@ -798,7 +819,7 @@ $ vi .k8048
 DEVICE=/dev/ttyS2
 SLEEP=0
 BITRULES=0x1F
-BUSY=50
+BUSY=0
 :wq!
 </pre>
 
@@ -880,14 +901,13 @@ SLEEP=1
 # TTY VELLEMAN K8048 = PGD_IN_PULLUP + PGD_OUT_FLIP + PGC_OUT_FLIP + VPP_OUT_FLIP + PGD_IN_FLIP
 # TTY VELLEMAN K8076 = PGD_IN_PULLUP
 # RPI GPIO VELLEMAN K8048 = PGD_IN_PULLUP
-# RPI GPIO DIRECT = PGD_IN_PULLUP (PGDO != PGDI)
 #
 # TTY VELLEMAN K8048
 #BITRULES=0x1f
 # TTY VELLEMAN K8076
 #BITRULES=0x10
 # RPIO GPIO VELLEMAN K8048
-#BITRULES=0x10
+#BITRULES=0x00
 # RPIO GPIO DIRECT
 BITRULES=0x10
 # LINUX MCP23017 I2C
@@ -895,9 +915,9 @@ BITRULES=0x10
 # LPICP ICSP
 #BITRULES=0x00
 
-# I/O busy cursor speed (lower is faster)
+# I/O busy cursor (0=DISABLED)
 # 
-BUSY=50
+BUSY=0
 
 # RPI GPIO VELLEMAN K8048 (README.raspi)
 #
@@ -968,7 +988,7 @@ DEBUG=1
 DEVICE=/dev/cuad0
 SLEEP=0
 BITRULES=0x1F
-BUSY=50
+BUSY=0
 </pre>
 
 <p><u>R-PI using a Velleman K8048 with a 74HC03</u></p>
@@ -987,14 +1007,14 @@ PGDI=25
 DEVICE=/dev/ttyS2
 SLEEP=0
 BITRULES=0x1F
-BUSY=50
+BUSY=0
 </pre>
 
 <p><u>R-PI GPIO Low Voltage Programming (LVP)</u></p>
 <pre>
 DEVICE=RPI
 SLEEP=1
-BITRULES=0x10
+BITRULES=0x00
 VPP=4
 PGM=22
 PGC=25
@@ -1132,6 +1152,8 @@ EXAMPLES:
                 Dump device content (intel hex32 format).
  k14 eeprom
                 Display data EEPROM content.
+ k14 erase flash | id | row [n]
+                Erase program flash, id or flash at row for n rows.
  k14 flash [n]
                 Display all or n words of program flash content.
  k14 id
@@ -1180,6 +1202,8 @@ EXAMPLES:
                 Dump device content (intel hex32 format).
  k16 eeprom
                 Display data EEPROM content.
+ k16 erase flash | id | row [n]
+                Erase program flash, id or flash at row for n rows.
  k16 flash [n]
                 Display all or n words of program flash content.
  k16 id
@@ -1581,30 +1605,10 @@ The single input drives the fourth remaining gate.
 <p>Low Voltage Programming with VPP at 3V3</p>
 
 <p>
-The following connections refer to the R-PI GPIO header directly. Ensure that power is only ever applied from GPIO 3V3 on PIN 1 and never 5V. The resistor is 1000 ohms.
+The following connections refer to the R-PI GPIO header directly. Ensure that power is only ever applied from GPIO 3V3 on PIN 1 and never 5V.
 </p>
 
 <p><u>Separate data I/O connections (RPI)</u></p>
-<pre>
-R-PI                              PICMicro	GPIO header	.k8048 	Cable colour (above left)
-====                              ========	===========	======	============
-
-3V3-------------------------------VDD		PIN 1 (P1-01)		RED
-
-GND-------------------------------VSS		PIN 6			GREEN
-
-GPIO04----------------------------VPP		PIN 7		VPP=4	GREY
-
-GPIO25----------------------------PGC		PIN 22		PGC=25	WHITE
-
-GPIO24-----------1KR------+-------PGD		PIN 18		PGDO=24	BLACK
-                          |
-GPIO23--------------------+			PIN 16		PGDI=23	BROWN
-
-GPIO22----------------------------PGM (1)	PIN 15		PGM=22  BLUE
-</pre>
-
-<p><u>Single common data I/O connection (RPI or LPICP)</u></p>
 <pre>
 R-PI                              PICMicro	GPIO header	.k8048 (RPI)
 ====                              ========	===========	============
@@ -1613,18 +1617,39 @@ R-PI                              PICMicro	GPIO header	.k8048 (RPI)
 
 GND-------------------------------VSS		PIN 6
 
-GPIO04----------------------------VPP		PIN 7		VPP=4
+GPIO04-----------470R-------------VPP		PIN 7		VPP=4
 
-GPIO25----------------------------PGC		PIN 22		PGC=25
+GPIO25-----------470R-------------PGC		PIN 22		PGC=25
 
-GPIO24----------------------------PGD		PIN 18		PGD=24
+GPIO24-----------470R--------+----PGD		PIN 18		PGDO=24
+			     |
+GPIO23-----------10K---------+			PIN 16		PGDI=23
 
-GPIO22----------------------------PGM (1)	PIN 15		PGM=22
+GPIO22-----------470R-------------PGM (1)	PIN 15		PGM=22
+</pre>
+
+<p><u>Single common data I/O connection (RPI or LPICP)</u></p>
+<pre>
+R-PI                              PICMicro	GPIO header	.k8048 (RPI)
+====                              ========	===========	============
+
+3V3-------------------------------VDD----+	PIN 1 (P1-01)
+					 |
+GND-------------------------------VSS	 |	PIN 6
+					 1(2)
+GPIO04-----------470R-------------VPP	 0	PIN 7		VPP=4
+					 K
+GPIO25-----------470R-------------PGC	 |	PIN 22		PGC=25
+					 |
+GPIO24-----------470R-------------PGD----+	PIN 18		PGD=24
+
+GPIO22-----------470R-------------PGM (1)	PIN 15		PGM=22
 </pre>
 
 <p><u>Notes</u></p>
 <ol class="outer">
 <li>Not used by all LVP compatible devices.
+<li>For `kio' ICSP I/O.
 </ol>
 
 <p>The full R-PI GPIO header is described <a href="http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29">here</a>.
@@ -1691,7 +1716,7 @@ $ kio stop
 <p>Low Voltage Programming with VPP at 3V3 or 5V</p>
 
 <p>
-The following connections are as per the image above. The resistor is 1000 ohms.
+The following connections are as per the image above.
 </p>
 
 <p><u>Separate data I/O connections (only supported option)</u></p>
@@ -1703,22 +1728,21 @@ PWR-------------------------------VDD
 
 GND-------------------------------VSS
 
-A0--------------------------------VPP
+A0---------------470R-------------VPP
 
-A1--------------------------------PGC
+A1---------------470R-------------PGC
 
-A2---------------1KR------+-------PGD
-                          |
-A3------------------------+
+A2---------------470R--------+----PGD
+                             |
+A3---------------10K---------+
 
-A4--------------------------------PGM (1)
+A4---------------470R-------------PGM (1)
 </pre>
 
 <p><u>Notes</u></p>
 <ol class="outer">
 <li>Not used by all LVP compatible devices.
 </ol>
-
 
 <a href="#toc">Table of contents</a><br>
 

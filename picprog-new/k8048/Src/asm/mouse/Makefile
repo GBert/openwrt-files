@@ -19,6 +19,7 @@ build:$(OBJECT)
 $(OBJECT):$(HEADER)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:build

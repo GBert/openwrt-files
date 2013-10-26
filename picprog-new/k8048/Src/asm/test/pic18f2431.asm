@@ -1,5 +1,5 @@
 ;
-; Velleman K8048 PIC18F2431 ICSPIO Demo Test (Receive commands, send data).
+; R-PI 3V3 PIC18F2431
 ;
 ; Copyright (c) 2005-2013 Darron Broad
 ; All rights reserved.
@@ -8,11 +8,15 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; Incompatible with the VELLEMAN K8048.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Pinout
 ; ------
-; !MCLR VPP 1-----28 RB7
-; RA0       2     27 RB6
-; RA1       3     26 RB5
+; !MCLR VPP 1-----28 RB7 PGD
+; RA0       2     27 RB6 PGC
+; RA1       3     26 RB5 PGM
 ; RA2       4     25 RB4
 ; RA3       5     24 RB3
 ; RA4       6     23 RB2
@@ -24,19 +28,6 @@
 ; RC1       12    17 RC6
 ; RC2       13    16 RC5
 ; RC3       14----15 RC4
-;
-; Function Pin Note
-; -------- --- ----
-; LD1      RA0
-; LD2      RA1
-; LD3      RA2
-; LD4      RA3
-; LD5      RA4 OPEN DRAIN?
-; LD6      RA5
-; SW1      RB0
-; SW2      RB1
-; SW3      RB2
-; SW4      RB4
 ;
 ; Program
 ; -------
@@ -53,14 +44,9 @@ ERRORLEVEL      -302
 ;
 ;******************************************************************************
 ;
-; K8048 PIC18F2431 (DS39599G) ICSPIO Demo Test (Receive commands, send data).
+; R-PI 3V3 PIC18F2431
 ;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the six LEDs to that
-; value and the second command takes no argument yet demonstrates how
-; we may send a value back to the host which, in this case, is the
-; current status of the four switches.
+; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
 ;******************************************************************************
 ;
@@ -69,7 +55,7 @@ ERRORLEVEL      -302
 ; DS51537F-page 32
 ;
 ; Oscillator Selection bits:
-                CONFIG    OSC=XT
+                CONFIG    OSC=IRCIO
 ; Fail-Safe Clock Monitor Enable bit:
                 CONFIG    FCMEN=OFF
 ; Internal External Switch Over mode:
@@ -81,7 +67,7 @@ ERRORLEVEL      -302
 ; Brown-out Voltage:
                 CONFIG    BORV=27
 ; Watchdog Timer:
-                CONFIG    WDTEN=ON
+                CONFIG    WDTEN=OFF
 ; Watchdog Postscaler:
                 CONFIG    WDPS=1024
 ; PWM output pins Reset state control:
@@ -141,24 +127,31 @@ ERRORLEVEL      -302
 ;
 ; Constants
 ;
-  __IDLOCS _IDLOC0,1
-  __IDLOCS _IDLOC1,2
-  __IDLOCS _IDLOC2,3
-  __IDLOCS _IDLOC3,4
-  __IDLOCS _IDLOC4,5
-  __IDLOCS _IDLOC5,6
-  __IDLOCS _IDLOC6,7
-  __IDLOCS _IDLOC7,8
+; __IDLOCS _IDLOC0,1
+; __IDLOCS _IDLOC1,2
+; __IDLOCS _IDLOC2,3
+; __IDLOCS _IDLOC3,4
+; __IDLOCS _IDLOC4,5
+; __IDLOCS _IDLOC5,6
+; __IDLOCS _IDLOC6,7
+; __IDLOCS _IDLOC7,8
 ;
-; XTAL = 4MHz
-    CONSTANT CLOCK = 4000000
+; INTRC = 8MHz
+    CONSTANT CLOCK = 8000000
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Data EEPROM
 ;
-                ORG     0xF00000
-                DE      "PIC18F2431",0
+;               ORG     0xF00000
+;               DE      "PIC18F2431",0
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Program flash (row 255)
+;
+                ORG     0x3FC0
+                DB      "PIC18F2431",0
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -192,7 +185,11 @@ NPINS           SET     .28                 ;28-PIN PDIP
 ;
 ; Initialise
 ;
-INIT            
+INIT            MOVLW   b'01110010'         ;INIT CLOCK 8MHZ INTRC
+                MOVWF   OSCCON
+INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
+                GOTO    INITIOFS
+
                 BTFSC   RCON,NOT_TO         ;WATCHDOG TIME-OUT
                 GOTO    POWERUP
 
@@ -201,72 +198,28 @@ INIT
 
                 GOTO    WATCHDOG            ;CONTINUE
 
-POWERUP         SETF    LATA                ;INIT PORTA
-                CLRF    LATB                ;INIT PORTB
+POWERUP         SETF    LATA                ;INIT PORT A
 
-WATCHDOG        CLRWDT                      ;RESET WATCHDOG
+WATCHDOG 
+                CLRF    ADCON0              ;DISABLE A/D
+                CLRF    ANSEL0              ;DIGITAL I/O
+                CLRF    PWMCON0             ;DISABLE PWM
 
-                MOVLW   b'00000000'         ;DISABLE A/D
-                MOVWF   ADCON0
-                MOVLW   b'00001111'         ;DIGITAL I/O
-                MOVWF   ADCON1
-
-                MOVLW   b'11000000'         ;LD1..LD6 O/P    
+                MOVLW   b'00000000'         ;PORT A ALL O/P
                 MOVWF   TRISA
 
-                MOVLW   b'11111111'         ;PGD/PGC I/P SW1..SW4 I/P
-                MOVWF   TRISB
+                CLRWDT                      ;INIT WATCHDOG TIMER
+                BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
-                MOVF    BUFFER,W            ;IS LED?
-                XORLW   CMD_LED
-                BZ      DOLED
-
-                MOVF    BUFFER,W            ;IS SWITCH?
-                XORLW   CMD_SWITCH
-                BZ      DOSWITCH
-
                 GOTO    UNSUPPORTED
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Set LD1..LD6
-;
-DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                CALL    GETBYTE             ;GET LD ARG
-                BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
-
-                MOVF    BUFFER,W            ;SET LD1..LD6
-                ANDLW   0x3F
-                MOVWF   LATA
-
-                GOTO    DOEND               ;COMMAND COMPLETED
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Get SW1..SW4
-;
-DOSWITCH        CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                MOVF    PORTB,W             ;GET SW1..SW3
-                ANDLW   B'00000111'
-                BTFSC   PORTB,4             ;GET SW4
-                IORLW   B'00001000'
-
-                CALL    SENDBYTE            ;SEND SW1..SW4
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    DOEND               ;COMMAND COMPLETED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

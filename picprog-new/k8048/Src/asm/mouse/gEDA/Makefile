@@ -16,6 +16,7 @@ SYMDIR=/usr/share/gEDA/sym/local
 build:$(OBJECT)
 
 %.sym: %.src
+	@echo -n "[TRAGESYM] "
 	$(TS) $< $@
 
 install:build

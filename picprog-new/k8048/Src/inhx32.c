@@ -72,7 +72,7 @@ int
 inhx32(const char *filename)
 {
 	FILE *f1;
-	char *line;
+	char line[STRLEN];
 	unsigned int extended_address = 0, bb, ix;
 	int n;
 	unsigned char tt = TT_DATA, cc;
@@ -83,15 +83,10 @@ inhx32(const char *filename)
 	inhx32_count = 0;
 	inhx32_pdata = NULL;
 	
-	f1 = fopen(filename, "rb");
-	if (f1 == NULL) {
-		printf("%s: error: file open failed [%s] [%s]\n", __func__, filename, strerror(errno));
+	if ((f1 = fopen(filename, "rb")) == NULL) {
+		printf("%s: error: file open failed [%s] [%s]\n",
+		__func__, filename, strerror(errno));
 		return -1;
-	}
-	line = (char *)calloc(STRLEN, sizeof(char));
-	if (line == NULL) {
-		printf("%s: fatal error: calloc failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
 	}
 
 	while (tt != TT_EOF && fgets(line, STRLEN, f1) != NULL)
@@ -163,7 +158,13 @@ inhx32(const char *filename)
 					inhx32->bytes[n] = inhx32_gethexb(&line[ix]);
 					ix += 2;
 				}
-				
+#ifdef DEBUG
+				printf("ADDRESS=0x%08X NBYTES=%d ", inhx32->address, inhx32->nbytes);
+				for (n = 0; n < bb; n++) {
+					printf("0x%02x ", inhx32->bytes[n]);
+				}
+				printf("\n");
+#endif
 				/* Find entry in tree */
 				if (tfind((void *)(inhx32), (void **)(&root), inhx32_compare) != NULL) {
 					printf("%s: fatal error: duplicate address [%08X]\n",
@@ -203,7 +204,6 @@ inhx32(const char *filename)
 				break;
 		}
 	}
-	free(line);
 	fclose(f1);
 
 	/* Return error if no program data lines found */

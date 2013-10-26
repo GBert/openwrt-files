@@ -99,6 +99,7 @@ ENDC
 NPINS           SET     .8                  ;8-PIN PDIP
 #INCLUDE        "delay.inc"                 ;DELAY COUNTERS
 #INCLUDE        "icspio.inc"                ;ICSP I/O
+#INCLUDE        "common.inc"                ;COMMON COMMANDS MACRO
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -134,42 +135,17 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
-MAINLOOP        CLRF    CHECKSUM            ;START SESSION
-                CALL    GETBYTE             ;GET COMMAND
-                BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
-
-                CLRWDT                      ;UPDATE WATCHDOG
-;
-; COMMAND VALIDATE
-;
-                MOVF    BUFFER,W            ;IS SLEEP?
-                XORLW   CMD_SLEEP
-                BZ      DOSLEEP
+MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
                 MOVF    BUFFER,W            ;IS LED?
                 XORLW   CMD_LED
                 BZ      DOLED
 
-                MOVF    BUFFER,W            ;IS ERROR?
-                XORLW   CMD_ERROR
-                BZ      DOERROR
+                GOTO    UNSUPPORTED
 ;
-; COMMAND UNSUPPORTED
-;
-                CALL    SENDNAK             ;COMMAND UNSUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Standby
-;
-DOSLEEP         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                SLEEP                       ;SLEEP UNTIL WATCHDOG TIME-OUT
-NOTREACHED
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Set LD1
 ;
@@ -179,36 +155,13 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
                 CALL    GETBYTE             ;GET LD ARG
                 BC      IOERROR             ;TIME-OUT, PROTOCOL OR PARITY ERROR
 
-                CLRW                        ;SET LD1
+                MOVLW   0                   ;SET LD1
                 BTFSC   BUFFER,0
-                IORLW   B'00000100'
+                IORLW   0x04
                 MOVWF   LATIO               ;UPDATE SHADOW
                 MOVWF   GPIO                ;UPDATE GPIO
 
                 GOTO    DOEND               ;COMMAND COMPLETED
-;
-; Get last error
-;
-DOERROR         CALL    SENDACK             ;COMMAND SUPPORTED
-                BC      IOERROR             ;TIME-OUT
-
-                MOVF    LASTERROR,W
-                CLRF    LASTERROR
-                CALL    SENDBYTE
-                BC      IOERROR
-;
-; Command completed
-;
-DOEND           CALL    SENDSUM             ;CLOSE SESSION
-                BC      IOERROR             ;TIME-OUT
-
-                GOTO    MAINLOOP            ;CONTINUE
-;
-; Time-out, protocol or parity error
-;
-IOERROR         MOVWF   LASTERROR
-
-                GOTO    MAINLOOP            ;CONTINUE
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                 END

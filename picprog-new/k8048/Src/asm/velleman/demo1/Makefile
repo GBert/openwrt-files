@@ -14,6 +14,7 @@ OBJECT=pic16f676.hex
 build:$(OBJECT)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:build

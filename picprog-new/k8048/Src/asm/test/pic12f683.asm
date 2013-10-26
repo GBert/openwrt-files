@@ -158,7 +158,7 @@ WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

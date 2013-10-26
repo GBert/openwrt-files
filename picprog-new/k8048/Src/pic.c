@@ -271,12 +271,10 @@ pic_read_eeprom_memory_block(struct k8048 *k, unsigned char *data, int max)
 void
 pic_program(struct k8048 *k, const char *filename, int blank)
 {
-	inhx32(filename);
-	if (inhx32_count <= 0) {
+	if (inhx32(filename) <= 0)
 		return;
-	}
 
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	switch (k->arch) {
 #ifdef K12
@@ -311,12 +309,10 @@ pic_verify(struct k8048 *k, const char *filename)
 {
 	int fail = 0;
 	
-	inhx32(filename);
-	if (inhx32_count <= 0) {
+	if (inhx32(filename) <= 0)
 		return 0;
-	}
 
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	switch (k->arch) {
 #ifdef K12
@@ -351,7 +347,7 @@ pic_verify(struct k8048 *k, const char *filename)
 void
 pic_blank(struct k8048 *k)
 {
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	switch (k->arch) {
 #ifdef K12
@@ -375,12 +371,12 @@ pic_blank(struct k8048 *k)
 }
 
 /*
- * ERASE A ROW
+ * ERASE ROW(S)
  */
 void
-pic_erase(struct k8048 *k, int row)
+pic_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
 {
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	switch (k->arch) {
 #ifdef K12
@@ -390,12 +386,12 @@ pic_erase(struct k8048 *k, int row)
 #endif
 #ifdef K14
 	case ARCH14BIT:
-		printf("%s: information: unimplemented\n", __func__);
+		pic14_row_erase(k, row, nrows);
 		break;
 #endif
 #ifdef K16
 	case ARCH16BIT:
-		pic16_row_erase(k, row);
+		pic16_row_erase(k, row, nrows);
 		break;
 #endif
 	default:printf("%s: information: unimplemented\n", __func__);
@@ -409,7 +405,7 @@ pic_erase(struct k8048 *k, int row)
 void
 pic_dumpdeviceid(struct k8048 *k)
 {
-	pic_read_config(k, CONFIG_ALL);
+	pic_read_config(k, PIC_CONFIG_ALL);
 
 	switch (k->arch) {
 #ifdef K12
@@ -440,7 +436,7 @@ pic_dumpconfig(struct k8048 *k)
 {
 	int mode = VERBOSE;
 
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	switch (k->arch) {
 #ifdef K12
@@ -500,7 +496,7 @@ pic_dumposccal(struct k8048 *k)
 	switch (k->arch) {
 #ifdef K12
 	case ARCH12BIT:
-		pic12_read_config_memory(k, CONFIG_ALL);
+		pic12_read_config_memory(k, PIC_CONFIG_ALL);
 		pic12_dumposccal(k);
 		break;
 #endif
@@ -529,7 +525,7 @@ pic_writeosccal(struct k8048 *k, unsigned short osccal)
 	switch (k->arch) {
 #ifdef K12
 	case ARCH12BIT:
-		pic12_read_config_memory(k, CONFIG_ONLY);
+		pic12_read_config_memory(k, PIC_CONFIG_ONLY);
 		pic12_bulk_erase(k, osccal);
 		break;
 #endif
@@ -556,11 +552,12 @@ void
 pic_dumpbyte(struct k8048 *k, unsigned short address, unsigned char byte)
 {
 	unsigned char cc, hb, lb;
-
+#ifdef DEBUG
 	if (k->debug >= 10) {
 		printf("%s: information: address=%04X byte=%02X\n",
 			__func__, address, byte);
 	}
+#endif
 	hb = address >> 8;
 	lb = address;
 	printf(":01%02X%02X00", hb, lb);
@@ -577,11 +574,12 @@ void
 pic_dumpword(struct k8048 *k, unsigned short address, unsigned short word)
 {
 	unsigned char cc, hb, lb;
-
+#ifdef DEBUG
 	if (k->debug >= 10) {
 		printf("%s: information: address=%04X word=%04X\n",
 			__func__, address, word);
 	}
+#endif
 	hb = address >> 7;
 	lb = address << 1;
 	printf(":02%02X%02X00", hb, lb);
@@ -601,7 +599,7 @@ pic_dumpdevice(struct k8048 *k)
 	int size;
 
 	/* Get userid/config */
-	pic_read_config(k, CONFIG_ALL);
+	pic_read_config(k, PIC_CONFIG_ALL);
 
 	/* Extended address = 0x0000 */
 	printf(":020000040000FA\n");
@@ -658,7 +656,7 @@ pic_dumpflash(struct k8048 *k, int max)
 {
 	int size;
 
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get program/data flash size */
 	size = pic_get_data_flash_size(k);
@@ -685,7 +683,7 @@ pic_dumpeeprom(struct k8048 *k)
 {
 	int size;
 
-	pic_read_config(k, CONFIG_ONLY);
+	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get data EEPROM size */
 	size = pic_get_data_eeprom_size(k);
@@ -710,7 +708,7 @@ pic_dump_program_flash(struct k8048 *k, int max, int capacity, int mode)
 	unsigned short *code;
 
 	/* Program code data */
-	code = (unsigned short *)calloc(CODEWIDTH + max, sizeof(unsigned short));
+	code = (unsigned short *)calloc(PIC_CODEWIDTH + max, sizeof(unsigned short));
 	if (code == NULL) {
 		printf("%s: fatal error: calloc failed\n", __func__);
 		exit(EX_OSERR); /* Panic */
@@ -727,13 +725,13 @@ pic_dump_program_flash(struct k8048 *k, int max, int capacity, int mode)
 	while (addr < max) {
 		/* Detect blank row */
 		int skip = 0;
-		for (i = 0; i < CODEWIDTH; i++) {
+		for (i = 0; i < PIC_CODEWIDTH; i++) {
 			/* arch = mask */
 			if (code[addr + i] == k->arch)
 				skip++;
 		}
 		/* Output row if not blank */
-		if (skip < CODEWIDTH) {
+		if (skip < PIC_CODEWIDTH) {
 			lines++;
 
 			/* Intel hexadecimal output */
@@ -746,9 +744,9 @@ pic_dump_program_flash(struct k8048 *k, int max, int capacity, int mode)
 					hb = baseaddr >> 7;
 					lb = baseaddr << 1;
 				}
-				printf(":%02X%02X%02X00", CODEWIDTH * 2, hb, lb);
-				cc = CODEWIDTH * 2 + hb + lb + 0x00;
-				for (i = 0; i < CODEWIDTH; i++) {
+				printf(":%02X%02X%02X00", PIC_CODEWIDTH * 2, hb, lb);
+				cc = PIC_CODEWIDTH * 2 + hb + lb + 0x00;
+				for (i = 0; i < PIC_CODEWIDTH; i++) {
 					lb = code[addr + i];
 					hb = code[addr + i] >> 8;
 					printf("%02X%02X", lb, hb);
@@ -763,17 +761,17 @@ pic_dump_program_flash(struct k8048 *k, int max, int capacity, int mode)
 					printf("[%04X] ", baseaddr);
 				else
 					printf("[%05X] ", baseaddr);
-				for (i = 0; i < CODEWIDTH; i++)
+				for (i = 0; i < PIC_CODEWIDTH; i++)
 					printf("%04X ", code[addr + i]);
 				printf("\n");
 			}
 
 		}
 		/* Move to next row */
-		addr += CODEWIDTH;
-		baseaddr += CODEWIDTH;
+		addr += PIC_CODEWIDTH;
+		baseaddr += PIC_CODEWIDTH;
 		if (k->arch == ARCH16BIT)
-			baseaddr += CODEWIDTH;
+			baseaddr += PIC_CODEWIDTH;
 	}
 	/* Dump footer */
 	if (mode == HEXDEC && lines == 0) {
@@ -790,7 +788,7 @@ pic_dump_program_flash(struct k8048 *k, int max, int capacity, int mode)
 void
 pic_dump_data_eeprom(struct k8048 *k, int max, int mode)
 {
-	int i, lines = 0, header = 0, datawidth = DATAWIDTH, addr = 0, baseaddr;
+	int i, lines = 0, header = 0, datawidth = PIC_DATAWIDTH, addr = 0, baseaddr;
 	unsigned char ch, *data;
 
 	if (mode == INHX32 && k->arch != ARCH16BIT) {

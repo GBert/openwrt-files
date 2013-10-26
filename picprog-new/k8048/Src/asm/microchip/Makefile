@@ -14,6 +14,7 @@ OBJECT=a2d.hex bttn.hex i2c.hex intrp.hex pwm.hex table.hex tmrrw.hex usart.hex
 build:$(OBJECT)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:

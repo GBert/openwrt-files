@@ -8,14 +8,18 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; Incompatible with the VELLEMAN K8048.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; 32768 words Flash (16-bit)
 ; 3648 bytes RAM
 ; 1024 bytes EEPROM
 ;
 ; Pinout
 ; ------
-; !MCLR        1-----28 RB7
-; RA0          2     27 RB6
+; !MCLR        1-----28 RB7 PGD
+; RA0          2     27 RB6 PGC
 ; RA1          3     26 RB5
 ; RA2          4     25 RB4
 ; RA3          5     24 RB3
@@ -213,7 +217,7 @@ WATCHDOG        CLRF    ADCON0              ;DISABLE A/D
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

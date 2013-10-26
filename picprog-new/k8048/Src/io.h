@@ -18,7 +18,7 @@
 /*
  * command i/o
  */
-#define RESYNCTIME (1000000) /* 1 second */
+#define RESYNC (64)
 #define EOT (0x04)
 #define ACK (0x06)
 #define NAK (0x15)
@@ -111,6 +111,8 @@ unsigned char get_pgd(struct k8048 *);
 void io_usleep(struct k8048 *, int);
 void io_standby(struct k8048 *);
 void io_init_program_verify(struct k8048 *);
+void io_init_mchp_key14(struct k8048 *);
+void io_init_mchp_key16(struct k8048 *);
 
 void io_data_input_pullup(struct k8048 *);
 void io_data_input_release(struct k8048 *);
@@ -149,7 +151,7 @@ int io_test_in(struct k8048 *, int, int, unsigned char *);
 char *io_test_err(int);
 int io_test_command(struct k8048 *, int, int, unsigned char *, int, unsigned int *, int);
 
-void io_test_switch(struct k8048 *, int);
-void io_test_lasterror(struct k8048 *, int);
+int io_test_switch(struct k8048 *, int);
+int io_test_lasterror(struct k8048 *, int);
 
 #endif /* !_IO_H */

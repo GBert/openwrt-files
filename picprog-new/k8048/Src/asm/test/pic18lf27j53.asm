@@ -1,10 +1,14 @@
 ;
-; R-PI 3V3 PIC18LF27J53 TODO
+; R-PI 3V3 PIC18LF27J53
 ;
 ; Copyright (c) 2005-2013 Darron Broad
 ; All rights reserved.
 ;
 ; Licensed under the terms of the BSD license, see file LICENSE for details.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Incompatible with the VELLEMAN K8048.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -14,8 +18,8 @@
 ;
 ; Pinout
 ; ------
-; !MCLR        1-----28 RB7
-; RA0          2     27 RB6
+; !MCLR        1-----28 RB7 PGD
+; RA0          2     27 RB6 PGC
 ; RA1          3     26 RB5
 ; RA2          4     25 RB4
 ; RA3          5     24 RB3
@@ -29,6 +33,31 @@
 ; RC2          13    16 RC5
 ; VUSB         14----15 RC4
 ;
+; VDDCORE 2.00V .. 2.70V (VDDCORE <= VDD)
+; VDD     2.15V .. 3.60V (VDD >= VDDCORE)
+;
+; LP2951 Pinout 
+; -------------
+; OUTPUT   1-----8 INPUT
+; SENSE    2     7 FEEDBACK
+; SHUTDOWN 3     6 VTAP
+; GROUND   4-----5 !ERROR
+;
+; LP2951 VDDCORE
+; --------------
+; OUTPUT = 1.23 * (1 + R1 / R2)
+;
+; R1=100K R2=100K VOUT=2.46V
+;
+; VDDCORE---+----+----+-----OUTPUT-+--------+-INPUT---VDD
+;  2.46V    |    |    |            |        |         3V3
+;          100n 10u  100K R1       | LP2951 |
+;           |    |    |            |        |
+;           |    |    +---FEEDBACK-+--------+
+;           |    |    |                |
+;           |    |   100K R2           |
+;           |    |    |                |
+;           +----+----+----------------+--------------GND
 ; Program
 ; -------
 ; k16 mchp program pic18lf27j53.hex
@@ -44,7 +73,7 @@ ERRORLEVEL      -302
 ;
 ;******************************************************************************
 ;
-; R-PI 3V3 PIC18LF27J53 TODO
+; R-PI 3V3 PIC18LF27J53
 ;
 ; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
@@ -53,21 +82,21 @@ ERRORLEVEL      -302
 ; Config
 ;
 ; Watchdog Timer:
-                CONFIG  WDTEN=OFF 
+                CONFIG  WDTEN=OFF ; Disabled - Controlled by SWDTEN bit
 ; PLL Prescaler Selection:
-                CONFIG  PLLDIV=3
+                CONFIG  PLLDIV=1 ; No prescale (4 MHz oscillator input drives PLL directly)
 ; PLL Enable Configuration Bit:
-                CONFIG  CFGPLLEN=OFF
+                CONFIG  CFGPLLEN=ON ; PLL Enabled
 ; Stack Overflow/Underflow Reset:
                 CONFIG  STVREN=ON
 ; Extended Instruction Set:
                 CONFIG  XINST=OFF
 ; CPU System Clock Postscaler:
-                CONFIG  CPUDIV=OSC1
+                CONFIG  CPUDIV=OSC1 ; No CPU system clock divide
 ; Code Protect:
                 CONFIG  CP0=OFF
 ; Oscillator:
-                CONFIG  OSC=INTOSC
+                CONFIG  OSC=INTOSCPLL
 ; T1OSC/SOSC Power Selection Bits:
                 CONFIG  SOSCSEL=DIG
 ; EC Clock Out Enable Bit:
@@ -109,7 +138,7 @@ ERRORLEVEL      -302
 ;
 ; Constants
 ;
-; HFINTOSC = TODO
+; INTOSCPLL = 48MHz
     CONSTANT CLOCK = 48000000
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -158,13 +187,34 @@ INTLOW
 ;
 ; Initialise
 ;
-INIT            ;TODO
+INIT            MOVLB   0x0F                ;SFR ACCESS IN BANKED MODE
+
+                BTFSC   RCON,NOT_TO         ;WATCHDOG TIME-OUT?
+                GOTO    POWERUP
+
+                MOVLW   0xFF                ;WATCHDOG TIMED OUT
+                XORWF   LATA,F
+
+                GOTO    WATCHDOG            ;CONTINUE
+
+POWERUP         SETF    LATA                ;INIT PORT A
+                CLRF    LATB                ;INIT PORT B
+
+WATCHDOG
+                MOVLW   b'00000000'         ;PORT A ALL O/P    
+                MOVWF   TRISA
+
+                MOVLW   b'11111111'         ;PORT B ALL I/P
+                MOVWF   TRISB
+
+                CLRWDT                      ;INIT WATCHDOG TIMER
+                BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

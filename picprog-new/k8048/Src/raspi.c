@@ -221,20 +221,20 @@ gpio_test(GPIO *gpio, int seconds)
 		printf("\n");
 
 		gpio_set(gpio, gpio->vpp, output_level);
-		printf("GPIO %d (TX/!MCLR/VPP)     = %d\n", gpio->vpp, output_level);
+		printf("GPIO %02d (TX/!MCLR/VPP)     = %d\n", gpio->vpp, output_level);
 
 		gpio_set(gpio, gpio->pgm, output_level);
-		printf("GPIO %d (PGM)              = %d\n", gpio->pgm, output_level);
+		printf("GPIO %02d (PGM)              = %d\n", gpio->pgm, output_level);
 
 		gpio_set(gpio, gpio->pgc, output_level);
-		printf("GPIO %d (RTS/PGC CLOCK)    = %d\n", gpio->pgc, output_level);
+		printf("GPIO %02d (RTS/PGC CLOCK)    = %d\n", gpio->pgc, output_level);
 
 		gpio_set(gpio, gpio->pgdo, output_level);
-		printf("GPIO %d (DTR/PGD DATA_OUT) = %d\n", gpio->pgdo,output_level);
+		printf("GPIO %02d (DTR/PGD DATA_OUT) = %d\n", gpio->pgdo,output_level);
 
 		if (gpio->pgdi != gpio->pgdo) {
 			gpio_get(gpio, gpio->pgdi, &input_level);
-			printf("GPIO %d (CTS/PGD DATA_IN)  = %d\n", gpio->pgdi, input_level);
+			printf("GPIO %02d (CTS/PGD DATA_IN)  = %d\n", gpio->pgdi, input_level);
 		}
 
 		fflush(stdout);

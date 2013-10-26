@@ -42,7 +42,8 @@ AOBJECT=pic16f84a.hex pic16f627.hex pic16f88.hex pic16f648a.hex \
 	pic16f57.hex pic16f54.hex pic16f506.hex pic10f220.hex \
 	pic16f887.hex pic12f519.hex pic16f73.hex pic16f886.hex \
 	pic18f4620.hex pic16f876a.hex pic18f4520.hex pic16f917.hex \
-	pic16f84.hex pic18f1330.hex pic18f2431.hex
+	pic16f84.hex pic18f1330.hex pic18f2431.hex pic16f690.hex \
+	pic12f510.hex pic16f59.hex pic16f767.hex
 
 ASTEST:=$(shell gpasm -l | grep -i 10f320)
 ifneq "$(strip $(ASTEST))" ""
@@ -99,6 +100,11 @@ ifneq "$(strip $(ASTEST))" ""
 AOBJECT+=pic18f14k50.hex
 endif
 
+ASTEST:=$(shell gpasm -l | grep -i 16f1788)
+ifneq "$(strip $(ASTEST))" ""
+AOBJECT+=pic16f1788.hex
+endif
+
 AHEADER=../include/device.inc ../include/const.inc ../include/delay.inc \
 	../include/icspio.inc ../include/macro.inc ../include/shadow.inc \
 	../include/common.inc ../include/ampire-ac162d.inc ../include/ps2.inc
@@ -110,12 +116,16 @@ $(AOBJECT):$(AHEADER)
 $(COBJECT):$(CHEADER)
 
 $(CTARGET):$(COBJECT)
+	@echo -n "[LINK] "
 	$(CC) $(CFLAGS) $(COBJECT) -o $(CTARGET) $(CLIB)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
-c.o:	$(CC) -c $< -o $@
+%.o:%.c
+	@echo -n "[CC] "
+	$(CC) $(CFLAGS) -c $< -o $@
 
 install:build
 

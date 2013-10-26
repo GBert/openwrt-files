@@ -90,22 +90,37 @@ Breadboard connections for LVP programming with VPP at 3V3
 
  R-PI                              PICMicro	GPIO header	.k8048
  ====                              ========	===========	======
+ 3V3-------------------------------VDD           PIN 1 (P1-01)
 
- 3V3-------------------------------VDD		PIN 1 (P1-01)
+ GND-------------------------------VSS           PIN 6
 
- GND-------------------------------VSS		PIN 6
+ GPIO04-----------470R-------------VPP           PIN 7           VPP=4
 
- GPIO04----------------------------VPP		PIN 7		VPP=4
+ GPIO25-----------470R-------------PGC           PIN 22          PGC=25
 
- GPIO25----------------------------PGC		PIN 22		PGC=25
+ GPIO24-----------470R--------+----PGD           PIN 18          PGDO=24
+                              |
+ GPIO23-----------10K---------+                  PIN 16          PGDI=23
 
- GPIO24-----------1KR------+-------PGD		PIN 18		PGDO=24
-                           |
- GPIO23--------------------+			PIN 16		PGDI=23
+ GPIO22-----------470R-------------PGM (1)       PIN 15          PGM=22
 
- GPIO22----------------------------PGM (1)	PIN 15		PGM=22
+ R-PI                              PICMicro	GPIO header	.k8048
+ ====                              ========	===========	======
+
+ 3V3-------------------------------VDD----+     PIN 1 (P1-01)
+                                          |
+ GND-------------------------------VSS    |     PIN 6
+                                          1(2)
+ GPIO04-----------470R-------------VPP    0     PIN 7           VPP=4
+                                          K
+ GPIO25-----------470R-------------PGC    |     PIN 22          PGC=25
+                                          |
+ GPIO24-----------470R-------------PGD----+     PIN 18          PGD=24
+
+ GPIO22-----------470R-------------PGM (1)      PIN 15          PGM=22
 
 (1) Not used by all LVP compatible devices.
+(2) For `kio' ICSP I/O
 
 The R-PI GPIO header is described here:
  http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29

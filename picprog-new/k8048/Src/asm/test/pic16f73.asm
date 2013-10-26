@@ -157,7 +157,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 
@@ -183,7 +183,7 @@ DOLED           CALL    SENDACK             ;COMMAND SUPPORTED
 
                 MOVF    BUFFER,W            ;SET LD1..LD6
                 ANDLW   0x3F
-                MOVWF   LATA                ;UPDATE SHADOW
+                MOVWF   LATA                ;UPDATE PORT A SHADOW
                 MOVWF   PORTA               ;UPDATE PORT A
 
                 GOTO    DOEND               ;COMMAND COMPLETED

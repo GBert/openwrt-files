@@ -75,8 +75,6 @@ ERRORLEVEL      -220
                 DE      0x02    ;[2001] USERID1
                 DE      0x03    ;[2002] USERID2
                 DE      0x04    ;[2003] USERID3
-                DE      0x05    ;[2004] RESERVED
-                DE      0x06    ;[2005] RESERVED
 ERRORLEVEL      +220
 ;
 ; XTAL = 4MHz
@@ -158,7 +156,7 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 ;
 ; Main loop
 ;
-                CLRF    LASTERROR
+                CALL    INITIO              ;INITIALISE ICSPIO
 ;
 MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
 

@@ -12,7 +12,7 @@
                 NOLIST
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; K8048 ICSP I/O
+; ICSP I/O
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -136,6 +136,47 @@ ENDC
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
+; Initialise for ICSPIO
+;
+; params  : NONE
+; result  : W=0
+; affects : LASTERROR
+;
+INITIO          CLRF    LASTERROR
+;
+; DATA/CLOCK = LOW
+;
+IF ARCH == ENHANCED
+                BANKSEL ICSPLAT
+ENDIF
+                BCF     ICSPLAT,ICSPDAT ;INIT LATCH
+                BCF     ICSPLAT,ICSPCLK
+IF ARCH == ENHANCED
+                BANKSEL BANK0
+ENDIF
+IFDEF SHADOWLATCH                       ;INIT PORT
+                MOVF    ICSPLAT,W
+                MOVWF   ICSPPORT
+ENDIF
+;
+; DATA/CLOCK = INPUT
+;
+IF ARCH == MIDRANGE || ARCH == ENHANCED
+                BANKSEL ICSPTRIS
+ENDIF
+                BSF     ICSPTRIS,ICSPDAT;INIT TRIS
+                BSF     ICSPTRIS,ICSPCLK
+IF ARCH == MIDRANGE || ARCH == ENHANCED
+                BANKSEL BANK0
+ENDIF
+IF ARCH == BASELINE
+                MOVF    ICSPTRIS,W
+                TRIS    ICSPPORT
+ENDIF
+                RETLW   0
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Wait for ICSPCLK High
 ;
 ; params  : NONE
@@ -153,6 +194,8 @@ WAITHIGHTEST    BTFSC   ICSPPORT,ICSPCLK
                 DJNZ    COUNTER1,WAITHIGHTEST
                 BSF     STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT (CARRY SET)
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Wait for ICSPCLK Low
 ;
@@ -172,6 +215,8 @@ WAITLOWTEST     BTFSS   ICSPPORT,ICSPCLK
                 BSF     STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT (CARRY SET)
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Get in a clocked byte
 ; 
 ; params  : NONE
@@ -184,7 +229,7 @@ GETBYTE         CLRF    BUFFER          ;CLEAR INPUT BYTE
                 MOVLW   0x08            ;8 BITS IN A BYTE
                 MOVWF   COUNTER0
 ;
-; SET ICSPDAT I/P
+; ENSURE ICSPDAT IS I/P
 ;
 IF ARCH == MIDRANGE || ARCH == ENHANCED
                 BANKSEL ICSPTRIS
@@ -198,25 +243,33 @@ IF ARCH == BASELINE
                 TRIS    ICSPPORT
 ENDIF
 ;
-; START BIT
+; START BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;START BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
+;
+; START BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;START BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
-
+;
+; START BIT INPUT
+;
                 BTFSS   ICSPPORT,ICSPDAT;TEST START BIT LOW
                 GOTO    GETBIT          ;START BIT LOW...
                 BSF     STATUS,C        ;START BIT NOT LOW
                 RETLW   ERRPROTOCOL     ;PROTOCOL ERROR (CARRY SET)
 ;
-; DATA BIT
+; DATA BIT CLOCK HIGH
 ;
 GETBIT          CALL    WAITHIGH        ;DATA BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
+;
+; DATA BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;DATA BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
@@ -236,15 +289,20 @@ ENDIF
 GETPAR          XORWF   PARITY,F
                 DJNZ    COUNTER0,GETBIT ;FOR ALL BITS
 ;
-; PARITY BIT
+; PARITY BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;PARITY BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
+;
+; PARITY BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;PARITY BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
-
+;
+; PARITY BIT INPUT
+;
                 MOVLW   0               ;UPDATE PARITY
                 BTFSC   ICSPPORT,ICSPDAT
                 MOVLW   1
@@ -257,15 +315,20 @@ GETPAR          XORWF   PARITY,F
                 BSF     STATUS,C
                 RETLW   ERRPARITY       ;PARITY ERROR (CARRY SET)
 ;
-; STOP BIT
+; STOP BIT CLOCK HIGH
 ;
 GETSTOP         CALL    WAITHIGH        ;STOP BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
+;
+; STOP BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;STOP BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
-
+;
+; STOP BIT INPUT
+;
                 BTFSC   ICSPPORT,ICSPDAT;TEST STOP BIT HIGH
                 GOTO    GETSUM          ;STOP BIT HIGH
                 BSF     STATUS,C        ;STOP BIT NOT HIGH
@@ -275,6 +338,8 @@ GETSUM
                 ADDWF   CHECKSUM,F
                 BCF     STATUS,C
                 RETLW   ERRNONE         ;NO ERROR (CARRY CLEAR)
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Send negative acknowledge
 ;
@@ -286,6 +351,8 @@ GETSUM
 SENDNAK         MOVLW   NAK
                 GOTO    SENDBYTE
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Send acknowledge
 ;
 ; params  : NONE
@@ -296,6 +363,8 @@ SENDNAK         MOVLW   NAK
 SENDACK         MOVLW   ACK
                 GOTO    SENDBYTE
 ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
 ; Send checksum
 ;
 ; params  : NONE
@@ -304,6 +373,8 @@ SENDACK         MOVLW   ACK
 ; affects : BUFFER, COUNTER0, COUNTER1, COUNTER2
 ;
 SENDSUM         MOVF    CHECKSUM,W
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Send out a clocked byte (W)
 ;
@@ -318,41 +389,27 @@ SENDBYTE        MOVWF   BUFFER          ;SAVE OUTPUT BYTE
                 MOVLW   0x08            ;8 BITS IN A BYTE
                 MOVWF   COUNTER0
 ;
-; START BIT
+; START BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;START BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
-; SET ICSPDAT O/P
+; START BIT OUTPUT
 ;
-IF ARCH == ENHANCED
-                BANKSEL ICSPLAT
-ENDIF
-                BCF     ICSPLAT,ICSPDAT ;SET START BIT LOW
-IF ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
-IFDEF SHADOWLATCH                       ;BASELINE OR MOST MIDRANGE
-                MOVF    ICSPLAT,W
-                MOVWF   ICSPPORT
-ENDIF
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL ICSPTRIS
-ENDIF
-                BCF     ICSPTRIS,ICSPDAT;DATA OUTPUT
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
+                TRISPD  ICSPTRIS,ICSPDAT;SET START BIT LOW
 IF ARCH == BASELINE
                 MOVF    ICSPTRIS,W
                 TRIS    ICSPPORT
 ENDIF
+;
+; START BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;START BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
-; DATA BIT
+; DATA BIT CLOCK HIGH
 ;
 SENDBIT         CALL    WAITHIGH        ;DATA BIT CLOCK HIGH
                 BTFSC   STATUS,C
@@ -365,76 +422,75 @@ IF ARCH == PIC18
 ELSE
                 RRF     BUFFER,F        ;ROTATE OUT BIT
 ENDIF
-IF ARCH == ENHANCED
-                BANKSEL ICSPLAT
-ENDIF
                 BTFSC   STATUS,C
                 GOTO    SENDSET
-                BCF     ICSPLAT,ICSPDAT ;SET DATA BIT LOW
+                TRISPD  ICSPTRIS,ICSPDAT;SET DATA BIT LOW
+IF ARCH == BASELINE
+                MOVF    ICSPTRIS,W
+                TRIS    ICSPPORT
+ENDIF
                 MOVLW   0
                 GOTO    SENDPAR
 SENDSET
-                BSF     ICSPLAT,ICSPDAT ;SET DATA BIT HIGH
+                TRISPU  ICSPTRIS,ICSPDAT;SET DATA BIT HIGH
+IF ARCH == BASELINE
+                MOVF    ICSPTRIS,W
+                TRIS    ICSPPORT
+ENDIF
                 MOVLW   1
 SENDPAR
-IF ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
                 XORWF   PARITY,F        ;UPDATE PARITY
-IFDEF SHADOWLATCH                       ;BASELINE OR MOST MIDRANGE
-                MOVF    ICSPLAT,W
-                MOVWF   ICSPPORT
-ENDIF
+;
+; DATA BIT CLOCK LOW
+;
                 CALL    WAITLOW         ;DATA BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
 
                 DJNZ    COUNTER0,SENDBIT;FOR ALL BITS
 ;
-; PARITY BIT
+; PARITY BIT CLOCK HIGH
 ; 
                 CALL    WAITHIGH        ;PARITY BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
-
+;
+; PARITY BIT OUTPUT
+;
                 MOVF    PARITY,F        ;TEST PARITY
-IF ARCH == ENHANCED
-                BANKSEL ICSPLAT
-ENDIF
                 BTFGC   STATUS,Z,SENDSET2
-                BCF     ICSPLAT,ICSPDAT ;SET PARITY BIT LOW
+                TRISPD  ICSPTRIS,ICSPDAT;SET PARITY BIT LOW
                 GOTO    SENDPAR2
 SENDSET2
-                BSF     ICSPLAT,ICSPDAT ;SET PARITY BIT HIGH
+                TRISPU  ICSPTRIS,ICSPDAT;SET PARITY BIT HIGH
 SENDPAR2
-IF ARCH == ENHANCED
-                BANKSEL BANK0
+IF ARCH == BASELINE
+                MOVF    ICSPTRIS,W
+                TRIS    ICSPPORT
 ENDIF
-IFDEF SHADOWLATCH                       ;BASELINE OR MOST MIDRANGE
-                MOVF    ICSPLAT,W
-                MOVWF   ICSPPORT
-ENDIF
+;
+; PARITY BIT CLOCK LOW
+; 
                 CALL    WAITLOW         ;PARITY BIT CLOCK LOW
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
-; STOP BIT
+; STOP BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;STOP BIT CLOCK HIGH
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
-
-IF ARCH == ENHANCED
-                BANKSEL ICSPLAT
+;
+; STOP BIT OUTPUT
+;
+                TRISPU  ICSPTRIS,ICSPDAT;SET STOP BIT HIGH
+IF ARCH == BASELINE
+                MOVF    ICSPTRIS,W
+                TRIS    ICSPPORT
 ENDIF
-                BSF     ICSPLAT,ICSPDAT ;SET STOP BIT HIGH
-IF ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
-IFDEF SHADOWLATCH                       ;BASELINE OR MOST MIDRANGE
-                MOVF    ICSPLAT,W
-                MOVWF   ICSPPORT
-ENDIF
+;
+; STOP BIT CLOCK LOW
+;
                 GOTO    WAITLOW         ;STOP BIT CLOCK LOW
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

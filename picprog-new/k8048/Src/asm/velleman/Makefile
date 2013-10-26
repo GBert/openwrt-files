@@ -15,6 +15,7 @@ build:$(OBJECT)
 	cd demo1 && $(MAKE)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:build

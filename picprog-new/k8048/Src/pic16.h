@@ -281,7 +281,8 @@ struct pic16_dsmap
 	unsigned int p9, p9a;		/* Program delay times P9 and P9A in us */
 	unsigned int p10, p11;		/* Erase delay times P10 and P11 in us */
 	unsigned int configaddr;        /* CONFIG ADDRESS */
-	unsigned int configsize;        /* CONFIG SIZE    */
+	unsigned int configsize;        /* CONFIG SIZE */
+	unsigned int erasesize;         /* ERASE BLOCK SIZE 64 or 1024 for PIC18J */
 };
 #define MAXPANELSIZE (64)
 
@@ -341,12 +342,12 @@ void pic16_free(struct k8048 *);
 void pic16_write(struct k8048 *);
 
 /* machine code block utilities */
-void pic16_set_table_pointer(struct k8048 *, unsigned long);
+void pic16_set_table_pointer(struct k8048 *, unsigned int);
 
-void pic16_erase_block(struct k8048 *, unsigned long int);
-void pic16_erase_row(struct k8048 *, unsigned long int, int);
+void pic16_erase_block(struct k8048 *, unsigned int);
+void pic16_erase_row(struct k8048 *, unsigned int, unsigned int);
 void pic16_bulk_erase(struct k8048 *);
-void pic16_row_erase(struct k8048 *, unsigned long int);
+void pic16_row_erase(struct k8048 *, unsigned int, unsigned int);
 
 /* data (EEPROM) */
 void pic16_init_data_memory_access(struct k8048 *);
@@ -371,6 +372,7 @@ void pic16_dumpconfig_verbose(struct k8048 *);
 void pic16_dumpdevice(struct k8048 *);
 
 /* regions */
+int pic16_getregion(unsigned int);
 unsigned char pic16_programregion(struct k8048 *, int, unsigned long, unsigned char);
 
 /* program/write/verify */

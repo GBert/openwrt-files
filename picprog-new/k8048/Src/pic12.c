@@ -360,7 +360,7 @@ pic12_read_config_memory(struct k8048 *k, int f)
 	io_init_program_verify(k);
 
 	pic12_read_config_word(k);				/* Get config word */
-	if (f == CONFIG_ALL) {
+	if (f == PIC_CONFIG_ALL) {
 		for (i = 0; i < (pic12_map[pic12_index].flash - 1); i++) {
 			pic12_increment_address(k);		/* Skip program flash */
 		}
@@ -466,7 +466,7 @@ pic12_read_osccal(struct k8048 *k)
 
 	io_init_program_verify(k);
 
-	pic12_read_config_memory(k, CONFIG_ALL);
+	pic12_read_config_memory(k, PIC_CONFIG_ALL);
 
 	io_standby(k);
 
@@ -638,42 +638,44 @@ pic12_loadregion(struct k8048 *k, int region, unsigned short word)
 void
 pic12_programregion(struct k8048 *k, unsigned short address, int region, unsigned short data)
 {
+	static int write_pending = 0;
+
+#ifdef DEBUG
+	if (k->debug >= 10) {
+		printf("%s(,%04X,%d,%04X)\n", __func__, address, region, data);
+	}
+#endif 
 	/*
 	 * Cache config word
-	*/
+	 */
 	if (region == PIC12_REGIONCONFIG) {
 		pic12_conf.index[PIC12_CONFIG_WORD] = data;
 		return;
 	}
 
 	/*
-	 * Ignore OSCCAL
-	 *
-	 * OSCCAL address is on a multi-word boundary but the devices are not multi-word
+	 * Write single or multi-word code
 	 */
-	if (pic12_map[pic12_index].backupaddr != 0) {
-		if (address == (pic12_map[pic12_index].flash - 1)) {
-			printf("%s: warning: OSCCAL RESET word ignored: word [%04X] address [%04X]\n",
-				__func__, data, address);
-			return;
-		}
-		if (address == pic12_map[pic12_index].backupaddr) {
-			printf("%s: warning: OSCCAL BACKUP word ignored: word [%04X] address [%04X]\n",
-				__func__, data, address);
-			return;
-		}
-	}
-
-	/*
-	 * Write multi-word code
-	 */
-	static int write_pending = 0;
-	int multiword = (pic12_map[pic12_index].latches > 1);
-	if (multiword && region == PIC12_REGIONCODE) {
+	if (region == PIC12_REGIONCODE) {
 		if (data != MW_NODATA) {
-			pic12_loadregion(k, region, data);
+			/* Ignore OSCCAL */
+			if (pic12_map[pic12_index].backupaddr != 0) {
+				if (address == (pic12_map[pic12_index].flash - 1)) {
+					printf("%s: warning: OSCCAL RESET word ignored: word [%04X] address [%04X]\n",
+						__func__, data, address);
+					return;
+				}
+				if (address == pic12_map[pic12_index].backupaddr) {
+					printf("%s: warning: OSCCAL BACKUP word ignored: word [%04X] address [%04X]\n",
+						__func__, data, address);
+					return;
+				}
+			}
+			/* Cache */
+			pic12_loadregion(k, PIC12_REGIONCODE, data);
 			write_pending = 1;
 		}
+		/* Flush */
 		unsigned int mask = pic12_map[pic12_index].latches - 1;
 		if ((address & mask) == mask) {
 			if (write_pending) {
@@ -684,9 +686,9 @@ pic12_programregion(struct k8048 *k, unsigned short address, int region, unsigne
 		}
 		return;
 	}
-
+#if 0
 	/*
-	 * Write single word code
+	 * Write single word data EEPROM (NOT IMPLEMENTED)
 	 */
 
 	/* Store data in working register */
@@ -695,6 +697,7 @@ pic12_programregion(struct k8048 *k, unsigned short address, int region, unsigne
 	/* Program working register */
 	pic12_begin_programming(k);
 	pic12_end_programming(k);
+#endif
 }
 
 /*
@@ -737,7 +740,6 @@ pic12_program(struct k8048 *k, int blank)
 	unsigned short hex_address, PC_address = 0, wdata;
 	int new_region, current_region = PIC12_REGIONUNKNOWN;
 	int total = 0;
-	int multiword = (pic12_map[pic12_index].latches > 1);
 
 	/* Initialise device for programming */
 	if (blank)
@@ -751,7 +753,7 @@ pic12_program(struct k8048 *k, int blank)
 			continue;
 
 		if (new_region != current_region) {
-			if (multiword && current_region == PIC12_REGIONCODE)
+			if (current_region == PIC12_REGIONCODE)
 				pic12_programregion(k, MW_FLUSH, PIC12_REGIONCODE, MW_NODATA);
 			io_init_program_verify(k); /* Reset P.C. */
 			PC_address = pic12_initregion(k, new_region);
@@ -760,7 +762,7 @@ pic12_program(struct k8048 *k, int blank)
 
 		/* Skip over unused P.C. locations */
 		while (hex_address > PC_address) {
-			if (multiword && current_region == PIC12_REGIONCODE)
+			if (current_region == PIC12_REGIONCODE)
 				pic12_programregion(k, PC_address, PIC12_REGIONCODE, MW_NODATA);
 			PC_address++;
 			pic12_increment_address(k);
@@ -776,7 +778,7 @@ pic12_program(struct k8048 *k, int blank)
 			total++;
 		}
 	}
-	if (multiword && current_region == PIC12_REGIONCODE)
+	if (current_region == PIC12_REGIONCODE)
 		pic12_programregion(k, MW_FLUSH, PIC12_REGIONCODE, MW_NODATA);
 
 	io_standby(k);
@@ -846,34 +848,38 @@ void
 pic12_dumpdeviceid(struct k8048 *k)
 {
 	int i;
-	unsigned char u;
+	unsigned char c;
 
 	printf("[%04X] [PROGRAM]  %04X WORDS\n",
 		PIC12_CODE_LOW, pic12_map[pic12_index].flash);
+
 	if (pic12_map[pic12_index].backupaddr) {
-	printf("[%04X] [OSCCAL]   %04X\n",
-		pic12_map[pic12_index].flash - 1,
-		pic12_conf.index[PIC12_CONFIG_OSCCAL_RESET]);
+		printf("[%04X] [OSCCAL]   %04X\n",
+			pic12_map[pic12_index].flash - 1,
+			pic12_conf.index[PIC12_CONFIG_OSCCAL_RESET]);
 	}
+
 	if (pic12_map[pic12_index].data > 0) {
-	printf("[%04X] [DATA]     %04X BYTES\n",
-		pic12_map[pic12_index].flash,
-		pic12_map[pic12_index].data);
+		printf("[%04X] [DATA]     %04X BYTES\n",
+			pic12_map[pic12_index].flash,
+			pic12_map[pic12_index].data);
 	}
+
 	for (i = 0; i < 4; i++) {
-	u = pic12_conf.index[i] & 0xff;
-	printf("[%04X] [USERID%d]  %04X %c\n",
-		pic12_map[pic12_index].flash + 
-		pic12_map[pic12_index].data  + i,
-		i,
-		pic12_conf.index[i],
-		(u >= 32 && u < 127) ? u : '.');
+		c = pic12_conf.index[i] & 0xFF;
+		printf("[%04X] [USERID%d]  %04X %c\n",
+			pic12_map[pic12_index].flash + pic12_map[pic12_index].data  + i,
+			i,
+			pic12_conf.index[i],
+			(c >= 32 && c < 127) ? (c) : ('.'));
 	}
+
 	if (pic12_map[pic12_index].backupaddr) {
-	printf("[%04X] [BACKUP]   %04X\n",
-		pic12_map[pic12_index].backupaddr,
-		pic12_conf.index[PIC12_CONFIG_OSCCAL_BACKUP]);
+		printf("[%04X] [BACKUP]   %04X\n",
+			pic12_map[pic12_index].backupaddr,
+			pic12_conf.index[PIC12_CONFIG_OSCCAL_BACKUP]);
 	}
+
 	pic12_dumpconfig(k, BRIEF);
 	printf("       [DEVICEID] %s\n", pic12_map[pic12_index].devicename);
 }

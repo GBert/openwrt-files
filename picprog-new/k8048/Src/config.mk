@@ -8,16 +8,16 @@
 #
 
 # build targets (enable:1 disable:0)
-K12=0
+K12=1
 K14=1
 K16=1
 KTEST=1
 KIO=1
 
 # backends (where available) (enable:1 disable:0)
-TTY=0
-RPI=0
-MCP23017=0
+TTY=1
+RPI=1
+MCP23017=1
 LPICP=1
 
 # gdb else strip (gdb:1 strip:0)

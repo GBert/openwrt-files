@@ -10,13 +10,12 @@
 #ifndef _PIC_H
 #define _PIC_H
 
-#define DATAWIDTH (16)
-#define CODEWIDTH (8)
-
 #define PIC_NCOLS (5)
 int pic_cmp(const void *, const void *);
 void pic_selector(struct k8048 *);
 
+#define PIC_CONFIG_ONLY (0)
+#define PIC_CONFIG_ALL (1)
 void pic_read_config(struct k8048 *, int);
 
 int pic_get_program_flash_size(struct k8048 *);
@@ -28,7 +27,10 @@ int pic_read_eeprom_memory_block(struct k8048 *, unsigned char *, int);
 void pic_program(struct k8048 *, const char *, int);
 int pic_verify(struct k8048 *, const char *);
 void pic_blank(struct k8048 *);
-void pic_erase(struct k8048 *, int);
+
+#define PIC_ID_ERASE (UINT_MAX)
+void pic_erase(struct k8048 *, unsigned int, unsigned int);
+
 void pic_dumpdeviceid(struct k8048 *);
 void pic_dumpconfig(struct k8048 *);
 void pic_writeconfig(struct k8048 *, unsigned short);
@@ -43,7 +45,10 @@ void pic_dumpdevice(struct k8048 *);
 void pic_dumpflash(struct k8048 *, int);
 void pic_dumpeeprom(struct k8048 *);
 
+#define PIC_CODEWIDTH (8)
 void pic_dump_program_flash(struct k8048 *, int, int, int);
+
+#define PIC_DATAWIDTH (16)
 void pic_dump_data_eeprom(struct k8048 *, int, int);
 
 #endif /* !_PIC_H */

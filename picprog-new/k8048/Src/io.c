@@ -9,6 +9,8 @@
 
 #include "k8048.h"
 
+#define DEBUG
+
 /******************************************************************************
  * CTRL-C signal handler
  *****************************************************************************/
@@ -501,14 +503,12 @@ io_usleep(struct k8048 *k, int n)
 void
 io_standby(struct k8048 *k)
 {
-	io_cursor(k, '-');
-
 	io_usleep(k, 10000); /* 10ms */
 	io_set_pgd_pgc(k, LOW, LOW);
-
 #if defined(K14)
 	if (k->key == MCHPKEY) {
-		io_set_vpp_pgm(k, HIGH, HIGH);
+		/* VPP HIGH */
+		io_set_vpp_pgm(k, HIGH, LOW);
 		io_usleep(k, 1000); /* 1ms */
 	}
 #endif
@@ -523,35 +523,74 @@ io_standby(struct k8048 *k)
 void
 io_init_program_verify(struct k8048 *k)
 {
-	io_cursor(k, '+');
-
+	/* VPP + PGM LOW */
 	io_standby(k);
-#if defined(K14) || defined(K16)
-	if (k->key != NOKEY) {
-		io_set_vpp_pgm(k, HIGH, HIGH);
-		io_usleep(k, 1000); /* 1ms */
-		io_set_vpp_pgm(k, LOW, LOW);
-		io_usleep(k, 1000); /* 1ms */
-		io_word_out32(k, k->key);
-	}
-#endif
 #if defined(K14)
 	if (k->key == MCHPKEY) {
-		/* PIC16F1XXX 33 clock pulses */
-#ifdef LPICP
-		if (k->iot == IOLPICP) 
-			lpp_icsp_clock_out(&k->lpicp, 0);
-		else
-#endif
-		io_clock_out(k, k->sleep, 0);
-	} else {
-		io_set_vpp_pgm(k, HIGH, HIGH);
+		io_init_mchp_key14(k);
+		return;
 	}
-#else
-	io_set_vpp_pgm(k, HIGH, HIGH);
 #endif
+#if defined(K16)
+	if (k->key == PHCMKEY) {
+		io_init_mchp_key16(k);
+		return;
+	}
+#endif
+	/* VPP + PGM HIGH */
+	io_set_vpp_pgm(k, HIGH, HIGH);
 	io_usleep(k, 10000); /* 10ms */
 }
+
+#if defined(K14)
+void
+io_init_mchp_key14(struct k8048 *k)
+{
+	/* VPP HIGH */
+	io_set_vpp_pgm(k, HIGH, LOW);
+	io_usleep(k, 1000); /* 1ms */
+
+	/* VPP LOW */
+	io_set_vpp_pgm(k, LOW, LOW);
+	io_usleep(k, 1000); /* 1ms */
+
+	/* MCHP KEY */
+	io_word_out32(k, k->key);
+	switch (k->iot) {
+	default:
+		io_clock_out(k, k->sleep, 0);
+		break;
+#ifdef LPICP
+	case IOLPICP:
+		lpp_icsp_clock_out(&k->lpicp, 0);
+		break;
+#endif
+	}
+	io_usleep(k, 10000); /* 10ms */
+}
+#endif
+
+#if defined(K16)
+void
+io_init_mchp_key16(struct k8048 *k)
+{
+	/* VPP HIGH */
+	io_set_vpp_pgm(k, HIGH, LOW);
+	io_usleep(k, 1000); /* 1ms */
+
+	/* VPP LOW */
+	io_set_vpp_pgm(k, LOW, LOW);
+	io_usleep(k, 1000); /* 1ms */
+
+	/* MCHP KEY */
+	io_word_out32(k, k->key);
+	io_usleep(k, 1000); /* 1ms */
+
+	/* VPP HIGH */
+	io_set_vpp_pgm(k, HIGH, LOW);
+	io_usleep(k, 10000); /* 10ms */
+}
+#endif
 
 /*
  * Acquire data input
@@ -653,8 +692,10 @@ io_clock_in_bits(struct k8048 *k, int nbits)
 	unsigned short bits = 0;
 	int i;
 
+	io_data_input_acquire(k);
 	for (i = 0; i < nbits; i++)
 		bits |= (io_clock_in(k, k->sleep) << i);
+	io_data_input_release(k);
 
 	return bits;
 }
@@ -671,11 +712,11 @@ void
 io_command_out(struct k8048 *k, unsigned char command)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: command [0x%02X]\n", __func__, command);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -698,11 +739,11 @@ void
 io_word_out14(struct k8048 *k, unsigned short word)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: word [0x%04X]\n", __func__, word);
 	}
-
+#endif
 	/* Add start and stop bits to word */
 	word = 0x8001 | (word << 1);
 
@@ -735,9 +776,7 @@ io_word_in14(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_data_input_acquire(k);
 		word = io_clock_in_bits(k, 16);
-		io_data_input_release(k);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -749,11 +788,11 @@ io_word_in14(struct k8048 *k)
 
 	/* Remove start and stop bits from word */
 	word = (word & 0x7FFE) >> 1;
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: word [0x%04X]\n", __func__, word);
 	}
-
+#endif
 	return word;
 }
 #endif
@@ -770,11 +809,11 @@ void
 io_word_out32(struct k8048 *k, unsigned int word)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: word [0x%04X]\n", __func__, word);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -803,12 +842,12 @@ void
 io_command_out16(struct k8048 *k, unsigned char command, unsigned short word)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: command [0x%02X] word [0x%04X]\n",
 			__func__, command, word);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -832,12 +871,12 @@ void
 io_command_program(struct k8048 *k, unsigned int high, unsigned int low)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: command [NOP] HIGH=%d LOW=%d\n",
 			__func__, high, low);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -878,12 +917,12 @@ void
 io_command_erase(struct k8048 *k, unsigned int p10, unsigned int p11)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: command [NOP] P10=%d P11=%d\n",
 			__func__, p10, p11);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -914,7 +953,7 @@ io_command_in8(struct k8048 *k, unsigned char command)
 {
 	unsigned char byte;
 
-	io_cursor(k, 'o');
+	io_cursor(k, 'i');
 
 	switch (k->iot) {
 	default:/* tty */
@@ -930,12 +969,12 @@ io_command_in8(struct k8048 *k, unsigned char command)
 		break;
 #endif
 	}
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: command [0x%02X] byte [0x%02X]\n",
 			__func__, command, byte);
 	}
-
+#endif
 	return byte;
 }
 
@@ -946,11 +985,11 @@ void
 io_word_out16(struct k8048 *k, unsigned short word)
 {
 	io_cursor(k, 'o');
-
-	if (k->debug >= 15) {
+#ifdef DEBUG
+	if (k->debug >= 10) {
 		printf("%s: word [0x%04X]\n", __func__, word);
 	}
-
+#endif
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
@@ -972,7 +1011,7 @@ io_word_out16(struct k8048 *k, unsigned short word)
 unsigned char
 io_byte_in(struct k8048 *k)
 {
-	unsigned char byte = 0;
+	unsigned short word;
 
 	io_cursor(k, 'i');
 
@@ -980,33 +1019,19 @@ io_byte_in(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-#if 1
-		io_data_input_acquire(k);
-		io_clock_in_bits(k, 8);
-#else
-		io_clock_out_bits(k, 0, 8);
-		io_data_input_acquire(k);
-		if (k->iot == IOTTY) {
-			/* critical ttyusb delay */
-			io_usleep(k, k->sleep);
-		}
-#endif
-		byte = io_clock_in_bits(k, 8);
-		io_data_input_release(k);
+		word = io_clock_in_bits(k, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
 		{
-		unsigned short word;
 		lpp_icsp_read_16(&k->lpicp, &word);
-		byte = (word >> 8);
 		}
 		break;
 #endif
 	}
 
-	return byte;
+	return (word >> 8);
 }
 #endif
 
@@ -1018,15 +1043,17 @@ io_byte_in(struct k8048 *k)
 void
 io_cursor(struct k8048 *k, char c)
 {
-	static int c_count = 0;
+	static int c_count = 0, a_count = 0;
 	static const char arrow[] = "|/-\\";
+	static char c_last = 0;
 
 	if (!k->busy) {
-		return; /* Disabled BUSY=0 */
+		return; /* BUSY=0=DISABLED */
 	}
-	if (++c_count % (k->busy * ARROWLENGTH - 1) == 0) {
-		fprintf(stderr, "%c[%c]\r",
-			arrow[ARROWLENGTH - (c_count % ARROWLENGTH) - 1], c);
+	if ((c_last != c) || (c_count++ > k->busy)) {
+		fprintf(stderr, "%c[%c]\r", arrow[a_count++ % ARROWLENGTH], c);
+		c_last = c;
+		c_count = 0;
 	}
 }
 #undef ARROWLENGTH
@@ -1342,9 +1369,10 @@ io_test_out(struct k8048 *k, int t1, int t2, unsigned char byte)
 	int i, bit;
 	int parity = 0; /* 0=even 1=odd */
 
-	if (k->debug >= 10)
-		fprintf(stderr, "%s(k, %d, %d, 0x%02X)\n",
+	if (k->debug >= 10) {
+		fprintf(stderr, "%s(k, t1=%d, t2=%d, byte=0x%02X)\n",
 			__func__, t1, t2, byte);
+	}
 
 	/* Start bit */
 	io_clock_out(k, t1, LOW);
@@ -1379,9 +1407,10 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 	
 	*byte = '\0';
 
-	if (k->debug >= 10)
-		fprintf(stderr, "%s(k, %d, %d, 0x%02X)\n",
-			__func__, t1, t2, *byte);
+	if (k->debug >= 10) {
+		fprintf(stderr, "%s(k, t1=%d, t2=%d, %p)\n",
+			__func__, t1, t2, byte);
+	}
 
 	/* Prepare data input */
 	io_data_input_acquire(k);
@@ -1389,7 +1418,7 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 	/* Get start bit */
 	if (io_clock_in(k, t1) != LOW) {
 		if (k->debug >= 10)
-			fprintf(stderr, "%s: INVALID START BIT\n", __func__);
+			fprintf(stderr, "%s: INVALID START BIT (NOT LOW)\n", __func__);
 		return ERRPROTOCOL;
 	}
 
@@ -1411,7 +1440,7 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 	/* Get stop bit */
 	if (io_clock_in(k, t1) != HIGH) {
 		if (k->debug >= 10)
-			fprintf(stderr, "%s: INVALID STOP BIT\n", __func__);
+			fprintf(stderr, "%s: INVALID STOP BIT (NOT HIGH)\n", __func__);
 		return ERRPROTOCOL;
 	}
 
@@ -1434,7 +1463,7 @@ io_test_command(struct k8048 *k, int t1, int t2, unsigned char *cmdarg, int cmda
 	unsigned char byte;
 
 	if (k->debug >= 10)
-		fprintf(stderr, "%s(k, t1=%d, t2=%d, cmd=%02X, %d, %p, %d)\n", __func__,
+		fprintf(stderr, "%s(k, t1=%d, t2=%d, cmdarg[0]=%02X, cmdargc=%d, %p, %d)\n", __func__,
 			t1, t2, cmdarg[0], cmdargc, res, resw);
 
 	if (cmdargc < 0) {
@@ -1455,7 +1484,7 @@ io_test_command(struct k8048 *k, int t1, int t2, unsigned char *cmdarg, int cmda
 	/* Send command */
 	io_test_out(k, t1, t2, cmdarg[0]);
 
-	/* Get command ACK */
+	/* Get command ACK or NACK */
 	err = io_test_in(k, t1, t2, &byte);
 	if (err != ERRNONE) {
 		return err;
@@ -1549,7 +1578,7 @@ io_test_err(int err)
 /*
  * Read and output switches.
  */
-void
+int
 io_test_switch(struct k8048 *k, int t)
 {
 	int err;
@@ -1561,24 +1590,22 @@ io_test_switch(struct k8048 *k, int t)
 	cmd[0] = CMD_SWITCH;
 	err = io_test_command(k, t, t << 1, cmd, 0, &sw, 1);
 	if (err != ERRNONE) {
-		if (k->debug >= 1) {
-			fprintf(stderr, "%s: error: %s [0x%02X]\n",
-				__func__, io_test_err(err), err);
-		}
-		io_usleep(k, RESYNCTIME);
-	} else if (!io_stop && sw != lastsw) {
+		return err;
+	}
+	if (!io_stop && sw != lastsw) {
 		printf("%s: SW=0x%02X SW1=%d SW2=%d SW3=%d SW4=%d\n",
 			__func__, sw,
 			(sw & 0x01) >> 0, (sw & 0x02) >> 1,
 			(sw & 0x04) >> 2, (sw & 0x08) >> 3);
 		lastsw = sw;
 	}
+	return ERRNONE;
 }
 
 /*
  * Read and output last error.
  */
-void
+int
 io_test_lasterror(struct k8048 *k, int t)
 {
 	int err;
@@ -1590,16 +1617,14 @@ io_test_lasterror(struct k8048 *k, int t)
 	cmd[0] = CMD_ERROR;
 	err = io_test_command(k, t, t << 1, cmd, 0, &le, 1);
 	if (err != ERRNONE) {
-		if (k->debug >= 1) {
-			fprintf(stderr, "%s: error: %s [0x%02X]\n",
-				__func__, io_test_err(err), err);
-		}
-		io_usleep(k, RESYNCTIME);
-	} else if (!io_stop && le != lastle) {
+		return err;
+	}
+	if (!io_stop && le != lastle) {
 		printf("%s: last error: %s [0x%02X]\n",
 			__func__, io_test_err(le), le);
 		lastle = le;
 	}
+	return ERRNONE;
 }
 
 /*
@@ -1616,22 +1641,37 @@ io_test5(struct k8048 *k, int t)
 
 	io_signal_on();
 
-	io_set_vpp_pgm(k, HIGH, LOW);
 	io_set_pgd_pgc(k, LOW, LOW);
+
+	/* VPP LOW */
+	io_set_vpp_pgm(k, LOW, LOW);
+	io_usleep(k, 10000); /* 10ms */
+
+	/* VPP HIGH */
+	io_set_vpp_pgm(k, HIGH, LOW);
+	io_usleep(k, 10000); /* 10ms */
 
 	while (!io_stop) {
 		cmd[0] = CMD_LED;
 		cmd[1] = ld++;
 		err = io_test_command(k, t, t << 1, cmd, 1, NULL, 0);
 		if (err != ERRNONE) {
-			if (k->debug >= 1) {
-				fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, io_test_err(err), err);
-			}
-			io_usleep(k, RESYNCTIME);
+			fprintf(stderr, "%s: error: %s [0x%02X]\n",
+				__func__, io_test_err(err), err);
+			break;
 		}
-		io_test_switch(k, t);
-		io_test_lasterror(k, t);
+		err = io_test_switch(k, t);
+		if (err != ERRNONE) {
+			fprintf(stderr, "%s: error: %s [0x%02X]\n",
+				__func__, io_test_err(err), err);
+			break;
+		}
+		err = io_test_lasterror(k, t);
+		if (err != ERRNONE) {
+			fprintf(stderr, "%s: error: %s [0x%02X]\n",
+				__func__, io_test_err(err), err);
+			break;
+		}
 	}
 
 	printf("\nTEST DONE\n\n");

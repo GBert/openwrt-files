@@ -14,6 +14,7 @@ OBJECT=debug.hex pwm.hex timer.hex vref.hex walsh.hex
 build:$(OBJECT)
 
 %.hex:%.asm
+	@echo -n "[AS] "
 	$(AS) $< -o $@
 
 install:build
