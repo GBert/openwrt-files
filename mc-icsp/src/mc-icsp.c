@@ -131,6 +131,9 @@ void mc_icsp_tx_bits(const unsigned int bits, const unsigned int nbits)
 
         current_bit_mask <<= 1;
     }
+
+    /* make sure that pgd goes down after pumping out the data */
+    mc_icsp_io_pgd_set_lo();
 }
 
 /* send a command only */
