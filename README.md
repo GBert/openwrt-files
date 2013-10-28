@@ -13,7 +13,7 @@ To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt 
 
 <pre><code>src-git openwrtfiles git://github.com/GBert/openwrt-files</pre></code>
 and do
-<pre><code>script/feeds update
+<pre><code>scripts/feeds update
 scripts/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog-new</pre></code>
 in your OpenWrt source tree.
 
