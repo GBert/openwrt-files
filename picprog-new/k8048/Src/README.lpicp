@@ -16,7 +16,7 @@ Breadboard connections for LVP programming with VPP at 3V3
  3V3-------------------------------VDD----+     PIN 1 (P1-01)
                                           | 
  GND-------------------------------VSS    |     PIN 6
-                                          1(2)
+                                          1
  GPIO04-----------470R-------------VPP    0     PIN 7
                                           K
  GPIO25-----------470R-------------PGC    |     PIN 22
@@ -26,7 +26,6 @@ Breadboard connections for LVP programming with VPP at 3V3
  GPIO22-----------470R-------------PGM (1)      PIN 15
 
 (1) Not used by all LVP compatible devices.
-(2) For `kio' ICSP I/O
 
 How to build LPICP kernel modules for raspbian on the R-PI
 ==========================================================

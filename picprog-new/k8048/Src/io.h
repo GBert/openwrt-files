@@ -114,11 +114,8 @@ void io_init_program_verify(struct k8048 *);
 void io_init_mchp_key14(struct k8048 *);
 void io_init_mchp_key16(struct k8048 *);
 
-void io_data_input_pullup(struct k8048 *);
-void io_data_input_release(struct k8048 *);
-
-void io_clock_out(struct k8048 *, int, int);
-unsigned char io_clock_in(struct k8048 *, int);
+void io_clock_out_bits(struct k8048 *, int, unsigned int, int);
+unsigned short io_clock_in_bits(struct k8048 *, int, int);
 
 void io_command_out(struct k8048 *, unsigned char);
 

@@ -717,7 +717,7 @@ pic12_verifyregion(struct k8048 *k, unsigned short address, int region, unsigned
 		return FAIL;
 	}
 	if (vdata != data) {
-		printf("%s: error: read [%04x] expected [%04x] at [%04x]\n",
+		printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
 			__func__, vdata, data, address);
 		return FAIL;
 	}

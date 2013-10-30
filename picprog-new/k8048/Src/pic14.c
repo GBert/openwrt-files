@@ -11,6 +11,8 @@
 
 #include "k8048.h"
 
+#define DEBUG
+
 /*****************************************************************************
  *
  * Hardware configuration
@@ -956,24 +958,63 @@ pic14_bulk_erase(struct k8048 *k, unsigned short osccal, unsigned short bandgap)
 void
 pic14_row_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
 {
+	if (row == PIC_ERASE_EEPROM) {
+                if (pic14_map[pic14_index].eeprom == 0) {
+                        printf("%s: information: EEPROM is not supported on this device\n", __func__);
+                        return; /* NO EEPROM */
+                }
+
+		io_init_program_verify(k);
+
+		/* ERASE EEPROM */
+		for (int i = 0; i < pic14_map[pic14_index].eeprom; ++i) {
+			pic14_load_data_for_data_memory(k, 0x3FFF);
+			pic14_write_word(k);
+			pic14_increment_address(k);
+		}
+
+		io_standby(k);
+		return;
+	}
+#if 1
 	if (pic14_map[pic14_index].erasesize == 0) {
 		printf("%s: information: unsupported\n", __func__);
 		return;
 	}
-
-	if (row == PIC_ID_ERASE) {
+#endif
+	if (row == PIC_ERASE_ID) {
 		io_init_program_verify(k);
 
 		pic14_load_configuration(k, 0x3FFF);
 
-		/* ERASE USERID & CONFIG */
+		/* ERASE USERID */
 		pic14_row_erase_program_memory(k, 6000); /* 6ms */
 
 		io_standby(k);
 		return;
 	}
+#if 0
+	if (row == PIC_ERASE_CONFIG) {
+		io_init_program_verify(k);
 
-	unsigned int maxrows = pic14_map[pic14_index].flash / pic14_map[pic14_index].erasesize;
+		pic14_load_configuration(k, 0x3FFF);
+
+		/* ERASE CONFIG */
+		pic14_row_erase_program_memory(k, 6000); /* 6ms */
+
+		io_standby(k);
+		return;
+	}
+#endif
+	/*
+	 * ERASE PROGRAM FLASH ROW(S)
+	 */
+
+	unsigned int erasesize = pic14_map[pic14_index].erasesize;
+	if (erasesize == 0)
+		erasesize = 16;
+
+	unsigned int maxrows = pic14_map[pic14_index].flash / erasesize;
 	if (row >= maxrows) {
 		printf("%s: information: row out of range\n", __func__);
 		return;
@@ -984,7 +1025,7 @@ pic14_row_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
 		nrows = numrows;
 	}
 
-	unsigned int address = row * pic14_map[pic14_index].erasesize, PC_address = 0;
+	unsigned int address = row * erasesize, PC_address = 0;
 
 	io_init_program_verify(k);
 
@@ -999,7 +1040,7 @@ pic14_row_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
 		/* ERASE PROGRAM FLASH */
 		pic14_row_erase_program_memory(k, 6000); /* 6ms */
 
-		address += pic14_map[pic14_index].erasesize;
+		address += erasesize;
 	}
 
 	io_standby(k);

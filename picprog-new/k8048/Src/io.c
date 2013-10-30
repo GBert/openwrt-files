@@ -558,7 +558,7 @@ io_init_mchp_key14(struct k8048 *k)
 	io_word_out32(k, k->key);
 	switch (k->iot) {
 	default:
-		io_clock_out(k, k->sleep, 0);
+		io_clock_out_bits(k, k->sleep, 0, 1);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -593,111 +593,107 @@ io_init_mchp_key16(struct k8048 *k)
 #endif
 
 /*
- * Acquire data input
- */
-void
-io_data_input_acquire(struct k8048 *k)
-{
-	if (k->bitrules & PGD_IN_PULLUP) {
-		io_set_pgd(k, HIGH);
-	} else {
-		io_set_pgd(k, LOW);
-	}
-#ifdef RPI
-	if (k->iot == IORPI && k->gpio.pgdi == k->gpio.pgdo) {
-		gpio_reselect_input(&k->gpio, k->gpio.pgdo);
-		return;
-	}
-#endif
-#ifdef LPICP
-	if (k->iot == IOLPICP) {
-		lpp_icsp_set_pgd_dir(&k->lpicp, MC_ICSP_IO_DIR_INPUT);
-		return;
-	}
-#endif
-}
-
-/*
- * Release data input
- */
-void
-io_data_input_release(struct k8048 *k)
-{
-#ifdef RPI
-	if (k->iot == IORPI && k->gpio.pgdi == k->gpio.pgdo) {
-		gpio_reselect_output(&k->gpio, k->gpio.pgdo);
-		return;
-	}
-#endif
-#ifdef LPICP
-	if (k->iot == IOLPICP) {
-		lpp_icsp_set_pgd_dir(&k->lpicp, MC_ICSP_IO_DIR_OUTPUT);
-		return;
-	}
-#endif
-}
-
-/*
- * Clock out bit to chip
- */
-void
-io_clock_out(struct k8048 *k, int t, int bit)
-{
-	io_set_pgd(k, bit);	/* output bit */
-
-	io_set_pgc(k, HIGH);	/* clock high */
-	io_usleep(k, t);
-
-	io_set_pgc(k, LOW);	/* clock low */
-	io_usleep(k, t);
-}
-
-/*
- * Clock out bits to chip
+ * Clock bit in or out
  */
 static inline void
-io_clock_out_bits(struct k8048 *k, unsigned long bits, int nbits)
+io_clock_bit(struct k8048 *k, int t)
 {
-	int i;
-
-	for (i = 0; i < nbits; ++i)
-		io_clock_out(k, k->sleep, (bits >> i) & 1);
+	io_set_pgc(k, HIGH);		/* Clock high */
+	io_usleep(k, t);
+	io_set_pgc(k, LOW);		/* Clock low */
+	io_usleep(k, t);
 }
 
 /*
- * Clock in bit from chip
+ * Initialise data input from chip (PGD=IN, SDATA=OUTPUT)
+ *
+ * PICMicro will own PGD after next high transition on PGC.
  */
-unsigned char
-io_clock_in(struct k8048 *k, int t)
+void
+io_data_input(struct k8048 *k, unsigned int bit)
 {
-	unsigned char bit;
-
-	io_set_pgc(k, HIGH);	/* clock high */
-	io_usleep(k, t);
-
-	io_set_pgc(k, LOW);	/* clock low */
-	io_usleep(k, t);
-
-	bit = io_get_pgd(k);	/* input bit */
-
-	return bit;
+	io_set_pgd(k, bit);
+#ifdef RPI
+	if (k->iot == IORPI) {
+		if (k->gpio.pgdi == k->gpio.pgdo) {
+			/* Set PGD to I/P */
+	 		gpio_reselect_input(&k->gpio, k->gpio.pgdi);
+		}
+		return;
+	}
+#endif
+#ifdef LPICP
+	if (k->iot == IOLPICP) {
+		/* Set PGD to I/P */
+		lpp_icsp_set_pgd_input(&k->lpicp);
+		return;
+	}
+#endif
 }
 
 /*
- * Clock in bits from chip
+ * Clock in bit(s) from chip
  */
-static inline unsigned short
-io_clock_in_bits(struct k8048 *k, int nbits)
+unsigned short
+io_clock_in_bits(struct k8048 *k, int t, int nbits)
 {
 	unsigned short bits = 0;
-	int i;
 
-	io_data_input_acquire(k);
-	for (i = 0; i < nbits; i++)
-		bits |= (io_clock_in(k, k->sleep) << i);
-	io_data_input_release(k);
+	/* Initialise data input */
+	io_data_input(k, (k->bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
 
+	/* Clock in bits 0..N */
+	for (int i = 0; i < nbits; i++) {
+		io_clock_bit(k, t);
+		bits |= io_get_pgd(k) << i;
+	}
 	return bits;
+}
+
+/*
+ * Initialise data output to chip (PGD=OUT, SDATA=INPUT)
+ *
+ * PICMicro may own PGD until next high transition on PGC.
+ *
+ * Nb. We do not raise PGC before setting data direction
+ * since a number of PIC18K devices fail to operate
+ * correctly when doing so.
+ */
+void
+io_data_output(struct k8048 *k, unsigned int bit)
+{
+#ifdef RPI
+	if (k->iot == IORPI) {
+		if (k->gpio.pgdi == k->gpio.pgdo) {
+			/* Set PGD to O/P */
+			gpio_reselect_output(&k->gpio, k->gpio.pgdo);
+		}
+		return;
+	}
+#endif
+#ifdef LPICP
+	if (k->iot == IOLPICP) {
+		/* Set PGD to O/P */
+		lpp_icsp_set_pgd_output(&k->lpicp, bit);
+		return;
+	}
+#endif
+}
+
+/*
+ * Clock out bit(s) to chip
+ */
+void
+io_clock_out_bits(struct k8048 *k, int t, unsigned int bits, int nbits)
+{
+	/* Initialise data output */
+	io_data_output(k, bits & 1);
+
+	/* Clock out bits 0..N */
+	for (int i = 0; i < nbits; ++i) {
+		io_set_pgd(k, (bits >> i) & 1);
+		io_clock_bit(k, t);
+	}
 }
 
 /******************************************************************************
@@ -721,7 +717,7 @@ io_command_out(struct k8048 *k, unsigned char command)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, command, 6);
+		io_clock_out_bits(k, k->sleep, command, 6);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -751,7 +747,7 @@ io_word_out14(struct k8048 *k, unsigned short word)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, word, 16);
+		io_clock_out_bits(k, k->sleep, word, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -776,7 +772,7 @@ io_word_in14(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		word = io_clock_in_bits(k, 16);
+		word = io_clock_in_bits(k, k->sleep, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -818,7 +814,7 @@ io_word_out32(struct k8048 *k, unsigned int word)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, word, 32);
+		io_clock_out_bits(k, k->sleep, word, 32);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -852,7 +848,7 @@ io_command_out16(struct k8048 *k, unsigned char command, unsigned short word)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, command, 4);
+		io_clock_out_bits(k, k->sleep, command, 4);
         	io_word_out16(k, word);
 		break;
 #ifdef LPICP
@@ -881,30 +877,30 @@ io_command_program(struct k8048 *k, unsigned int high, unsigned int low)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, 0, 3);
-		io_set_pgc(k, HIGH);  		/* CLOCK HIGH */
-		io_usleep(k, high);		/* delay HIGH */
-		io_set_pgc(k, LOW);		/* CLOCK LOW  */
+		io_clock_out_bits(k, k->sleep, 0, 3);
+		io_set_pgc(k, HIGH);  		/* Clock high */
+		io_usleep(k, high);		/* Delay high */
+		io_set_pgc(k, LOW);		/* Clock low  */
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
 		{
 		struct mc_icsp_cmd_only_t cmd_config = {0};
-		/* CLOCK HIGH */
+		/* Clock high */
                	cmd_config.pgc_value_after_cmd = 1;
-		/* delay HIGH */
+		/* Delay high */
 		if (k->sleep)
 			cmd_config.msleep = 1 + (high / 1000);
 		else
 			cmd_config.udelay = high;
 		lpp_icsp_command_only(&k->lpicp, &cmd_config);
-		/* CLOCK LOW */
+		/* Clock low */
 		}
 		break;
 #endif
 	}
-	/* delay LOW */
+	/* Delay low */
 	io_usleep(k, low);
 	/* Clock out 16 bits (0x0000) */
 	io_word_out16(k, 0);
@@ -927,7 +923,7 @@ io_command_erase(struct k8048 *k, unsigned int p10, unsigned int p11)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, 0, 4);
+		io_clock_out_bits(k, k->sleep, 0, 4);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -939,7 +935,7 @@ io_command_erase(struct k8048 *k, unsigned int p10, unsigned int p11)
 		break;
 #endif
 	}
-	/* delay P11 + P10 */
+	/* Delay P11 + P10 */
 	io_usleep(k, p11 + p10);
 	/* Clock out 16 bits (0x0000) */
 	io_word_out16(k, 0);
@@ -959,7 +955,7 @@ io_command_in8(struct k8048 *k, unsigned char command)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, command, 4);
+		io_clock_out_bits(k, k->sleep, command, 4);
 		byte = io_byte_in(k);
 		break;
 #ifdef LPICP
@@ -994,7 +990,7 @@ io_word_out16(struct k8048 *k, unsigned short word)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		io_clock_out_bits(k, word, 16);
+		io_clock_out_bits(k, k->sleep, word, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
@@ -1019,14 +1015,12 @@ io_byte_in(struct k8048 *k)
 	default:/* tty */
 		/* rpi */
 		/* mcp23017 i2c */
-		word = io_clock_in_bits(k, 16);
+		word = io_clock_in_bits(k, k->sleep, 16);
 		break;
 #ifdef LPICP
 	case IOLPICP:
 		/* lpicp */
-		{
 		lpp_icsp_read_16(&k->lpicp, &word);
-		}
 		break;
 #endif
 	}
@@ -1266,12 +1260,12 @@ io_test3(struct k8048 *k, int t)
 }
 
 /*
- * Test 16F627
+ * Test PIC16F627 on Velleman K8048
  *
  * Program:
  *	k14 program asm/pic16f627/debug.hex
  *
- * Note: This is the PIC which came with the Velleman K8048.
+ * Note: This is the PICMicro which came with the Velleman K8048 kit.
  */
 void
 io_test4(struct k8048 *k, int t)
@@ -1286,8 +1280,8 @@ io_test4(struct k8048 *k, int t)
 	io_set_vpp_pgm(k, LOW, LOW);
 	io_set_pgd_pgc(k, LOW, LOW);
 
-	/* Prepare data input */
-	io_data_input_acquire(k);
+	/* Pull-up PGD output for PGD input on Velleman K8048 */
+	io_data_input(k, (k->bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
 
 	while (!io_stop) {
 		/* Handshake */
@@ -1330,9 +1324,6 @@ io_test4(struct k8048 *k, int t)
 			line[j++] = c;
 	}
 
-	/* Release data input */
-	io_data_input_release(k);
-	
 	printf("\nTEST DONE\n\n");
 
 	io_set_vpp_pgm(k, LOW, LOW);
@@ -1375,20 +1366,20 @@ io_test_out(struct k8048 *k, int t1, int t2, unsigned char byte)
 	}
 
 	/* Start bit */
-	io_clock_out(k, t1, LOW);
+	io_clock_out_bits(k, t1, LOW, 1);
 
 	/* Send 8-bit byte */
 	for (i = 0; !io_stop && i < 8; ++i) {
 		bit = (byte >> i) & 1;
 		parity ^= bit;
-		io_clock_out(k, t1, bit);
+		io_clock_out_bits(k, t1, bit, 1);
 	}
 
 	/* Send parity bit */	
-	io_clock_out(k, t1, parity);
+	io_clock_out_bits(k, t1, parity, 1);
 
 	/* Send stop bit */
-	io_clock_out(k, t1, HIGH);
+	io_clock_out_bits(k, t1, HIGH, 1);
 
 	/* Firmware delay */
 	io_usleep(k, t2);
@@ -1412,11 +1403,8 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 			__func__, t1, t2, byte);
 	}
 
-	/* Prepare data input */
-	io_data_input_acquire(k);
-
 	/* Get start bit */
-	if (io_clock_in(k, t1) != LOW) {
+	if (io_clock_in_bits(k, t1, 1) != LOW) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID START BIT (NOT LOW)\n", __func__);
 		return ERRPROTOCOL;
@@ -1424,13 +1412,13 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 
 	/* Get 8-bit byte */
 	for (i = 0; !io_stop && i < 8; i++) {
-		bit = io_clock_in(k, t1);
+		bit = io_clock_in_bits(k, t1, 1);
 		parity ^= bit;
 		*byte |= (bit << i);
 	}
 
 	/* Get parity bit */	
-	bit = io_clock_in(k, t1);
+	bit = io_clock_in_bits(k, t1, 1);
 	if (bit != parity) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID PARITY BIT\n", __func__);
@@ -1438,7 +1426,7 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 	}
 
 	/* Get stop bit */
-	if (io_clock_in(k, t1) != HIGH) {
+	if (io_clock_in_bits(k, t1, 1) != HIGH) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID STOP BIT (NOT HIGH)\n", __func__);
 		return ERRPROTOCOL;
@@ -1446,9 +1434,6 @@ io_test_in(struct k8048 *k, int t1, int t2, unsigned char *byte)
 
 	/* Firmware processing delay */
 	io_usleep(k, t2);
-
-	/* Release data input */
-	io_data_input_release(k);
 
 	return ERRNONE;
 }

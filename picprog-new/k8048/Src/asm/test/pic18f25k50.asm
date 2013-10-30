@@ -14,20 +14,20 @@
 ;
 ; Pinout
 ; ------
-; !MCLR VPP RE3 1-----28 RB7
-; RA0           2     27 RB6
+; !MCLR VPP RE3 1-----28 RB7 PGD
+; RA0           2     27 RB6 PGC
 ; RA1           3     26 RB5
 ; RA2           4     25 RB4
 ; RA3           5     24 RB3
 ; RA4           6     23 RB2
 ; RA5           7     22 RB1
-; VSS           8     21 RB0
+; VSS GND       8     21 RB0
 ; RA7           9     20 VDD VCC
 ; RA6           10    19 VSS GND
 ; RC0           11    18 RC7
 ; RC1           12    17 RC6
-; RC2           13    16 RC5
-; RC3           14----15 RC4
+; RC2           13    16 D+
+; VUSB3V3       14----15 D-
 ;
 ; K8048 Pin
 ; ----- ---

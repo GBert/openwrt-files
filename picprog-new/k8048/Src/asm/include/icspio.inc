@@ -136,7 +136,7 @@ ENDC
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Initialise for ICSPIO
+; Initialise latch for ICSPIO (INIT ICSPCLK = 0 & ICSPDAT = 0)
 ;
 ; params  : NONE
 ; result  : W=0
@@ -158,6 +158,13 @@ IFDEF SHADOWLATCH                       ;INIT PORT
                 MOVF    ICSPLAT,W
                 MOVWF   ICSPPORT
 ENDIF
+;               FOLLOW-THROUGH
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Initialise TRIS for ICSPIO (INIT ICSPCLK = I/P & ICSPDAT = I/P)
+;
+INITTRIS
 ;
 ; DATA/CLOCK = INPUT
 ;
@@ -177,7 +184,7 @@ ENDIF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Wait for ICSPCLK High
+; Wait for ICSPCLK I/P High (REQUIRES ICSPCLK = I/P)
 ;
 ; params  : NONE
 ; result  : W=ERRNONE, CARRY CLEAR
@@ -197,7 +204,7 @@ WAITHIGHTEST    BTFSC   ICSPPORT,ICSPCLK
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Wait for ICSPCLK Low
+; Wait for ICSPCLK I/P Low (REQUIRES ICSPCLK = I/P)
 ;
 ; params  : NONE
 ; result  : W=ERRNONE, CARRY CLEAR
@@ -217,7 +224,7 @@ WAITLOWTEST     BTFSS   ICSPPORT,ICSPCLK
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Get in a clocked byte
+; Get in a clocked byte (REQUIRES ICSPDAT = I/P)
 ; 
 ; params  : NONE
 ; result  : W=ERRNONE, CARRY CLEAR, BUFFER
@@ -228,20 +235,6 @@ GETBYTE         CLRF    BUFFER          ;CLEAR INPUT BYTE
                 CLRF    PARITY          ;EVEN PARITY
                 MOVLW   0x08            ;8 BITS IN A BYTE
                 MOVWF   COUNTER0
-;
-; ENSURE ICSPDAT IS I/P
-;
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL ICSPTRIS
-ENDIF
-                BSF     ICSPTRIS,ICSPDAT;DATA INPUT
-IF ARCH == MIDRANGE || ARCH == ENHANCED
-                BANKSEL BANK0
-ENDIF
-IF ARCH == BASELINE
-                MOVF    ICSPTRIS,W
-                TRIS    ICSPPORT
-ENDIF
 ;
 ; START BIT CLOCK HIGH
 ;
@@ -395,7 +388,7 @@ SENDBYTE        MOVWF   BUFFER          ;SAVE OUTPUT BYTE
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
-; START BIT OUTPUT
+; START BIT OUTPUT (ICSPDAT = O/P)
 ;
                 TRISPD  ICSPTRIS,ICSPDAT;SET START BIT LOW
 IF ARCH == BASELINE
@@ -407,15 +400,15 @@ ENDIF
 ;
                 CALL    WAITLOW         ;START BIT CLOCK LOW
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 ;
 ; DATA BIT CLOCK HIGH
 ;
 SENDBIT         CALL    WAITHIGH        ;DATA BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 ;
-; DATA BIT OUTPUT
+; DATA BIT OUTPUT (ICSPDAT = I/P OR O/P)
 ;
 IF ARCH == PIC18
                 RRCF    BUFFER,F        ;ROTATE OUT BIT
@@ -445,15 +438,15 @@ SENDPAR
 ;
                 CALL    WAITLOW         ;DATA BIT CLOCK LOW
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 
                 DJNZ    COUNTER0,SENDBIT;FOR ALL BITS
 ;
-; PARITY BIT CLOCK HIGH
+; PARITY BIT CLOCK HIGH (ICSPDAT = I/P OR O/P)
 ; 
                 CALL    WAITHIGH        ;PARITY BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 ;
 ; PARITY BIT OUTPUT
 ;
@@ -473,15 +466,15 @@ ENDIF
 ; 
                 CALL    WAITLOW         ;PARITY BIT CLOCK LOW
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 ;
 ; STOP BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;STOP BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                RETLW   ERRTIMEOUT      ;TIME-OUT
+                GOTO    TIMEDOUT        ;TIME-OUT
 ;
-; STOP BIT OUTPUT
+; STOP BIT OUTPUT (ICSPDAT = I/P)
 ;
                 TRISPU  ICSPTRIS,ICSPDAT;SET STOP BIT HIGH
 IF ARCH == BASELINE
@@ -491,7 +484,15 @@ ENDIF
 ;
 ; STOP BIT CLOCK LOW
 ;
-                GOTO    WAITLOW         ;STOP BIT CLOCK LOW
+                CALL    WAITLOW         ;STOP BIT CLOCK LOW
+                BTFSC   STATUS,C
+                RETLW   ERRTIMEOUT      ;TIME-OUT
+                RETLW   ERRNONE         ;SUCCESS
+;
+; TIME-OUT (RE-INIT ICSPDAT = I/P)
+;
+TIMEDOUT        CALL    INITTRIS        ;ICSPDAT = I/P
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

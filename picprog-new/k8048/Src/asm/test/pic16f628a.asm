@@ -68,7 +68,7 @@ ERRORLEVEL      -302
 ;
 ; Config
 ;
-  __CONFIG _CP_OFF & _CPD_OFF & _LVP_OFF & _BOREN_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_ON & _INTOSC_OSC_NOCLKOUT
+  __CONFIG _CP_OFF & _CPD_OFF & _LVP_ON & _BOREN_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_ON & _INTOSC_OSC_NOCLKOUT
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

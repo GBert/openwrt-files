@@ -156,11 +156,20 @@ int lpp_icsp_set_pgd(struct lpp_context_t *context, const unsigned char data)
     return ret;
 }
 
-int lpp_icsp_set_pgd_dir(struct lpp_context_t *context, const unsigned char data) 
+int lpp_icsp_set_pgd_input(struct lpp_context_t *context)
 {
     int ret;
 
-	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGD_DIR, data) == 0);
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGD_INPUT) == 0);
+
+    return ret;
+}
+
+int lpp_icsp_set_pgd_output(struct lpp_context_t *context, const unsigned char data) 
+{
+    int ret;
+
+	ret = (ioctl(context->icsp_dev_file, MC_ICSP_IOC_SET_PGD_OUTPUT, data) == 0);
 
     return ret;
 }

@@ -151,8 +151,8 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tDisplay oscillator calibration.\n");
 	printf(" k12 select PIC1XFXXX osccal 0x0c1a\n"
 		"\t\tRestore oscillator calibration as 0x0c1a.\n");
-	printf(" k12 select PIC1XFXXX program file.hex\n"
-		"\t\tProgram file.hex in flash (intel hex32 format).\n");
+	printf(" k12 select PIC1XFXXX program file.hex [noblank]\n"
+		"\t\tBlank and program file.hex in flash (intel hex32 format).\n");
 	printf(" k12 select PIC1XFXXX verify file.hex\n"
 		"\t\tVerify file.hex in flash (intel hex32 format).\n"
 		"\n");
@@ -199,8 +199,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tDump device content (intel hex32 format).\n");
 	printf(" k14 eeprom\n"
 		"\t\tDisplay data EEPROM content.\n");
-	printf(" k14 erase flash | id | row [n]\n"
-		"\t\tErase program flash, id or flash at row for n rows.\n");
+	printf(" k14 erase eeprom | flash | id | row [n]\n"
+		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n");
 	printf(" k14 flash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n");
 	printf(" k14 id\n"
@@ -209,8 +209,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tDisplay oscillator calibration.\n");
 	printf(" k14 osccal 0x343c\n"
 		"\t\tRestore oscillator calibration as 0x343c.\n");
-	printf(" k14 program file.hex\n"
-		"\t\tProgram file.hex in flash (intel hex32 format).\n");
+	printf(" k14 program file.hex [noblank]\n"
+		"\t\tBlank and program file.hex in flash (intel hex32 format).\n");
 	printf(" k14 verify file.hex\n"
 		"\t\tVerify file.hex in flash (intel hex32 format).\n"
 		"\n");
@@ -253,14 +253,14 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tDump device content (intel hex32 format).\n");
 	printf(" k16 eeprom\n"
 		"\t\tDisplay data EEPROM content.\n");
-	printf(" k16 erase flash | id | row [n]\n"
-		"\t\tErase program flash, id or flash at row for n rows.\n");
+	printf(" k16 erase eeprom | flash | id | row [n]\n"
+		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n");
 	printf(" k16 flash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n");
 	printf(" k16 id\n"
 		"\t\tDisplay device identification.\n");
-	printf(" k16 program file.hex\n"
-		"\t\tProgram file.hex in flash (intel hex32 format).\n");
+	printf(" k16 program file.hex [noblank]\n"
+		"\t\tBlank and program file.hex in flash (intel hex32 format).\n");
 	printf(" k16 verify file.hex\n"
 		"\t\tVerify file.hex in flash (intel hex32 format).\n"
 		"\n");
@@ -477,15 +477,24 @@ main(int argc, char **argv)
 				
 				int argv2 = tolower((int)argv[2][0]);
 				switch (argv2) {
-				case 'f': /* flash */
+				case 'i': /* IDLOCATION    */
+				case 'u': /* USERID/CONFIG */
+					row = PIC_ERASE_ID;
+					strncpy(prompt, "Erase id", STRLEN);
+					break;
+				case 'c': /* CONFIG */
+					row = PIC_ERASE_CONFIG;
+					strncpy(prompt, "Erase config", STRLEN);
+					break;
+				case 'e': /* EEPROM */
+					row = PIC_ERASE_EEPROM;
+					strncpy(prompt, "Erase EEPROM", STRLEN);
+					break;
+				case 'f': /* FLASH */
 					nrows = UINT_MAX;
 					strncpy(prompt, "Erase program flash", STRLEN);
 					break;
-				case 'i': /* idlocs */
-					row = PIC_ID_ERASE;
-					strncpy(prompt, "Erase id locations", STRLEN);
-					break;
-				default:  /* flash row */
+				default:  /* FLASH ROW */
 					row = strtoul(argv[2], &endptr, 0);
 					if (endptr == argv[2])
 						usage(&k, execname, "Invalid arg [erase]");

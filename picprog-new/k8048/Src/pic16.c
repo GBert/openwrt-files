@@ -529,10 +529,10 @@ pic16_set_table_pointer(struct k8048 *k, unsigned int address)
 	unsigned char addru = ((address & 0x003f0000) >> 16);	/* 21:16 */
 
 	/* TBLPTRU @ 0x0FF8 */
-	pic16_core_instruction(k, 0x0E00 | addru);	/* MOVLW <Addr[21:16]>  */
+	pic16_core_instruction(k, 0x0E00 | addru);	/* MOVLW <Addr[21:16]>	*/
 	pic16_core_instruction(k, 0x6EF8);		/* MOVWF TBLPTRU	*/
 	/* TBLPTRH @ 0x0FF7 */
-	pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <Addr[15:8]>   */
+	pic16_core_instruction(k, 0x0E00 | addrh);	/* MOVLW <Addr[15:8]>	*/
 	pic16_core_instruction(k, 0x6EF7);		/* MOVWF TBLPTRH	*/
 	/* TBLPTRL @ 0x0FF6 */
 	pic16_core_instruction(k, 0x0E00 | addrl);	/* MOVLW <Addr[7:0]>	*/
@@ -564,7 +564,7 @@ pic16_erase_block(struct k8048 *k, unsigned int block)
 }
 
 /*
- * ROW ERASE
+ * ROW ERASE (PROGRAM FLASH OR IDLOCATIONS)
  *
  * DS39972B-page 19 PIC18F26K80  HIGH=P9(1ms)   LOW=P10(100us)
  * DS39622L-page 16 PIC18F2XXX   HIGH=P9(1ms)   LOW=P10(100us)
@@ -575,33 +575,32 @@ pic16_erase_row(struct k8048 *k, unsigned int address, unsigned int nrows)
 {
 	int h, l;
 
-	switch (pic16_map[pic16_index].datasheet) {
-	case DS39687E: /* PIC18LF27J53 */
-		h = pic16_map[pic16_index].p10;		/* minimum 49 or 54ms     */
+	if (pic16_map[pic16_index].configaddr != PIC16_CONFIG_LOW) {
+		/* PIC18J */
+		h = pic16_map[pic16_index].p10;		/* minimum 49 or 54ms	*/
 		l = 0;
-		break;
-	default:h = pic16_map[pic16_index].p9;		/* normally 1ms           */
-		l = pic16_map[pic16_index].p10;		/* normally 100us         */
-		break;
+	} else {
+		h = pic16_map[pic16_index].p9;		/* normally 1ms		*/
+		l = pic16_map[pic16_index].p10;		/* normally 100us	*/
 	}
-
-	pic16_init_code_memory_access(k);		/* BSF EECON1, EEPGD      */
-							/* BCF EECON1, CFGS       */
-	pic16_write_enable(k);				/* BSF EECON1, WREN       */
+	pic16_init_code_memory_access(k);		/* BSF EECON1, EEPGD	*/
+							/* BCF EECON1, CFGS	*/
+	pic16_write_enable(k);				/* BSF EECON1, WREN	*/
 	while (nrows--) {
 		pic16_set_table_pointer(k, address);
-		pic16_free(k);				/* BSF EECON1, FREE	  */
-		pic16_write(k);		  		/* BSF EECON1, WR         */
+		pic16_free(k);				/* BSF EECON1, FREE	*/
+		pic16_write(k);				/* BSF EECON1, WR	*/
 		switch (pic16_map[pic16_index].datasheet) {
 		case DS30500A: /* PIC18F2431 DS30500A-page 11 */
-		case DS39576B: /* PIC18F252                   */
+		case DS39576B: /* PIC18F252  */
+		case DS39592E: /* PIC18F1320 */
 			pic16_table_write_start_programming(k, 0);
 		default:break;
 		}
-		pic16_core_instruction_nopp(k, h, l);	/* ROW ERASE              */
+		pic16_core_instruction_nopp(k, h, l);	/* ROW ERASE		*/
 		address += pic16_map[pic16_index].erasesize;
 	}
-	pic16_write_disable(k);				/* BCF EECON1, WREN       */
+	pic16_write_disable(k);				/* BCF EECON1, WREN	*/
 }
 
 /*
@@ -614,7 +613,7 @@ pic16_bulk_erase(struct k8048 *k)
 {	
 	io_init_program_verify(k);
 
-	switch (pic16_map[pic16_index].datasheet) {	/* CHIP ERASE           */
+	switch (pic16_map[pic16_index].datasheet) {	/* CHIP ERASE		*/
 	case DS30500A: /* PIC18F2431 DS30500A-page 9  */
 	case DS39576B: /* PIC18F252                   */
 	case DS39592E: /* PIC18F1320 DS39592F-page 10 */
@@ -696,19 +695,65 @@ pic16_bulk_erase(struct k8048 *k)
 void
 pic16_row_erase(struct k8048 *k, unsigned int row, unsigned int nrows)
 {	
-	if (row == PIC_ID_ERASE) {
+	if (row == PIC_ERASE_EEPROM) {
+		if (pic16_map[pic16_index].eeprom == 0) {
+			printf("%s: information: EEPROM is not supported on this device\n", __func__);
+			return; /* NO EEPROM */
+		}
+
+		unsigned short address = PIC16_REGIONDATA;
+		
 		io_init_program_verify(k);
 
-		/* ERASE ID LOCATIONS */
-		pic16_erase_row(k, PIC16_ID_LOW, 1);
+		/* ERASE EEPROM */
+		for (int i = 0; i < pic16_map[pic16_index].eeprom; ++i) {
+			pic16_set_data_pointer(k, address++);
+			pic16_write_data_memory(k, 0xFF);
+		}
 
 		io_standby(k);
 		return;
 	}
 
+	if (row == PIC_ERASE_ID) {
+		if (pic16_map[pic16_index].configaddr != PIC16_CONFIG_LOW) {
+			printf("%s: information: IDLOCATIONS are not supported on this device\n", __func__);
+			return; /* PIC18J IDLOCS:N/A */
+		}
+
+		io_init_program_verify(k);
+
+		/* ERASE IDLOCATIONS */
+		pic16_erase_row(k, PIC16_ID_LOW, 1);
+
+		io_standby(k);
+		return;
+	}
+#if 0
+	if (row == PIC_ERASE_CONFIG) {
+		io_init_program_verify(k);
+
+		/* ERASE CONFIG */
+		if (pic16_map[pic16_index].configaddr != PIC16_CONFIG_LOW) {
+			pic16_erase_row(k, pic16_map[pic16_index].configaddr, 1);
+		} else {
+			for (int i = 0; i < pic16_map[pic16_index].configsize; i++) {
+				pic16_conf.index[i + PIC16_CONFIG_1L] = 0xFF;
+			}
+			pic16_write_config(k);
+		}
+
+		io_standby(k);
+		return;
+	}
+#endif
+	/*
+	 * ERASE PROGRAM FLASH ROW(S)
+	 */
+
 	unsigned int maxrows = 2 * pic16_map[pic16_index].flash / pic16_map[pic16_index].erasesize;
 	if (row >= maxrows) {
-		printf("%s: information: row out of range\n", __func__);
+		printf("%s: information: program flash row is out of range\n", __func__);
 		return;
 	}
 
@@ -1070,20 +1115,20 @@ pic16_write_buffer(struct k8048 *k, unsigned long address, unsigned char buffer[
 		break;
 	}
 
-	if (address == PIC16_ID_LOW)	/* The idloc panel size is 8 bytes      */
+	if (address == PIC16_ID_LOW)	/* The idloc panel size is 8 bytes	*/
 		limit = 8 - 2;
-	else				/* The code panel size varies           */
+	else				/* The code panel size varies		*/
 		limit = pic16_map[pic16_index].panelsize - 2;
 #if 0
-	pic16_write_enable(k);				/* BSF EECON1, WREN     */
+	pic16_write_enable(k);				/* BSF EECON1, WREN	*/
 #endif
 	pic16_set_table_pointer(k, address);
 	for (i = 0; i < limit; i += 2)
 		pic16_table_write_post_increment_2(k, (buffer[i + 1] << 8) | buffer[i]);
 	pic16_table_write_start_programming(k, (buffer[i + 1] << 8) | buffer[i]);
-	pic16_core_instruction_nopp(k, h, l);		/* PANEL PROGRAM        */
+	pic16_core_instruction_nopp(k, h, l);		/* PANEL PROGRAM	*/
 #if 0
-	pic16_write_disable(k);				/* BCF EECON1, WREN     */
+	pic16_write_disable(k);				/* BCF EECON1, WREN	*/
 #endif
 }
 
@@ -1156,7 +1201,7 @@ pic16_write_configreg(struct k8048 *k, unsigned long address, int index, int h, 
 {
 	unsigned short data = pic16_conf.index[index] | pic16_conf.index[index + 1] << 8;
 
-	pic16_set_table_pointer(k, address);	/* EVEN ADDRESS                  */
+	pic16_set_table_pointer(k, address);	/* EVEN ADDRESS			 */
 	pic16_table_write_start_programming(k, data);
 	pic16_core_instruction_nopp(k, h, l);	/* CONFIG PROGRAM H=P9/P9A L=P10 */
 
@@ -1183,7 +1228,7 @@ pic16_write_config(struct k8048 *k)
 	pic16_init_config_memory_access(k);
 	pic16_goto100000(k);
 #if 0
-	pic16_write_enable(k);				/* BSF EECON1, WREN     */
+	pic16_write_enable(k);				/* BSF EECON1, WREN	*/
 #endif
 	pic16_write_configreg(k, PIC16_CONFIG_LOW + 0, PIC16_CONFIG_1L, h, l);
 	pic16_write_configreg(k, PIC16_CONFIG_LOW + 2, PIC16_CONFIG_2L, h, l);
@@ -1193,7 +1238,7 @@ pic16_write_config(struct k8048 *k)
 	pic16_write_configreg(k, PIC16_CONFIG_LOW + 12, PIC16_CONFIG_7L, h, l);
 	pic16_write_configreg(k, PIC16_CONFIG_LOW + 10, PIC16_CONFIG_6L, h, l);
 #if 0
-	pic16_write_disable(k);				/* BCF EECON1, WREN     */
+	pic16_write_disable(k);				/* BCF EECON1, WREN	*/
 #endif
 }
 
@@ -1300,7 +1345,7 @@ pic16_verifyregion(struct k8048 *k, unsigned long address, int region, int index
 		break;
 	}
 	if (vdata != data) {
-		printf("%s: error: read [%02X] expected [%02X] at [%04lx]\n",
+		printf("%s: error: read [%02X] expected [%02X] at [%04lX]\n",
 			__func__, vdata, data, address);
 		return FAIL;
 	}

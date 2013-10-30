@@ -66,7 +66,6 @@ struct mc_icsp_cmd_only_t
 /* SET BIT */
 #define MC_ICSP_IOC_SET_PGC     _IO(MC_ICSP_IOC_MAGIC, 11)
 #define MC_ICSP_IOC_SET_PGD     _IO(MC_ICSP_IOC_MAGIC, 12)
-#define MC_ICSP_IOC_SET_PGD_DIR _IO(MC_ICSP_IOC_MAGIC, 13)
 #define MC_ICSP_IOC_SET_PGM     _IO(MC_ICSP_IOC_MAGIC, 14)
 #define MC_ICSP_IOC_SET_MCLR    _IO(MC_ICSP_IOC_MAGIC, 15)
 
@@ -83,9 +82,9 @@ struct mc_icsp_cmd_only_t
 #define MC_ICSP_IOC_CLK_OUT     _IO(MC_ICSP_IOC_MAGIC, 19)
 #define MC_ICSP_IOC_CLK_IN      _IOR(MC_ICSP_IOC_MAGIC, 20, unsigned char *)
 
-/* IO direction */
-#define MC_ICSP_IO_DIR_OUTPUT (0)
-#define MC_ICSP_IO_DIR_INPUT  (1)
+/* SET DATA DIRECTION IN/OUT */
+#define MC_ICSP_IOC_SET_PGD_INPUT  _IO(MC_ICSP_IOC_MAGIC, 21)
+#define MC_ICSP_IOC_SET_PGD_OUTPUT _IO(MC_ICSP_IOC_MAGIC, 22)
 
 /* Platform-dependent data for Microchip ICSP */
 struct mc_icsp_platform_data
@@ -93,7 +92,8 @@ struct mc_icsp_platform_data
     void *data;
     void (*set_pgc) (void *data, unsigned int state);
     void (*set_pgd) (void *data, unsigned int state);
-    void (*set_pgd_dir) (void *data, unsigned int dir);
+    void (*set_pgd_input) (void *data);
+    void (*set_pgd_output) (void *data, unsigned int state);
     void (*set_pgm) (void *data, unsigned int state);
     void (*set_mclr) (void *data, unsigned int state);
     int  (*get_pgd) (void *data);
@@ -101,7 +101,7 @@ struct mc_icsp_platform_data
     int  (*release) (void *data);
     int  ndly_pgc_hold;
     int  ndly_pgc_low_hold;
-    int  udly_cmd_to_data;
+    int  pgd_pullup;
 };
 
 /* lpp context */
@@ -121,7 +121,8 @@ int lpp_icsp_data_only(struct lpp_context_t *, const unsigned int);
 int lpp_icsp_command_6(struct lpp_context_t *, const unsigned char);
 int lpp_icsp_set_pgc(struct lpp_context_t *, const unsigned char);
 int lpp_icsp_set_pgd(struct lpp_context_t *, const unsigned char);
-int lpp_icsp_set_pgd_dir(struct lpp_context_t *, const unsigned char);
+int lpp_icsp_set_pgd_input(struct lpp_context_t *);
+int lpp_icsp_set_pgd_output(struct lpp_context_t *, const unsigned char);
 int lpp_icsp_set_pgm(struct lpp_context_t *, const unsigned char);
 int lpp_icsp_set_mclr(struct lpp_context_t *, const unsigned char);
 int lpp_icsp_get_pgd(struct lpp_context_t *, unsigned char *);

@@ -357,6 +357,10 @@ void pic16_write_data_memory(struct k8048 *, unsigned char);
 
 void pic16_read_config_memory(struct k8048 *);
 
+void pic16_goto100000(struct k8048 *);
+void pic16_write_configreg(struct k8048 *, unsigned long, int, int, int);
+void pic16_write_config(struct k8048 *);
+
 /* multi-byte read */
 int pic16_get_program_flash_size(void);
 int pic16_get_data_flash_size(void);

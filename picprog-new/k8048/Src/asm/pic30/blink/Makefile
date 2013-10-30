@@ -81,7 +81,7 @@ $(OBJECT):$(HEADER) Makefile
 
 install:build
 
-uinstall:clean
+uninstall:clean
 
 clean:
 	@echo -n "[RM] "

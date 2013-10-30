@@ -69,9 +69,12 @@ static int P2A = 0; /* ndly_pgc_low_hold */
 module_param(P2A, int, 0644);
 MODULE_PARM_DESC(P2A, "DS39592F P2A TsclkL 40..400ns (default:0ns)");
 
-static int P5 = 0; /* udly_cmd_to_data */
-module_param(P5, int, 0644);
-MODULE_PARM_DESC(P5, "DS39592F P5 Tdly1 20ns (default:0us)");
+/*
+ * Pull-up parameter
+ */
+static int PU = 1; /* pgd_pullup */
+module_param(PU, int, 0644);
+MODULE_PARM_DESC(PU, "PGD level before input. 0=low, 1=high (default:1)");
 
 static unsigned int mc_icsp[BUS_PARAM_COUNT] __initdata;
 static unsigned int bus_nump __initdata;
@@ -92,12 +95,14 @@ static void set_pgd(void *data, unsigned int state) {
         gpio_set_value(pdata->pgd_pin, state);
 }
 
-static void set_pgd_dir(void *data, unsigned int dir) {
+static void set_pgd_input(void *data) {
         struct mc_icsp_gpio_platform_data *pdata = data;
-	if (dir)
-        	gpio_direction_input(pdata->pgd_pin);
-        else
-		gpio_direction_output(pdata->pgd_pin, 0);
+        gpio_direction_input(pdata->pgd_pin);
+}
+
+static void set_pgd_output(void *data, unsigned int state) {
+        struct mc_icsp_gpio_platform_data *pdata = data;
+	gpio_direction_output(pdata->pgd_pin, state);
 }
 
 static void set_pgm(void *data, unsigned int state) {
@@ -143,7 +148,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 		goto err;
         }
 
-	err = gpio_request_one(params[BUS_PARAM_PGD], GPIOF_OUT_INIT_LOW, "MC ICSP PGD");
+	err = gpio_request_one(params[BUS_PARAM_PGD], GPIOF_IN, "MC ICSP PGD");
         if (err) {
 		printk(KERN_ERR PFX " didn't get GPIO %d for PGD\n", params[BUS_PARAM_PGD] );
 		goto err_get_pgd;
@@ -172,7 +177,8 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.data = &pdata;
 	mc_icsp_pdata.set_pgc = set_pgc;
 	mc_icsp_pdata.set_pgd = set_pgd;
-	mc_icsp_pdata.set_pgd_dir = set_pgd_dir;
+	mc_icsp_pdata.set_pgd_input = set_pgd_input;
+	mc_icsp_pdata.set_pgd_output = set_pgd_output;
 	mc_icsp_pdata.set_pgm = set_pgm;
 	mc_icsp_pdata.set_mclr = set_mclr;
 	mc_icsp_pdata.get_pgd = get_pgd;
@@ -180,7 +186,7 @@ static int __init mc_icsp_gpio_custom_add(unsigned int id, unsigned int *params)
 	mc_icsp_pdata.release = NULL;
 	mc_icsp_pdata.ndly_pgc_hold = P2B;
 	mc_icsp_pdata.ndly_pgc_low_hold = P2A;
-	mc_icsp_pdata.udly_cmd_to_data = P5;
+	mc_icsp_pdata.pgd_pullup = PU;
 
 	pdev = platform_device_alloc("mc-icsp", 0);
 	if (!pdev) {

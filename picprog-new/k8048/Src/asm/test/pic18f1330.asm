@@ -12,15 +12,15 @@
 ; ------
 ;; Pinout
 ; ------
-; RA0       1----18 RB3
-; RA1       2    17 RB2
-; RA4       3    16 RA7
-; !MCLR VPP 4    15 RA6
-; VSS GND   5    14 VDD VCC
-; RA2       6    13 RB7 PGD
-; RA3       7    12 RB6 PGC
-; RB0       8    11 RB5
-; RB1       9----10 RB4
+; RA0 AN0 INT0 KBI0 CMP0 1----18 RB3 INT3 KBI3 CMP1 T1OSI
+; RA1 AN1 INT1 KBI1      2    17 RB2 INT2 KBI2 CMP2 T1OSO
+; RA4 AN2 T0CKI VREF+    3    16 RA7 OSC1 CLKI T1OSI !FLTA
+; RA5 !MCLR VPP !FLTA    4    15 RA6 OSC2 CLKO T1OSO AN3
+; VSS GND                5    14 VDD VCC
+; RA2 TX CK              6    13 RB7 PWM5 PGD
+; RA3 TX DT              7    12 RB6 PWM4 PGC
+; RB0 PWM0               8    11 RB5 PWM3
+; RB1 PWM1               9----10 RB4 PWM2
 ;
 ; K8048 Pin
 ; ----- ---

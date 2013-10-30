@@ -51,11 +51,12 @@ gpio_init(struct k8048 *k)
 	/* RTS/PGC CLOCK    */
 	gpio_select_output(&k->gpio, k->gpio.pgc, k->bitrules & PGC_OUT_FLIP);
 
-	/* CTS/PGD DATA_IN  (SETUP BEFORE DATA_OUT) */
+	/* CTS/PGD DATA_IN  */
 	gpio_select_input(&k->gpio, k->gpio.pgdi, GPPUD_UP);
 	
 	/* DTR/PGD DATA_OUT */
-	gpio_select_output(&k->gpio, k->gpio.pgdo, k->bitrules & PGD_OUT_FLIP);
+	if (k->gpio.pgdo != k->gpio.pgdi)
+		gpio_select_output(&k->gpio, k->gpio.pgdo, k->bitrules & PGD_OUT_FLIP);
 }
 
 int
@@ -158,7 +159,9 @@ gpio_select_input(GPIO *gpio, uint8_t pin, uint8_t pud)
 
 	uint32_t val = ~(7 << ((pin % 10) * 3));
 	*reg &= val; /* 000 = Input */
-
+#ifdef DEBUG
+	printf("%s()  reg=%p *reg=0x%08X val=0x%08X\n", __func__, reg, *reg, val);
+#endif
 	return gpio_pud(gpio, pin, pud);
 }
 
@@ -172,7 +175,9 @@ gpio_reselect_input(GPIO *gpio, uint8_t pin)
 
 	uint32_t val = ~(7 << ((pin % 10) * 3));
 	*reg &= val; /* 000 = Input */
-
+#ifdef DEBUG
+	printf("%s()  reg=%p *reg=0x%08X val=0x%08X\n", __func__, reg, *reg, val);
+#endif
 	return 0;
 }
 
@@ -184,12 +189,16 @@ gpio_select_output(GPIO *gpio, uint8_t pin, int level)
 
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio->map) + gpio_gpfsel(pin);
 	
-	uint32_t val = ~(7 << ((pin % 10) * 3));
+	uint32_t val;
+#if 1
+	val = ~(7 << ((pin % 10) * 3));
 	*reg &= val; /* 000 = Input */
-
+#endif
 	val = 1 << ((pin % 10) * 3);
 	*reg |= val; /* 001 = Output */
-
+#ifdef DEBUG
+	printf("%s() reg=%p *reg=0x%08X val=0x%08X\n", __func__, reg, *reg, val);
+#endif
 	return gpio_set(gpio, pin, level);
 }
 
@@ -201,12 +210,11 @@ gpio_reselect_output(GPIO *gpio, uint8_t pin)
 
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio->map) + gpio_gpfsel(pin);
 	
-	uint32_t val = ~(7 << ((pin % 10) * 3));
-	*reg &= val; /* 000 = Input */
-
-	val = 1 << ((pin % 10) * 3);
+	uint32_t val = 1 << ((pin % 10) * 3);
 	*reg |= val; /* 001 = Output */
-
+#ifdef DEBUG
+	printf("%s() reg=%p *reg=0x%08X val=0x%08X\n", __func__, reg, *reg, val);
+#endif
 	return 0;
 }
 

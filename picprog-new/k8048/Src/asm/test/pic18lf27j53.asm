@@ -36,15 +36,15 @@
 ; VDDCORE 2.00V .. 2.70V (VDDCORE <= VDD)
 ; VDD     2.15V .. 3.60V (VDD >= VDDCORE)
 ;
-; LP2951 Pinout 
-; -------------
+; LP2951ACN Pinout 
+; ----------------
 ; OUTPUT   1-----8 INPUT
 ; SENSE    2     7 FEEDBACK
 ; SHUTDOWN 3     6 VTAP
 ; GROUND   4-----5 !ERROR
 ;
-; LP2951 VDDCORE
-; --------------
+; LP2951ACN VDDCORE
+; -----------------
 ; OUTPUT = 1.23 * (1 + R1 / R2)
 ;
 ; R1=100K R2=100K VOUT=2.46V
@@ -52,7 +52,7 @@
 ; VDDCORE---+----+----+-----OUTPUT-+--------+-INPUT---VDD
 ;  2.46V    |    |    |            |        |         3V3
 ;          100n 10u  100K R1       | LP2951 |
-;           |    |    |            |        |
+;           |    |    |            |  ACN   |
 ;           |    |    +---FEEDBACK-+--------+
 ;           |    |    |                |
 ;           |    |   100K R2           |

@@ -8,7 +8,11 @@ Added:
 
 Changes:
 	Removed some files
+
 	Applied compilation fixes for sdcc 3.3.0
+
 	Edited USB descriptors
+
 	Re-arranged code slightly
+
 	Used INDENT(1) to tidy

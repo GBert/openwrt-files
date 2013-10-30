@@ -33,7 +33,7 @@
 int
 main(int argc, char **argv)
 {
-	int n = 64, d = 0, info = 0, increment = 0, p = 0, vid = 0, pid = 0, q = 0, f = 0, ctrl = 0, r = 1, c, i, j;
+	int n = 64, d = 0, info = 0, increment = 0, vid = 0, pid = 0, q = 0, f = 0, ctrl = 0, r = 1, c, i, j;
 	char path[256], buf[256];
 	path[0] = 0;
 	for (i = 0; i < 256; i++)
@@ -124,7 +124,7 @@ main(int argc, char **argv)
 		}
 
 	for (j = 0, i = optind; i < argc && i < 128; i++, j++)
-		sscanf(argv[i], "%x", &buf[j]);
+		sscanf(argv[i], "%x", (unsigned int *)&buf[j]);
 	int fd = -1;
 	struct hiddev_devinfo device_info;
 	if (pid && vid)
@@ -185,7 +185,6 @@ main(int argc, char **argv)
 	ref_multi_u.num_values = ref_multi_i.num_values = n;
 	for (i = 0; i < n; i++)
 		ref_multi_u.values[i] = buf[i];
-	int res;
 	if (f)
 	{	//use feature report
 		rep_info_u.report_type = rep_info_i.report_type = HID_REPORT_TYPE_FEATURE;

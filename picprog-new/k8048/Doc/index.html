@@ -746,7 +746,7 @@ Full support list is as follows.
 </div>
 
 <p>
-Download the lastest stable application archive from <a href="../k8048-2.14.tar.gz">here</a> or alternatively the latest development archive <a href="../k8048-2.15-dev.tar.gz">here</a>, then decompress and extract the application source code from the archive. Once you perform sudo make install, the application will be ready for use. This has been tested on FreeBSD 5 and 6 yet should work on all FreeBSD variants and other BSD derived systems. It has also been test to work in Linux 2.6 but only compiled for 2.4.
+Download the lastest stable application archive from <a href="../k8048-2.15.tar.gz">here</a> or alternatively the latest development archive <a href="../k8048-2.16-dev.tar.gz">here</a>, then decompress and extract the application source code from the archive. Once you perform sudo make install, the application will be ready for use. This has been tested on FreeBSD 5 and 6 yet should work on all FreeBSD variants and other BSD derived systems. It has also been test to work in Linux 2.6 but only compiled for 2.4.
 </p>
 
 <p>
@@ -765,8 +765,8 @@ Here are some sample sessions obtaining the application and then installing it.
 # make
 # make install
 # cd /root
-# fetch "http://dev.kewl.org/k8048/k8048-2.14.tar.gz"
-# tar zxf k8048-2.14.tar.gz
+# fetch "http://dev.kewl.org/k8048/k8048-2.15.tar.gz"
+# tar zxf k8048-2.15.tar.gz
 # cd k8048
 # rehash
 # gmake build-all
@@ -775,8 +775,8 @@ Here are some sample sessions obtaining the application and then installing it.
 
 <p><u>Generic UNIX application installation</u></p>
 <pre>
-$ wget -q http://dev.kewl.org/k8048/k8048-2.14.tar.gz
-$ tar zxf k8048-2.14.tar.gz
+$ wget -q http://dev.kewl.org/k8048/k8048-2.15.tar.gz
+$ tar zxf k8048-2.15.tar.gz
 $ cd k8048
 $ gnumake
 $ sudo gnumake install
@@ -785,8 +785,8 @@ $ sudo gnumake install
 <p><u>Debian GNU/Linux application installation</u></p>
 <pre>
 $ sudo apt-get install build-essential
-$ wget -q http://dev.kewl.org/k8048/k8048-2.14.tar.gz
-$ tar zxf k8048-2.14.tar.gz
+$ wget -q http://dev.kewl.org/k8048/k8048-2.15.tar.gz
+$ tar zxf k8048-2.15.tar.gz
 $ cd k8048
 $ make
 $ sudo make install
@@ -800,8 +800,8 @@ $ sudo apt-get install libncurses-dev
 $ sudo apt-get install gputils
 $ sudo apt-get install geda
 $ sudo apt-get install geda-utils
-$ wget -q http://dev.kewl.org/k8048/k8048-2.14.tar.gz
-$ tar zxf k8048-2.14.tar.gz
+$ wget -q http://dev.kewl.org/k8048/k8048-2.15.tar.gz
+$ tar zxf k8048-2.15.tar.gz
 $ cd k8048
 $ make build-all
 $ sudo make install-all
@@ -809,8 +809,8 @@ $ sudo make install-all
 
 <p><u>Cygwin for windows installation</u></p>
 <pre>
-$ wget -q http://dev.kewl.org/k8048/k8048-2.14.tar.gz
-$ tar zxf k8048-2.14.tar.gz
+$ wget -q http://dev.kewl.org/k8048/k8048-2.15.tar.gz
+$ tar zxf k8048-2.15.tar.gz
 $ cd k8048
 $ make
 $ make install
@@ -1076,7 +1076,7 @@ EXAMPLES:
                 Hardware tests.
 
 VERSION:
- 2.15-dev
+ 2.16-dev
 </pre>
 
 <p><u>k12 - Perform operations on 12-bit word architecture devices</u></p>
@@ -1108,13 +1108,13 @@ EXAMPLES:
                 Display oscillator calibration.
  k12 select PIC1XFXXX osccal 0x0c1a
                 Restore oscillator calibration as 0x0c1a.
- k12 select PIC1XFXXX program file.hex
-                Program file.hex in flash (intel hex32 format).
+ k12 select PIC1XFXXX program file.hex [noblank]
+                Blank and program file.hex in flash (intel hex32 format).
  k12 select PIC1XFXXX verify file.hex
                 Verify file.hex in flash (intel hex32 format).
 
 VERSION:
- 2.15-dev
+ 2.16-dev
 </pre>
 
 <p><u>k14 - Perform operations on 14-bit word architecture devices</u></p>
@@ -1152,8 +1152,8 @@ EXAMPLES:
                 Dump device content (intel hex32 format).
  k14 eeprom
                 Display data EEPROM content.
- k14 erase flash | id | row [n]
-                Erase program flash, id or flash at row for n rows.
+ k14 erase eeprom | flash | id | row [n]
+                Erase EEPROM, flash, id or flash at row for n rows.
  k14 flash [n]
                 Display all or n words of program flash content.
  k14 id
@@ -1162,13 +1162,13 @@ EXAMPLES:
                 Display oscillator calibration.
  k14 osccal 0x343c
                 Restore oscillator calibration as 0x343c.
- k14 program file.hex
-                Program file.hex in flash (intel hex32 format).
+ k14 program file.hex [noblank]
+                Blank and program file.hex in flash (intel hex32 format).
  k14 verify file.hex
                 Verify file.hex in flash (intel hex32 format).
 
 VERSION:
- 2.15-dev
+ 2.16-dev
 </pre>
 
 <p><u>k16 - Perform operations on 16-bit word architecture devices</u></p>
@@ -1202,19 +1202,19 @@ EXAMPLES:
                 Dump device content (intel hex32 format).
  k16 eeprom
                 Display data EEPROM content.
- k16 erase flash | id | row [n]
-                Erase program flash, id or flash at row for n rows.
+ k16 erase eeprom | flash | id | row [n]
+                Erase EEPROM, flash, id or flash at row for n rows.
  k16 flash [n]
                 Display all or n words of program flash content.
  k16 id
                 Display device identification.
- k16 program file.hex
-                Program file.hex in flash (intel hex32 format).
+ k16 program file.hex [noblank]
+                Blank and program file.hex in flash (intel hex32 format).
  k16 verify file.hex
                 Verify file.hex in flash (intel hex32 format).
 
 VERSION:
- 2.15-dev
+ 2.16-dev
 </pre>
 
 <p><u>ktest - Perform various hardware and communication tests</u></p>
@@ -1256,7 +1256,7 @@ EXAMPLES:
                 ICSPIO demo test with 100 microseconds clock mark time.
 
 VERSION:
- 2.15-dev
+ 2.16-dev
 </pre>
 
 <a href="#toc">Table of contents</a><br clear="all">
@@ -1608,26 +1608,6 @@ The single input drives the fourth remaining gate.
 The following connections refer to the R-PI GPIO header directly. Ensure that power is only ever applied from GPIO 3V3 on PIN 1 and never 5V.
 </p>
 
-<p><u>Separate data I/O connections (RPI)</u></p>
-<pre>
-R-PI                              PICMicro	GPIO header	.k8048 (RPI)
-====                              ========	===========	============
-
-3V3-------------------------------VDD		PIN 1 (P1-01)
-
-GND-------------------------------VSS		PIN 6
-
-GPIO04-----------470R-------------VPP		PIN 7		VPP=4
-
-GPIO25-----------470R-------------PGC		PIN 22		PGC=25
-
-GPIO24-----------470R--------+----PGD		PIN 18		PGDO=24
-			     |
-GPIO23-----------10K---------+			PIN 16		PGDI=23
-
-GPIO22-----------470R-------------PGM (1)	PIN 15		PGM=22
-</pre>
-
 <p><u>Single common data I/O connection (RPI or LPICP)</u></p>
 <pre>
 R-PI                              PICMicro	GPIO header	.k8048 (RPI)
@@ -1636,7 +1616,7 @@ R-PI                              PICMicro	GPIO header	.k8048 (RPI)
 3V3-------------------------------VDD----+	PIN 1 (P1-01)
 					 |
 GND-------------------------------VSS	 |	PIN 6
-					 1(2)
+					 1
 GPIO04-----------470R-------------VPP	 0	PIN 7		VPP=4
 					 K
 GPIO25-----------470R-------------PGC	 |	PIN 22		PGC=25
@@ -1649,7 +1629,6 @@ GPIO22-----------470R-------------PGM (1)	PIN 15		PGM=22
 <p><u>Notes</u></p>
 <ol class="outer">
 <li>Not used by all LVP compatible devices.
-<li>For `kio' ICSP I/O.
 </ol>
 
 <p>The full R-PI GPIO header is described <a href="http://elinux.org/RPi_Low-level_peripherals#General_Purpose_Input.2FOutput_.28GPIO.29">here</a>.
@@ -1728,15 +1707,15 @@ PWR-------------------------------VDD
 
 GND-------------------------------VSS
 
-A0---------------470R-------------VPP
+A0--------------------------------VPP
 
-A1---------------470R-------------PGC
+A1--------------------------------PGC
 
-A2---------------470R--------+----PGD
+A2--------------1000R--------+----PGD
                              |
-A3---------------10K---------+
+A3---------------------------+
 
-A4---------------470R-------------PGM (1)
+A4--------------------------------PGM (1)
 </pre>
 
 <p><u>Notes</u></p>
@@ -1806,7 +1785,7 @@ A4---------------470R-------------PGM (1)
 
 <div>
 <pre class="footer">
-Version 2.14
+Version 2.16-dev
 
 Copyright (c) 2005, 2007, 2012 and 2013 Darron Broad
 All rights reserved.

@@ -48,35 +48,26 @@ static struct mc_icsp_platform_data *mc_icsp_platform = NULL;
 #define mc_icsp_io_pgd_get()    mc_icsp_platform->get_pgd(mc_icsp_platform->data)
 
 /* delay if not zero */
-#define mc_icsp_ndelay(dly)     do {if (dly) ndelay(dly);} while(0)
-#define mc_icsp_udelay(dly)     do {if (dly) udelay(dly);} while(0)
+#define mc_icsp_ndelay(dly) do {if (dly) ndelay(dly);} while(0)
+#define mc_icsp_udelay(dly) do {if (dly) udelay(dly);} while(0)
 
-/* clock out a bit with a value of 1 */
-#define mc_icsp_io_output_one(cfg)    do {          \
-    mc_icsp_io_pgd_set_hi();                        \
-    mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
-    mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
-    } while (0)
+/* clock data bit in or out */
+static inline void mc_icsp_io_pgc(void)
+{
+    mc_icsp_io_pgc_set_hi();
+    mc_icsp_ndelay(mc_icsp_platform->ndly_pgc_hold);
+    mc_icsp_io_pgc_set_lo();
+    mc_icsp_ndelay(mc_icsp_platform->ndly_pgc_low_hold);
+}
 
-/* clock out a bit with a value of 0 */
-#define mc_icsp_io_output_zero(cfg) do {            \
-    mc_icsp_io_pgd_set_lo();                        \
-    mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
-    mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
-    } while (0)
-
-/* read a bit */
-#define mc_icsp_io_input(input_value, cfg) do {     \
-    mc_icsp_io_pgc_set_hi();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_hold);             \
-    mc_icsp_io_pgc_set_lo();                        \
-    mc_icsp_ndelay(cfg->ndly_pgc_low_hold);         \
-    input_value = mc_icsp_io_pgd_get();             \
-    } while (0)
+/* set data bit high or low */
+static inline void mc_icsp_io_pgd_set(const unsigned int bit)
+{
+    if (bit)
+        mc_icsp_io_pgd_set_hi();
+    else
+        mc_icsp_io_pgd_set_lo();
+}
 
 /* read 1 to 32 bits */
 void mc_icsp_rx_bits(unsigned int *bits, const unsigned int nbits)
@@ -85,31 +76,33 @@ void mc_icsp_rx_bits(unsigned int *bits, const unsigned int nbits)
 
     dprintk("%s(,%d)\n", __func__, nbits);
 
-    /* make sure that pgd goes down before pumping in the data */
-    mc_icsp_io_pgd_set_lo();
-
-    /* start read */
-    mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_INPUT);
-
     /* reset bits */
     *bits = 0;
+
+    /* pgd level pre input */
+    mc_icsp_io_pgd_set(mc_icsp_platform->pgd_pullup);
+
+    /* set pgd to i/p */
+    mc_icsp_platform->set_pgd_input(mc_icsp_platform->data);
 
     /* pump in bits */
     while (bits_left--)
     {
-        /* read a bit (1 if set, 0 otherwise) */
-        mc_icsp_io_input(current_bit, mc_icsp_platform);
+        /* clock in bit */
+        mc_icsp_io_pgc();
+
+        /* read a bit */
+        current_bit = mc_icsp_io_pgd_get();
 
         /* is the current bit set? */
         if (current_bit) {
             /* set in data */
             (*bits) |= current_bit_mask;
         }
+
+        /* next bit */
         current_bit_mask <<= 1;
     }
-
-    /* end read */
-    mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
 
     dprintk("%s()=0x%08X\n", __func__, *bits);
 }
@@ -121,28 +114,28 @@ void mc_icsp_tx_bits(const unsigned int bits, const unsigned int nbits)
 
     dprintk("%s(0x%08X, %d)\n", __func__, bits, nbits);
 
+    /* set pgd to o/p */
+    mc_icsp_platform->set_pgd_output(mc_icsp_platform->data, bits & 1);
+
     /* pump out bits */
     while (bits_left--)
     {
-        if (bits & current_bit_mask)
-            mc_icsp_io_output_one(mc_icsp_platform);
-        else
-            mc_icsp_io_output_zero(mc_icsp_platform);
+        /* send a bit */
+        mc_icsp_io_pgd_set(bits & current_bit_mask);
 
+        /* clock out bit */
+        mc_icsp_io_pgc();
+
+        /* next bit */
         current_bit_mask <<= 1;
     }
-
-    /* make sure that pgd goes down after pumping out the data */
-    mc_icsp_io_pgd_set_lo();
 }
 
 /* send a command only */
 void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
 {
     /* 3 clocks outputting 0 */
-    mc_icsp_io_output_zero(mc_icsp_platform);
-    mc_icsp_io_output_zero(mc_icsp_platform);
-    mc_icsp_io_output_zero(mc_icsp_platform);
+    mc_icsp_tx_bits(0, 3);
 
     /* now hold pgc hi */
     if (cmd_config->pgc_value_after_cmd)
@@ -153,7 +146,7 @@ void mc_icsp_command_only(struct mc_icsp_cmd_only_t *cmd_config)
     else
     {
         /* output another clock */
-        mc_icsp_io_output_zero(mc_icsp_platform);
+        mc_icsp_io_pgc();
     }
 
     /* delay P9/P9A + P5 or P10 + P11 */
@@ -218,9 +211,6 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         /* send the command */    
         mc_icsp_tx_bits(data >> 16, 4);
 
-        /* wait a bit */
-        mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
-
         /* send the 16 bit data */
         mc_icsp_tx_bits(data, 16);
     }
@@ -234,9 +224,6 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
         {
             /* send the command */
             mc_icsp_tx_bits(xfer_data >> 16, 4);
-
-            /* wait a bit */
-            mc_icsp_udelay(mc_icsp_platform->udly_cmd_to_data);
 
             /* receive the 16 bit data */
             mc_icsp_rx_bits(&xfer_data, 16);
@@ -296,12 +283,6 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
     }
     break;
 
-    case MC_ICSP_IOC_SET_PGD_DIR:
-    {
-        mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, data);
-    }
-    break;
-
     case MC_ICSP_IOC_SET_PGM:
     {
         mc_icsp_platform->set_pgm(mc_icsp_platform->data, data);
@@ -332,6 +313,7 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
      SEND BITS
      *********************************************************************/
 
+    /* send 32 bits (LVP key entry code) */
     case MC_ICSP_IOC_SEND_32:
     {
         mc_icsp_tx_bits(data, 32);
@@ -356,22 +338,36 @@ long mc_icsp_device_ioctl(struct file *filep, unsigned int cmd, unsigned long da
      CLOCK BIT IN/OUT
      *********************************************************************/
 
-    case MC_ICSP_IOC_CLK_OUT:
-    {
-        if (data)
-            mc_icsp_io_output_one(mc_icsp_platform);
-        else
-            mc_icsp_io_output_zero(mc_icsp_platform);
-    }
-    break;
-
     case MC_ICSP_IOC_CLK_IN:
     {
         unsigned char xfer_byte;
 
-        mc_icsp_io_input(xfer_data, mc_icsp_platform);
+        mc_icsp_rx_bits(&xfer_data, 1);
         xfer_byte = (xfer_data != 0);
         __put_user(xfer_byte, (unsigned char __user *)data);
+    }
+    break;
+
+    /* send 1 bit (LVP key entry code 33rd bit) */
+    case MC_ICSP_IOC_CLK_OUT:
+    {
+        mc_icsp_tx_bits(data, 1);
+    }
+    break;
+
+    /*********************************************************************
+      SET DATA DIRECTION IN/OUT
+     *********************************************************************/
+    
+    case MC_ICSP_IOC_SET_PGD_INPUT:
+    {
+        mc_icsp_platform->set_pgd_input(mc_icsp_platform->data);
+    }
+    break;
+
+    case MC_ICSP_IOC_SET_PGD_OUTPUT:
+    {
+        mc_icsp_platform->set_pgd_output(mc_icsp_platform->data, data);
     }
     break;
 
@@ -389,9 +385,6 @@ static int mc_icsp_device_open(struct inode *inode, struct file *icsp_file)
 
     /* call open callback */
     if (mc_icsp_platform->open != NULL) mc_icsp_platform->open(mc_icsp_platform->data);
-
-    /* set pgd to output */
-    mc_icsp_platform->set_pgd_dir(mc_icsp_platform->data, MC_ICSP_IO_DIR_OUTPUT);
 
     /* done */
     return 0;

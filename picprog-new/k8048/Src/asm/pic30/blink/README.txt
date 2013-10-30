@@ -3,6 +3,9 @@ Origin:
 
 Changes:
 	Removed all files except main.c.
+
 	Renamed main.c to blink.c
+
 	Added blink.h
+
 	Added GNU Makefile.

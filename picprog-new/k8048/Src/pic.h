@@ -28,7 +28,9 @@ void pic_program(struct k8048 *, const char *, int);
 int pic_verify(struct k8048 *, const char *);
 void pic_blank(struct k8048 *);
 
-#define PIC_ID_ERASE (UINT_MAX)
+#define PIC_ERASE_ID (UINT_MAX)
+#define PIC_ERASE_CONFIG (PIC_ERASE_ID - 1)
+#define PIC_ERASE_EEPROM (PIC_ERASE_ID - 2)
 void pic_erase(struct k8048 *, unsigned int, unsigned int);
 
 void pic_dumpdeviceid(struct k8048 *);
