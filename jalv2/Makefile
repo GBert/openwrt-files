@@ -48,6 +48,8 @@ endef
 define Package/jalv2/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bin/jalv2 $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/share/jal
+	$(INSTALL_BIN) files/* $(1)/usr/share/jal/
 endef
 
 
