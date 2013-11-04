@@ -5,8 +5,6 @@ This Git contains an OpenWrt feed. The main purpose is an in system low-voltage 
 The mc-icsp module was written by Eran Duchan http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/ -
 I just added a GPIO customizing module (mc-icsp-gpio-custom).
 
-Use the picprog-new instead of picprog (deprecated).
-
 ### OpenWrt Compiling
 
 To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt root dir:
@@ -14,7 +12,7 @@ To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt 
 <pre><code>src-git openwrtfiles git://github.com/GBert/openwrt-files</pre></code>
 and do
 <pre><code>scripts/feeds update
-scripts/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog-new</pre></code>
+scripts/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog</pre></code>
 in your OpenWrt source tree.
 
 ### Using
