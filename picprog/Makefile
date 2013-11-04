@@ -14,14 +14,14 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/picprog-new
+define Package/picprog
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Microchip PIC Programmer
   DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
 endef
 
-define Package/picprog-new/description
+define Package/picprog/description
   Microchip PIC Programmer based on MC ICSP modul from Eran Duchan.
   This is a modifed version of Darron Broads k8048 PIC Programmer.
   Only LVP PICs are supported
