@@ -6,7 +6,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=picprog-new
+PKG_NAME:=picprog
 PKG_RELEASE:=2.15
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
@@ -38,7 +38,7 @@ define Build/Compile
 		build
 endef
 
-define Package/picprog-new/install
+define Package/picprog/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kio $(1)/usr/bin/
@@ -46,11 +46,11 @@ define Package/picprog-new/install
 	$(INSTALL_BIN) ./config/k8048 $(1)/root/.k8048
 endef
 
-define Package/picprog-new/postinst
+define Package/picprog/postinst
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k14
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k16
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/ktest
 endef
 
 
-$(eval $(call BuildPackage,picprog-new))
+$(eval $(call BuildPackage,picprog))
