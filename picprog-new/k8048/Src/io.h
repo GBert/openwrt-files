@@ -25,6 +25,13 @@
 #define IOI2C   (3)     /* MCP23017 I2C                   */
 #define IOBB    (4)     /* LINUX BIT-BANG DRIVER          */
 
+/* Default GPIO pins */
+#define GPIO_VPP  (14)
+#define GPIO_PGC  (15)
+#define GPIO_PGDO (23)
+#define GPIO_PGDI (24)
+#define GPIO_PGM  (22)
+
 /******************************************************************************
  * ICSP I/O
  */

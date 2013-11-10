@@ -42,14 +42,14 @@ void
 io_config(struct k8048 *k)
 {
         k->iot = IONONE;
+	/* tty / rpi / mcp23017 i2c / bit-bang */
+        k->fd = -1;
 #ifdef TTY
 	/* tty */
-        k->fd = -1;
 	strncpy(k->device, SERIAL_DEVICE, STRLEN);
 #endif
-#ifdef RPI
+#if defined(RPI) || defined(BITBANG)
 	/* rpi */
-        k->fd = -1;
         k->vpp  = GPIO_VPP;  /* TX/!MCLR/VPP     */
         k->pgm  = GPIO_PGM;  /* PGM              */
         k->pgc  = GPIO_PGC;  /* RTS/PGC CLOCK    */
@@ -58,12 +58,7 @@ io_config(struct k8048 *k)
 #endif
 #ifdef MCP23017
 	/* mcp23017 i2c */
-        k->fd = -1;
         k->mcp = MCP23017_ADDR;
-#endif
-#ifdef BITBANG
-	/* bit-bang */
-        k->fd = -1;
 #endif
 }
 
@@ -690,6 +685,7 @@ io_program_in(struct k8048 *k, uint8_t nbits)
 		break;
 #ifdef BITBANG
 	case IOBB:
+		/* bit-bang */
 		{
 		struct bit_bang_gpio_shift shift = {1, nbits, 0};
 
@@ -732,6 +728,7 @@ io_program_out(struct k8048 *k, uint32_t bits, uint8_t nbits)
 		break;
 #ifdef BITBANG
 	case IOBB:
+		/* bit-bang */
 		{
 		struct bit_bang_gpio_shift shift = {0, nbits, (uint64_t)bits};
 

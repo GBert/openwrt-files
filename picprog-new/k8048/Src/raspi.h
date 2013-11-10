@@ -108,13 +108,4 @@ int gpio_reselect_output(struct k8048 *, uint8_t);
 
 void gpio_test(struct k8048 *k, int);
 
-/*
- * Default GPIO pins
- */
-#define GPIO_VPP  (14)
-#define GPIO_PGC  (15)
-#define GPIO_PGDO (23)
-#define GPIO_PGDI (24)
-#define GPIO_PGM  (22)
-
 #endif /* !_RASPI_H */
