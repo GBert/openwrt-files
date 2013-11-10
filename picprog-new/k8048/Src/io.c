@@ -163,7 +163,7 @@ io_init(struct k8048 *k)
 		init_i2c(k->fd);
 		break;
 #endif
-#ifdef RPI
+#ifdef BITBANG
 	case IOBB:	/* bit-bang */
 		break;
 #endif
