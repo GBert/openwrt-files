@@ -19,7 +19,7 @@ define Package/picprog-new
   CATEGORY:=Utilities
   TITLE:=Microchip PIC Programmer
 #  DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
-  DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
+  DEPENDS:=
 endef
 
 define Package/picprog-new/description
