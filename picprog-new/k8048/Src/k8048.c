@@ -470,7 +470,7 @@ main(int argc, char **argv)
 			int32_t test = strtol(argv[1], NULL, 0);
 			switch (test) {
 #ifdef RPI
-			case 0: if (k.gpio.fd < 0)
+			case 0: if (k.fd < 0)
 					usage_ktest(&k, "Invalid arg");
 				gpio_test(&k, testarg);
 				break;

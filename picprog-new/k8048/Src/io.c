@@ -49,7 +49,7 @@ io_config(struct k8048 *k)
 #endif
 #ifdef RPI
 	/* rpi */
-        k->gpio.fd = -1;
+        k->fd = -1;
         k->vpp  = GPIO_VPP;  /* TX/!MCLR/VPP     */
         k->pgm  = GPIO_PGM;  /* PGM              */
         k->pgc  = GPIO_PGC;  /* RTS/PGC CLOCK    */
@@ -58,12 +58,12 @@ io_config(struct k8048 *k)
 #endif
 #ifdef MCP23017
 	/* mcp23017 i2c */
-        k->i2c = -1;
+        k->fd = -1;
         k->mcp = MCP23017_ADDR;
 #endif
 #ifdef BITBANG
 	/* bit-bang */
-        k->bb = -1;
+        k->fd = -1;
 #endif
 }
 
@@ -92,9 +92,9 @@ io_open(struct k8048 *k, int standby)
 #ifdef RPI
 	if (mystrcasestr(k->device, "rpi") == k->device) {
 		/* rpi */
-		gpio_open(&k->gpio);
-		if (k->gpio.fd < 0) {
-			k->gpio.fd = -1;
+		gpio_open(k);
+		if (k->fd < 0) {
+			k->fd = -1;
 			return -1;
 		}
 		k->iot = IORPI;
@@ -106,9 +106,9 @@ io_open(struct k8048 *k, int standby)
 #ifdef MCP23017
 	if (strstr(k->device, "/dev/i2c") == k->device) {
 		/* mcp23017 i2c */
-		k->i2c = open_i2c(k->device, k->mcp);
-		if (k->i2c < 0) {
-			k->i2c = -1;
+		k->fd = open_i2c(k->device, k->mcp);
+		if (k->fd < 0) {
+			k->fd = -1;
 			return -1;
 		}
 		k->iot = IOI2C;
@@ -120,8 +120,8 @@ io_open(struct k8048 *k, int standby)
 #ifdef BITBANG
 	if (strstr(k->device, "/dev/bit-bang-gpio") == k->device) {
 		/* bit-bang */
-		if ((k->bb = open(k->device, O_RDWR)) < 0) {
-			k->bb = -1;
+		if ((k->fd = open(k->device, O_RDWR)) < 0) {
+			k->fd = -1;
 			return -1;
 		}
 		k->iot = IOBB;
@@ -132,7 +132,7 @@ io_open(struct k8048 *k, int standby)
 		config.data_pin_output = k->pgdo;
 		config.clock_delay_low = k->sleep_low;
 		config.clock_delay_high = k->sleep_high;
-		bit_bang_gpio_configure(k->bb, &config);
+		bit_bang_gpio_configure(k->fd, &config);
 		if (standby)
 			io_init(k);
 		return 0;
@@ -160,7 +160,7 @@ io_init(struct k8048 *k)
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		init_i2c(k->i2c);
+		init_i2c(k->fd);
 		break;
 #endif
 #ifdef RPI
@@ -255,20 +255,20 @@ io_close(struct k8048 *k, int standby)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_close(&k->gpio);
-		k->gpio.fd = -1;
+		gpio_close(k);
+		k->fd = -1;
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		close_i2c(k->i2c);
-		k->i2c = -1;
+		close_i2c(k->fd);
+		k->fd = -1;
 		break;
 #endif
 #ifdef BITBANG
 	case IOBB:	/* bit-bang */
-		close(k->bb);
-		k->bb = -1;
+		close(k->fd);
+		k->fd = -1;
 		break;
 #endif
 	default:printf("%s: information: unimplemented\n", __func__);
@@ -299,7 +299,7 @@ io_usleep(struct k8048 *k, uint32_t n)
 	if (k->iot == IORPI && n < 10) {
 		uint8_t pgd;
 		for (uint32_t i = 0; i < n; ++i) {
-			gpio_get(&k->gpio, k->pgdi, &pgd);
+			gpio_get(k, k->pgdi, &pgd);
 		}
 		return;
 	}
@@ -343,12 +343,12 @@ io_set_pgd(struct k8048 *k, uint8_t pgd)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(&k->gpio, k->pgdo, pgd);
+		gpio_set(k, k->pgdo, pgd);
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgd(k->i2c, pgd);
+		mcp_set_pgd(k->fd, pgd);
 		break;
 #endif
 #ifdef BITBANG
@@ -356,7 +356,7 @@ io_set_pgd(struct k8048 *k, uint8_t pgd)
 		{
 		struct bit_bang_gpio_io io = {0, k->pgdo, pgd};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		}
 		break;
 #endif
@@ -383,12 +383,12 @@ io_set_pgc(struct k8048 *k, uint8_t pgc)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(&k->gpio, k->pgc, pgc);
+		gpio_set(k, k->pgc, pgc);
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgc(k->i2c, pgc);
+		mcp_set_pgc(k->fd, pgc);
 		break;
 #endif
 #ifdef BITBANG
@@ -396,7 +396,7 @@ io_set_pgc(struct k8048 *k, uint8_t pgc)
 		{
 		struct bit_bang_gpio_io io = {0, k->pgc, pgc};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		}
 		break;
 #endif
@@ -426,13 +426,13 @@ io_set_pgd_pgc(struct k8048 *k, uint8_t pgd, uint8_t pgc)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(&k->gpio, k->pgdo, pgd);
-		gpio_set(&k->gpio, k->pgc,  pgc);
+		gpio_set(k, k->pgdo, pgd);
+		gpio_set(k, k->pgc,  pgc);
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgd_pgc(k->i2c, pgd, pgc);
+		mcp_set_pgd_pgc(k->fd, pgd, pgc);
 		break;
 #endif
 #ifdef BITBANG
@@ -440,10 +440,10 @@ io_set_pgd_pgc(struct k8048 *k, uint8_t pgd, uint8_t pgc)
 		{
 		struct bit_bang_gpio_io io = {0, k->pgdo, pgd};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		io.pin = k->pgc;
 		io.bit = pgc;
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		}
 		break;
 #endif
@@ -473,13 +473,13 @@ io_set_vpp_pgm(struct k8048 *k, uint8_t vpp, uint8_t pgm)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(&k->gpio, k->pgm, pgm);
-		gpio_set(&k->gpio, k->vpp, vpp);
+		gpio_set(k, k->pgm, pgm);
+		gpio_set(k, k->vpp, vpp);
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_vpp_pgm(k->i2c, vpp, pgm);
+		mcp_set_vpp_pgm(k->fd, vpp, pgm);
 		break;
 #endif
 #ifdef BITBANG
@@ -487,10 +487,10 @@ io_set_vpp_pgm(struct k8048 *k, uint8_t vpp, uint8_t pgm)
 		{
 		struct bit_bang_gpio_io io = {0, k->pgm, pgm};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		io.pin = k->vpp;
 		io.bit = vpp;
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		}
 		break;
 #endif
@@ -516,12 +516,12 @@ io_get_pgd(struct k8048 *k)
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_get(&k->gpio, k->pgdi, &pgd);
+		gpio_get(k, k->pgdi, &pgd);
 		break;
 #endif
 #ifdef MCP23017
 	case IOI2C:	/* mcp23017 i2c */
-		pgd = mcp_get_pgd(k->i2c) ? HIGH : LOW;
+		pgd = mcp_get_pgd(k->fd) ? HIGH : LOW;
 		break;
 #endif
 #ifdef BITBANG
@@ -529,7 +529,7 @@ io_get_pgd(struct k8048 *k)
 		{
 		struct bit_bang_gpio_io io = {1, k->pgdi, 0};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		pgd = io.bit;
 		}
 		break;
@@ -574,7 +574,7 @@ io_data_input(struct k8048 *k, uint8_t bit)
 	if (k->iot == IORPI) {
 		if (k->pgdi == k->pgdo) {
 			/* Set PGD to I/P */
-	 		gpio_reselect_input(&k->gpio, k->pgdi);
+	 		gpio_reselect_input(k, k->pgdi);
 		}
 		return;
 	}
@@ -584,7 +584,7 @@ io_data_input(struct k8048 *k, uint8_t bit)
 		/* Set PGD to I/P */
 		struct bit_bang_gpio_io io = {1, k->pgdi, 0};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 	}
 #endif
 }
@@ -633,7 +633,7 @@ io_data_output(struct k8048 *k, uint8_t bit)
 	if (k->iot == IORPI) {
 		if (k->pgdi == k->pgdo) {
 			/* Set PGD to O/P */
-			gpio_reselect_output(&k->gpio, k->pgdo);
+			gpio_reselect_output(k, k->pgdo);
 		}
 		return;
 	}
@@ -643,7 +643,7 @@ io_data_output(struct k8048 *k, uint8_t bit)
 		/* Set PGD to O/P */
 		struct bit_bang_gpio_io io = {0, k->pgdo, bit};
 
-		bit_bang_gpio_io(k->bb, &io);
+		bit_bang_gpio_io(k->fd, &io);
 		return;
 	}
 #endif
@@ -693,7 +693,7 @@ io_program_in(struct k8048 *k, uint8_t nbits)
 		{
 		struct bit_bang_gpio_shift shift = {1, nbits, 0};
 
-		bit_bang_gpio_shift(k->bb, &shift);
+		bit_bang_gpio_shift(k->fd, &shift);
 		bits = (uint32_t)shift.bits;
 		}
 		break;
@@ -735,7 +735,7 @@ io_program_out(struct k8048 *k, uint32_t bits, uint8_t nbits)
 		{
 		struct bit_bang_gpio_shift shift = {0, nbits, (uint64_t)bits};
 
-		bit_bang_gpio_shift(k->bb, &shift);
+		bit_bang_gpio_shift(k->fd, &shift);
 		}
 		break;
 #endif

@@ -35,10 +35,6 @@ struct k8048;
 
 /* I/O access */
 typedef volatile uint32_t *GPIO_ADDR;
-typedef struct {
-	int fd;
-	void *map;
-} GPIO;
 
 /* GPIO registers (32-bit) */
 #define GPFSEL0 (0x00)
@@ -93,22 +89,22 @@ typedef struct {
 #define GPPUD_RESERVED (3)
 #define GPPUD_DELAY (150)
 
-int gpio_open(GPIO *);
+int gpio_open(struct k8048 *);
 void gpio_init(struct k8048 *);
-int gpio_close(GPIO *);
+int gpio_close(struct k8048 *);
 
-int gpio_read(GPIO *, uint8_t, uint32_t *);
-int gpio_write(GPIO *, uint8_t, uint32_t);
+int gpio_read(struct k8048 *, uint8_t, uint32_t *);
+int gpio_write(struct k8048 *, uint8_t, uint32_t);
 
-int gpio_pud(GPIO *, uint8_t, uint8_t);
+int gpio_pud(struct k8048 *, uint8_t, uint8_t);
 
-int gpio_get(GPIO *, uint8_t, uint8_t *);
-int gpio_set(GPIO *, uint8_t, uint8_t);
+int gpio_get(struct k8048 *, uint8_t, uint8_t *);
+int gpio_set(struct k8048 *, uint8_t, uint8_t);
 
-int gpio_select_input(GPIO *, uint8_t, uint8_t);
-int gpio_reselect_input(GPIO *, uint8_t);
-int gpio_select_output(GPIO *, uint8_t, int);
-int gpio_reselect_output(GPIO *, uint8_t);
+int gpio_select_input(struct k8048 *, uint8_t, uint8_t);
+int gpio_reselect_input(struct k8048 *, uint8_t);
+int gpio_select_output(struct k8048 *, uint8_t, int);
+int gpio_reselect_output(struct k8048 *, uint8_t);
 
 void gpio_test(struct k8048 *k, int);
 

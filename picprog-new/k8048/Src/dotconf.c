@@ -65,11 +65,9 @@ getconf(struct k8048 *k, char *e)
 	/* Configure defaults */
 	bzero(k, sizeof(struct k8048));
 	k->bitrules = (PGD_IN_PULLUP | PGD_OUT_FLIP | PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP);
-	k->busy = 0;
 	k->sleep_low = 1;
 	k->sleep_high = 1;
-	k->fwsleep = 1;
-	k->run = 0;
+	k->fwsleep = 30;
 
 	/* Configure I/O defaults */
 	io_config(k);

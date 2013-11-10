@@ -93,18 +93,12 @@ struct k8048 {
 
 	/* I/O backends */
 	uint8_t iot;		/* I/O type (tty, rpi or i2c)			*/
-#ifdef TTY
-	int fd;			/* I/O handle (tty)				*/
-#endif
+	int fd;			/* I/O handle 					*/
 #ifdef RPI
-	GPIO gpio;		/* I/O handle (rpi)				*/
+	void *map;		/* Memory handle (rpi)				*/
 #endif
 #ifdef MCP23017
-	int i2c;		/* I/O handle (i2c)				*/
-	int mcp;		/* I2C (MCP23017) address			*/
-#endif
-#ifdef BITBANG
-	int bb;			/* I/O handle (bit-bang)			*/
+	int mcp;		/* MCP23017 I2C address				*/
 #endif
 #if defined(RPI) || defined(BITBANG)
         uint8_t vpp;		/* TX/!MCLR/VPP     */
