@@ -1,0 +1,39 @@
+Velleman K8048 Programmer for FreeBSD and others.
+-------------------------------------------------------------------------------
+
+ Copyright (c) 2005-2013 Darron Broad
+ All rights reserved.
+
+Licensed under the terms of the BSD license, see file LICENSE for details.
+-------------------------------------------------------------------------------
+
+24-bit word PIC24/dsPIC architecture.
+
+Sample data:
+
+ PIC24FJ64GA002:
+  [000000] [PROGRAM] 5600 WORDS
+  [00ABFC] [CONFIG2] FFFF
+  [00ABFE] [CONFIG1] 7FFF
+  [8007F0] [APPID]   CD6BD3
+  [8007FE] [CALIB]   FFF97D
+  [FF0000] [DEVID]   0447 FAM:11 DEV:07 PIC24FJ64GA002
+  [FF0002] [DEVREV]  3046 MAJ:1  DOT:6
+
+ dsPIC30F4013:
+  N/A
+
+Compatible ICSP devices:
+
+ DS39786D (1)
+  PIC24FJ16GA002  U PIC24FJ16GA004 U PIC24FJ32GA002  U PIC24FJ32GA004  U
+  PIC24FJ48GA002  U PIC24FJ48GA004 U PIC24FJ64GA002  T PIC24FJ64GA004  U
+  PIC24FJ64GA006  U PIC24FJ64GA008 U PIC24FJ64GA010  U PIC24FJ96GA006  U
+  PIC24FJ96GA008  U PIC24FJ96GA010 U PIC24FJ128GA006 U PIC24FJ128GA008 U
+  PIC24FJ128GA010 U
+
+ T=TESTED
+ U=UNTESTED
+
+ (1) These devices are not compatible with the Velleman K8048 and
+     can only be programmed using low voltage programming.

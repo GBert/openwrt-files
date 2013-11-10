@@ -1,0 +1,73 @@
+Velleman K8048 Programmer for FreeBSD and others.
+-------------------------------------------------------------------------------
+
+ Copyright (c) 2005-2013 Darron Broad
+ All rights reserved.
+
+Licensed under the terms of the BSD license, see file LICENSE for details.
+-------------------------------------------------------------------------------
+
+TO ACQUIRE (PDIP/SPDIP)
+=======================
+
+BASELINE
+F	PIC16F526				SIMILAR TO PIC12F519
+F	PIC16F527				SIMILAR TO PIC12F519
+F	PIC16F570
+MIDRANGE
+	PIC16F707				SIMILAR TO PIC16F726
+F	PIC16F721				SIMILAR TO PIC16F726
+F	PIC12F752
+F	PIC16F753
+	PIC16F785
+ENHANCED
+F	PIC12LF1552
+	PIC16F1704/1705/1707/1708/1709		FUTURE PRODUCT
+PIC18
+ 	PIC18F25K20
+PIC24
+F	PIC24F04KA201
+F	PIC24F16KL402
+M	PIC24HJ128GP502
+dsPIC
+	DSPIC33FJ06GS101A
+	DSPIC33FJ12GP201
+M	DSPIC33EP128GP502
+PIC32
+F	PIC32MX250F128B				CHIPKIT PI
+
+ON ORDER
+========
+
+BASELINE
+	N/A
+MIDRANGE
+	N/A
+ENHANCED
+	N/A
+PIC18
+	N/A
+PIC24
+	N/A
+dsPIC
+	N/A
+PIC32
+	N/A
+
+AVAILABLE
+=========
+
+BASELINE
+	N/A
+MIDRANGE
+	N/A
+ENHANCED
+	N/A
+PIC18
+	N/A
+PIC24
+	N/A
+dsPIC
+	dsPIC30F4013
+PIC32
+	PIC32MX150F128B 

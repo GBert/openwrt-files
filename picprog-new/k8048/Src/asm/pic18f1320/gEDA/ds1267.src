@@ -1,0 +1,37 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=2400
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20070531 1
+name=DS1267
+device=DS1267
+refdes=U?
+footprint=DIP14
+description=D/A
+documentation=DS1267.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	line	l		VB
+2		io	line	l		H1
+3		io	line	l		L1
+4		io	line	l		W1
+5		io	dot	l		\_RST\_
+6		io	clk	l		CLK
+7		pwr	line	l	GND	GND
+14		pwr	line	r	Vcc	VDD
+13		io	line	r		SOUT
+12		io	line	r		W0
+11		io	line	r		H0
+10		io	line	r		L0
+9		io	line	r		COUT
+8		io	line	r		DQ

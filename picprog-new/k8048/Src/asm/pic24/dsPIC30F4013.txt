@@ -1,0 +1,37 @@
+;******************************************************************************
+;
+; dsPIC30F4013 Pinout
+; -------------------
+; !MCLR                           1-----40 AVDD
+; AN0 VREF+ CN2 RB0               2     39 AVSS
+; AN1 VREF- CN3 RB1               3     38 AN9  RB9
+; AN2 !SS1 LVDIN CN4 RB2          4     37 AN10 RB10
+; AN3 CN5 RB3                     5     36 AN11 RB11
+; AN4 CN6 RB4                     6     35 AN12 RB12
+; AN5 CN7 RB5                     7     34 EMUC2 OC1 RD0
+; PGC EMUC AN6 OCFA RB6           8     33 EMUD2 OC2 RD1
+; PGD EMUD AN7 RB7                9     32 VDD
+; AN8 RB8                         10    31 VSS
+; VDD                             11    30 RF0
+; VSS                             12    29 RF1
+; OSC1 CLKI                       13    28 U2RX CN17 RF4
+; OSC2 CLKO RC15                  14    27 U2TX CN18 RF5
+; EMUD1 SOSCI T2CK U1ATX CN1 RC13 15    26 U1RX SDI1 SDA RF2
+; EMUC1 SOSCO T1CK U1ARX CN0 RC14 16    25 EMUD3 U1TX SDO1 SCL RF3
+; INT0 RA11                       17    24 EMUC3 SCK1 RF6
+; IC2 INT2 RD9                    18    23 IC1 INT1 RD8
+; RD3                             19    22 RD2
+; VSS                             20----21 VDD
+;
+; POWER
+; -----
+; VDD (2.5V .. 5.5V)                    40, 32, 21, 11
+; VSS                                   39, 31, 20, 12
+;
+; ICSP
+; ----
+; !MCLR (13V)   PROGRAMMING ENABLE      1
+; PGC           SERIAL CLOCK            8
+; PGD           SERIAL DATA             9
+;
+;******************************************************************************

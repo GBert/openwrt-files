@@ -1,0 +1,51 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=4400
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20070529 1
+name=PIC18F2550
+device=PIC18F2550
+refdes=U?
+footprint=DIP28
+description=Microcontroller
+documentation=DS39632D.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	dot	l		\_MCLR\_ VPP RE3
+2		io	line	l		RA0 AN0
+3		io	line	l		RA1 AN1
+4		io	line	l		RA2 AN2 VREF- CVREF	
+5		io	line	l		RA3 AN3 VREF+
+6		io	line	l		RA4 T0CKI C1OUT RCV
+7		io	line	l		RA5 AN4 \_SS\_ HLVDIN C2OUT
+8		pwr	line	l	GND	VSS
+9		io	line	l		OSC1 CLKI
+10		io	line	l		OSC2 CLKO RA6
+11		io	line	l		RC0 T1OSO T13CKI
+12		io	line	l		RC1 T1OSO CCP2 \_UOE\_
+13		io	line	l		RC2 CCP1
+14		io	line	l		VUSB
+28		io	line	r		RB7 KBI3 PGD
+27		io	line	r		RB6 KBI2 PGC
+26		io	line	r		RB5 KBI1 PGM
+25		io	line	r		RB4 AN11 KBI0
+24		io	line	r		RB3 AN9 CCP2 VPO
+23		io	line	r		RB2 AN8 INT2 VMO
+22		io	line	r		RB1 AN10 INT1 SCK SCL
+21		io	line	r		RB0 AN12 INT0 FLT0 SDI SDA
+20		pwr	line	r	Vcc	VDD
+19		pwr	line	r	GND	VSS
+18		io	line	r		RC7 RX DT DSO
+17		io	line	r		RC6 TX CK
+16		io	line	r		RC5 D+ VP
+15		io	line	r		RC4 D- VM

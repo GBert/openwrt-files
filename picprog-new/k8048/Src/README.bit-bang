@@ -1,0 +1,124 @@
+Velleman K8048 Programmer for FreeBSD and others.
+-------------------------------------------------------------------------------
+
+ Copyright (c) 2005-2013 Darron Broad
+ All rights reserved.
+
+Licensed under the terms of the BSD license, see file LICENSE for details.
+-------------------------------------------------------------------------------
+
+Breadboard connections for LVP programming with VPP at 3V3
+----------------------------------------------------------
+
+ R-PI                              PICMicro     GPIO header
+ ====                              ========     ===========
+
+ 3V3-------------------------------VDD----+     PIN 1 (P1-01)
+                                          | 
+ GND-------------------------------VSS    |     PIN 6
+                                          1
+ GPIO04-----------470R-------------VPP    0     PIN 7
+                                          K
+ GPIO25-----------470R-------------PGC    |     PIN 22
+                                          |
+ GPIO24-----------470R-------------PGD----+     PIN 18
+
+ GPIO22-----------470R-------------PGM (1)      PIN 15
+
+(1) Not used by all LVP compatible devices.
+
+How to build BIT-BANG kernel module for raspbian on the R-PI
+============================================================
+
+Determine the running kernel and it's config on the Raspberry Pi target machine.
+
+$  uname -a
+Linux pi3 3.6.11+ #538 PREEMPT Fri Aug 30 20:42:08 BST 2013 armv6l GNU/Linux
+$ zgrep "* firmware as of" /usr/share/doc/raspberrypi-bootloader/changelog.Debian.gz | head -1 | awk '{ print $5 }'
+d4f5315cfac4e
+$ zcat /proc/config.gz > d4f5315cfac4e.config
+
+On the build host fetch the equivalent R-PI firmware.
+
+$ mkdir -p /embedded/raspbian/build/
+$ cd /embedded/raspbian/build/
+$ git clone https://github.com/raspberrypi/firmware
+$ cd /embedded/raspbian/build/firmware/
+$ git checkout d4f5315cfac4e
+$ git reset --hard
+
+Determine the kernel hash for this firmware.
+
+$ cat /embedded/raspbian/build/firmware/extra/git_hash 
+1587f775d0a3c437485262ba951afc5e30be69fa
+
+Fetch the kernel source for this hash.
+
+$ cd /embedded/raspbian/build/
+$ git clone https://github.com/raspberrypi/linux.git
+$ cd /embedded/raspbian/build/linux/
+$ git checkout 1587f775d0a3c437485262ba951afc5e30be69fa
+$ git reset --hard
+
+Fetch the kernel build tools.
+
+$ cd /embedded/raspbian/build/
+$ git clone git://github.com/raspberrypi/tools.git
+
+Build the kernel using the tools.
+
+$ cd /embedded/raspbian/build/linux/
+$ scp pi@pi:d4f5315cfac4e.config .
+$ cp d4f5315cfac4e.config .config
+$ make ARCH=arm oldconfig
+$ make ARCH=arm CROSS_COMPILE=/embedded/raspbian/build/tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- -j 8
+
+Build the BIT-BANG module from the k8048 build directory and copy to target machine.
+
+$ cd $HOME/k8048/Src/driver/
+$ make 
+$ find . -name "*.ko" -exec scp {} pi@pi: \;
+
+Install the module on the Raspberry Pi target machine.
+
+$ mkdir -p /lib/modules/3.6.11+/kernel/local/
+$ cp bit-bang-gpio.ko /lib/modules/3.6.11+/kernel/local/
+$ chown -R 0:0 /lib/modules/3.6.11+/kernel/local/
+$ depmod -a
+
+Load modules on target machine.
+
+$ modprobe bit-bang-gpio
+$ mknod /dev/bit-bang-gpio c 180 0
+$ chmod 666 /dev/bit-bang-gpio
+
+How to build BIT-BANG kernel modules for OpenWRT (INVALID)
+==========================================================
+
+This example builds the firmware for a TP-LINK TL-WR841N. I don't have this
+hardware so although this process should work ultimately it is untested.
+
+$ mkdir -p /embedded/openwrt/
+$ cd /embedded/openwrt/
+$ git clone git://git.openwrt.org/openwrt.git
+$ chown -R nobody:nogroup /embedded/openwrt/openwrt/
+$ cd /embedded/openwrt/openwrt/
+$ su nobody
+$ cp feeds.conf.default feeds.conf.default.orig
+$ echo "src-git openwrtfiles git://github.com/GBert/openwrt-files" >> feeds.conf.default
+$ ./scripts/feeds update -a
+$ ./scripts/feeds install kmod-bit-bang-gpio picprog-new
+$ make menuconfig
+ [Target System  = Atheros AR7xxx/AR9xxx]
+ [Target Profile = TP-LINK TL-WR841N/ND]
+ [Kernel Modules] [Other Modules] [kmod-bit-bang-gpio]
+ [Utilities] [picprog-new]
+ [Exit] [Yes]
+$ make V=s
+ [WAIT FOR A LONG TIME...]
+$ ls -1 bin/ar71xx/openwrt-ar71xx-generic-tl-wr841n*factory.bin
+bin/ar71xx/openwrt-ar71xx-generic-tl-wr841nd-v1.5-squashfs-factory.bin
+bin/ar71xx/openwrt-ar71xx-generic-tl-wr841nd-v3-squashfs-factory.bin
+bin/ar71xx/openwrt-ar71xx-generic-tl-wr841nd-v5-squashfs-factory.bin
+bin/ar71xx/openwrt-ar71xx-generic-tl-wr841nd-v7-squashfs-factory.bin
+bin/ar71xx/openwrt-ar71xx-generic-tl-wr841n-v8-squashfs-factory.bin

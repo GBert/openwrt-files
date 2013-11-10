@@ -1,0 +1,29 @@
+#
+# Velleman K8048 Programmer for FreeBSD and others.
+#
+# Copyright (c) 2005-2013 Darron Broad
+# All rights reserved.
+#
+# Licensed under the terms of the BSD license, see file LICENSE for details.
+#
+
+AS=gpasm -a inhx32 -e on -r dec -I ../include/
+
+OBJECT=demo.hex skyrc6.hex rs232.hex
+
+HEADER=../include/device.inc ../include/const.inc ../include/delay.inc ../include/icspio.inc ../include/macro.inc ../include/shadow.inc
+
+build:$(OBJECT)
+
+$(OBJECT):$(HEADER)
+
+%.hex:%.asm
+	@echo -n "[AS] "
+	$(AS) $< -o $@
+
+install:build
+
+uninstall:clean
+
+clean:
+	rm -f *.lst *.hex *.cod *~
