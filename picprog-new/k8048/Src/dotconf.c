@@ -119,7 +119,7 @@ getconf(struct k8048 *k, char *e)
 #endif
 				k->busy = strtoul(&line[5], NULL, 0);
 			}
-#ifdef RPI
+#if defined(RPI) || defined(BITBANG)
 			else if (mystrcasestr(line, "VPP=") == line) {
 #ifdef DEBUG
 				printf("%s: VPP=%s\n", __func__, &line[4]);
