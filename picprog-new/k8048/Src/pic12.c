@@ -830,6 +830,10 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	if (blank)
 		pic12_bulk_erase(k, PIC_INTERNAL);
 
+	/*
+	 * Program device
+	 */
+
 	/* For each line */
 	for (uint32_t i = 0; i < inhx32_count; i++) {
 		hex_address = (inhx32_pdata[i]->address >> 1);
@@ -852,7 +856,7 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 			pic12_increment_address(k);
 		}
 
-		/* For each word in line */
+		/* For each 12-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 2) {
 			wdata = inhx32_pdata[i]->bytes[j] | (inhx32_pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC12_MASK;
@@ -890,6 +894,10 @@ pic12_verify(struct k8048 *k, char *filename)
 	if (!inhx32(filename, 2))
 		return 1;
 
+	/*
+	 * Verify device
+	 */
+
 	/* For each line */
 	for (uint32_t i = 0; i < inhx32_count; i++) {
 		hex_address = (inhx32_pdata[i]->address >> 1);
@@ -908,7 +916,7 @@ pic12_verify(struct k8048 *k, char *filename)
 			pic12_increment_address(k);
 		}
 
-		/* For each word in line */
+		/* For each 12-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 2) {
 			wdata = inhx32_pdata[i]->bytes[j] | (inhx32_pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC12_MASK;

@@ -758,7 +758,7 @@ pic16_bulk_erase(struct k8048 *k)
 		pic16_erase_block(k, 0x800804);		/* ERASE CODE BLOCK 3 TABLE 3-5 */
 		pic16_erase_block(k, 0x800005);		/* ERASE BOOT BLOCK   TABLE 3-6 */
 		pic16_erase_block(k, 0x800002);		/* ERASE CONFIG BITS  TABLE 3-7 */
-		pic16_erase_row(k, PIC16_ID_LOW, 1);	/* ERASE IDLOC		  */
+		pic16_erase_row(k, PIC16_ID_LOW, 1);	/* ERASE IDLOC		  	*/
 		break;
 
 	case DS39687E: /* PIC18LF27J53 */
@@ -819,19 +819,20 @@ pic16_row_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 	}
 #if 0
 	if (row == PIC_ERASE_CONFIG) {
-		pic16_program_verify(k);
+		if (pic16_map[pic16_index].datasheet == DS39687E) { /* PIC18J */
+			pic16_program_verify(k);
 
-		/* ERASE CONFIG */
-		if (pic16_map[pic16_index].configaddr != PIC16_CONFIG_LOW) {
+			/* ERASE CONFIG */
 			pic16_erase_row(k, pic16_map[pic16_index].configaddr, 1);
+
+			pic16_standby(k);
 		} else {
 			for (int i = 0; i < pic16_map[pic16_index].configsize; i++) {
 				pic16_conf.config[i] = 0xFF;
 			}
+			/* ERASE CONFIG */
 			pic16_write_config(k);
 		}
-
-		pic16_standby(k);
 		return;
 	}
 #endif
@@ -1278,18 +1279,20 @@ pic16_write_configreg(struct k8048 *k, uint8_t index, uint32_t h, uint32_t l)
 /*
  * WRITE CONFIGURATION (CONFIG_6H MUST BE WRITTEN LAST)
  */
-void
+uint32_t
 pic16_write_config(struct k8048 *k)
 {
 	uint32_t h, l;
 
 	if (pic16_map[pic16_index].datasheet == DS39687E) { /* PIC18J */
-		return;
+		return 0;
 	}
 
 	h = (pic16_map[pic16_index].p9a != 0)
 		? (pic16_map[pic16_index].p9a) : (pic16_map[pic16_index].p9);
 	l = pic16_map[pic16_index].p10;
+
+	pic16_program_verify(k);
 
 	pic16_init_config_memory_access(k);
 	pic16_goto100000(k);
@@ -1306,6 +1309,9 @@ pic16_write_config(struct k8048 *k)
 #if 0	
 	pic16_write_disable(k);				/* BCF EECON1, WREN	*/
 #endif
+	pic16_standby(k);
+
+	return 14;
 }
 
 /*****************************************************************************
@@ -1478,7 +1484,10 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 	if (blank)
 		pic16_bulk_erase(k);
 	
-	/* Program device */
+	/*
+	 * Program device
+	 */
+
 	pic16_program_verify(k);
 	pic16_write_buffer_init(k);
 
@@ -1506,8 +1515,7 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 
 	/* Finalise device programming (write config words) */
 	if (blank) {
-		pic16_program_config(k);
-		total += 14;
+		total += pic16_write_config(k);
 	}
 
 	printf("Total: %u\n", total);
@@ -1529,7 +1537,10 @@ pic16_verify(struct k8048 *k, char *filename)
 	if (!inhx32(filename, 1))
 		return 1;
 
-	/* Verify device */
+	/*
+	 * Verify device
+	 */
+
 	pic16_program_verify(k);
 
 	/* For each line */
@@ -1559,19 +1570,6 @@ pic16_verify(struct k8048 *k, char *filename)
 	return fail;
 }
  
-/*
- * PROGRAM CONFIGURATION (AFTER VERIFY)
- */
-void
-pic16_program_config(struct k8048 *k)
-{
-	pic16_program_verify(k);
-
-	pic16_write_config(k);
-
-	pic16_standby(k);
-}
-
 /*****************************************************************************
  *
  * Diagnostic functions

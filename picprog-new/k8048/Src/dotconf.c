@@ -157,7 +157,7 @@ getconf(struct k8048 *k, char *e)
 #endif
 				k->pgdi = strtoul(&line[5], NULL, 0);
 			}
-#endif
+#endif /* RPI || BITBANG */
 #ifdef MCP23017
 			else if (mystrcasestr(line, "MCP=") == line) {
 #ifdef DEBUG
@@ -165,7 +165,7 @@ getconf(struct k8048 *k, char *e)
 #endif
 				k->mcp = strtoul(&line[4], NULL, 0);
 			}
-#endif
+#endif /* MCP23017 */
 			else if (mystrcasestr(line, "RUN=") == line) {
 #ifdef DEBUG
 				printf("%s: RUN=%s\n", __func__, &line[4]);

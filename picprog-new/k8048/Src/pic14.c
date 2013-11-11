@@ -1879,6 +1879,10 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 	/* Initialise device for programming */
 	if (blank)
 		pic14_bulk_erase(k, PIC_INTERNAL, PIC_NOINTERNAL);
+	
+	/*
+	 * Program device
+	 */
 
 	/* For each line */
 	for (uint32_t i = 0; i < inhx32_count; i++) {
@@ -1902,7 +1906,7 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 			pic14_increment_address(k);
 		}
 
-		/* For each word in line */
+		/* For each 14-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 2) {
 			wdata = inhx32_pdata[i]->bytes[j] | (inhx32_pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC14_MASK;
@@ -1945,6 +1949,10 @@ pic14_verify(struct k8048 *k, char *filename)
 	if (!inhx32(filename, 2))
 		return 1;
 
+	/*
+	 * Verify device
+	 */
+
 	/* For each line */
 	for (uint32_t i = 0; i < inhx32_count; i++) {
 		hex_address = (inhx32_pdata[i]->address >> 1);
@@ -1963,7 +1971,7 @@ pic14_verify(struct k8048 *k, char *filename)
 			pic14_increment_address(k);
 		}
 
-		/* For each word in line */
+		/* For each 14-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 2) {
 			wdata = inhx32_pdata[i]->bytes[j] | (inhx32_pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC14_MASK;

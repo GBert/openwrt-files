@@ -790,7 +790,10 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	if (blank)
 		pic24_bulk_erase(k);
 
-	/* Program device */
+	/*
+	 * Program device
+	 */
+
 	pic24_program_verify(k);
 	pic24_write_buffer_init(k);
 
@@ -806,7 +809,7 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 				continue;
 		}
 
-		/* For each word in line */
+		/* For each 32-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 4) {
 			wdata = inhx32_pdata[i]->bytes[j] |
 				(inhx32_pdata[i]->bytes[j + 1] << 8) | (inhx32_pdata[i]->bytes[j + 2] << 16);
@@ -818,12 +821,12 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	pic24_write_buffered(k, 0, 0, PIC24_PANEL_END);
 
 	pic24_standby(k);
-#if 0
+
 	/* Finalise device programming (write config words) */
 	if (blank) {
-		total += pic24_program_config(k);
+		/* UNIMPLEMENTED / NOT REQUIRED ON PIC24FJ */
 	}
-#endif
+
 	printf("Total: %u\n", total);
 
 	inhx32_free();
@@ -842,7 +845,10 @@ pic24_verify(struct k8048 *k, char *filename)
 	if (!inhx32(filename, 4))
 		return 1;
 
-	/* Verify device */
+	/*
+	 * Verify device
+	 */
+
 	pic24_program_verify(k);
 
 	/* For each line */
@@ -857,7 +863,7 @@ pic24_verify(struct k8048 *k, char *filename)
 				continue;
 		}
 
-		/* For each word in line */
+		/* For each 32-bit word in line */
 		for (uint32_t j = 0; j < inhx32_pdata[i]->nbytes; j += 4) {
 			wdata = inhx32_pdata[i]->bytes[j] |
 				(inhx32_pdata[i]->bytes[j + 1] << 8) | (inhx32_pdata[i]->bytes[j + 2] << 16);
