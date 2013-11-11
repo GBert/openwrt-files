@@ -53,14 +53,16 @@ static int bit_bang_gpio_io(uint8_t dir, uint8_t pin, uint8_t *bit)
 				gpio_direction_output(pin, *bit);
 				dirs[pin] = 0;
 			} else {
-	        		gpio_set_value(pin, *bit);
+				gpio_set_value(pin, *bit);
 			}
-		} else {
+		} else if (dir == 1) {
 			if (!dirs[pin]) {
 				gpio_direction_input(pin);
 				dirs[pin] = 1;
 			}
-        		*bit = (gpio_get_value(pin) != 0);
+			*bit = (gpio_get_value(pin) != 0);
+		} else {
+			return -EINVAL;
 		}
 		return 0;
 	}
@@ -75,14 +77,16 @@ static int bit_bang_gpio_io(uint8_t dir, uint8_t pin, uint8_t *bit)
 			return err;
 		}
 		dirs[pin] = 0;
-	} else {
+	} else if (dir == 1) {
 		err = gpio_request_one(pin, GPIOF_IN, "bit-bang-gpio");
 		if (err) {
 			printk("bit-bang-gpio: pin %d is currently unavailable.\n", pin);
 			return err;
 		}
 		dirs[pin] = 1;
-       		*bit = (gpio_get_value(pin) != 0);
+		*bit = (gpio_get_value(pin) != 0);
+	} else {
+		return -EINVAL;
 	}
 	pins[pin] = 1;
 	return 0;
@@ -92,7 +96,7 @@ static inline void bit_bang_gpio_delay(uint8_t delay)
 {
 
 	while (delay--)
-        	gpio_get_value(config.data_pin_input);
+		gpio_get_value(config.data_pin_input);
 }
 
 static inline void bit_bang_gpio_clock(void)
@@ -105,55 +109,66 @@ static inline void bit_bang_gpio_clock(void)
 	bit_bang_gpio_delay(config.clock_delay_low);
 }
 
-static void bit_bang_gpio_shift_out(uint64_t bits, uint8_t nbits)
+static int bit_bang_gpio_shift_out(uint64_t bits, uint8_t nbits)
 {
+	int err = 0;
 	uint64_t mask = 1;
 	uint8_t bit = bits & 1;
 
-	bit_bang_gpio_io(0, config.data_pin_output, &bit);
+	err = bit_bang_gpio_io(0, config.data_pin_output, &bit);
+	if (err)
+		return err;
 
 	while (nbits--) {
-		gpio_set_value(config.data_pin_output, bits & mask);
+		gpio_set_value(config.data_pin_output, (bits & mask) != 0);
 		bit_bang_gpio_clock();
 		mask <<= 1;
 	}
+	return 0;
 }
 
-static void bit_bang_gpio_shift_in(uint64_t *bits, uint8_t nbits)
+static int bit_bang_gpio_shift_in(uint64_t *bits, uint8_t nbits)
 {
+	int err = 0;
 	uint64_t mask = 1;
 	uint8_t bit;
 
-	bit_bang_gpio_io(1, config.data_pin_input, &bit);
+	err = bit_bang_gpio_io(1, config.data_pin_input, &bit);
+	if (err)
+		return err;
 
 	*bits = 0;
 	while (nbits--) {
 		if (!config.clock_falling) {
-            		bit_bang_gpio_clock();
-        	}
-        	if (gpio_get_value(config.data_pin_input)) {
+			bit_bang_gpio_clock();
+		}
+		if (gpio_get_value(config.data_pin_input)) {
 			*bits |= mask;
 		}
 		if (config.clock_falling) {
-            		bit_bang_gpio_clock();
-        	}
+			bit_bang_gpio_clock();
+		}
 		mask <<= 1;
 	}
+	return 0;
 }
 
 static long bit_bang_gpio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+	int err = 0;
 
 	if (_IOC_TYPE(cmd) != BIT_BANG_GPIO_MAJOR) {
 		return -EINVAL;
 	}
 	if (_IOC_DIR(cmd) & _IOC_READ) {
-		if (!access_ok(VERIFY_WRITE, arg, _IOC_SIZE(cmd)))
+		if (!access_ok(VERIFY_WRITE, arg, _IOC_SIZE(cmd))) {
 			return -EFAULT;
+		}
 	}
 	if (_IOC_DIR(cmd) & _IOC_WRITE) {
-		if (!access_ok(VERIFY_READ, arg, _IOC_SIZE(cmd)))
+		if (!access_ok(VERIFY_READ, arg, _IOC_SIZE(cmd))) {
 			return -EFAULT;
+		}
 	}
 	switch (cmd) {
 	case BIT_BANG_GPIO_IO:
@@ -161,22 +176,26 @@ static long bit_bang_gpio_ioctl(struct file *file, unsigned int cmd, unsigned lo
 		struct bit_bang_gpio_io io;
 
 		if (copy_from_user(&io, (struct bit_bang_gpio_io *)arg, sizeof(io)) != 0)
-            		printk("bit-bang-gpio: copy_from_user failed.\n");
+			return -EFAULT;
 		else {
-			bit_bang_gpio_io(io.dir, io.pin, &io.bit);
+			err = bit_bang_gpio_io(io.dir, io.pin, &io.bit);
+			if (err)
+				return err;
 			if (copy_to_user((struct bit_bang_gpio_io *)arg, &io, sizeof(io)) != 0)
-            			printk("bit-bang-gpio: copy_to_user failed.\n");
+				return -EFAULT;
 		}
 		}
 		break;
 	case BIT_BANG_GPIO_CONFIGURE:
 		{
 		if (copy_from_user(&config, (struct bit_bang_gpio_config *)arg, sizeof(config)) != 0)
-            		printk("bit-bang-gpio: copy_from_user failed.\n");
+			return -EFAULT;
 		else {
 			uint8_t low = 0;
 
-			bit_bang_gpio_io(0, config.clock_pin, &low);
+			err = bit_bang_gpio_io(0, config.clock_pin, &low);
+			if (err)
+				return err;
 		}
 		}
 		break;
@@ -185,14 +204,20 @@ static long bit_bang_gpio_ioctl(struct file *file, unsigned int cmd, unsigned lo
 		struct bit_bang_gpio_shift shift;
 
 		if (copy_from_user(&shift, (struct bit_bang_gpio_shift *)arg, sizeof(shift)) != 0)
-            		printk("bit-bang-gpio: copy_from_user failed.\n");
+			return -EFAULT;
 		else {
-			if (shift.dir == 0)
-				bit_bang_gpio_shift_out(shift.bits, shift.nbits);
-			else {
-				bit_bang_gpio_shift_in(&shift.bits, shift.nbits);
+			if (shift.dir == 0) {
+				err = bit_bang_gpio_shift_out(shift.bits, shift.nbits);
+				if (err)
+					return err;
+			} else if (shift.dir == 1) {
+				err = bit_bang_gpio_shift_in(&shift.bits, shift.nbits);
+				if (err)
+					return err;
 				if (copy_to_user((struct bit_bang_gpio_shift *)arg, &shift, sizeof(shift)) != 0)
-            				printk("bit-bang-gpio: copy_to_user failed.\n");
+					return -EFAULT;
+			} else {
+				return -EINVAL;
 			}
 		}
 		}
