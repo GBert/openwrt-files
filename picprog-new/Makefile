@@ -18,13 +18,11 @@ define Package/picprog-new
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Microchip PIC Programmer
-#  DEPENDS:=+kmod-mc-icsp +kmod-mc-icsp-gpio-custom
-  DEPENDS:=
+  DEPENDS:=+kmod-bit-bang-gpio
 endef
 
 define Package/picprog-new/description
-  Microchip PIC Programmer based on MC ICSP modul from Eran Duchan.
-  This is a modifed version of Darron Broads k8048 PIC Programmer.
+  Microchip PIC Programmer based on Darron Broads PIC k8048 programmer
   Only LVP PICs are supported
 endef
 
