@@ -1,0 +1,522 @@
+; maze.jal
+;   Copyright (c) 2008, Kyle A. York
+;   all rights reserved
+;
+; Theory of operation:
+;   A perfect maze is one in which every cell can be reached, and there
+;   exists only a single path between any two cells. This is generated
+;   thusly:
+;     starting at a random cell
+;     1. determine all neighbors that have not yet been visited
+;     2. choose one of those neighbors at random
+;     3. break down the wall between, and move to that neighbor
+;     4. if there are no neighbors that satisfy (1) above, backup
+;        one step along the path
+;     5. continue until all cells have been visited.
+;
+;   This is normally shown using a stack for the path, pushing and
+;   popping away as necessary. The PIC doesn't have nearly that
+;   much memory, so we'll use a couple of tricks.
+;
+;   Each cell is represented by 4 bits, the North and West walls.
+;   The South wall is the North wall of the cell below, and the
+;   East wall is the West wall of the cell to the right. Easy enough.
+;   We have to remember the path we took, so we'll track from which
+;   direction we entered the cell. Therefore, each cell requires
+;   four bits as follows (high to low):
+;
+;     ddwn
+;
+;   dd is direction (see DIR_* below)
+;   w  is set if the West wall exists
+;   n  is set if the North wall exists
+;
+;   Once the maze has been created, let's go ahead & solve it. Perfect
+;   mazes are trivial to solve. As such, they are never used in robot
+;   contests, but it's a fun exercise anyway. For this we need only
+;   enter a cell, and examine clockwise until we find an exit.
+;
+;   As written, you'll need an ANSI capable display. It would be
+;   trivial to change this -- simply remove all of the drawing code
+;   except `maze_draw' and call `maze_draw' only when everything
+;   has completed.
+;
+include 18f26k80
+pragma target clock 64_000_000
+pragma target OSC  HS_HIGH
+pragma target PLLEN P4
+pragma target WDT  disabled
+pragma target DEBUG disabled
+pragma target MCLR external
+;
+; this is cheesy, but since I'm using Rick Farmer's PIC bootloader
+; the UART is already setup for me, so I shan't do it again
+
+const usart_hw2_serial = true
+const serial_hw2_baudrate = 460_800
+include serial_hardware2
+serial_hw2_init();
+
+procedure serial_write(byte in ch) is
+  pragma inline
+  serial_hw2_data = ch
+end procedure
+    
+procedure serial_write_str(byte in str[]) is
+  var byte ix
+
+  for count(str) using ix loop
+    var byte tmp
+
+    tmp = str[ix]
+    serial_write(tmp)
+  end loop
+end procedure
+
+;
+; biggest possible with one bank : 16 x 12
+; I'm using 11 below because 12 doesn't fit on an 80x25 screen
+;
+const byte COLS = 16
+const byte ROWS = 11
+
+const byte WALL_NORTH = 1
+const byte WALL_WEST  = 2
+const byte WALL_MASK  = 3
+
+const byte DIR_NORTH  = 0x00
+const byte DIR_WEST   = 0x04
+const byte DIR_SOUTH  = 0x08
+const byte DIR_EAST   = 0x0c
+const byte DIR_MASK   = 0x0c
+const byte DIR_NONE   = 0xff
+
+var byte cells[96]
+
+procedure move_north is
+  const byte STR_MOVE_NORTH[] = "\x1b[2A"
+  serial_write_str(STR_MOVE_NORTH)
+end procedure
+
+procedure move_west is
+  const byte STR_MOVE_WEST[]  = "\x1b[3D"
+  serial_write_str(STR_MOVE_WEST)
+end procedure
+
+procedure move_south is
+  const byte STR_MOVE_SOUTH[] = "\x1b[2B"
+  serial_write_str(STR_MOVE_SOUTH)
+end procedure
+
+procedure move_east is
+  const byte STR_MOVE_EAST[]  = "\x1b[3C"
+  serial_write_str(STR_MOVE_EAST)
+end procedure
+  
+;
+; determine the cell offset given a row and column
+;
+function cell_offset_get(byte in row, byte in col) return byte is
+  return byte(row) * (COLS / 2) + (col / 2)
+end function
+
+;
+; set a cell to val
+;
+procedure cell_set(byte in row, byte in col, byte in val) is
+  var byte ofs
+  var byte mask
+  
+  ofs = cell_offset_get(row, col)
+  if ((col & 1) == 0) then
+    mask = 0x0f
+    val  = val << 4
+  else
+    mask = 0xf0
+  end if
+  cells[ofs] = (cells[ofs] & mask) | val
+end procedure
+
+;
+; return the value of a cell
+;
+function cell_get(byte in row, byte in col) return byte is
+  var byte val
+
+  if (row < ROWS) & (col < COLS) then
+    var byte ofs
+
+    ofs = cell_offset_get(row, col);
+    val = cells[ofs]
+    if ((col & 1) == 0) then
+      val = val >> 4
+    end if
+  else
+    val = 0x0f
+  end if
+  return val & 0x0f
+end function
+
+;
+; set either or both walls
+;
+procedure wall_set(byte in row, byte in col, byte in wall) is
+  cell_set(row, col, (cell_get(row, col) & !WALL_MASK) | wall)
+end procedure
+
+;
+; return the wall parts of a cell
+;
+function wall_get(byte in row, byte in col) return byte is
+  return cell_get(row, col) & WALL_MASK
+end function
+
+;
+; clear one or both walls
+;
+procedure wall_clr(byte in row, byte in col, byte in wall) is
+  if (wall == WALL_NORTH) then
+    ; one to the right - 2 spaces - 3 to the left
+    const byte clr[] = "\x1b[C  \x1b[3D"
+    serial_write_str(clr)
+  else ; wall must be WEST
+    ;go down one line - erase the wall - go up one line
+    const byte clr[] = "\x1b[B \b\x1b[A"
+    serial_write_str(clr)
+  end if
+  wall_set(row, col, wall_get(row, col) & !wall)
+end procedure
+
+;
+; test if a wall exists
+;
+function wall_test(byte in row, byte in col, byte in wall) return bit is
+  return (wall_get(row, col) & wall) != 0
+end function
+
+;
+; set the direction parts of the cell
+;
+procedure dir_set(byte in row, byte in col, byte in dir) is
+  cell_set(row, col, (cell_get(row, col) & !DIR_MASK) | dir)
+end procedure
+
+;
+; return the direction parts of the cell
+;
+function dir_get(byte in row, byte in col) return byte is
+  return cell_get(row, col) & DIR_MASK
+end function
+
+;
+; return TRUE if the cell has not been visited, FALSE if it has
+;
+function not_visited(byte in row, byte in col) return bit is
+  return (wall_get(row, col) == (WALL_NORTH | WALL_WEST))
+    & ((wall_get(row, col + 1) & WALL_WEST) != 0)
+    & ((wall_get(row + 1, col) & WALL_NORTH) != 0)
+end function
+
+;
+; return a random number 0 - 255
+; don't initialze the seed & you'll get different mazes
+; on PIC reset, and quite possibly difference mazes after
+; a power cycle
+;
+var dword seed ; = 0x12345678
+function rand return byte is
+  seed = 1103515245 * seed + 12345
+  return byte(seed)
+end function
+
+;
+; draw the maze
+;
+procedure maze_draw is
+  var byte row
+  var byte col
+  const byte HORIZ_SET_STR[]       = "+--"
+  const byte HORIZ_CLR_STR[]       = "+  "
+  const byte HORIZ_CLR_STR_MOUSE[] = "+**"
+  const byte VERT_SET_STR[]        = "|  "
+  const byte VERT_CLR_STR[]        = "   "
+  const byte VERT_CLR_STR_MOUSE[]  = " **"
+  const byte VERT_CLR_STR_MOUSE2[] = "***"
+  const byte VERT_SET_STR_MOUSE[]  = "|**"
+  const byte EOL_STR[]             = "+\r\n"
+  const byte EOF_STR[]             = "+\x1b[H" ; '+' / home cursor
+  const byte INIT_STR[]            = "\x1b[2J" ; clear screen/home cursor
+
+  serial_write_str(INIT_STR)
+
+  for ROWS using row loop
+    ;
+    ; draw the north wall
+    ;
+    for COLS using col loop
+      if wall_test(row, col, WALL_NORTH) then
+        serial_write_str(HORIZ_SET_STR)
+      else
+        if (dir_get(row, col) != 0)
+          & (dir_get(row - 1, col) != 0) then
+          serial_write_str(HORIZ_CLR_STR_MOUSE)
+        else
+          serial_write_str(HORIZ_CLR_STR)
+        end if
+      end if
+    end loop
+    serial_write_str(EOL_STR)
+    ;
+    ; draw the west walls
+    ;
+    for COLS using col loop
+      if wall_test(row, col, WALL_WEST) then
+        if (dir_get(row, col) != 0) then
+          serial_write_str(VERT_SET_STR_MOUSE)
+        else 
+          serial_write_str(VERT_SET_STR)
+        end if
+      else
+        if (dir_get(row, col) != 0) then
+          if (dir_get(row, col - 1) == 0) then
+            serial_write_str(VERT_CLR_STR_MOUSE)
+          else
+            serial_write_str(VERT_CLR_STR_MOUSE2)
+          end if
+        else
+          serial_write_str(VERT_CLR_STR)
+        end if
+      end if
+    end loop
+    serial_write_str(EOL_STR)
+  end loop
+  ;
+  ; draw the south walls
+  ;
+  for COLS using col loop
+    serial_write_str(HORIZ_SET_STR)
+  end loop
+  serial_write_str(EOF_STR)
+end procedure
+
+;
+; create a maze
+;
+procedure maze_create is
+  var byte row
+  var byte col
+  var word cells_left
+  var byte dir
+
+  ;
+  ; First, setup the walls. Yes, I should loop through
+  ; and call the above functions, but be real.
+  ;
+  for ROWS * COLS / 2 using cells_left loop
+    cells[cells_left] = ((WALL_NORTH | WALL_WEST) << 4)
+                       | (WALL_NORTH | WALL_WEST)
+  end loop
+
+  cells_left = ROWS * COLS - 1
+  row        = 0; rand % ROWS
+  col        = 0; rand % COLS
+
+  ;
+  ; take away walls until done!
+  ;
+
+  maze_draw
+  while (cells_left != 0) loop
+    var byte neighbor_ct
+    var byte neighbor[4]
+
+    _usec_delay(50_000) ; 0.05 second delay between updates
+    ;
+    ; determine which neighbors I can visit
+    ;
+    neighbor_ct = 0
+    if (row != 0) then
+      if not_visited(row - 1, col) then
+        neighbor[0] = DIR_NORTH
+        neighbor_ct = neighbor_ct + 1
+      end if
+    end if
+    if (col != 0) then
+      if not_visited(row, col - 1) then
+        neighbor[neighbor_ct] = DIR_WEST
+        neighbor_ct = neighbor_ct + 1
+      end if
+    end if
+    if (row + 1 < ROWS) then
+      if not_visited(row + 1, col) then
+        neighbor[neighbor_ct] = DIR_SOUTH
+        neighbor_ct = neighbor_ct + 1
+      end if
+    end if
+    if (col + 1 < COLS) then
+      if not_visited(row, col + 1) then
+        neighbor[neighbor_ct] = DIR_EAST
+        neighbor_ct = neighbor_ct + 1
+      end if
+    end if
+    if (neighbor_ct != 0) then
+      ;
+      ; We've at least one neighbor. Choose one,
+      ; remove the appropriate wall, and move it.
+      ;
+      dir = neighbor[rand % neighbor_ct]
+      case dir of
+        DIR_NORTH: block
+                     wall_clr(row, col, WALL_NORTH)
+                     dir_set(row - 1, col, DIR_SOUTH)
+                   end block
+        DIR_WEST:  block
+                     wall_clr(row, col, WALL_WEST)
+                     dir_set(row, col - 1, DIR_EAST)
+                   end block
+        DIR_SOUTH: block
+                     move_south
+                     row = row + 1 
+                     wall_clr(row, col, WALL_NORTH)
+                     dir_set(row, col, DIR_NORTH)
+                     dir = DIR_NONE
+                   end block
+        DIR_EAST:  block
+                     move_east
+                     col = col + 1
+                     wall_clr(row, col, WALL_WEST)
+                     dir_set(row, col, DIR_WEST)
+                     dir = DIR_NONE
+                   end block
+      end case
+      cells_left = cells_left - 1
+    else
+      ;
+      ; We've no neighbors, back up one step along the
+      ; path.
+      ;
+      dir = dir_get(row, col)
+    end if
+    case dir of
+      DIR_NORTH: block
+                   move_north
+                   row = row - 1
+                 end block  
+      DIR_WEST:  block
+                   move_west
+                   col = col - 1
+                 end block
+      DIR_SOUTH: block
+                   move_south
+                   row = row + 1
+                 end block  
+      DIR_EAST:  block
+                   move_east
+                   col = col + 1
+                 end block
+    end case  
+  end loop
+  ;
+  ; clear out the direction bits so as not to confuse maze_draw
+  ;
+  for ROWS using row loop
+    for COLS using col loop
+      dir_set(row, col, 0)
+    end loop
+  end loop
+end procedure
+
+procedure maze_solve is
+  var byte col
+  var byte row
+  var byte dir
+  var bit  skip_delay
+  const byte screen_init[] = "\x1b[2;2H**\x1b[2D"
+  const byte mouse_erase[] = "  \b\b"
+  const byte mouse_draw[]  = "**\x1b[2D"
+
+  serial_write_str(screen_init)
+  dir = DIR_EAST
+  dir_set(0, 0, DIR_MASK)
+  row = 0
+  col = 0
+  while (row + 1 != ROWS) | (col + 1 != COLS) loop
+    skip_delay = 0
+
+    case dir of
+      DIR_NORTH: block
+                   if !wall_test(row, col, WALL_NORTH) then
+                     if dir_get(row - 1, col) != 0 then
+                       serial_write_str(mouse_erase)
+                       dir_set(row, col, 0)
+                     end if
+                     move_north
+                     row = row - 1
+                     dir = DIR_WEST
+                   else
+                     dir = DIR_EAST
+                     skip_delay = 1
+                   end if
+                 end block
+      DIR_WEST:  block
+                   if !wall_test(row, col, WALL_WEST) then
+                     if dir_get(row, col - 1) != 0 then
+                       serial_write_str(mouse_erase)
+                       dir_set(row, col, 0)
+                     end if
+                     move_west
+                     col = col - 1
+                     dir = DIR_SOUTH
+                   else
+                     dir = DIR_NORTH
+                     skip_delay = 1
+                   end if
+                 end block
+      DIR_SOUTH: block
+                   if !wall_test(row + 1, col, WALL_NORTH) then
+                     if dir_get(row + 1, col) != 0 then
+                       serial_write_str(mouse_erase)
+                       dir_set(row, col, 0)
+                     end if
+                     move_south
+                     row = row + 1
+                     dir = DIR_EAST
+                   else
+                     dir = DIR_WEST
+                     skip_delay = 1
+                   end if
+                 end block
+      DIR_EAST:  block
+                   if !wall_test(row, col + 1, WALL_WEST) then
+                     if dir_get(row, col + 1) != 0 then
+                       serial_write_str(mouse_erase)
+                       dir_set(row, col, 0)
+                     end if
+                     move_east
+                     col = col + 1
+                     dir = DIR_NORTH
+                   else
+                     dir = DIR_SOUTH
+                     skip_delay = 1
+                   end if
+                 end block
+    end case
+    ;
+    ; only update the display if we've moved
+    ;
+    if (!skip_delay) then
+      dir_set(row, col, DIR_MASK)
+      serial_write_str(mouse_draw)
+      _usec_delay(50_000) ; 0.05 second delay between updates
+    end if  
+  end loop
+end procedure
+
+forever loop
+  maze_create
+  maze_solve
+  maze_draw
+  for 30 loop
+    _usec_delay(1_000_000)
+  end loop
+end loop

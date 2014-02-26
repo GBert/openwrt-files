@@ -1,0 +1,85 @@
+-- Title: CAN to UART adapter example
+-- Author: William Welch Copyright (c) 2009, all rights reserved.
+--   slightly modified by Gerhard Bertelsmann
+--   adapted to PIC18F26K80
+-- Sponsored by: Fiwihex www.fiwihex.com
+-- Compiler: 2.4
+-- Revision: $Revision: 2760 $
+-- 
+-- This file is part of jallib (http://jallib.googlecode.com)
+-- Released under the ZLIB license (http://www.opensource.org/licenses/zlib-license.html)
+--
+-- Description: gateway between RS232 and CAN bus. Uses ASCII encapsulation, 
+--          compatible with the Socket-CAN SLCAN API.
+-- 
+-- Sources: Socket-CAN, in particular the SLCAN API. http://developer.berlios.de/projects/socketcan/ 
+--          also, the LAWICEL CAN-USB adapter.
+--
+-- For this example, the UART is only running at 460800.
+--
+
+include 18f26k80
+pragma target clock 64_000_000
+pragma target OSC  HS_HIGH
+pragma target PLLEN P4                                           
+pragma target WDT  disabled
+pragma target DEBUG disabled
+pragma target MCLR external
+include print
+include delay
+include jascii
+include strings
+
+enable_digital_io()
+
+var bit led is pin_A0
+pin_A0_direction =  output
+
+const usart_hw2_serial = true
+const serial_hw2_baudrate = 460_800
+include serial_hardware2
+serial_hw2_init()
+
+const byte WELCOME[]="Welcome to quark!"
+const byte GOT_COMMAND[]="command:"
+const byte PROMPT[]="quark>"
+
+var byte command[16]
+var byte char
+var byte i
+
+procedure reboot() is
+  asm goto 0x00
+end procedure
+
+print_crlf(serial_hw2_data)
+print_string(serial_hw2_data,WELCOME)
+print_crlf(serial_hw2_data)
+
+forever loop
+  print_crlf(serial_hw2_data)
+  print_byte_hex(serial_hw2_data,i)
+  print_string(serial_hw2_data,"[")
+  print_byte_hex(serial_hw2_data,command[0])
+  print_string(serial_hw2_data,"]")
+  print_string(serial_hw2_data,PROMPT)
+
+  command[0]=0
+  i = 0
+  while true loop
+    char = serial_hw2_data
+    serial_hw2_data = char
+ 
+    if char == ASCII_LF | char == ASCII_CR | char == ASCII_SP then
+      command[i] = ASCII_NULL
+      exit loop
+     end if
+    command[i] = char
+    i = i + 1
+  end loop
+  if command[0] != ASCII_NULL then
+    print_crlf(serial_hw2_data)
+    print_string(serial_hw2_data, GOT_COMMAND)
+  end if
+end loop
+
