@@ -21,14 +21,12 @@ Mark 'picprog-new' under 'Utilities' to compile and install it.
 
 ### Using
 On the OpenWrt Router install the module:
-<pre><code>insmod gpio-bb
-insmod gpio-bb</pre></code>
+<pre><code>insmod gpio-bb</pre></code>
 and add the device:
 <pre><code>mknod /dev/gpi-bb c 180 0</pre></code>
 Please apply your GPIO settings in /root/.k8048 .
 ### Test
 <pre><code>root@OpenWrt:~# ls -l /usr/bin/k\*
-root@OpenWrt:~# ls -l /usr/bin/k\*
 lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k14 -> /usr/bin/k8048
 lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k16 -> /usr/bin/k8048
 -rwxr-xr-x    1 root     root        462152 Mar 30 13:18 /usr/bin/k8048
@@ -54,12 +52,24 @@ root@OpenWrt:~# k16 lvp info
 [30000C] [CONFIG7]     400F
 [3FFFFE] [DEVICEID]    6123 DEV:309 REV:03 PIC18F26K80
 [F00000] [DATA]	       0400 BYTES
-root@OpenWrt-MC-ICSP:~# k16 lvp blank
+root@OpenWrt:~# # blanking the device is not needed before progamming - just to see if its working
+root@OpenWrt:~# k16 lvp blank
 Blank device: Are you sure [y/N]? y
 root@OpenWrt:~# k16 lvp programm 18f26k80\_blink.hex 
 Total: 132
 root@OpenWrt:~# k16 lvp verify 18f26k80\_blink.hex 
 Total: 118 Pass: 118 Fail: 0
+root@OpenWrt:~# time k16 lvp flash
+[000000] 0E8F 14D3 0970 6ED3 8C9B 010F 6B5D 6B5C ....p..n....]k\k
+[000010] 6AC2 6AC1 6AC0 6B5F 6B5E 9092 8089 0100 .j.j.j\_k^k......
+[000020] 0E9C 6E01 0EDD 6E02 0E25 6E03 2E03 EF16 ...n...n%..n....
+[000030] F000 2E02 EF14 F000 2E01 EF12 F000 0000 ................
+[000040] 9089 0100 0E9C 6E01 0EDD 6E02 0E25 6E03 .......n...n%..n
+[000050] 2E03 EF28 F000 2E02 EF26 F000 2E01 EF24 ..(.....&.....$.
+[000060] F000 0000 EF0E F000 FFFF FFFF FFFF FFFF ................
+real	0m 0.96s
+user	0m 0.07s
+sys	0m 0.87s
 </pre></code>
 
 ### Todo
