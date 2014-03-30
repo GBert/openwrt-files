@@ -15,8 +15,9 @@ To use this feed just edit your feeds.conf or feeds.conf.default in the OpenWrt 
 <pre><code>src-git openwrtfiles git://github.com/GBert/openwrt-files</pre></code>
 and do
 <pre><code>scripts/feeds update
-scripts/feeds install kmod-mc-icsp kmod-mc-icsp-gpio-custom picprog</pre></code>
-in your OpenWrt source tree.
+scripts/feeds install picprog-new</pre></code>
+in your OpenWrt source tree. This will automatically add the kmod-gpio-bb module.
+Mark 'picprog-new' under 'Utilities' to compile and install it.
 
 ### Using
 On the OpenWrt Router just install both modules:
