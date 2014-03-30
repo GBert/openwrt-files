@@ -17,7 +17,7 @@ define KernelPackage/bit-bang-gpio
   SUBMENU:=Other modules
   TITLE:=Bit-bang GPIO
   DEPENDS:=@GPIO_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/bit-bang-gpio.ko
+  FILES:=$(PKG_BUILD_DIR)/gpio-bb.ko
   KCONFIG:=
 endef
 

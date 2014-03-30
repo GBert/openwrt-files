@@ -1,12 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * See README.12 (12-bit word architecture)
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _PIC12_H
@@ -33,7 +54,7 @@ struct pic12_dsmap {
 	uint32_t datasheet;
 	uint16_t backupaddr;		/* osccal backup address (0=unsupported) */
 	uint16_t configaddr;
-	uint8_t latches;
+	uint8_t nlatches;
 };
 
 #define PIC12_WORD(X) (((X) * 8192.0) / 12) /* KB to words */
@@ -41,7 +62,9 @@ struct pic12_dsmap {
 /*
  * MEMORY MAP
  */
+#if 0
 #define PIC12_CODE_LOW  (0x0000)
+#endif
 #define PIC12_CODE_HIGH (0x07FF)	/* 2K words (3KB) is the largest flash size available */
 #define PIC12_CONFIG    (0x0FFF)	/* default config address */
 
@@ -58,6 +81,7 @@ struct pic12_dsmap {
 #define PIC12_TPROG_DEFAULT      (2000)  /*   2ms DS41226G-page 18 */
 #define PIC12_TERASE_DEFAULT     (10000) /*  10ms DS41226G-page 18 */
 #define PIC12_TDISCHARGE_DEFAULT (100)   /* 100us DS41226G-page 18 */
+#define PIC12_TDISCHARGE_300US   (300)   /* 300us DS41670A-page 20 */
 
 /******************************************************************************
  * PICMicro devices (12-bit word devices have no embedded device id)
@@ -108,23 +132,33 @@ struct pic12_dsmap {
 #define DS41316C (41316)
 #define PIC12F519 (12519)
 
+/* DS41670A PIC16F570 */
+#define DS41670A (41670)
+#define PIC16F570 (16570)
+
+/* DS41640A PIC16F527 */
+#define DS41640A (41640)
+#define PIC16F527 (16527)
+
+/* DS41317B PIC16F526 */
+#define DS41317B (41317)
+#define PIC16F526 (16526)
+
 /******************************************************************************
  * PROTOTYPES
  *****************************************************************************/
 
-void pic12_selector(struct k8048 *);
+uint32_t pic12_arch(struct k8048 *);
+void pic12_selector(void);
 void pic12_program_verify(struct k8048 *);
 void pic12_standby(struct k8048 *);
 uint16_t pic12_read_program_memory_increment(struct k8048 *);
-void pic12_read_config_word(struct k8048 *);
 void pic12_read_config_memory(struct k8048 *, int);
-void pic12_bulk_erase(struct k8048 *, uint16_t);
-uint32_t pic12_get_program_flash_size(uint32_t *);
-uint32_t pic12_get_data_flash_size(uint32_t *);
-uint32_t pic12_get_data_eeprom_size(uint32_t *);
-uint32_t pic12_get_executive_size(uint32_t *);
-uint32_t pic12_read_flash_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
-uint32_t pic12_read_eeprom_memory_block(struct k8048 *, uint8_t *, uint32_t, uint16_t);
+void pic12_bulk_erase(struct k8048 *, uint16_t, uint16_t);
+uint32_t pic12_get_program_size(uint32_t *);
+uint32_t pic12_get_data_size(uint32_t *);
+uint32_t pic12_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
+uint32_t pic12_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
 uint16_t pic12_read_osccal(struct k8048 *);
 uint32_t pic12_write_osccal(struct k8048 *, uint16_t);
 uint32_t pic12_write_config(struct k8048 *, uint16_t);
@@ -136,8 +170,9 @@ void pic12_dumpdeviceid(struct k8048 *);
 void pic12_dumposccal(struct k8048 *);
 void pic12_dumpconfig(struct k8048 *, int);
 void pic12_dumpconfig_verbose(struct k8048 *);
-void pic12_dumphexwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
-void pic12_dumpinhxwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic12_dumphexcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic12_dumpinhxcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic12_dumphexdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
+void pic12_dumpinhxdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 void pic12_dumpdevice(struct k8048 *);
-
 #endif /* !_PIC12_H */

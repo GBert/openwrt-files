@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,41 +30,44 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _BIT_BANG_GPIO_H
-#define _BIT_BANG_GPIO_H
+#ifndef _GPIO_BB_H
+#define _GPIO_BB_H
 
-struct bit_bang_gpio_io {
+struct gpio_bb_io {
 	uint8_t dir;
 	uint8_t pin;
 	uint8_t bit;
 };
 
-struct bit_bang_gpio_config {
+struct gpio_bb_config {
 	uint8_t clock_pin;
 	uint8_t clock_falling;
 	uint8_t data_pin_input;
 	uint8_t data_pin_output;
 	uint8_t clock_delay_low;
 	uint8_t clock_delay_high;
+	uint8_t lock;
 };
 
-struct bit_bang_gpio_shift {
+struct gpio_bb_shift {
 	uint8_t dir;
 	uint8_t nbits;
 	uint64_t bits;
 };
 
-#define BIT_BANG_GPIO_MAX (256)
+#define GPIO_BB_MAX (256)
 
-#define BIT_BANG_GPIO_MAJOR (180)
-#define BIT_BANG_GPIO_IO	_IOWR(BIT_BANG_GPIO_MAJOR, 100, struct bit_bang_gpio_io *)
-#define BIT_BANG_GPIO_CONFIGURE _IOW(BIT_BANG_GPIO_MAJOR,  101, struct bit_bang_gpio_config *)
-#define BIT_BANG_GPIO_SHIFT	_IOWR(BIT_BANG_GPIO_MAJOR, 102, struct bit_bang_gpio_shift *)
+#define GPIO_BB_MAJOR (180)
+#define GPIO_BB_IO		_IOWR(GPIO_BB_MAJOR, 100, struct gpio_bb_io *)
+#define GPIO_BB_CONFIGURE	_IOW(GPIO_BB_MAJOR,  101, struct gpio_bb_config *)
+#define GPIO_BB_SHIFT		_IOWR(GPIO_BB_MAJOR, 102, struct gpio_bb_shift *)
 
 #ifndef __KERNEL__
-int bit_bang_gpio_io(int, struct bit_bang_gpio_io *);
-int bit_bang_gpio_configure(int, struct bit_bang_gpio_config *);
-int bit_bang_gpio_shift(int, struct bit_bang_gpio_shift *);
+int gpio_bb_open(const char *);
+void gpio_bb_close(void);
+int gpio_bb_io(struct gpio_bb_io *);
+int gpio_bb_configure(struct gpio_bb_config *);
+int gpio_bb_shift(struct gpio_bb_shift *);
 #endif
 
-#endif /* _BIT_BANG_GPIO_H */
+#endif /* _GPIO_BB_H */

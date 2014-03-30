@@ -18,7 +18,7 @@
 #DEVICE=/dev/ttyUSB0
 #DEVICE=RPI
 #DEVICE=/dev/i2c-1
-DEVICE=/dev/bit-bang-gpio
+DEVICE=/dev/gpio-bb
 
 # For ttyS 1us is fine
 # For ttyUSB try 600us
@@ -113,16 +113,27 @@ BUSY=0
 # PGD DATA_IN      - PI/O G23
 #PGDI=23
 
-# RPI OR BIT-BANG GPIO (single PGD DATA I/O)
+# WR-841N(D) BIT-BANG GPIO (single PGD DATA I/O)
 #
-# !MCLR/VPP        - PI/O G04
-VPP=2
-# PGM              - PI/O G22
-PGM=1
-# PGC CLOCK        - PI/O G25
-PGC=3
-# PGD DATA_I/O     - PI/O G24
-PGD=0
+# !MCLR/VPP        - PI/O 
+# VPP=2
+# PGM              - PI/O 
+# PGM=1
+# PGC CLOCK        - PI/O 
+# PGC=3
+# PGD DATA_I/O     - PI/O
+# PGD=0
+
+# Carambola BIT-BANG GPIO (single PGD DATA I/O)
+#
+# !MCLR/VPP	- GPIO09 J5 CTS PIN06
+VPP=9		
+# PGM		- GPIO07 J5 RTS PIN08
+PGM=7
+# PGC CLOCK	- GPIO13 J5 DSR PIN10
+PGC=13
+# PGD DATA_I/O	- GPIO11 J5 DTR PIN12
+PGD=11
 
 # LINUX MCP23017 I2C ADDRESS (README.i2c)
 #

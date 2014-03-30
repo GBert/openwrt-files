@@ -1,12 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * See README.16 (16-bit word architecture)
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _PIC16_H
@@ -44,7 +65,9 @@ struct pic16_dsmap {
 /*
  * MEMORY MAP
  */
+#if 0
 #define PIC16_CODE_LOW    (0x000000)	/* 128KB MAX  */
+#endif
 #define PIC16_CODE_HIGH   (0x1fffff)
 #define PIC16_ID_LOW      (0x200000)	/* not PIC18J */
 #define PIC16_ID_HIGH     (0x200007)
@@ -113,26 +136,47 @@ struct pic16_dsmap {
 /*
  * PROGRAM
  */
-#define PIC16_PANEL_BEGIN  (1)
-#define PIC16_PANEL_UPDATE (2)
-#define PIC16_PANEL_END    (3)
+#define PIC16_PANEL_BEGIN   (1)
+#define PIC16_PANEL_UPDATE  (2)
+#define PIC16_PANEL_END     (3)
+#define PIC16_ID_PANEL_SIZE (8)
+#define PIC16_TIMEOUT       (1)
 
 /******************************************************************************
  * PICMicro devices
  *****************************************************************************/
 
 /*
- * DS39576B (SINGLE PANEL WRITES ONLY)
+ * DS39576B (MATURE PRODUCT 2013-11-12)
  */
 #define DS39576B (39576)
-#define PIC18F242 (0x0480)
+#define PIC18F242 (0x0480) /* Device id shared with PIC18F2439 */
 #define PIC18F248 (0x0800)
-#define PIC18F252 (0x0400)
+#define PIC18F252 (0x0400) /* Device id shared with PIC18F2539 */
 #define PIC18F258 (0x0840)
-#define PIC18F442 (0x04a0)
+#define PIC18F442 (0x04a0) /* Device id shared with PIC18F4439 */
 #define PIC18F448 (0x0820)
-#define PIC18F452 (0x0420)
+#define PIC18F452 (0x0420) /* Device id shared with PIC18F4539 */
 #define PIC18F458 (0x0860)
+
+/*
+ * DS30480C (MATURE PRODUCT 2013-11-30)
+ *
+ * THESE DEVICES SHARE THEIR DEVID WITH THE DEVICES LISTED ABOVE.
+ *
+ * THE MAIN DIFFERENCE BETWEEN THESE AND THEIR SHARED DEVICES
+ * IS THE FLASH SIZE, FOR EXAMPLE THE PIC18F252 HAS 32KB AND
+ * THE PIC18F2539 HAS 24KB, HOWEVER, THE SAMPLE PIC18LF2539
+ * DEVICE HAS 32KB FLASH AND THE 8KB WHICH WAS UTILISED BY THE
+ * MOTOR CONTROL FIRMWARE AT 0x6000 IS COMPLETELY RE-USABLE.
+ *
+ * THESE DEVICES ARE NOW OBSOLETE ALONG WITH THOSE ABOVE.
+ */
+#define DS30480C (30480)
+#define PIC18F2439  (0x0480) /* Device id shared with PIC18F242 */
+#define PIC18F2539  (0x0400) /* Device id shared with PIC18F252 */
+#define PIC18F4439  (0x04a0) /* Device id shared with PIC18F442 */
+#define PIC18F4539  (0x0420) /* Device id shared with PIC18F452 */
 
 /*
  * DS39592E == DS39576B
@@ -333,11 +377,34 @@ struct pic16_dsmap {
 #define PIC18LF46J53 (0x5AA0)
 #define PIC18LF47J53 (0x5AE0)
 
+/*
+ * DS41357B
+ */
+#define DS41357B (41357)
+#define PIC18LF13K22 (0x4F80)
+#define PIC18LF14K22 (0x4F60)
+#define PIC18F13K22  (0x4F40)
+#define PIC18F14K22  (0x4F20)
+
+/*
+ * DS41297F
+ */
+#define DS41297F (41297)
+#define PIC18F23K20 (0x20E0)
+#define PIC18F24K20 (0x20A0)
+#define PIC18F25K20 (0x2060)
+#define PIC18F26K20 (0x2020)
+#define PIC18F43K20 (0x20C0)
+#define PIC18F44K20 (0x2080)
+#define PIC18F45K20 (0x2040)
+#define PIC18F46K20 (0x2000)
+
 /******************************************************************************
  * PROTOTYPES
  *****************************************************************************/
 
-void pic16_selector(struct k8048 *);
+uint32_t pic16_arch(struct k8048 *);
+void pic16_selector(void);
 void pic16_program_verify(struct k8048 *);
 void pic16_standby(struct k8048 *);
 void pic16_init_code_memory_access(struct k8048 *);
@@ -350,20 +417,18 @@ void pic16_write(struct k8048 *);
 void pic16_set_table_pointer(struct k8048 *, uint32_t);
 void pic16_erase_block(struct k8048 *, uint32_t);
 void pic16_erase_row(struct k8048 *, uint32_t, uint32_t);
-void pic16_bulk_erase(struct k8048 *);
+void pic16_bulk_erase(struct k8048 *, uint16_t, uint16_t);
 void pic16_row_erase(struct k8048 *, uint32_t, uint32_t);
-void pic16_read_config_memory(struct k8048 *);
-uint32_t pic16_get_program_flash_size(uint32_t *);
-uint32_t pic16_get_data_flash_size(uint32_t *);
-uint32_t pic16_get_data_eeprom_size(uint32_t *);
-uint32_t pic16_get_executive_size(uint32_t *);
-uint32_t pic16_read_flash_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
-uint32_t pic16_read_eeprom_memory_block(struct k8048 *, uint8_t *, uint32_t, uint16_t);
+void pic16_read_config_memory(struct k8048 *, int);
+uint32_t pic16_get_program_size(uint32_t *);
+uint32_t pic16_get_data_size(uint32_t *);
+uint32_t pic16_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
+uint32_t pic16_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
 void pic16_set_data_pointer(struct k8048 *, uint16_t);
 uint8_t pic16_read_data_memory(struct k8048 *);
 void pic16_write_data_memory(struct k8048 *, uint8_t);
-void pic16_write_buffer(struct k8048 *, uint32_t, uint8_t *);
-void pic16_write_buffered(struct k8048 *, uint32_t, uint8_t, int);
+void pic16_write_buffer(struct k8048 *, uint32_t, uint32_t, uint8_t *, uint32_t);
+void pic16_write_buffered(struct k8048 *, uint32_t, uint32_t, int);
 void pic16_write_buffer_init(struct k8048 *);
 void pic16_goto100000(struct k8048 *);
 void pic16_write_configreg(struct k8048 *, uint8_t, uint32_t, uint32_t);
@@ -378,10 +443,10 @@ uint32_t pic16_verify(struct k8048 *, char *);
 void pic16_dumpdeviceid(struct k8048 *);
 void pic16_dumpconfig(struct k8048 *, int);
 void pic16_dumpconfig_verbose(struct k8048 *);
-void pic16_dumphexwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
-void pic16_dumphexbytes(struct k8048 *, uint32_t, uint32_t, uint8_t *);
-void pic16_dumpinhxwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
-void pic16_dumpinhxbytes(struct k8048 *, uint32_t, uint32_t, uint8_t *);
+void pic16_dumphexcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic16_dumpinhxcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic16_dumphexdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
+void pic16_dumpinhxdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 void pic16_dumpdevice(struct k8048 *);
 
 #endif /* !_PIC16_H */

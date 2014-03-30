@@ -1,10 +1,33 @@
 #
-# Velleman K8048 Programmer for FreeBSD and others.
-#
-# Copyright (c) 2005-2013 Darron Broad
+# Copyright (C) 2005-2014 Darron Broad
 # All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
 #
-# Licensed under the terms of the BSD license, see file LICENSE for details.
+# 3. Neither the name `Darron Broad' nor the names of any contributors
+#    may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 #
 
 # build targets and backend configuration
@@ -17,11 +40,21 @@ SYSTEM:=$(shell uname -s)
 RELEASE:=$(shell uname -r)
 PLATFORM:=$(shell uname -m)
 
-CC=gcc
+ifeq "$(SYSTEM)" "FreeBSD"
+ ifneq (,$(findstring 10.,$(RELEASE)))
+  CC=cc
+ else
+  CC=gcc
+ endif
+else
+ CC=gcc
+endif
+
 CFLAGS=-Os -std=gnu99 -pedantic-errors -I. -Wall -fverbose-asm -save-temps
 ifeq "$(GDB)" "1"
 CFLAGS+=-ggdb
 endif
+
 ifeq "$(VERBOSE)" "1"
 CFLAGS+=-DVERBOSE
 endif
@@ -59,6 +92,9 @@ ifeq "$(K32)" "1"
 CFLAGS+=-DK32
 SOURCE1+=pic32.c
 endif
+ifeq "$(KCTRL)" "1"
+CFLAGS+=-DKCTRL
+endif
 ifeq "$(KTEST)" "1"
 CFLAGS+=-DKTEST
 endif
@@ -89,8 +125,8 @@ ifeq "$(SYSTEM)" "Linux"
 
  ifeq "$(BITBANG)" "1"
  CFLAGS+=-DBITBANG
- SOURCE1+=bit-bang-gpio.c
- SOURCE2+=bit-bang-gpio.c
+ SOURCE1+=gpio-bb.c
+ SOURCE2+=gpio-bb.c
  endif
 endif
 
@@ -158,6 +194,9 @@ endif
 ifeq "$(K32)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/k32
 endif
+ifeq "$(KCTRL)" "1"
+	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/kctrl
+endif
 ifeq "$(KTEST)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/ktest
 endif
@@ -180,11 +219,14 @@ uninstall:
 	rm -f $(BINDIR)/k16
 	rm -f $(BINDIR)/k24
 	rm -f $(BINDIR)/k32
+	rm -f $(BINDIR)/kctrl
 	rm -f $(BINDIR)/ktest
 	rm -f $(BINDIR)/$(TARGET2)
 
 clean:
-	cd etc      && $(MAKE) clean
+	cd dotconf && $(MAKE) clean
+	cd etc     && $(MAKE) clean
+	cd tools   && $(MAKE) clean
 	rm -f $(TARGET1) $(TARGET2) *.o *~ .*~ *.err *.log *.map *.s *.i
 #
 # ASSEMBLER DEMOS

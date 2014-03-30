@@ -1,12 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
  *
- * See README.14 (14-bit word architecture)
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _PIC14_H
@@ -17,35 +38,17 @@
  *****************************************************************************/
 
 #define PIC14_MASK (0x3FFF)
-
-#define PIC14_CONFIG_USERID0    (0) /* [2000]                       */
-#define PIC14_CONFIG_USERID1    (1) /* [2001]                       */
-#define PIC14_CONFIG_USERID2    (2) /* [2002]                       */
-#define PIC14_CONFIG_USERID3    (3) /* [2003]                       */
-#define PIC14_CONFIG_RESERVED4  (4) /* [2004]                       */
-#define PIC14_CONFIG_RESERVED5  (5) /* [2005]                       */
-#define PIC14_CONFIG_REVISIONID (5) /* [8005]    REVID (PIC16F1788) */
-#define PIC14_CONFIG_RESERVED6  (6) /* [2006] NO DEVID (PIC16F84)   */
-#define PIC14_CONFIG_DEVICEID   (6) /* [2006]    DEVID (PIC16F84A)  */
-#define PIC14_CONFIG_WORD1      (7) /* [2007] CONFIG/CONFIG1        */
-#define PIC14_CONFIG_WORD2      (8) /* [2008] CONFIG2  (PIC16F726)  */
-				    /* [2008] CALIB1   (PIC16F688)  */
-#define PIC14_CONFIG_WORD3      (9) /* [2009] CALIB1   (PIC16F726)  */
-#define PIC14_CONFIG_WORD4     (10) /* [200A] CALIB2   (PIC16F726)  */
-#define PIC14_CONFIG_WORD5     (11) /* [800B] CALIB3   (PIC16F1788) */
-#define PIC14_CONFIG_WORD6     (12) /* [800C] CALIB4   (PIC16F1788) */
-#define PIC14_CONFIG_WORD7     (13) /* [800D] RESERVED (PIC16F1788) */
-#define PIC14_CONFIG_WORD8     (14) /* [800E] CALIB5   (PIC16F1788) */
-#define PIC14_CONFIG_WORD9     (15) /* [800F] CALIB6   (PIC16F1788) */
-#define PIC14_CONFIG_WORD10    (16) /* [8010] RESERVED (PIC16F1788) */
-#define PIC14_CONFIG_WORD11    (17) /* [8011] CALIB8   (PIC16F1788) */
-#define PIC14_CONFIG_WORD12    (18) /* [8012] CALIB9   (PIC16F1788) */
-#define PIC14_CONFIG_WORD13    (19) /* [8013] RESERVED (PIC16F1788) */
-				    /* [8014..81FF]    RESERVED     */
-#define PIC14_CONFIG_SIZE (20)
+#define PIC14_CONFIG_MAX (3)
+#define PIC14_CALIB_MAX  (32)
+#define PIC14_USERID_MAX (4)
 
 struct pic14_config {
-	uint16_t index[PIC14_CONFIG_SIZE];
+	uint16_t userid[PIC14_USERID_MAX];	/* X000 .. X003 */
+	uint16_t reserved;			/* X004         */
+	uint16_t revisionid;			/* X005         */
+	uint16_t deviceid;			/* X006         */
+	uint16_t config[PIC14_CONFIG_MAX];	/* X007 .. X009 */
+	uint16_t calib[PIC14_CALIB_MAX];	/* X00X .. X0XX */
 };
 
 struct pic14_dsmap {
@@ -53,14 +56,17 @@ struct pic14_dsmap {
 	uint16_t deviceid;	/*                                                     */
 	uint16_t flash;		/* program flash size in words                         */
 	uint16_t eeprom;	/* data eeprom size in bytes 0=none                    */
-	uint16_t dataflash;	/* data flash size in bytes 0=none (UNIMPLEMENTED)     */
 	uint32_t datasheet;	/*                                                     */
 	uint16_t configaddr;	/* CONFIG BASE                                         */
+	uint16_t dataaddr;	/* DATA BASE                                           */
 	uint8_t nconfig;	/* NUMBER OF CONFIG WORDS AT CONFIG BASE + 7           */
 	uint8_t ncalib;		/* NUMBER OF CALIB. WORDS AT CONFIG BASE + 7 + nconfig */
-	uint8_t latches;	/* PROGRAM FLASH MULTI-WORD LATCHES                    */
-	uint8_t idlatches;	/* USERID MULTI-WORD LATCHES (UNIMPLEMENTED)           */
+	uint8_t nlatches;	/* PROGRAM FLASH MULTI-WORD LATCHES                    */
         uint8_t erasesize;	/* ERASE BLOCK SIZE IF ROW ERASE SUPPORTED             */
+#if 0
+	uint16_t dataflash;	/* data flash size in bytes 0=none                     */
+	uint8_t idlatches;	/* USERID MULTI-WORD LATCHES                           */
+#endif
 };
 
 #define PIC14_WORD(X) (((X) * 8192.0) / 14) /* KB to words */
@@ -68,13 +74,12 @@ struct pic14_dsmap {
 /*
  * MEMORY MAP
  */
-#define PIC14_CODE_LOW        (0x0000)	/* CODE ORIGIN */
-#define PIC14_CONFIG_MIDRANGE (0x2000)	/* CONFIG ORIGIN FOR MID-RANGE */
-#define PIC14_CONFIG_ENHANCED (0x8000)	/* CONFIG ORIGIN FOR ENHANCED MID-RANGE */
-#define PIC14_CONFIG_MAX      (256)	/* CONFIG MAX SIZE */
-#define PIC14_DATA_MIDRANGE   (0x2100)	/* DATA EEPROM ORIGIN FOR MID-RANGE */
-#define PIC14_DATA_ENHANCED   (0xF000)	/* DATA EEPROM ORIGIN FOR ENHANCED MID-RANGE */
-#define PIC14_DATA_MAX        (1024)	/* DATA EEPROM MAX SIZE ? */
+#if 0
+#define PIC14_CODE_LOW     (0x0000)	/* CODE ORIGIN  */
+#endif
+#define PIC14_CONFIG_WORD1 (7)		/* 2007 or 8007 */
+#define PIC14_CONFIG_WORD2 (8)		/* 2008 or 8008 */
+#define PIC14_CONFIG_WORD3 (9)		/* 8009         */
 
 /*
  * MEMORY REGIONS
@@ -95,20 +100,20 @@ struct pic14_dsmap {
 /*
  * PROGRAM / ERASE
  */
-#define PIC14_TPROG_DEFAULT	(10000)	/* 10ms  */
-#define PIC14_TERASE_DEFAULT	(10000)	/* 10ms DS30072B-page 2 PIC16F84A */
+#define PIC14_TPROG_DEFAULT	(10000)	/* 10ms                                  */
+#define PIC14_TERASE_DEFAULT	(10000)	/* 10ms DS30072B-page 2 PIC16F84A        */
 #define PIC14_TPROG_20MS	(20000)	/* 20ms DS30072B-page 2 PIC16F84  EEPROM */
 #define PIC14_TERASE_20MS	(20000)	/* 20ms DS30072B-page 2 PIC16F84  EEPROM */
-#define PIC14_TERASE_30MS	(30000)	/* 30ms                 PIC16F73 */
-#define PIC14_TDISCHARGE_DEFAULT (100)	/* 100us */
-#define PIC14_TDISCHARGE_300US	 (300)	/* 300us */
+#define PIC14_TERASE_30MS	(30000)	/* 30ms                 PIC16F73         */
+#define PIC14_TDISCHARGE_DEFAULT (100)	/* 100us                                 */
+#define PIC14_TDISCHARGE_300US	 (300)	/* 300us                                 */
 
 /******************************************************************************
  * PICMicro devices
  *****************************************************************************/
 
 /*
- * DS30262E
+ * DS30262E (MATURE PRODUCT 2013-11-12)
  *  PIC16CR83 No embedded device id (OTP)
  *  PIC16CR84 No embedded device id (OTP)
  *  PIC16F83  No embedded device id
@@ -132,7 +137,7 @@ struct pic14_dsmap {
 #define PIC16C84 (0x0560 + 0x05)
 
 /*
- * DS30034D (DS30277D PAGE 3-161)
+ * DS30034D (DS30277D PAGE 3-161) (MATURE PRODUCT 2013-11-12)
  *  PIC16F627 --00 0111 101X XXXX
  *  PIC16F628 --00 0111 110X XXXX
  */
@@ -141,7 +146,7 @@ struct pic14_dsmap {
 #define PIC16F628 (0x07c0)
 
 /*
- * DS39025F
+ * DS39025F (MATURE PRODUCT 2013-11-12)
  *  PIC16F870 --00 1101 000X XXXX
  *  PIC16F871 --00 1101 001X XXXX
  *  PIC16F872 --00 1000 111X XXXX
@@ -160,7 +165,7 @@ struct pic14_dsmap {
 #define PIC16F877 (0x09a0)
 
 /*
- * DS39589C
+ * DS39589C (MATURE PRODUCT 2013-11-12)
  *  PIC16F873A --00 1110 0100 XXXX
  *  PIC16F874A --00 1110 0110 XXXX
  *  PIC16F876A --00 1110 0000 XXXX
@@ -258,18 +263,13 @@ struct pic14_dsmap {
 /*
  * PIC16F72X series devices.
  *
- * This series of devices may not be plugged into the Velleman K8048
- * without the possibility of causing damage to the chip.
+ * These devices say that they require a VPP voltage of 9V D.C. and not 13V D.C
+ * as supplied by the Velleman K8048, however, in tests 9V fails to work on the
+ * K8048 and in fact the default (current limited) voltage of 13V works without
+ * a problem.
  *
- * They require a VPP voltage of 9V D.C. and not 13V D.C as supplied
- * by the Velleman K8048.
- *
- * A simple way to reduce VPP to 9V D.C. is to connect VPP to ground via
- * a 6K8 resistor.
- *
- * The L variant devices also demand a lower VDD which is not possible
- * on the Velleman K8048 and are therefore incompatible even when
- * reducing VPP.
+ * The L variant devices demand a lower VDD which is not possible on the Velleman
+ * K8048 and are therefore incompatible.
  *
  * DS41332D
  *  PIC16F722   --01 1000 100X XXXX
@@ -322,8 +322,8 @@ struct pic14_dsmap {
  *  PIC16LF707  --01 1010 111X XXXX
  */
 #define DS41405A (41405)
-#define PIC16F707  (0x1ac0)
-#define PIC16LF707 (0x1ae0)
+#define PIC16F707  (0x1AC0)
+#define PIC16LF707 (0x1AE0)
 
 /*
  * DS41284E
@@ -553,13 +553,12 @@ struct pic14_dsmap {
  *  PIC16F1787  --10 1010 100X XXXX
  *  PIC16LF1787 --10 1011 001X XXXX
  *
+ *  REVID [8005] --10 XXXX XXXX XXXX (2XXX)
  *  DEVID [8006]
- *  PIC16F1788  --11 0000 0010 1011 (302B)
- *  PIC16LF1788 --11 0000 0010 1101 (302D)
- *  PIC16F1789  --11 0000 0010 1010 (302A)
- *  PIC16LF1789 --11 0000 0010 1100 (302C)
- *  REVID [8005]
- *              --10 XXXX XXXX XXXX (2XXX)
+ *  PIC16F1788   --11 0000 0010 1011 (302B)
+ *  PIC16LF1788  --11 0000 0010 1101 (302D)
+ *  PIC16F1789   --11 0000 0010 1010 (302A)
+ *  PIC16LF1789  --11 0000 0010 1100 (302C)
  */
 #define DS41457E (41457)
 #define PIC16F1782  (0x2a00)
@@ -574,8 +573,8 @@ struct pic14_dsmap {
 #define PIC16LF1787 (0x2b20)
 /* */
 #define PIC16F1788  (0x302b) /* IF [8006] & 0x3000 == 0x3000 */
-#define PIC16LF1788 (0x302d) /*    DEVID = [8006]            */
-#define PIC16F1789  (0x302a) /*    REVID = [8005] & 0x0FFF   */
+#define PIC16LF1788 (0x302d) /*    REVID = [8005] & 0x0FFF   */
+#define PIC16F1789  (0x302a) /*    DEVID = [8006]            */
 #define PIC16LF1789 (0x302c) /* ENDIF                        */
 
 /*
@@ -589,9 +588,9 @@ struct pic14_dsmap {
  */
 #define DS41620C (41620)
 #define PIC16F1454  (0x3020) /* IF [8006] & 0x3000 == 0x3000 */
-#define PIC16LF1454 (0x3024) /*                              */
+#define PIC16LF1454 (0x3024) /*    REVID = [8005] & 0x0FFF   */
 #define PIC16F1455  (0x3021) /*    DEVID = [8006]            */
-#define PIC16LF1455 (0x3025) /*    REVID = [8005] & 0x0FFF   */
+#define PIC16LF1455 (0x3025) /*                              */
 #define PIC16F1459  (0x3023) /*                              */
 #define PIC16LF1459 (0x3027) /* ENDIF                        */
 
@@ -632,31 +631,158 @@ struct pic14_dsmap {
 #define PIC16LF1513 (0x1740)
 #define PIC16LF1512 (0x1720)
 
+/*
+ * DS41561C
+ *  PIC12F752  --01 0101 000X XXXX
+ *  PIC12HV752 --01 0101 001X XXXX
+ */
+#define DS41561C (41561)
+#define PIC12F752  (0x1500)
+#define PIC12HV752 (0x1520)
+
+/*
+ * DS41642A
+ *  PIC12LF1552 --10 1011 110X XXXX
+ */
+#define DS41642A (41642)
+#define PIC12LF1552 (0x2BC0)
+
+/*
+ * DS40001743A
+ *  PIC16LF1554 --10 1111 000X XXXX
+ *  PIC16LF1559 --10 1111 001X XXXX
+ */
+#define DS40001743A (40001743)
+#define PIC16LF1554 (0x2F00)
+#define PIC16LF1559 (0x2F20)
+
+/*
+ * DS41686A
+ *  REVID [2005]
+ *  DEVID [2006]
+ *  PIC16F753    0x3030
+ *  PIC16HV753   0x3031
+ */
+#define DS41686A (41686)
+#define PIC16F753  (0x3030)
+#define PIC16HV753 (0x3031)
+
+/*
+ * DS41237D
+ *  PIC16F785     --01 0010 000X XXXX
+ *  PIC16HV785    --01 0010 001X XXXX
+ *  PIC16F785-ICD ?
+ */
+#define DS41237D (41237)
+#define PIC16F785  (0x1200)
+#define PIC16HV785 (0x1220)
+ 
+/*
+ * DS40001683B
+ *  REVID [8005]
+ *  DEVID [8006]
+ *  PIC16F1703	0x3061 0x2XXX
+ *  PIC16LF1703	0x3063 0x2XXX
+ *  PIC16F1704	0x3043 0x2XXX
+ *  PIC16LF1704	0x3045 0x2XXX
+ *  PIC16F1705	0x3055 0x2XXX
+ *  PIC16LF1705	0x3057 0x2XXX
+ *  PIC16F1707	0x3060 0x2XXX
+ *  PIC16LF1707	0x3062 0x2XXX
+ *  PIC16F1708	0x3042 0x2XXX
+ *  PIC16LF1708	0x3044 0x2XXX
+ *  PIC16F1709	0x3054 0x2XXX
+ *  PIC16LF1709	0x3056 0x2XXX
+ */
+#define DS40001683B (40001683)
+#define PIC16F1703  (0x3061)
+#define PIC16LF1703 (0x3063)
+#define PIC16F1704  (0x3043)
+#define PIC16LF1704 (0x3045)
+#define PIC16F1705  (0x3055)
+#define PIC16LF1705 (0x3057)
+#define PIC16F1707  (0x3060)
+#define PIC16LF1707 (0x3062)
+#define PIC16F1708  (0x3042)
+#define PIC16LF1708 (0x3044)
+#define PIC16F1709  (0x3054)
+#define PIC16LF1709 (0x3056)
+
+/*
+ * DS40001720A
+ *  PIC12F1612	--11 0000 0101 1000 0x2XXX
+ *  PIC12LF1612 --11 0000 0101 1001 0x2XXX
+ *  PIC16F1613  --11 0000 0100 1100 0x2XXX
+ *  PIC16LF1613 --11 0000 0100 1101 0x2XXX
+ */
+#define DS40001720A (40001720)
+#define PIC12F1612  (0x3058)
+#define PIC12LF1612 (0x3059)
+#define PIC16F1613  (0x304C)
+#define PIC16LF1613 (0x304D)
+
+/*
+ * DS40001714C
+ *  PIC16F1713  0x3049 0x2xxx
+ *  PIC16LF1713 0x304B 0x2xxx
+ *  PIC16F1716  0x3048 0x2xxx
+ *  PIC16LF1716 0x304A 0x2xxx
+ *  PIC16F1717  0x305C 0x2xxx
+ *  PIC16LF1717 0x305F 0x2xxx
+ *  PIC16F1718  0x305B 0x2xxx
+ *  PIC16LF1718 0x305E 0x2xxx
+ *  PIC16F1719  0x305A 0x2xxx
+ *  PIC16LF1719 0x305D 0x2xxx
+ */
+#define DS40001714C (40001714)
+#define PIC16F1713  (0x3049)
+#define PIC16LF1713 (0x304B)
+#define PIC16F1716  (0x3048)
+#define PIC16LF1716 (0x304A)
+#define PIC16F1717  (0x305C)
+#define PIC16LF1717 (0x305F)
+#define PIC16F1718  (0x305B)
+#define PIC16LF1718 (0x305E)
+#define PIC16F1719  (0x305A)
+#define PIC16LF1719 (0x305D)
+
+/*
+ * DS40001713A
+ *  PIC12F1571	0x3051 0x2xxx
+ *  PIC12LF1571	0x3053 0x2xxx
+ *  PIC12F1572	0x3050 0x2xxx
+ *  PIC12LF1572	0x3052 0x2xxx
+ */
+#define DS40001713A (40001713)
+#define PIC12F1571  (0x3051)
+#define PIC12LF1571 (0x3053)
+#define PIC12F1572  (0x3050)
+#define PIC12LF1572 (0x3052)
+
 /******************************************************************************
  * PROTOTYPES
  *****************************************************************************/
 
-void pic14_selector(struct k8048 *);
+uint32_t pic14_arch(struct k8048 *);
+void pic14_selector(void);
 void pic14_program_verify(struct k8048 *);
 void pic14_standby(struct k8048 *);
-uint16_t pic14_read_flash_memory_increment(struct k8048 *);
-uint8_t  pic14_read_eeprom_memory_increment(struct k8048 *);
+uint16_t pic14_read_program_memory_increment(struct k8048 *);
+uint8_t  pic14_read_data_memory_increment(struct k8048 *);
 void pic14_bulk_erase(struct k8048 *, uint16_t, uint16_t);
 void pic14_row_erase(struct k8048 *, uint32_t, uint32_t);
-void pic14_read_config_memory(struct k8048 *);
-uint32_t pic14_get_program_flash_size(uint32_t *);
-uint32_t pic14_get_data_flash_size(uint32_t *);
-uint32_t pic14_get_data_eeprom_size(uint32_t *);
-uint32_t pic14_get_executive_size(uint32_t *);
-uint32_t pic14_read_flash_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
-uint32_t pic14_read_eeprom_memory_block(struct k8048 *, uint8_t *, uint32_t, uint16_t);
+void pic14_read_config_memory(struct k8048 *, int);
+uint32_t pic14_get_program_size(uint32_t *);
+uint32_t pic14_get_data_size(uint32_t *);
+uint32_t pic14_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
+uint32_t pic14_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
 uint32_t pic14_write_word(struct k8048 *, uint16_t);
 uint16_t pic14_read_osccal(struct k8048 *);
 uint32_t pic14_write_osccal(struct k8048 *, uint16_t);
 uint32_t pic14_write_calib(struct k8048 *, uint16_t);
 uint32_t pic14_write_config(struct k8048 *, uint16_t);
 uint16_t pic14_getregion(uint16_t);
-uint16_t pic14_initregion(struct k8048 *, uint16_t);
+uint16_t pic14_initregion(struct k8048 *, uint16_t, uint16_t *);
 void pic14_loadregion(struct k8048 *, uint16_t, uint16_t);
 void pic14_programregion(struct k8048 *, uint16_t, uint16_t, uint16_t);
 uint32_t pic14_verifyregion(struct k8048 *, uint16_t, uint16_t, uint16_t);
@@ -672,10 +798,10 @@ void pic14_dumpconfig_16f88(uint16_t, uint16_t);
 void pic14_dumpconfig_16f628a(uint16_t);
 void pic14_dumpconfig_12f683(uint16_t);
 void pic14_dumpconfig_16f886(uint16_t, uint16_t);
-void pic14_dumphexwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
-void pic14_dumphexbytes(struct k8048 *, uint32_t, uint32_t, uint8_t *);
-void pic14_dumpinhxwords(struct k8048 *, uint32_t, uint32_t, uint32_t *);
-void pic14_dumpinhxbytes(struct k8048 *, uint32_t, uint32_t, uint8_t *);
+void pic14_dumphexcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic14_dumpinhxcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic14_dumphexdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
+void pic14_dumpinhxdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 void pic14_dumpdevice(struct k8048 *);
 
 #endif /* !_PIC14_H */

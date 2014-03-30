@@ -1,10 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "VERSION"
@@ -39,7 +62,7 @@ usage_k8048(struct k8048 *k)
 #endif
 #ifdef BITBANG
 		" BIT-BANG\n"
-		"\t\tLinux bit-bang GPIO.\n"
+		"\t\tLinux GPIO bit-bang.\n"
 #endif
 		"\n");
 
@@ -49,20 +72,24 @@ usage_k8048(struct k8048 *k)
 		"\t\t12-bit word PIC10F/12F/16F operations.\n"
 #endif
 #ifdef K14
-		" k14 [LVP | SELECT 16F84] OPERATION [ARG]\n"
+		" k14 [SELECT DEVICE] [LVP] OPERATION [ARG]\n"
 		"\t\t14-bit word PIC10F/12F/16F operations.\n"
 #endif
 #ifdef K16
-		" k16 [LVP] OPERATION [ARG]\n"
+		" k16 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n"
 		"\t\t16-bit word PIC18F operations.\n"
 #endif
 #ifdef K24
-		" k24 [LVP] OPERATION [ARG]\n"
+		" k24 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n"
 		"\t\t24-bit word PIC24/dsPIC operations.\n"
 #endif
 #ifdef K32
-		" k32 OPERATION [ARG]\n"
+		" k32 [SELECT DEVICE] [LVP] OPERATION [ARG]\n"
 		"\t\t32-bit word PIC32 operations.\n"
+#endif
+#ifdef KCTRL
+		" kctrl RUN|STOP|RESTORE\n"
+		"\t\tControl master clear.\n"
 #endif
 #ifdef KTEST
 		" ktest TEST [ARG]\n"
@@ -72,8 +99,42 @@ usage_k8048(struct k8048 *k)
 
 	printf("VERSION:\n %s\n", VERSION);
 
-	exit(EX_OK);
+	io_exit(k, EX_OK);
 }
+
+/*
+ * kctrl help
+ */
+#ifdef KCTRL
+void
+usage_kctrl(struct k8048 *k, char *msg)
+{
+	printf("USAGE: kctrl RUN|STOP|RESTORE\n");
+	printf("Control master clear.\n\n");
+
+	if (msg)
+		printf("Error: %s.\n\n", msg);
+
+	printf("FILES:\n"
+		" %s\n"
+		"\t\tConfiguration.\n\n", k->dotfile);
+
+	printf("EXAMPLES:\n"
+		" kctrl RUN\n"
+		"\t\tRaise master clear to take the device out of reset.\n"
+		" kctrl STOP\n"
+		"\t\tLower master clear to put the device in reset.\n"
+		" kctrl RESTORE\n"
+		"\t\tLower then raise master clear to reset the device.\n"
+		"\n");
+
+	printf("VERSION:\n %s\n", VERSION);
+
+	if (msg)
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
+}
+#endif
 
 /*
  * ktest help
@@ -120,8 +181,8 @@ usage_ktest(struct k8048 *k, char *msg)
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -149,8 +210,10 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %sc%sonfig\n"
 		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX %sda%sta\n"
+		"\t\tDisplay data flash content.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %sd%sump\n"
-		"\t\tDump device content (intel hex32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %sf%slash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %si%sd\n"
@@ -159,18 +222,18 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tDisplay oscillator calibration.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %so%ssccal 0x0c1a\n"
 		"\t\tRestore oscillator calibration as 0x0c1a.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-	printf(" k12 %ss%select PIC1XFXXX %sp%srogram file.hex [noblank]\n"
-		"\t\tBlank and program file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-	printf(" k12 %ss%select PIC1XFXXX %sv%serify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -181,7 +244,7 @@ usage_k12(struct k8048 *k, char *msg)
 void
 usage_k14(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k14 [LVP | SELECT 16F84] OPERATION [ARG]\n");
+	printf("USAGE: k14 [SELECT DEVICE] [LVP] OPERATION [ARG]\n");
 	printf("14-bit word PIC10F/12F/16F operations.\n\n");
 
 	if (msg)
@@ -197,17 +260,17 @@ usage_k14(struct k8048 *k, char *msg)
 	printf(" k14 %ss%select 16F84 OPERATION [ARG]\n"
 		"\t\tSelect device PIC16F84.\n", UL_ON, UL_OFF);
 	printf(" k14 %sl%svp OPERATION [ARG]\n"
-		"\t\tLVP key entry.\n", UL_ON, UL_OFF);
+		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
 	printf(" k14 %sb%slank\n"
 		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
 	printf(" k14 %sc%sonfig\n"
 		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
 	printf(" k14 %sc%sonfig 0x3000\n"
 		"\t\tRestore band-gap configuration as 0x3000.\n", UL_ON, UL_OFF);
-	printf(" k14 %sd%sump\n"
-		"\t\tDump device content (intel hex32 format).\n", UL_ON, UL_OFF);
-	printf(" k14 %se%seprom\n"
+	printf(" k14 %sda%sta\n"
 		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+	printf(" k14 %sd%sump\n"
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k14 %ser%sase eeprom | flash | id | row [n]\n"
 		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
 	printf(" k14 %sf%slash [n]\n"
@@ -218,18 +281,18 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tDisplay oscillator calibration.\n", UL_ON, UL_OFF);
 	printf(" k14 %so%ssccal 0x343c\n"
 		"\t\tRestore oscillator calibration as 0x343c.\n", UL_ON, UL_OFF);
-	printf(" k14 %sp%srogram file.hex [noblank]\n"
-		"\t\tBlank and program file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
-	printf(" k14 %sv%serify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
+	printf(" k14 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k14 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -240,7 +303,7 @@ usage_k14(struct k8048 *k, char *msg)
 void
 usage_k16(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k16 [LVP] OPERATION [ARG]\n");
+	printf("USAGE: k16 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n");
 	printf("16-bit word PIC18F operations.\n\n");
 
 	if (msg)
@@ -253,34 +316,38 @@ usage_k16(struct k8048 *k, char *msg)
 	printf("EXAMPLES:\n");
 	printf(" k16 %ss%select\n"
 		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+	printf(" k16 %ss%select 18LF2539 OPERATION [ARG]\n"
+		"\t\tSelect device PIC18LF2539.\n", UL_ON, UL_OFF);
 	printf(" k16 %sl%svp OPERATION [ARG]\n"
-		"\t\tLVP key entry.\n", UL_ON, UL_OFF);
+		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+	printf(" k16 %sh%svp OPERATION [ARG]\n"
+		"\t\tHVP 32-bit key entry.\n", UL_ON, UL_OFF);
 	printf(" k16 %sb%slank\n"
 		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
 	printf(" k16 %sc%sonfig\n"
 		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
-	printf(" k16 %sd%sump\n"
-		"\t\tDump device content (intel hex32 format).\n", UL_ON, UL_OFF);
-	printf(" k16 %se%seprom\n"
+	printf(" k16 %sda%sta\n"
 		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+	printf(" k16 %sd%sump\n"
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k16 %ser%sase eeprom | flash | id | row [n]\n"
 		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
 	printf(" k16 %sf%slash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
 	printf(" k16 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
-	printf(" k16 %sp%srogram file.hex [noblank]\n"
-		"\t\tBlank and program file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
-	printf(" k16 %sv%serify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
+	printf(" k16 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k16 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -291,7 +358,7 @@ usage_k16(struct k8048 *k, char *msg)
 void
 usage_k24(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k24 [LVP] OPERATION [ARG]\n");
+	printf("USAGE: k24 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n");
 	printf("24-bit word PIC24/dsPIC operations.\n\n");
 
 	if (msg)
@@ -304,30 +371,38 @@ usage_k24(struct k8048 *k, char *msg)
 	printf("EXAMPLES:\n");
 	printf(" k24 %ss%select\n"
 		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+	printf(" k24 %ss%select 33EP128GP502 OPERATION [ARG]\n"
+		"\t\tSelect device dsPIC33EP128GP502.\n", UL_ON, UL_OFF);
+	printf(" k24 %sl%svp OPERATION [ARG]\n"
+		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+	printf(" k24 %sh%svp OPERATION [ARG]\n"
+		"\t\tHVP 32-bit key entry.\n", UL_ON, UL_OFF);
 	printf(" k24 %sb%slank\n"
 		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
 	printf(" k24 %sc%sonfig\n"
 		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+	printf(" k24 %sda%sta\n"
+		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
 	printf(" k24 %sd%sump\n"
-		"\t\tDump device content (intel hex32 format).\n", UL_ON, UL_OFF);
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k24 %sex%sec\n"
 		"\t\tDisplay program executive content.\n", UL_ON, UL_OFF);
 	printf(" k24 %sf%slash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
 	printf(" k24 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
-	printf(" k24 %sp%srogram file.hex [noblank]\n"
-		"\t\tBlank and program file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
-	printf(" k24 %sv%serify file.hex\n"
-		"\t\tVerify file.hex in flash (intel hex32 format).\n", UL_ON, UL_OFF);
+	printf(" k24 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k24 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -338,7 +413,7 @@ usage_k24(struct k8048 *k, char *msg)
 void
 usage_k32(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k32 OPERATION [ARG]\n");
+	printf("USAGE: k32 [SELECT DEVICE] OPERATION [ARG]\n");
 	printf("32-bit word PIC32 operations.\n\n");
 
 	if (msg)
@@ -355,8 +430,8 @@ usage_k32(struct k8048 *k, char *msg)
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 #endif
 
@@ -398,16 +473,19 @@ main(int argc, char **argv)
 	struct k8048 k;
 	char *execdup, *execname;
 
+	/* Initialise */
+	memset(&k, 0, sizeof(k));
+
 	/* Get exec name */
 	execdup = (char *)strdup(argv[0]);
 	if (execdup == NULL) {
 		printf("%s: fatal error: strdup failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(&k, EX_OSERR); /* Panic */
 	}
 	execname = basename(execdup);
 	if (execname == NULL) {
 		printf("%s: fatal error: basename failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(&k, EX_OSERR); /* Panic */
 	}
 
 	/* Get configuration */
@@ -417,20 +495,8 @@ main(int argc, char **argv)
 	if (strcmp(execname, "k8048") == 0)
 		usage_k8048(&k);
 
-	/* Arch: k12 | k14 | k16 | k24 | k32 */
-	if (strcmp(execname, "k12") == 0)
-		k.arch = ARCH12BIT;	/* 12-bit word PIC10F/PIC12F/PIC16F */
-	else if (strcmp(execname, "k14") == 0)
-		k.arch = ARCH14BIT;	/* 14-bit word PIC10F/PIC12F/PIC16F */
-	else if (strcmp(execname, "k16") == 0)
-		k.arch = ARCH16BIT;	/* 16-bit word PIC18F */
-	else if (strcmp(execname, "k24") == 0)
-		k.arch = ARCH24BIT;	/* 24-bit word PIC24/dsPIC */
-	else if (strcmp(execname, "k32") == 0)
-		k.arch = ARCH32BIT;	/* 32-bit word PIC32 */
-
 	/* Open device */
-	if (io_open(&k, 0) < 0) {
+	if (io_open(&k) < 0) {
 #ifdef KTEST
 		if (strcmp(execname, "ktest") == 0)
 			usage_ktest(&k, io_error(&k));
@@ -438,14 +504,37 @@ main(int argc, char **argv)
 		usage(&k, execname, io_error(&k));
 	}
 
+	setpriority(PRIO_PROCESS, 0, -20);
+
 	/* Reset uid */
 	if (getuid() != geteuid()) {
 		if (setuid(getuid()) < 0) {
 			printf("%s: fatal error: setuid failed\n", __func__);
-			exit(EX_OSERR); /* Panic */
+			io_exit(&k, EX_OSERR); /* Panic */
 		}
 	}
-
+#ifdef KCTRL
+	/* Command: kctrl */
+	if (strcmp(execname, "kctrl") == 0) {
+		if (argc < 2)
+			usage_kctrl(&k, "Missing arg");
+		else if (argc > 2)
+			usage_kctrl(&k, "Too many args");
+		if (strcasecmp(argv[1], "RUN") == 0) {
+			io_close(&k, HIGH);
+			printf("RUN\n");
+		} else if (strcasecmp(argv[1], "STOP") == 0) {
+			io_close(&k, LOW);
+			printf("STOP\n");
+		} else if (strcasecmp(argv[1], "RESTORE") == 0) {
+			io_set_vpp(&k, LOW);
+			io_usleep(&k, 10);
+			io_close(&k, HIGH);
+			printf("RESTORE\n");
+		}
+		io_exit(&k, EX_OK);
+	}
+#endif
 #ifdef KTEST
 	/* Command: ktest */
 	if (strcmp(execname, "ktest") == 0) {
@@ -457,7 +546,6 @@ main(int argc, char **argv)
 		if (testarg < 0)
 			usage_ktest(&k, "Invalid arg");
 
-		io_init(&k);
 		if (strcasecmp(argv[1], "VPP") == 0) 
 			io_test0(&k, 0, testarg);
 		else if (strcasecmp(argv[1], "PGC") == 0)
@@ -470,10 +558,7 @@ main(int argc, char **argv)
 			int32_t test = strtol(argv[1], NULL, 0);
 			switch (test) {
 #ifdef RPI
-			case 0: if (k.fd < 0)
-					usage_ktest(&k, "Invalid arg");
-				gpio_test(&k, testarg);
-				break;
+			case 0: gpio_test(&k, testarg);break;
 #endif
 			case 1: io_test1(&k, testarg); break;
 			case 2: io_test2(&k, testarg); break;
@@ -487,68 +572,81 @@ main(int argc, char **argv)
 		} else {
 			usage_ktest(&k, "Invalid arg");
 		}
-		io_close(&k, 1);
-		exit(EX_OK);
+		io_exit(&k, EX_OK);
 	}
 #endif
-
-	/* Command: k12 | k14 | k16 | k24 | k32 */
-	if (k.arch == 0)
+	/* Determine arch: k12 | k14 | k16 | k24 | k32 */
+	if (pic_arch(&k, execname) == 0)
 		usage_k8048(&k);
 	if (argc < 2)
 		usage(&k, execname, "Missing arg(s)");
 
+	/* Device selection */
 	int argv1 = tolower((int)argv[1][0]);
 	if (argv1 == 's') { /* Select device */
 		if (argc < 3) {
 			pic_selector(&k);
-			io_close(&k, 1);
-			exit(EX_OK);
+			io_exit(&k, EX_OK);
 		}
-		if (mystrcasestr(argv[2], "pic") == argv[2]) {
+		if (mystrcasestr(argv[2], "dspic") == argv[2]) {
+			strncpy(k.devicename, argv[2], STRLEN);
+		} else if (mystrcasestr(argv[2], "pic") == argv[2]) {
 			strncpy(k.devicename, argv[2], STRLEN);
 		} else {
 			int32_t temp = strtol(argv[2], NULL, 0);
-			if (temp < 10 || temp > 32) {
+			if (temp < 10 || temp > 33) {
 				usage(&k, execname, "Invalid arg [select]");
 			}
-			strcpy(k.devicename, "pic");
-			strncpy(&k.devicename[3], argv[2], STRLEN - 3);
+			if (temp == 30 || temp == 33) {
+				strcpy(k.devicename, "dspic");
+				strncpy(&k.devicename[5], argv[2], STRLEN - 5);
+			} else {
+				strcpy(k.devicename, "pic");
+				strncpy(&k.devicename[3], argv[2], STRLEN - 3);
+			}
 		}
 		argc -= 2;
 		argv += 2;
 		if (argc < 2)
 			usage(&k, execname, "Missing arg(s)");
-	} else if (k.arch == ARCH12BIT) {
+	} else if (k.pic->arch == ARCH12BIT) {
 		usage(&k, execname, "Missing select");
 	}
 
+	/* Key entry */
 	argv1 = tolower((int)argv[1][0]);
-	if (argv1 == 'l') {		/* LVP key entry */
-		if (k.arch == ARCH12BIT) {
+	if (argv1 == 'l') {			/* LVP 32-bit key entry */
+		if (k.pic->arch == ARCH12BIT) {
 			usage(&k, execname, "Invalid arg [lvp]");
 		}
+		/* ARCH14BIT || ARCH16BIT || ARCH24BIT || ARCH32BIT */
 		k.key = LVPKEY;
 		argc -= 1;
 		argv += 1;
 		if (argc < 2)
 			usage(&k, execname, "Missing arg(s)");
 	}
-	else if (argv1 == 'h') {	/* HVP key entry (not working) */
-		if (k.arch != ARCH16BIT) {
+	else if (argv1 == 'h') {		/* HVP 32-bit key entry */
+		if (k.pic->arch == ARCH12BIT || k.pic->arch == ARCH14BIT || k.pic->arch == ARCH32BIT) {
 			usage(&k, execname, "Invalid arg [hvp]");
 		}
+		/* ARCH16BIT || ARCH24BIT */
 		k.key = HVPKEY;
 		argc -= 1;
 		argv += 1;
 		if (argc < 2)
 			usage(&k, execname, "Missing arg(s)");
 	}
-	else {				/* No key entry */
+	else if (k.pic->arch == ARCH32BIT) {	/* LVP 32-bit key entry */
+		/* ARCH32BIT */
+		k.key = LVPKEY;
+	}
+	else {					/* No key entry */
+		/* ARCH12BIT || ARCH14BIT || ARCH16BIT || ARCH24BIT */
 		k.key = NOKEY;
 	}
 
-	io_init(&k);
+	/* Command */
 	argv1 = tolower((int)argv[1][0]);
 	int argv11 = tolower((int)argv[1][1]);
 	switch (argv1) {
@@ -566,9 +664,15 @@ main(int argc, char **argv)
 				pic_writebandgap(&k, strtoul(argv[2], NULL, 0));
 			break;
 	
-	case 'd':	if (argc > 2)
-				usage(&k, execname, "Too many args [dump]");
-			pic_dumpdevice(&k);
+	case 'd':	if (argv11 == 'a') {		/* DATA */
+				if (argc > 2)
+					usage(&k, execname, "Too many args [data]");
+				pic_dumpdata(&k);
+			} else {			/* DUMP */
+				if (argc > 2)
+					usage(&k, execname, "Too many args [dump]");
+				pic_dumpdevice(&k);
+			}
 			break;
 
 	case 'e':	if (argv11 == 'r') {		/* ERASE FLASH | ID | ROW[NROWS] */
@@ -621,20 +725,20 @@ main(int argc, char **argv)
 			} else {			/* EEPROM */
 				if (argc > 2)
 					usage(&k, execname, "Too many args [eeprom]");
-				pic_dumpeeprom(&k);
+				pic_dumpdata(&k);
 			}
 			break;
 
 	case 'f':	{
 			uint32_t words = UINT32_MAX;
 			if (argc > 3)
-				usage(&k, execname, "Too many args [flash]");
+				usage(&k, execname, "Too many args [program flash]");
 			if (argc == 3) {
 				words = strtoul(argv[2], NULL, 0);
 				if (words == 0)
-					usage(&k, execname, "Invalid arg [flash]");
+					usage(&k, execname, "Invalid arg [program flash]");
 			}
-			pic_dumpflash(&k, words);
+			pic_dumpprogram(&k, words);
 			}
 			break;
 
@@ -653,8 +757,6 @@ main(int argc, char **argv)
 
 	case 'p':	{
 			int blank = 1;
-			if (argc < 3)
-				usage(&k, execname, "Missing arg [program]");
 			if (argc > 4)
 				usage(&k, execname, "Too many args [program]");
 			if (argc == 4) switch (argv[3][0]) {
@@ -669,15 +771,19 @@ main(int argc, char **argv)
 				default:usage(&k, execname, "Invalid arg [program]");
 					break;
 			}
-			pic_program(&k, argv[2], blank);
+			if (argc < 3)
+				pic_program(&k, "-", 1);
+			else
+				pic_program(&k, argv[2], blank);
 			}
 			break;
 
-	case 'v':	if (argc < 3)
-				usage(&k, execname, "Missing arg [verify]");
-			if (argc > 3)
+	case 'v':	if (argc > 3)
 				usage(&k, execname, "Too many args [verify]");
-			pic_verify(&k, argv[2]);
+			if (argc < 3)
+				pic_verify(&k, "-");
+			else
+				pic_verify(&k, argv[2]);
 			break;
 #ifdef DEBUG
 	case 'x':	if (argc > 2)
@@ -689,7 +795,6 @@ main(int argc, char **argv)
 			break;
 	}
 
-	io_close(&k, 1);
 	free(execdup);
-	exit(EX_OK);
+	io_exit(&k, EX_OK);
 }

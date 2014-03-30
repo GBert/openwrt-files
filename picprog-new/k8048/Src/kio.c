@@ -1,15 +1,40 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "VERSION"
 
 #include "kio.h"
+
+extern int io_stop;
 
 void
 usage(struct k8048 *k, char *execname, char *msg)
@@ -21,9 +46,6 @@ usage(struct k8048 *k, char *execname, char *msg)
 		printf("Error: %s.\n\n", msg);
 
 	printf("Commands:\n"
-		" RUN                             Run firmware on GPIO/I2C (MCLR=1 PGM=0).\n"
-		" STOP                            Stop firmware on GPIO/I2C (MCLR=0 PGM=0).\n"
-		" RESET                           Reset firmware on GPIO/I2C (MCLR=0/1 PGM=0).\n"
 		" LED       0x00..0x3F            Set Velleman K8048 LEDs.\n"
 		" SWITCH                          Get Velleman K8048 switches.\n"
 		" SLEEP                           Sleep until watchdog time-out.\n"
@@ -61,8 +83,8 @@ usage(struct k8048 *k, char *execname, char *msg)
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		exit(EX_USAGE);
-	exit(EX_OK);
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
 }
 
 /*
@@ -75,7 +97,7 @@ getbytearg(struct k8048 *k, char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
 
-	if (argn >= 0 && argn <= 255)
+	if (argn <= 255)
 		return argn;
 
 	usage(k, execname, "Invalid arg [8-bit byte]");
@@ -92,7 +114,7 @@ getshortarg(struct k8048 *k, char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
 
-	if (argn >= 0 && argn <= 65535)
+	if (argn <= 65535)
 		return argn;
 
 	usage(k, execname, "Invalid arg [16-bit word]");
@@ -109,7 +131,7 @@ get24arg(struct k8048 *k, char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
 
-	if (argn >= 0 && argn <= 0xFFFFFF)
+	if (argn <= 0xFFFFFF)
 		return argn;
 
 	usage(k, execname, "Invalid arg [24-bit word]");
@@ -155,23 +177,26 @@ main(int argc, char *argv[])
 	struct k8048 k;
 	char *execdup = NULL, *execname = NULL;
 
+	/* Initialise */
+	memset(&k, 0, sizeof(k));
+
 	/* Get exec name */
 	execdup = (char *)strdup(argv[0]);
 	if (execdup == NULL) {
 		printf("%s: fatal error: strdup failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(&k, EX_OSERR); /* Panic */
 	}
 	execname = basename(execdup);
 	if (execname == NULL) {
 		printf("%s: fatal error: basename failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(&k, EX_OSERR); /* Panic */
 	}
 
 	/* Get configuration */
 	getconf(&k, execname);
 
 	/* Open device */
-	if (io_open(&k, 0) < 0) {
+	if (io_open(&k) < 0) {
 		usage(&k, execname, io_error(&k));
 	}
 
@@ -179,7 +204,7 @@ main(int argc, char *argv[])
 	if (getuid() != geteuid()) {
 		if (setuid(getuid()) < 0) {
 			printf("%s: fatal error: setuid failed\n", __func__);
-			exit(EX_OSERR); /* Panic */
+			io_exit(&k, EX_OSERR); /* Panic */
 		}
 	}
 
@@ -190,37 +215,6 @@ main(int argc, char *argv[])
 	int err;
 	uint8_t cmd[STRLEN];
 
-	/* RUN/STOP/RESTORE(RESET) */
-	if (strcasecmp(argv[1], "RUN") == 0) {
-		if (argc > 2)
-			usage(&k, execname, "Too many args");
-
-		io_init(&k);
-		io_test_run(&k, 1);
-		fprintf(stdout, "RUN\n");
-		io_close(&k, 0);
-		exit(EX_OK);
-	} else if (strcasecmp(argv[1], "STOP") == 0) {
-		if (argc > 2)
-			usage(&k, execname, "Too many args");
-
-		io_init(&k);
-		io_test_run(&k, 0);
-		fprintf(stdout, "STOP\n");
-		io_close(&k, 0);
-		exit(EX_OK);
-	} else if (strcasecmp(argv[1], "RESET") == 0) {
-		if (argc > 2)
-			usage(&k, execname, "Too many args");
-
-		io_init(&k);
-		io_test_run(&k, 0);
-		io_test_run(&k, 1);
-		fprintf(stdout, "RESET\n");
-		io_close(&k, 0);
-		exit(EX_OK);
-	}
-	
 	/*
  	 * ICSPIO
 	 */
@@ -244,7 +238,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "SWITCH") == 0)
@@ -265,7 +259,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", sw);
 	}
 	
@@ -286,7 +280,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 	
 	else if (strcasecmp(argv[1], "WATCHDOG") == 0)
@@ -317,7 +311,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 	
 	else if (strcasecmp(argv[1], "CLOCK") == 0)
@@ -340,7 +334,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "DIRECTION") == 0)
@@ -364,7 +358,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 	
 	else if (strcasecmp(argv[1], "OUTPUT") == 0)
@@ -388,7 +382,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "INPUT") == 0)
@@ -414,7 +408,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
 	}
 
@@ -443,7 +437,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "SAMPLE") == 0)
@@ -466,7 +460,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%04X\n", sample);
 	}
 
@@ -491,7 +485,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", data);
 	}
 
@@ -516,7 +510,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "READ") == 0) {
@@ -542,7 +536,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%04X\n", data);
 	}
 
@@ -571,7 +565,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "8") == 0)
@@ -596,7 +590,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
 	}
 	
@@ -624,7 +618,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
 	}
 	
@@ -653,7 +647,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
 	}
 
@@ -683,7 +677,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", in);
 	}
 
@@ -707,7 +701,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 	}
 
 	else if (strcasecmp(argv[1], "ERROR") == 0)
@@ -730,7 +724,7 @@ main(int argc, char *argv[])
 				}		
 				io_usleep(&k, RESYNC * k.fwsleep);
 			}
-		} while (err != ERRNONE && err != ERRNOTSUP);
+		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
 		fprintf(stdout, "0x%02X\n", le);
 	}
 
@@ -738,7 +732,6 @@ main(int argc, char *argv[])
 		usage(&k, execname, "Unknown operation");
 	}
 
-	io_close(&k, 0);
-	exit(EX_OK);
+	io_exit(&k, EX_OK);
 	return 0;
 }

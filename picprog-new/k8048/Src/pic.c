@@ -1,10 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "k8048.h"
@@ -13,47 +36,61 @@
 void
 pic_x(struct k8048 *k)
 {
-	pic_dump_program_flash(k, PIC24_EXEC_LOW, 1024, PIC_INHX32);
+	pic_read_config(k, PIC_CONFIG_ALL);
+#if 0
+	pic_dump_program(k, 0x000000, 128, PIC_HEXDEC);
+	pic_dump_program(k, 0x000000, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0x800000, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0x800800, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0x801000, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0xF80000, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0xFA0000, 256, PIC_HEXDEC);
+	pic_dump_program(k, 0xFF0000, 256, PIC_HEXDEC);
+#endif
 }
 #endif
 
 /*
+ * DETERMINE ARCH
+ *
+ *  k12 | k14 | k16 | k24 | k32
+ */
+uint32_t
+pic_arch(struct k8048 *k, const char *execname)
+{
+#ifdef K12
+        if (strcmp(execname, "k12") == 0)
+		return pic12_arch(k);	/* 12-bit word PIC10F/PIC12F/PIC16F */
+#endif
+#ifdef K14
+        if (strcmp(execname, "k14") == 0)
+                return pic14_arch(k);	/* 14-bit word PIC10F/PIC12F/PIC16F */
+#endif
+#ifdef K16
+        if (strcmp(execname, "k16") == 0)
+                return pic16_arch(k);	/* 16-bit word PIC18F */
+#endif
+#ifdef K24
+        if (strcmp(execname, "k24") == 0)
+                return pic24_arch(k);	/* 24-bit word PIC24/dsPIC */
+#endif
+#ifdef K32
+        if (strcmp(execname, "k32") == 0)
+                return pic32_arch(k);	/* 32-bit word PIC32 */
+#endif
+	return 0;
+}
+
+/*
  * COMPARE DEVICE NAMES FOR QSORT
  */
-#if 0
-int
-pic_cmpval(char *s)
-{
-	int t = (s[3] - '0') * 10 + (s[4] - '0'), u = 0;
-
-	for (int i = 5; s[i]; ++i) {
-		if (isdigit(s[i])) {
-			u = u * 10 + (s[i] - '0');
-		}
-	}
-	return (t << 16) + u;
-}
-int
-pic_cmp(const void *p1, const void *p2)
-{
-	char *s1 = *(char **)p1, *s2 = *(char **)p2;
-	int n1 = pic_cmpval(s1), n2 = pic_cmpval(s2);
-
-	if (n1 == n2)
-		return 0;
-	if (n1 < n2)
-		return -1;
-	return 1;
-}
-#else
 int
 pic_cmp(const void *p1, const void *p2)
 {
 	char *s1 = *(char **)p1, *s2 = *(char **)p2;
 
-	return strcmp(s1, s2);
+	return strcasecmp(s1, s2);
 }
-#endif
 
 /*
  * DUMP DEVICE SELECTION
@@ -61,35 +98,10 @@ pic_cmp(const void *p1, const void *p2)
 void
 pic_selector(struct k8048 *k)
 {
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_selector(k);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_selector(k);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_selector(k);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_selector(k);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->selector)
+		k->pic->selector();
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -98,35 +110,10 @@ pic_selector(struct k8048 *k)
 void
 pic_read_config(struct k8048 *k, int flag)
 {
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_read_config_memory(k, flag);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_read_config_memory(k);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_read_config_memory(k);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_read_config_memory(k);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->read_config_memory)
+		k->pic->read_config_memory(k, flag);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -135,123 +122,33 @@ pic_read_config(struct k8048 *k, int flag)
  *  INVOKE AFTER `pic_read_config'
  */
 uint32_t
-pic_get_program_flash_size(struct k8048 *k, uint32_t *addr)
+pic_get_program_size(struct k8048 *k, uint32_t *addr)
 {
 	uint32_t size = UINT32_MAX;
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		size = pic12_get_program_flash_size(addr);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		size = pic14_get_program_flash_size(addr);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		size = pic16_get_program_flash_size(addr);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		size = pic24_get_program_flash_size(addr);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->get_program_size)
+		size = k->pic->get_program_size(addr);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
+
 	return size;
 }
 
 /*
- * DETERMINE DATA FLASH SIZE
+ * DETERMINE DATA EEPROM/FLASH SIZE
  *
  *  INVOKE AFTER `pic_read_config'
  */
 uint32_t
-pic_get_data_flash_size(struct k8048 *k, uint32_t *addr)
+pic_get_data_size(struct k8048 *k, uint32_t *addr)
 {
 	uint32_t size = UINT32_MAX;
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		size = pic12_get_data_flash_size(addr);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		size = pic14_get_data_flash_size(addr);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		size = pic16_get_data_flash_size(addr);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		size = pic24_get_data_flash_size(addr);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->get_data_size)
+		size = k->pic->get_data_size(addr);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
-	return size;
-}
 
-/*
- * DETERMINE DATA EEPROM SIZE
- *
- *  INVOKE AFTER `pic_read_config'
- */
-uint32_t
-pic_get_data_eeprom_size(struct k8048 *k, uint32_t *addr)
-{
-	uint32_t size = UINT32_MAX;
-
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		size = pic12_get_data_eeprom_size(addr);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		size = pic14_get_data_eeprom_size(addr);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		size = pic16_get_data_eeprom_size(addr);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		size = pic24_get_data_eeprom_size(addr);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 	return size;
 }
 
@@ -265,35 +162,11 @@ pic_get_executive_size(struct k8048 *k, uint32_t *addr)
 {
 	uint32_t size = UINT32_MAX;
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		size = pic12_get_executive_size(addr);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		size = pic14_get_executive_size(addr);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		size = pic16_get_executive_size(addr);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		size = pic24_get_executive_size(addr);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->get_executive_size)
+		size = k->pic->get_executive_size(addr);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
+
 	return size;
 }
 
@@ -303,81 +176,33 @@ pic_get_executive_size(struct k8048 *k, uint32_t *addr)
  *  INVOKE AFTER `pic_get_program_size'
  */
 uint32_t
-pic_read_flash_memory_block(struct k8048 *k, uint32_t *data, uint32_t addr, uint32_t size)
+pic_read_program_memory_block(struct k8048 *k, uint32_t *data, uint32_t addr, uint32_t size)
 {
 	uint32_t rc = UINT32_MAX;
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		rc = pic12_read_flash_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		rc = pic14_read_flash_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		rc = pic16_read_flash_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		rc = pic24_read_flash_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->read_program_memory_block)
+		rc = k->pic->read_program_memory_block(k, data, addr, size);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
+
 	return rc;
 }
 
 /*
- * READ DATA EEPROM MEMORY BLOCK 
+ * READ DATA EEPROM/FLASH MEMORY BLOCK 
  *
  *  INVOKE AFTER `pic_get_data_size'
  */
 uint32_t
-pic_read_eeprom_memory_block(struct k8048 *k, uint8_t *data, uint32_t addr, uint16_t size)
+pic_read_data_memory_block(struct k8048 *k, uint16_t *data, uint32_t addr, uint16_t size)
 {
 	uint32_t rc = UINT32_MAX;
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		printf("%s: information: EEPROM is not supported on this device\n", __func__);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		rc = pic14_read_eeprom_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		rc = pic16_read_eeprom_memory_block(k, data, addr, size);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
+	if (k->pic->read_data_memory_block)
+		rc = k->pic->read_data_memory_block(k, data, addr, size);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
+
 	return rc;
 }
  
@@ -387,37 +212,12 @@ pic_read_eeprom_memory_block(struct k8048 *k, uint8_t *data, uint32_t addr, uint
 void
 pic_program(struct k8048 *k, char *filename, int blank)
 {
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (k->pic->program) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_program(k, filename, blank);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_program(k, filename, blank);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_program(k, filename, blank);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_program(k, filename, blank);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+		k->pic->program(k, filename, blank);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -430,37 +230,12 @@ pic_verify(struct k8048 *k, char *filename)
 {
 	uint32_t fail = UINT32_MAX;
 	
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (k->pic->program) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		fail = pic12_verify(k, filename);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		fail = pic14_verify(k, filename);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		fail = pic16_verify(k, filename);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		fail = pic24_verify(k, filename);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+		fail = k->pic->verify(k, filename);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 
 	return fail;
 }
@@ -471,36 +246,15 @@ pic_verify(struct k8048 *k, char *filename)
 void
 pic_writebandgap(struct k8048 *k, uint16_t bandgap)
 {
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
+	if (k->pic->arch == ARCH14BIT) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
+
+		if (k->pic->bulk_erase)
+			k->pic->bulk_erase(k, PIC_INTERNAL, bandgap);
+		else
+			printf("%s: information: unimplemented\n", __func__);
+	} else
 		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_read_config_memory(k);
-		pic14_bulk_erase(k, PIC_INTERNAL, bandgap);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -509,37 +263,15 @@ pic_writebandgap(struct k8048 *k, uint16_t bandgap)
 void
 pic_writeosccal(struct k8048 *k, uint16_t osccal)
 {
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_read_config_memory(k, PIC_CONFIG_ONLY);
-		pic12_bulk_erase(k, osccal);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_read_config_memory(k);
-		pic14_bulk_erase(k, osccal, PIC_INTERNAL);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
+	if (k->pic->arch == ARCH12BIT || k->pic->arch == ARCH14BIT) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
+
+		if (k->pic->bulk_erase)
+			k->pic->bulk_erase(k, osccal, PIC_INTERNAL);
+		else
+			printf("%s: information: unimplemented\n", __func__);
+	} else
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -550,37 +282,12 @@ pic_writeosccal(struct k8048 *k, uint16_t osccal)
 void
 pic_blank(struct k8048 *k)
 {
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (k->pic->bulk_erase) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_bulk_erase(k, PIC_INTERNAL);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_bulk_erase(k, PIC_INTERNAL, PIC_INTERNAL);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_bulk_erase(k);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_bulk_erase(k);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+		k->pic->bulk_erase(k, PIC_INTERNAL, PIC_INTERNAL);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -589,37 +296,12 @@ pic_blank(struct k8048 *k)
 void
 pic_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 {
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (k->pic->row_erase) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		printf("%s: information: unsupported\n", __func__);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_row_erase(k, row, nrows);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_row_erase(k, row, nrows);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
+		k->pic->row_erase(k, row, nrows);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -628,37 +310,12 @@ pic_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 void
 pic_dumpdeviceid(struct k8048 *k)
 {
-	pic_read_config(k, PIC_CONFIG_ALL);
+	if (k->pic->dumpdeviceid) {
+		pic_read_config(k, PIC_CONFIG_ALL);
 
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_dumpdeviceid(k);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumpdeviceid(k);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumpdeviceid(k);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_dumpdeviceid(k);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+		k->pic->dumpdeviceid(k);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -667,39 +324,12 @@ pic_dumpdeviceid(struct k8048 *k)
 void
 pic_dumpconfig(struct k8048 *k)
 {
-	int mode = PIC_VERBOSE;
+	if (k->pic->dumpconfig) {
+		pic_read_config(k, PIC_CONFIG_ONLY);
 
-	pic_read_config(k, PIC_CONFIG_ONLY);
-
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_dumpconfig(k, mode);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumpconfig(k, mode);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumpconfig(k, mode);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_dumpconfig(k, mode);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+		k->pic->dumpconfig(k, PIC_VERBOSE);
+	} else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
@@ -708,37 +338,15 @@ pic_dumpconfig(struct k8048 *k)
 void
 pic_dumposccal(struct k8048 *k)
 {
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_read_config_memory(k, PIC_CONFIG_ALL);
-		pic12_dumposccal(k);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_read_config_memory(k);
-		pic14_dumposccal(k);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
+	if (k->pic->arch == ARCH12BIT || k->pic->arch == ARCH14BIT) {
+		pic_read_config(k, PIC_CONFIG_ALL);
+
+		if (k->pic->dumposccal)
+			k->pic->dumposccal(k);
+		else
+			printf("%s: information: unimplemented\n", __func__);
+	} else
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /******************************************************************************
@@ -794,7 +402,7 @@ pic_dumpbyte(uint32_t addr, uint8_t byte)
  * DUMP 16-BIT WORD AS INHX32 DATA
  */
 void
-pic_dumpword(uint32_t addr, uint16_t word)
+pic_dumpword16(uint32_t addr, uint16_t word)
 {
 	uint8_t cc, hb, lb;
 	hb = addr >> 7;
@@ -808,68 +416,59 @@ pic_dumpword(uint32_t addr, uint16_t word)
 }
 
 /*
+ * DUMP 32-BIT WORD AS INHX32 DATA
+ */
+void
+pic_dumpword32(uint32_t addr, uint32_t word)
+{
+	uint8_t cc, b3, b2, b1, b0;
+	b1 = addr >> 7;
+	b0 = addr << 1;
+	printf(":04%02X%02X00", b1, b0);
+	cc = 0x04 + b1 + b0 + 0x00;
+	b3 = word >> 24;
+	b2 = word >> 16;
+	b1 = word >> 8;
+	b0 = word;
+	cc = cc + b3 + b2 + b1 + b0;
+	printf("%02X%02X%02X%02X%02X\n", b0, b1, b2, b3, (0x0100 - cc) & 0xFF);
+}
+
+/*
  * DUMP DEVICE AS INHX32 DATA
  */
 void
 pic_dumpdevice(struct k8048 *k)
 {
+	if (!k->pic->dumpdevice) {
+		printf("%s: information: unimplemented\n", __func__);
+		return;
+	}
+
 	/* Get userid/config */
 	pic_read_config(k, PIC_CONFIG_ALL);
 
 	/* Get program flash size */
-	uint32_t faddr, fsize = pic_get_program_flash_size(k, &faddr);
+	uint32_t faddr, fsize = pic_get_program_size(k, &faddr);
 	if (fsize == 0 || fsize == UINT32_MAX) {
 		printf("%s: fatal error: program flash size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-	/* Get data flash size */
-	uint32_t daddr, dsize = pic_get_data_flash_size(k, &daddr);
-	if (dsize == UINT32_MAX) {
-		printf("%s: fatal error: data flash size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
-	/* Dump program + data flash */
-	fsize += dsize;
-	pic_dump_program_flash(k, faddr, fsize, PIC_INHX32);
+	/* Dump program flash */
+	pic_dump_program(k, faddr, fsize, PIC_INHX32);
 
-	/* Get data EEPROM size */
-	dsize = pic_get_data_eeprom_size(k, &daddr);
+	/* Get data EEPROM/flash size */
+	uint32_t daddr, dsize = pic_get_data_size(k, &daddr);
 	if (dsize == UINT32_MAX) {
-		printf("%s: fatal error: data EEPROM size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		printf("%s: fatal error: data EEPROM/flash size invalid\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-	/* Dump data EEPROM */
+	/* Dump data EEPROM/flash */
 	if (dsize)
-		pic_dump_data_eeprom(k, daddr, dsize, PIC_INHX32);
+		pic_dump_data(k, daddr, dsize, PIC_INHX32);
 
 	/* Dump userid/config */
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_dumpdevice(k);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumpdevice(k);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumpdevice(k);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_dumpdevice(k);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		break;
-#endif
-	default:break;
-	}
+	k->pic->dumpdevice(k);
 
 	/* EOF */
 	printf(":00000001FF\n");
@@ -880,74 +479,68 @@ pic_dumpdevice(struct k8048 *k)
  *****************************************************************************/
 
 /*
- * DUMP PROGRAM AND DATA FLASH IN HEX
+ * DUMP PROGRAM FLASH IN HEX
  */
 void
-pic_dumpflash(struct k8048 *k, uint32_t size)
+pic_dumpprogram(struct k8048 *k, uint32_t size)
 {
 	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get program flash size */
-	uint32_t faddr, fsize = pic_get_program_flash_size(k, &faddr);
+	uint32_t faddr, fsize = pic_get_program_size(k, &faddr);
 	if (fsize == 0 || fsize == UINT32_MAX) {
 		printf("%s: fatal error: program flash size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-	/* Get data flash size */
-	uint32_t daddr, dsize = pic_get_data_flash_size(k, &daddr);
-	if (dsize == UINT32_MAX) {
-		printf("%s: fatal error: data flash size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
-	/* Dump program + data flash */
-	fsize += dsize;
-	if (size == 0 || size > fsize)
+	if (size > fsize)
 		size = fsize;
-	pic_dump_program_flash(k, faddr, size, PIC_HEXDEC);
+	/* Dump program flash */
+	pic_dump_program(k, faddr, size, PIC_HEXDEC);
 }
 
 /*
- * DUMP DATA EEPROM IN HEX
+ * DUMP DATA EEPROM/FLASH IN HEX
  */
 void
-pic_dumpeeprom(struct k8048 *k)
+pic_dumpdata(struct k8048 *k)
 {
 	pic_read_config(k, PIC_CONFIG_ONLY);
 
-	/* Get data EEPROM size */
-	uint32_t daddr, dsize = pic_get_data_eeprom_size(k, &daddr);
+	/* Get data EEPROM/data flash size */
+	uint32_t daddr, dsize = pic_get_data_size(k, &daddr);
 	if (dsize == UINT32_MAX) {
-		printf("%s: fatal error: data EEPROM size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		printf("%s: fatal error: data EEPROM/flash size invalid\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 	if (dsize == 0) {
-		printf("%s: information: EEPROM is not supported on this device\n", __func__);
+		printf("%s: information: data EEPROM/flash is not supported on this device\n", __func__);
 		return;
 	}
-	/* Dump data EEPROM */
-	pic_dump_data_eeprom(k, daddr, dsize, PIC_HEXDEC);
+	/* Dump data EEPROM/flash */
+	pic_dump_data(k, daddr, dsize, PIC_HEXDEC);
 }
 
 /*
- * DUMP EXECUTIVE IN HEX
+ * DUMP PROGRAM EXECUTIVE IN HEX
  */
 void
 pic_dumpexec(struct k8048 *k)
 {
-	pic_read_config(k, PIC_CONFIG_ONLY);
-
-	/* Get EXECUTIVE size */
-	uint32_t eaddr, esize = pic_get_executive_size(k, &eaddr);
-	if (esize == UINT32_MAX) {
-		printf("%s: fatal error: EXECUTIVE size invalid\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
-	if (esize == 0) {
-		printf("%s: information: EXECUTIVE is not supported on this device\n", __func__);
+	if (!k->pic->get_executive_size) {
+		printf("%s: information: EXECUTIVE is not supported on this architecture\n", __func__);
 		return;
 	}
+
+	pic_read_config(k, PIC_CONFIG_ONLY);
+
+	/* Get program executive size */
+	uint32_t eaddr, esize = pic_get_executive_size(k, &eaddr);
+	if (esize == UINT32_MAX || esize == 0) {
+		printf("%s: fatal error: EXECUTIVE size invalid\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
 	/* Dump program executive */
-	pic_dump_program_flash(k, eaddr, esize, PIC_HEXDEC);
+	pic_dump_program(k, eaddr, esize, PIC_HEXDEC);
 }
 
 /******************************************************************************
@@ -958,33 +551,33 @@ pic_dumpexec(struct k8048 *k)
  * DUMP PROGRAM FLASH
  */
 void
-pic_dump_program_flash(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
+pic_dump_program(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
 {
 	/* Allocate program array */
 	uint32_t *data = (uint32_t *)calloc(size + 16, sizeof(uint32_t));
 	if (data == NULL) {
 		printf("%s: fatal error: calloc failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(k, EX_OSERR); /* Panic */
 	}
 	/* Read program */
-	if (pic_read_flash_memory_block(k, data, addr, size) == UINT32_MAX) {
+	if (pic_read_program_memory_block(k, data, addr, size) == UINT32_MAX) {
 		printf("%s: fatal error: program flash read failed\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 	/* Dump */
 	if (mode == PIC_HEXDEC) {
-		pic_dumphexwords(k, addr, size, data);
+		pic_dumphexcode(k, addr, size, data);
 	} else if (mode == PIC_INHX32) {
-		pic_dumpinhxwords(k, addr, size, data);
+		pic_dumpinhxcode(k, addr, size, data);
 	}
 	free(data);
 }
 
 /*
- * DETECT EMPTY FLASH ROW
+ * DETECT EMPTY PROGRAM FLASH ROW
  */
 int
-pic_mtwords(uint32_t compar, uint32_t size, uint32_t *data)
+pic_mtcode(uint32_t compar, uint32_t size, uint32_t *data)
 {
 	uint32_t mtrow = 0;
 
@@ -996,110 +589,60 @@ pic_mtwords(uint32_t compar, uint32_t size, uint32_t *data)
 }
 
 /*
- * DUMP HEX FLASH WORDS
+ * DUMP HEX PROGRAM FLASH WORDS
  */
 void
-pic_dumphexwords(struct k8048 *k, uint32_t addr, uint32_t size, uint32_t *data)
+pic_dumphexcode(struct k8048 *k, uint32_t addr, uint32_t size, uint32_t *data)
 {
-	/* Dump words */
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_dumphexwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumphexwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumphexwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_dumphexwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
+	if (k->pic->dumphexcode)
+		k->pic->dumphexcode(k, addr, size, data);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
- * DUMP INHX32 FLASH WORDS
+ * DUMP INHX32 PROGRAM FLASH WORDS
  */
 void
-pic_dumpinhxwords(struct k8048 *k, uint32_t addr, uint32_t size, uint32_t *data)
+pic_dumpinhxcode(struct k8048 *k, uint32_t addr, uint32_t size, uint32_t *data)
 {
-	/* Dump words */
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		pic12_dumpinhxwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumpinhxwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumpinhxwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		pic24_dumpinhxwords(k, addr, size, data);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		break;
-#endif
-	default:break;
-	}
+	if (k->pic->dumpinhxcode)
+		k->pic->dumpinhxcode(k, addr, size, data);
+	else
+		printf("%s: information: unimplemented\n", __func__);
 }
 
 /*
- * DUMP DATA EEPROM
+ * DUMP DATA EEPROM/FLASH
  */
 void
-pic_dump_data_eeprom(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
+pic_dump_data(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
 {
-	/* Allocate EEPROM array */
-	uint8_t *data = (uint8_t *)calloc(size + 16, sizeof(uint8_t));
+	/* Allocate data EEPROM/flash array */
+	uint16_t *data = (uint16_t *)calloc(size + 16, sizeof(uint16_t));
 	if (data == NULL) {
 		printf("%s: fatal error: calloc failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
+		io_exit(k, EX_OSERR); /* Panic */
 	}
-	/* Read EEPROM */
-	if (pic_read_eeprom_memory_block(k, data, addr, size) == UINT32_MAX) {
-		printf("%s: fatal error: data EEPROM read failed\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+	/* Read data EEPROM/flash */
+	if (pic_read_data_memory_block(k, data, addr, size) == UINT32_MAX) {
+		printf("%s: fatal error: data EEPROM/flash read failed\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 	/* Dump */
 	if (mode == PIC_HEXDEC) {
-		pic_dumphexbytes(k, addr, size, data);
+		pic_dumphexdata(k, addr, size, data);
 	} else if (mode == PIC_INHX32) {
-		pic_dumpinhxbytes(k, addr, size, data);
+		pic_dumpinhxdata(k, addr, size, data);
 	}
 	free(data);
 }
 
 /*
- * DETECT EMPTY EEPROM ROW
+ * DETECT EMPTY DATA EEPROM/FLASH ROW
  */
 int
-pic_mtbytes(uint32_t compar, uint32_t size, uint8_t *data)
+pic_mtdata(uint16_t compar, uint32_t size, uint16_t *data)
 {
 	uint32_t mtrow = 0;
 
@@ -1111,73 +654,25 @@ pic_mtbytes(uint32_t compar, uint32_t size, uint8_t *data)
 }
 
 /*
- * DUMP HEX EEPROM BYTES
+ * DUMP HEX DATA EEPROM/FLASH BYTES/WORDS
  */
 void
-pic_dumphexbytes(struct k8048 *k, uint32_t addr, uint32_t size, uint8_t *data)
+pic_dumphexdata(struct k8048 *k, uint32_t addr, uint32_t size, uint16_t *data)
 {
-	/* Dump bytes */
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
+	if (k->pic->dumphexdata)
+		k->pic->dumphexdata(k, addr, size, data);
+	else
 		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumphexbytes(k, addr, size, data);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumphexbytes(k, addr, size, data);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		printf("%s: information: unimplemented\n", __func__);
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
 }
 
 /*
- * DUMP INHX32 EEPROM BYTES
+ * DUMP INHX32 DATA EEPROM/FLASH BYTES/WORDS
  */
 void
-pic_dumpinhxbytes(struct k8048 *k, uint32_t addr, uint32_t size, uint8_t *data)
+pic_dumpinhxdata(struct k8048 *k, uint32_t addr, uint32_t size, uint16_t *data)
 {
-	/* Dump bytes */
-	switch (k->arch) {
-#ifdef K12
-	case ARCH12BIT:
-		break;
-#endif
-#ifdef K14
-	case ARCH14BIT:
-		pic14_dumpinhxbytes(k, addr, size, data);
-		break;
-#endif
-#ifdef K16
-	case ARCH16BIT:
-		pic16_dumpinhxbytes(k, addr, size, data);
-		break;
-#endif
-#ifdef K24
-	case ARCH24BIT:
-		break;
-#endif
-#ifdef K32
-	case ARCH32BIT:
-		break;
-#endif
-	default:break;
-	}
+	if (k->pic->dumpinhxdata)
+		k->pic->dumpinhxdata(k, addr, size, data);
+	else
+		printf("%s: information: unimplemented\n", __func__);
 }

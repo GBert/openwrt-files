@@ -1,16 +1,40 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "k8048.h"
+#define DEBUG
 
 /******************************************************************************
- * CTRL-C signal handler
+ * CTRL-C signal handlers
  *****************************************************************************/
 
 int io_stop = 0;
@@ -35,138 +59,188 @@ io_signal_off()
 }
 
 /******************************************************************************
- * I/O configure defaults/open/init/get error/get fault/close/sleep
+ * I/O
  *****************************************************************************/
 
+/*
+ * Configure defaults
+ */
 void
 io_config(struct k8048 *k)
 {
-        k->iot = IONONE;
-	/* tty / rpi / mcp23017 i2c / bit-bang */
-        k->fd = -1;
+	k->iot = IONONE;
 #ifdef TTY
 	/* tty */
 	strncpy(k->device, SERIAL_DEVICE, STRLEN);
 #endif
 #if defined(RPI) || defined(BITBANG)
 	/* rpi */
-        k->vpp  = GPIO_VPP;  /* TX/!MCLR/VPP     */
-        k->pgm  = GPIO_PGM;  /* PGM              */
-        k->pgc  = GPIO_PGC;  /* RTS/PGC CLOCK    */
-        k->pgdo = GPIO_PGDO; /* DTR/PGD DATA_OUT */
-        k->pgdi = GPIO_PGDI; /* CTS/PGD DATA_IN  */
+	k->vpp  = GPIO_VPP;		/* TX/!MCLR/VPP     */
+	k->pgm  = GPIO_PGM_DISABLED;	/* PGM              */
+	k->pgc  = GPIO_PGC;		/* RTS/PGC CLOCK    */
+	k->pgdo = GPIO_PGDO;		/* DTR/PGD DATA_OUT */
+	k->pgdi = GPIO_PGDI;		/* CTS/PGD DATA_IN  */
 #endif
 #ifdef MCP23017
-	/* mcp23017 i2c */
-        k->mcp = MCP23017_ADDR;
+	/* mcp23017 */
+	k->mcp = MCP_ADDR;
 #endif
 }
 
+/*
+ * Open I/O
+ */
 int
-io_open(struct k8048 *k, int standby)
+io_open(struct k8048 *k)
 {
 	if (k->iot != IONONE) {
 		printf("%s: fatal error: device already open.\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 #ifdef TTY
-	if ((strstr(k->device, "/dev/cu") == k->device) || 
-		(strstr(k->device, "/dev/tty") == k->device)) {
+	if ((strstr(k->device, "/dev/cu") == k->device) || (strstr(k->device, "/dev/tty") == k->device)) {
 		/* tty */
-		k->fd = open_port(k->device);
-		if (k->fd < 0) {
-			k->fd = -1;
+		if (serial_open(k->device) < 0)
 			return -1;
-		}
 		k->iot = IOTTY;
-		if (standby)
-			io_init(k);
+		io_signal_on();
 		return 0;
 	} 
 #endif
 #ifdef RPI
 	if (mystrcasestr(k->device, "rpi") == k->device) {
 		/* rpi */
-		gpio_open(k);
-		if (k->fd < 0) {
-			k->fd = -1;
+		if (gpio_open("/dev/mem") < 0)
 			return -1;
-		}
 		k->iot = IORPI;
-		if (standby)
-			io_init(k);
+		io_signal_on();
 		return 0;
 	} 
 #endif
 #ifdef MCP23017
 	if (strstr(k->device, "/dev/i2c") == k->device) {
-		/* mcp23017 i2c */
-		k->fd = open_i2c(k->device, k->mcp);
-		if (k->fd < 0) {
-			k->fd = -1;
+		/* mcp23017 */
+		if (mcp_open(k->device, k->mcp) < 0)
 			return -1;
-		}
 		k->iot = IOI2C;
-		if (standby)
-			io_init(k);
+		io_signal_on();
 		return 0;
 	} 
 #endif
 #ifdef BITBANG
-	if (strstr(k->device, "/dev/bit-bang-gpio") == k->device) {
-		/* bit-bang */
-		if ((k->fd = open(k->device, O_RDWR)) < 0) {
-			k->fd = -1;
+	if (strstr(k->device, "/dev/gpio-bb") == k->device) {
+		/* gpio bit-bang */
+		if (gpio_bb_open("/dev/gpio-bb") < 0)
 			return -1;
-		}
 		k->iot = IOBB;
-		struct bit_bang_gpio_config config;
-		config.clock_pin = k->pgc;
-		config.clock_falling = (k->arch == ARCH24BIT);
-		config.data_pin_input = k->pgdi;
-		config.data_pin_output = k->pgdo;
-		config.clock_delay_low = k->sleep_low;
-		config.clock_delay_high = k->sleep_high;
-		bit_bang_gpio_configure(k->fd, &config);
-		if (standby)
-			io_init(k);
+		io_signal_on();
 		return 0;
 	}
 #endif
 	return -1; /* Unsupported */
 }
 
+/*
+ * Release GPIO
+ */
 void
-io_init(struct k8048 *k)
+io_release(struct k8048 *k)
 {
-	if (k->iot == IONONE) {
-		printf("%s: fatal error: device not open.\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
 	switch (k->iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		break;
-#endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_init(k);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		init_i2c(k->fd);
+		if (k->bitrules & PGD_RELEASE)
+			gpio_release(k->pgdo);
+		if (k->bitrules & PGC_RELEASE)
+			gpio_release(k->pgc);
+		if (k->bitrules & PGM_RELEASE && k->pgm != GPIO_PGM_DISABLED)
+			gpio_release(k->pgm);
+		if (k->bitrules & VPP_RELEASE)
+			gpio_release(k->vpp);
 		break;
 #endif
 #ifdef BITBANG
-	case IOBB:	/* bit-bang */
+	case IOBB:	/* gpio bit-bang */
+		{
+		struct gpio_bb_io io = {1, 0, 0};
+
+		if (k->bitrules & PGD_RELEASE) {
+			io.pin = k->pgdo;
+			gpio_bb_io(&io);
+		}
+		if (k->bitrules & PGC_RELEASE) {
+			io.pin = k->pgc;
+			gpio_bb_io(&io);
+		}
+		if (k->bitrules & PGM_RELEASE && k->pgm != GPIO_PGM_DISABLED) {
+			io.pin = k->pgm;
+			gpio_bb_io(&io);
+		}
+		if (k->bitrules & VPP_RELEASE) {
+			io.pin = k->vpp;
+			gpio_bb_io(&io);
+		}
+		}
 		break;
 #endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
+	default:break;
 	}
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
+}
+
+void
+io_close(struct k8048 *k, int run)
+{
+	if (k->iot == IONONE) {
+		printf("%s: fatal error: device not open.\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+#if defined(RPI) || defined(MCP23017) || defined(BITBANG)
+	io_usleep(k, 10);
+	if (run) {
+		io_set_vpp(k, HIGH);
+	} else {
+		io_set_vpp(k, LOW);
+	}
+	io_release(k);
+#endif
+	switch (k->iot) {
+#ifdef TTY
+	case IOTTY:
+		/* tty */
+		serial_close();
+		break;
+#endif
+#ifdef RPI
+	case IORPI:
+		/* rpi */
+		gpio_close();
+		break;
+#endif
+#ifdef MCP23017
+	case IOI2C:
+		/* mcp23017 */
+		mcp_close();
+		break;
+#endif
+#ifdef BITBANG
+	case IOBB:
+		/* gpio bit-bang */
+		gpio_bb_close();
+		break;
+#endif
+	default:break;
+	}
+	k->iot = IONONE;
+	io_signal_off();
+}
+
+void
+io_exit(struct k8048 *k, int err)
+{
+	if (k->iot != IONONE) {
+		io_close(k, k->bitrules & VPP_RUN);
+	}
+	exit(err);
 }
 
 char *
@@ -176,23 +250,23 @@ io_error(struct k8048 *k)
 
 	switch (k->iot) {
 #ifdef TTY
-	case IOTTY:     /* tty */
+	case IOTTY:	/* tty */
 		msg = "Can't open serial I/O";
 		break;
 #endif
 #ifdef RPI
-	case IORPI:     /* rpi */
+	case IORPI:	/* rpi */
 		msg = "Can't open RPI I/O";
 		break;
 #endif
 #ifdef MCP23017
-	case IOI2C:     /* mcp23017 i2c */
+	case IOI2C:	/* mcp23017 */
 		msg = "Can't open MCP23017 I2C I/O";
 		break;
 #endif
 #ifdef BITBANG
-	case IOBB:	/* bit-bang */
-		msg = "Can't open bit-bang I/O";
+	case IOBB:	/* gpio bit-bang */
+		msg = "Can't open GPIO bit-bang I/O";
 		break;
 #endif
 	default:msg = "Unsupported I/O";
@@ -216,63 +290,6 @@ io_fault(struct k8048 *k, int errorcode)
 }
 
 void
-io_close(struct k8048 *k, int standby)
-{
-	if (k->iot == IONONE) {
-		printf("%s: fatal error: device not open.\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
-	}
-	if (standby) {
-		/* Reset I/O */
-		io_set_pgd_pgc(k, LOW, LOW);
-		io_usleep(k, 1000); /* 1ms */
-
-		/* Reset device */
-		io_set_vpp_pgm(k, LOW, LOW);
-		io_usleep(k, 1000); /* 1ms */
-		io_set_vpp_pgm(k, HIGH, LOW);
-		io_usleep(k, 1000); /* 1ms */
-		io_set_vpp_pgm(k, LOW, LOW);
-		io_usleep(k, 1000); /* 1ms */
-
-		if (k->run) {
-			/* Take device out of reset */
-			io_set_vpp_pgm(k, HIGH, LOW);
-			io_usleep(k, 1000); /* 1ms */
-		}
-	}
-	switch (k->iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		close(k->fd);
-		k->fd = -1;
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_close(k);
-		k->fd = -1;
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		close_i2c(k->fd);
-		k->fd = -1;
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* bit-bang */
-		close(k->fd);
-		k->fd = -1;
-		break;
-#endif
-	default:printf("%s: information: unimplemented\n", __func__);
-		break;
-	}
-	k->iot = IONONE;
-}
-
-void
 io_usleep(struct k8048 *k, uint32_t n)
 {
 	/* No sleep */
@@ -284,7 +301,7 @@ io_usleep(struct k8048 *k, uint32_t n)
 	if (k->iot == IOTTY && n < 10) {
 		for (uint32_t i = 0; i < n; ++i) {
 			/* 1us ttyS, 3ms ttyUSB */
-			get_cts(k->fd);
+			get_cts();
 		}
 		return;
 	}
@@ -292,9 +309,8 @@ io_usleep(struct k8048 *k, uint32_t n)
 #ifdef RPI
 	/* I/O sleep */
 	if (k->iot == IORPI && n < 10) {
-		uint8_t pgd;
 		for (uint32_t i = 0; i < n; ++i) {
-			gpio_get(k, k->pgdi, &pgd);
+			gpio_delay();
 		}
 		return;
 	}
@@ -321,42 +337,124 @@ io_usleep(struct k8048 *k, uint32_t n)
  *****************************************************************************/
 
 /*
+ * Set PGM (LVP PROGRAM OUT)
+ */
+void
+io_set_pgm(struct k8048 *k, uint8_t pgm)
+{
+	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
+	if (k->bitrules & PGM_OUT_FLIP) {
+		pgm = HIGH - pgm;
+	}
+	switch (k->iot) {
+#ifdef TTY
+	case IOTTY:	/* tty (PGM not supported) */
+		break;
+#endif
+#ifdef RPI
+	case IORPI:	/* rpi */
+		if (k->pgm != GPIO_PGM_DISABLED)
+			gpio_set(k->pgm, pgm);
+		break;
+#endif
+#ifdef MCP23017
+	case IOI2C:	/* mcp23017 */
+		mcp_set_pgm(pgm);
+		break;
+#endif
+#ifdef BITBANG
+	case IOBB:	/* gpio bit-bang */
+		if (k->pgm != GPIO_PGM_DISABLED) {
+			struct gpio_bb_io io = {0, k->pgm, pgm};
+
+			gpio_bb_io(&io);
+		}
+		break;
+#endif
+	default:printf("%s: fatal error: unsupported\n", __func__);
+	       	io_exit(k, EX_SOFTWARE); /* Panic */
+		break;
+	}
+}
+
+/*
+ * Set VPP (PROGRAM OUT)
+ */
+void
+io_set_vpp(struct k8048 *k, uint8_t vpp)
+{
+	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
+	if (k->bitrules & VPP_OUT_FLIP) {
+		vpp = HIGH - vpp;
+	}
+	switch (k->iot) {
+#ifdef TTY
+	case IOTTY:	/* tty (pgm not supported) */
+		set_tx(vpp);
+		break;
+#endif
+#ifdef RPI
+	case IORPI:	/* rpi */
+		gpio_set(k->vpp, vpp);
+		break;
+#endif
+#ifdef MCP23017
+	case IOI2C:	/* mcp23017 */
+		mcp_set_vpp(vpp);
+		break;
+#endif
+#ifdef BITBANG
+	case IOBB:	/* gpio bit-bang */
+		{
+		struct gpio_bb_io io = {0, k->vpp, vpp};
+
+		gpio_bb_io(&io);
+		}
+		break;
+#endif
+	default:printf("%s: fatal error: unsupported\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+		break;
+	}
+}
+
+/*
  * Set PGD (DATA OUT)
  */
 void
 io_set_pgd(struct k8048 *k, uint8_t pgd)
 {
+	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
 	if (k->bitrules & PGD_OUT_FLIP) {
-		/* Eg. k8048/tty: inverting, k8076/tty: non-inverting */
 		pgd = HIGH - pgd;
 	}
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		set_dtr(k->fd, pgd);
+		set_dtr(pgd);
 		break;
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(k, k->pgdo, pgd);
+		gpio_set(k->pgdo, pgd);
 		break;
 #endif
 #ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgd(k->fd, pgd);
+	case IOI2C:	/* mcp23017 */
+		mcp_set_pgd(pgd);
 		break;
 #endif
 #ifdef BITBANG
-	case IOBB:	/* bit-bang */
+	case IOBB:	/* gpio bit-bang */
 		{
-		struct bit_bang_gpio_io io = {0, k->pgdo, pgd};
+		struct gpio_bb_io io = {0, k->pgdo, pgd};
 
-		bit_bang_gpio_io(k->fd, &io);
+		gpio_bb_io(&io);
 		}
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 		break;
 	}
 }
@@ -367,130 +465,37 @@ io_set_pgd(struct k8048 *k, uint8_t pgd)
 void
 io_set_pgc(struct k8048 *k, uint8_t pgc)
 {
+	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
 	if (k->bitrules & PGC_OUT_FLIP) {
 		pgc = HIGH - pgc;
 	}
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		set_rts(k->fd, pgc);
+		set_rts(pgc);
 		break;
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_set(k, k->pgc, pgc);
+		gpio_set(k->pgc, pgc);
 		break;
 #endif
 #ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgc(k->fd, pgc);
+	case IOI2C:	/* mcp23017 */
+		mcp_set_pgc(pgc);
 		break;
 #endif
 #ifdef BITBANG
-	case IOBB:	/* bit-bang */
+	case IOBB:	/* gpio bit-bang */
 		{
-		struct bit_bang_gpio_io io = {0, k->pgc, pgc};
+		struct gpio_bb_io io = {0, k->pgc, pgc};
 
-		bit_bang_gpio_io(k->fd, &io);
+		gpio_bb_io(&io);
 		}
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
-}
-
-/*
- * Set PGD/PGC (DATA OUT/CLOCK OUT) 
- */
-void
-io_set_pgd_pgc(struct k8048 *k, uint8_t pgd, uint8_t pgc)
-{
-	if (k->bitrules & PGD_OUT_FLIP) {
-		pgd = HIGH - pgd;
-	}
-	if (k->bitrules & PGC_OUT_FLIP) {
-		pgc = HIGH - pgc;
-	}
-	switch (k->iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		set_dtr_rts(k->fd, pgd, pgc);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_set(k, k->pgdo, pgd);
-		gpio_set(k, k->pgc,  pgc);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_pgd_pgc(k->fd, pgd, pgc);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* bit-bang */
-		{
-		struct bit_bang_gpio_io io = {0, k->pgdo, pgd};
-
-		bit_bang_gpio_io(k->fd, &io);
-		io.pin = k->pgc;
-		io.bit = pgc;
-		bit_bang_gpio_io(k->fd, &io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
-}
-
-/*
- * Set VPP/PGM (VPP OUT/PGM OUT)
- */
-void
-io_set_vpp_pgm(struct k8048 *k, uint8_t vpp, uint8_t pgm)
-{
-	if (k->bitrules & VPP_OUT_FLIP) {
-		vpp = HIGH - vpp;
-	}
-	if (k->bitrules & PGM_OUT_FLIP) {
-		pgm = HIGH - pgm;
-	}
-	switch (k->iot) {
-#ifdef TTY
-	case IOTTY:	/* tty (pgm not supported) */
-		set_tx(k->fd, vpp);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_set(k, k->pgm, pgm);
-		gpio_set(k, k->vpp, vpp);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		mcp_set_vpp_pgm(k->fd, vpp, pgm);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* bit-bang */
-		{
-		struct bit_bang_gpio_io io = {0, k->pgm, pgm};
-
-		bit_bang_gpio_io(k->fd, &io);
-		io.pin = k->vpp;
-		io.bit = vpp;
-		bit_bang_gpio_io(k->fd, &io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 		break;
 	}
 }
@@ -506,33 +511,34 @@ io_get_pgd(struct k8048 *k)
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		pgd = get_cts(k->fd) ? HIGH : LOW;
+		pgd = get_cts();
 		break;
 #endif
 #ifdef RPI
 	case IORPI:	/* rpi */
-		gpio_get(k, k->pgdi, &pgd);
+		gpio_get(k->pgdi, &pgd);
 		break;
 #endif
 #ifdef MCP23017
-	case IOI2C:	/* mcp23017 i2c */
-		pgd = mcp_get_pgd(k->fd) ? HIGH : LOW;
+	case IOI2C:	/* mcp23017 */
+		pgd = mcp_get_pgd();
 		break;
 #endif
 #ifdef BITBANG
-	case IOBB:	/* bit-bang */
+	case IOBB:	/* gpio bit-bang */
 		{
-		struct bit_bang_gpio_io io = {1, k->pgdi, 0};
+		struct gpio_bb_io io = {1, k->pgdi, 0};
 
-		bit_bang_gpio_io(k->fd, &io);
+		gpio_bb_io(&io);
 		pgd = io.bit;
 		}
 		break;
 #endif
 	default:printf("%s: fatal error: unsupported\n", __func__);
-               	exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 		break;
 	}
+	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
 	if (k->bitrules & PGD_IN_FLIP) {
 		pgd = HIGH - pgd;
 	}
@@ -544,6 +550,31 @@ io_get_pgd(struct k8048 *k)
  *****************************************************************************/
 
 /*
+ * Configure chip input
+ *
+ * Clock falling is to satisfy LVP mode PIC24F devices which output data
+ * on the falling edge of the clock and not on the rising edge.
+ */
+void
+io_configure(struct k8048 *k, uint8_t clock_falling)
+{
+	k->clock_falling = clock_falling;
+#ifdef BITBANG
+	if (k->iot == IOBB) {
+		struct gpio_bb_config config;
+		config.clock_pin = k->pgc;
+		config.clock_falling = clock_falling;
+		config.data_pin_input = k->pgdi;
+		config.data_pin_output = k->pgdo;
+		config.clock_delay_low = k->sleep_low;
+		config.clock_delay_high = k->sleep_high;
+		config.lock = (k->bitrules & BB_LOCK) ? 1 : 0;
+		gpio_bb_configure(&config);
+	}
+#endif
+}
+
+/*
  * Clock bit in or out
  */
 static inline void
@@ -551,108 +582,57 @@ io_clock_bit(struct k8048 *k, uint32_t ldly, uint32_t hdly)
 {
 	io_set_pgc(k, HIGH);		/* Clock high */
 	io_usleep(k, hdly);
+
 	io_set_pgc(k, LOW);		/* Clock low */
 	io_usleep(k, ldly);
 }
 
 /*
  * Initialise data input from chip (PGD=IN, SDATA=OUTPUT)
- *
- * PICMicro will own PGD after next high transition on PGC.
  */
 void
-io_data_input(struct k8048 *k, uint8_t bit)
+io_data_input(struct k8048 *k)
 {
-	/* Pull-up or pull-down */
-	io_set_pgd(k, bit);
 #ifdef RPI
-	if (k->iot == IORPI) {
-		if (k->pgdi == k->pgdo) {
-			/* Set PGD to I/P */
-	 		gpio_reselect_input(k, k->pgdi);
-		}
+	if (k->iot == IORPI && k->pgdi == k->pgdo)
 		return;
-	}
 #endif
 #ifdef BITBANG
-	if (k->iot == IOBB) {
-		/* Set PGD to I/P */
-		struct bit_bang_gpio_io io = {1, k->pgdi, 0};
-
-		bit_bang_gpio_io(k->fd, &io);
-	}
+	if (k->iot == IOBB && k->pgdi == k->pgdo)
+		return;
 #endif
+	/* Pull-up PGD output for PGD input (Eg. Velleman K8048) */
+	io_set_pgd(k, (k->bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
 }
 
 /*
- * Clock in bit(s) using bit-banging
- *
- * The falling option is to satisfy PIC24 devices which output data
- * on the falling edge of the clock and not on the rising edge.
+ * Clock in bit(s)
  */
 uint32_t
-io_clock_in_bits(struct k8048 *k, uint32_t ldly, uint32_t hdly, uint8_t nbits, uint8_t falling)
+io_clock_in_bits(struct k8048 *k, uint32_t ldly, uint32_t hdly, uint8_t nbits)
 {
 	uint32_t bits = 0;
 
-	/* Initialise data input */
-	io_data_input(k, (k->bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
+	/* Initialise for data input */
+	io_data_input(k);
 
 	/* Clock in bits 0..N */
 	for (int i = 0; i < nbits; i++) {
-		if (!falling)
+		if (!k->clock_falling)
 			io_clock_bit(k, ldly, hdly);
 		bits |= io_get_pgd(k) << i;
-		if (falling)
+		if (k->clock_falling)
 			io_clock_bit(k, ldly, hdly);
 	}
 	return bits;
 }
 
 /*
- * Initialise data output to chip (PGD=OUT, SDATA=INPUT)
- *
- * PICMicro may own PGD until next high transition on PGC.
- *
- * Nb. We do not raise PGC before setting data direction
- * since PIC18K and PIC24 devices fail to operate when
- * doing so. PIC24 devices must have data ready before the
- * clock and PIC18K devices do not operate correctly; this
- * has been observed when testing PIC18K devices in LVP
- * mode with VDD at 3V3.
- */
-void
-io_data_output(struct k8048 *k, uint8_t bit)
-{
-#ifdef RPI
-	if (k->iot == IORPI) {
-		if (k->pgdi == k->pgdo) {
-			/* Set PGD to O/P */
-			gpio_reselect_output(k, k->pgdo);
-		}
-		return;
-	}
-#endif
-#ifdef BITBANG
-	if (k->iot == IOBB) {
-		/* Set PGD to O/P */
-		struct bit_bang_gpio_io io = {0, k->pgdo, bit};
-
-		bit_bang_gpio_io(k->fd, &io);
-		return;
-	}
-#endif
-}
-
-/*
- * Clock out bit(s) using bit-banging
+ * Clock out bit(s)
  */
 void
 io_clock_out_bits(struct k8048 *k, uint32_t ldly, uint32_t hdly, uint32_t bits, uint8_t nbits)
 {
-	/* Initialise data output */
-	io_data_output(k, bits & 1);
-
 	/* Clock out bits 0..N */
 	for (int i = 0; i < nbits; ++i) {
 		io_set_pgd(k, (bits >> i) & 1);
@@ -660,12 +640,73 @@ io_clock_out_bits(struct k8048 *k, uint32_t ldly, uint32_t hdly, uint32_t bits, 
 	}
 }
 
+/*
+ * Clock 1 bit in and 2 bits out (2-wire 4-phase)
+ */
+#ifdef K32
+uint8_t
+io_clock_bit_4phase(struct k8048 *k, uint8_t tms, uint8_t tdi)
+{
+	uint8_t tdo;
+
+	/*********
+	 * PHASE 1
+	 */
+	io_set_pgd(k, tdi);	/* TDI OUTPUT */
+	io_clock_bit(k, k->sleep_low, k->sleep_high);
+
+	/*********
+	 * PHASE 2
+	 */
+	io_set_pgd(k, tms);	/* TMS OUTPUT */
+	io_clock_bit(k, k->sleep_low, k->sleep_high);
+
+	/*********
+	 * PHASE 3
+	 */
+	io_data_input(k);
+	io_get_pgd(k);		/* DISCARD INPUT */
+	io_clock_bit(k, k->sleep_low, k->sleep_high);
+
+	/*********
+	 * PHASE 4
+	 */
+	tdo = io_get_pgd(k);	/* TDO INPUT  */
+	io_clock_bit(k, k->sleep_low, k->sleep_high);
+
+#ifdef DEBUG
+	if (k->debug >= 10)
+		printf("%s: tdo [%d] tms [%d] tdi [%d]\n",
+			__func__, tdo, tms, tdi);
+#endif
+	return tdo;
+}
+
+/*
+ * Clock multiple bits in and multiple bits out (2-wire 4-phase)
+ */
+uint32_t
+io_clock_bits_4phase(struct k8048 *k, uint8_t nbits, uint32_t tms, uint32_t tdi)
+{
+	uint32_t tdo = 0;
+
+	for (int i = 0; i < nbits; ++i)
+		tdo |= io_clock_bit_4phase(k, (tms >> i) & 1, (tdi >> i) & 1) << i;
+#ifdef DEBUG
+	if (k->debug >= 10)
+		printf("%s: tdo [%08X] nbits [%d] tms [0x%08X] tdi [0x%08X]\n",
+			__func__, tdo, nbits, tms, tdi);
+#endif
+	return tdo;
+}
+#endif /* K32 */
+
 /******************************************************************************
- * BIT BANGING FOR PROGRAM/VERIFY MODE
+ * BIT-BANG SHIFTING FOR PROGRAM/VERIFY MODE
  *****************************************************************************/
 
 /*
- * Clock in 1..32 bits for program/verify mode
+ * Shift in 1..N bits for program/verify mode
  */
 uint32_t
 io_program_in(struct k8048 *k, uint8_t nbits)
@@ -680,32 +721,31 @@ io_program_in(struct k8048 *k, uint8_t nbits)
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
-		/* mcp23017 i2c */
-		bits = io_clock_in_bits(k, k->sleep_low, k->sleep_high, nbits, k->arch == ARCH24BIT);
+		/* mcp23017 */
+		bits = io_clock_in_bits(k, k->sleep_low, k->sleep_high, nbits);
 		break;
 #ifdef BITBANG
 	case IOBB:
-		/* bit-bang */
+		/* gpio bit-bang */
 		{
-		struct bit_bang_gpio_shift shift = {1, nbits, 0};
+		struct gpio_bb_shift shift = {1, nbits, 0};
 
-		bit_bang_gpio_shift(k->fd, &shift);
+		gpio_bb_shift(&shift);
 		bits = (uint32_t)shift.bits;
 		}
 		break;
 #endif
 	}
 #ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s:  bits [0x%08X] nbits [%d]\n",__func__,
-			bits, nbits);
-	}
+	if (k->debug >= 10)
+		printf("%s:  bits [0x%08X] nbits [%d]\n",
+			__func__, bits, nbits);
 #endif
 	return bits;
 }
 
 /*
- * Clock out 1..32 bits for program/verify mode
+ * Shift out 1..N bits for program/verify mode
  */
 void
 io_program_out(struct k8048 *k, uint32_t bits, uint8_t nbits)
@@ -714,25 +754,24 @@ io_program_out(struct k8048 *k, uint32_t bits, uint8_t nbits)
 	if (k->busy)
 		io_program_feedback(k, 'o');
 #ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s: bits [0x%08X] nbits [%d]\n",__func__,
-			bits, nbits);
-	}
+	if (k->debug >= 10)
+		printf("%s: bits [0x%08X] nbits [%d]\n",
+			__func__, bits, nbits);
 #endif
 	/* OUTPUT BITS */
 	switch (k->iot) {
 	default:/* tty */
 		/* rpi */
-		/* mcp23017 i2c */
+		/* mcp23017 */
 		io_clock_out_bits(k, k->sleep_low, k->sleep_high, bits, nbits);
 		break;
 #ifdef BITBANG
 	case IOBB:
-		/* bit-bang */
+		/* gpio bit-bang */
 		{
-		struct bit_bang_gpio_shift shift = {0, nbits, (uint64_t)bits};
+		struct gpio_bb_shift shift = {0, nbits, (uint64_t)bits};
 
-		bit_bang_gpio_shift(k->fd, &shift);
+		gpio_bb_shift(&shift);
 		}
 		break;
 #endif
@@ -771,47 +810,54 @@ io_test0(struct k8048 *k, int pin, int t)
 
 	switch (pin) {
 	case 0: printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
+		io_set_vpp(k, LOW);
 		break;
 	case 1: printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
+		io_set_pgc(k, LOW);
 		break;
 	case 2: printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
+		io_set_pgd(k, LOW);
 		break;
 	case 3: printf("PGM LOW  [3 seconds]\n");
+		io_set_pgm(k, LOW);
 		break;
 	}
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-	sleep(3);
+	if (!io_stop)
+		sleep(3);
 
 	switch (pin) {
 	case 0: printf("VPP HIGH (ICSP 1) (D-SUB-9 TX 3) [%d seconds]\n", t);
-		io_set_vpp_pgm(k, HIGH, LOW);
+		io_set_vpp(k, HIGH);
 		break;
 	case 1: printf("PGC HIGH (ICSP 5) (D-SUB-9 RTS 7) [%d seconds]\n", t);
-		io_set_pgd_pgc(k, LOW, HIGH);
+		io_set_pgc(k, HIGH);
 		break;
 	case 2: printf("PGD HIGH (ICSP 4) (D-SUB-9 DTR 3) [%d seconds]\n", t);
-		io_set_pgd_pgc(k, HIGH, LOW);
+		io_set_pgd(k, HIGH);
 		break;
 	case 3: printf("PGM HIGH [%d seconds]\n", t);
-		io_set_vpp_pgm(k, LOW, HIGH);
+		io_set_pgm(k, HIGH);
 		break;
 	}
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 
 	switch (pin) {
 	case 0: printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
+		io_set_vpp(k, LOW);
 		break;
 	case 1: printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
+		io_set_pgc(k, LOW);
 		break;
 	case 2: printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
+		io_set_pgd(k, LOW);
 		break;
 	case 3: printf("PGM LOW  [3 seconds]\n");
+		io_set_pgm(k, LOW);
 		break;
 	}
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-	sleep(3);
+	if (!io_stop)
+		sleep(3);
 	
 	printf("\nTEST DONE\n\n");
 }
@@ -824,51 +870,51 @@ io_test1(struct k8048 *k, int t)
 {
 	printf("\nTEST MODE 1 [D-SUB-9]\n\n");
 
-	k->bitrules = 0; /* Disable rules */
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
+	k->bitrules = 0; /* Disable BITRULES */
 
 	printf("Tx  SET  (+VE) (D-SUB-9 3) [%d seconds] ", t);
 	fflush(stdout);
-	io_set_vpp_pgm(k, HIGH, LOW);
-	sleep(t);
+	io_set_vpp(k, HIGH);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n", io_get_pgd(k));
 
 	printf("Tx  CLR  (-VE) (D-SUB-9 3) [%d seconds] ", t);
 	fflush(stdout);
-	io_set_vpp_pgm(k, LOW, LOW);
-	sleep(t);
+	io_set_vpp(k, LOW);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n\n", io_get_pgd(k));
 
 	printf("DTR SET  (+VE) (D-SUB-9 4) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgd(k, HIGH);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n", io_get_pgd(k));
 
 	printf("DTR CLR  (-VE) (D-SUB-9 4) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgd(k, LOW);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n\n", io_get_pgd(k));
 	
 	printf("RTS SET  (+VE) (D-SUB-9 7) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgc(k, HIGH);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n", io_get_pgd(k));
 
 	printf("RTS CLR  (-VE) (D-SUB-9 7) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgc(k, LOW);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("CTS IN: %d\n\n", io_get_pgd(k));
 	
 	printf("TEST DONE\n\n");
-	
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
 }
 
 /*
@@ -879,49 +925,49 @@ io_test2(struct k8048 *k, int t)
 {
 	printf("\nTEST MODE 2 [ICSP]\n\n");
 
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-
 	printf("VPP LOW  (0V)  (ICSP 1) [%d seconds] ", t);
 	fflush(stdout);
-	io_set_vpp_pgm(k, LOW, LOW);
-	sleep(t);
+	io_set_vpp(k, LOW);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n", io_get_pgd(k));
 
 	printf("VPP HIGH (12V) (ICSP 1) [%d seconds] ", t);
 	fflush(stdout);
-	io_set_vpp_pgm(k, HIGH, LOW);
-	sleep(t);
+	io_set_vpp(k, HIGH);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n\n", io_get_pgd(k));
 
 	printf("PGD LOW  (0V)  (ICSP 4) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgd(k, LOW);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n", io_get_pgd(k));
 
 	printf("PGD HIGH (5V)  (ICSP 4) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgd(k, HIGH);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n\n", io_get_pgd(k));
 
 	printf("PGC LOW  (0V)  (ICSP 5) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgc(k, LOW);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n", io_get_pgd(k));
 
 	printf("PGC HIGH (5V)  (ICSP 5) [%d seconds] ", t);
 	fflush(stdout);
 	io_set_pgc(k, HIGH);
-	sleep(t);
+	if (!io_stop)
+		sleep(t);
 	printf("PGD IN: %d\n\n", io_get_pgd(k));
 
 	printf("TEST DONE\n\n");
-	
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
 }
 
 /*
@@ -934,13 +980,9 @@ io_test3(struct k8048 *k, int t)
 
 	printf("\nTEST MODE 3 [D-SUB-9 RTS 7 (PGC) DTR 4 (PGD)] CTRL-C TO STOP\n\n");
 
-	io_signal_on();
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-
 	while (!io_stop) {
-		io_set_pgd_pgc(k, data, clk);
+		io_set_pgd(k, data);
+		io_set_pgc(k, clk);
 		switch (t) {
 		case 0:	/* None */
 			break;
@@ -956,15 +998,10 @@ io_test3(struct k8048 *k, int t)
 	}
 
 	printf("\nTEST DONE\n\n");
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-	
-	io_signal_off();
 }
 
 /*
- * Test PIC16F627 on Velleman K8048
+ * Test PIC16F627 on Velleman K8048 (PIC16F628A is compatible)
  *
  * Program:
  *	k14 program asm/pic16f627/debug.hex
@@ -979,13 +1016,8 @@ io_test4(struct k8048 *k, int t)
 
 	printf("\nTEST MODE 4 [16F627 debug.asm] CTRL-C TO STOP\n\n");
 
-	io_signal_on();
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-
-	/* Pull-up PGD output for PGD input on Velleman K8048 */
-	io_data_input(k, (k->bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
+	/* Initialise for data input */
+	io_data_input(k);
 
 	while (!io_stop) {
 		/* Handshake */
@@ -1028,11 +1060,6 @@ io_test4(struct k8048 *k, int t)
 	}
 
 	printf("\nTEST DONE\n\n");
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-
-	io_signal_off();
 }
 #endif /* KTEST */
 
@@ -1044,16 +1071,6 @@ io_test4(struct k8048 *k, int t)
  * Start or stop firmware (not Velleman K8048)
  */
 #ifdef KIO
-void
-io_test_run(struct k8048 *k, int run)
-{
-	if (run) {
-		io_set_vpp_pgm(k, HIGH, LOW);
-	} else {
-		io_set_vpp_pgm(k, LOW, LOW);
-	}
-}
-
 /*
  * Send an 8-bit byte
  */
@@ -1107,7 +1124,7 @@ io_test_in(struct k8048 *k, int t1, int t2, uint8_t *byte)
 	}
 
 	/* Get start bit */
-	if (io_clock_in_bits(k, t1, t1, 1, 0) != LOW) {
+	if (io_clock_in_bits(k, t1, t1, 1) != LOW) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID START BIT (NOT LOW)\n", __func__);
 		return ERRPROTOCOL;
@@ -1115,13 +1132,13 @@ io_test_in(struct k8048 *k, int t1, int t2, uint8_t *byte)
 
 	/* Get 8-bit byte */
 	for (i = 0; !io_stop && i < 8; i++) {
-		bit = io_clock_in_bits(k, t1, t1, 1, 0);
+		bit = io_clock_in_bits(k, t1, t1, 1);
 		parity ^= bit;
 		*byte |= (bit << i);
 	}
 
 	/* Get parity bit */	
-	bit = io_clock_in_bits(k, t1, t1, 1, 0);
+	bit = io_clock_in_bits(k, t1, t1, 1);
 	if (bit != parity) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID PARITY BIT\n", __func__);
@@ -1129,7 +1146,7 @@ io_test_in(struct k8048 *k, int t1, int t2, uint8_t *byte)
 	}
 
 	/* Get stop bit */
-	if (io_clock_in_bits(k, t1, t1, 1, 0) != HIGH) {
+	if (io_clock_in_bits(k, t1, t1, 1) != HIGH) {
 		if (k->debug >= 10)
 			fprintf(stderr, "%s: INVALID STOP BIT (NOT HIGH)\n", __func__);
 		return ERRPROTOCOL;
@@ -1138,6 +1155,8 @@ io_test_in(struct k8048 *k, int t1, int t2, uint8_t *byte)
 	/* Firmware processing delay */
 	io_usleep(k, t2);
 
+	if (k->debug >= 10)
+		fprintf(stderr, "%s: OKAY [0x%02X]\n", __func__, *byte);
 	return ERRNONE;
 }
 
@@ -1156,17 +1175,17 @@ io_test_command(struct k8048 *k, int t1, int t2, uint8_t *cmdarg, int cmdargc, u
 
 	if (cmdargc < 0) {
 		printf("%s: fatal error: invalid length: %d\n", __func__, cmdargc);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 	
 	if (resw < 0 || resw > 4) {
 		printf("%s: fatal error: invalid width: %d\n", __func__, resw);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 
 	if (resw > 0 && res == NULL) {
 		printf("%s: fatal error: invalid result pointer: (NULL)\n", __func__);
-		exit(EX_SOFTWARE); /* Panic */
+		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 
 	/* Send command */
@@ -1327,16 +1346,12 @@ io_test5(struct k8048 *k, int t)
 
 	printf("\nTEST MODE 5 [ICSPIO] CTRL-C TO STOP\n\n");
 
-	io_signal_on();
-
-	io_set_pgd_pgc(k, LOW, LOW);
-
 	/* VPP LOW */
-	io_set_vpp_pgm(k, LOW, LOW);
+	io_set_vpp(k, LOW);
 	io_usleep(k, 10000); /* 10ms */
 
 	/* VPP HIGH */
-	io_set_vpp_pgm(k, HIGH, LOW);
+	io_set_vpp(k, HIGH);
 	io_usleep(k, 10000); /* 10ms */
 
 	while (!io_stop) {
@@ -1363,10 +1378,5 @@ io_test5(struct k8048 *k, int t)
 	}
 
 	printf("\nTEST DONE\n\n");
-
-	io_set_vpp_pgm(k, LOW, LOW);
-	io_set_pgd_pgc(k, LOW, LOW);
-	
-	io_signal_off();
 }
 #endif /* KTEST && KIO */

@@ -1,10 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef _MCP23017_H
@@ -75,20 +98,36 @@
 #define OLATB    (0x1A)
 #endif
 
-#define IOCON (IOCONA)
-#define IOCON_BANK   (0x80)
-#define IOCON_MIRROR (0x40)
-#define IOCON_SEQOP  (0x20)
-#define IOCON_DISSLW (0x10)
-#define IOCON_HAEN   (0x08)
-#define IOCON_ODR    (0x04)
-#define IOCON_INTPOL (0x02)
-#define IOCON_U      (0x01)
+#define IOCONX_BANK   (0x80)
+#define IOCONX_MIRROR (0x40)
+#define IOCONX_SEQOP  (0x20)
+#define IOCONX_DISSLW (0x10)
+#define IOCONX_HAEN   (0x08)
+#define IOCONX_ODR    (0x04)
+#define IOCONX_INTPOL (0x02)
+#define IOCONX_U      (0x01)
+
+/*
+ * MCP23016
+ */
+#define GP0     (0x00)
+#define GP1     (0x01)
+#define OLAT0   (0x02)
+#define OLAT1   (0x03)
+#define IPOL0   (0x04)
+#define IPOL1   (0x05)
+#define IODIR0  (0x06)
+#define IODIR1  (0x07)
+#define INTCAP0 (0x08)
+#define INTCAP1 (0x09)
+#define IOCON0  (0x0A)
+#define IOCON1  (0x0B)
 
 /* mcp23017 i2c address (default) */
-#define MCP23017_ADDR (0x020)
+#define MCP_ADDR (0x020)
 
 /* I/O ports */
+#define MCP_IOCON (IOCONA)
 #define MCP_IODIR (IODIRA)
 #define MCP_OUT   (OLATA)
 #define MCP_IN    (GPIOA)
@@ -100,18 +139,14 @@
 #define MCP_PGDI (0x08)
 #define MCP_PGM  (0x10)
 
-/* shadow output */
-uint8_t mcp_latch;
-
-int open_i2c(const char *, int);
-void init_i2c(int);
-void close_i2c(int);
-void mcp_set(int, uint8_t, uint8_t);
-void mcp_get(int, uint8_t, uint8_t *);
-void mcp_set_pgd(int, int);
-void mcp_set_pgc(int, int);
-void mcp_set_pgd_pgc(int, int, int);
-void mcp_set_vpp_pgm(int, int, int);
-int mcp_get_pgd(int);
+int mcp_open(const char *, int);
+void mcp_close(void);
+void mcp_set(uint8_t, uint8_t);
+void mcp_get(uint8_t, uint8_t *);
+void mcp_set_pgm(int);
+void mcp_set_vpp(int);
+void mcp_set_pgd(int);
+void mcp_set_pgc(int);
+int mcp_get_pgd(void);
 
 #endif /* !_MCP23017_H */

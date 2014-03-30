@@ -1,10 +1,33 @@
 /*
- * Velleman K8048 Programmer for FreeBSD and others.
- *
- * Copyright (c) 2005-2013 Darron Broad
+ * Copyright (C) 2005-2014 Darron Broad
  * All rights reserved.
  *
- * Licensed under the terms of the BSD license, see file LICENSE for details.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name `Darron Broad' nor the names of any contributors
+ *    may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include "k8048.h"
@@ -50,44 +73,3 @@ mystrcasestr(const char *haystack, const char *needle)
 	}
 	return NULL;
 }
-	
-/*
- * Get quoted command line argument
- */
-#if 0
-char *
-getarg(const char *line)
-{
-	int len = strlen(line);
-	if (len == 0)
-		return NULL;
-
-	char *arg = calloc(1 + len, sizeof(char));
-	if (arg == NULL) {
-		printf("%s: fatal error: calloc failed\n", __func__);
-		exit(EX_OSERR); /* Panic */
-	}
-
-	int i = 0;
-	while (line[i] && line[i] == ' ')
-		i++;
-
-	char q;
-	if (line[i] == '\'' || line[i] == '"')
-		q = line[i++];
-	else
-		q = ' ';
-
-	int j = 0;
-	while (line[i] && line[i] != q)
-		arg[j++] = line[i++];
-
-	if (j == 0) {
-		free(arg);
-		return NULL;
-	}
-	arg[j] = '\0';
-
-	return arg;
-}
-#endif
