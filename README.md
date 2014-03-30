@@ -20,14 +20,13 @@ in your OpenWrt source tree. This will automatically add the kmod-gpio-bb module
 Mark 'picprog-new' under 'Utilities' to compile and install it.
 
 ### Using
-On the OpenWrt Router just install both modules:
-<pre><code>insmod mc-icsp
+On the OpenWrt Router install the module:
+<pre><code>insmod gpio-bb
 insmod gpio-bb</pre></code>
 and add the device:
 <pre><code>mknod /dev/gpi-bb c 180 0</pre></code>
-Please edit the /root/.k8048 to your settings.
+Please apply your GPIO settings in /root/.k8048 .
 ### Test
-
 <pre><code>root@OpenWrt:~# ls -l /usr/bin/k\*
 root@OpenWrt:~# ls -l /usr/bin/k\*
 lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k14 -> /usr/bin/k8048
@@ -36,8 +35,6 @@ lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k16 -> /usr/bi
 lrwxrwxrwx    1 root     root            17 Mar 30 13:24 /usr/bin/killall -> ../../bin/busybox
 -rwxr-xr-x    1 root     root         19624 Mar 30 13:18 /usr/bin/kio
 lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/ktest -> /usr/bin/k8048
-
-root@OpenWrt:~# k16 lvp info
 root@OpenWrt:~# k16 lvp info
 [000000] [PROGRAM]     8000 WORDS (0400 ROWS OF 0020 WORDS)
 [200000] [IDLOCATION1] FF .
