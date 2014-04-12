@@ -23,7 +23,7 @@ Mark 'picprog-new' under 'Utilities' to compile and install it.
 On the OpenWrt Router install the module:
 <pre><code>insmod gpio-bb</pre></code>
 and add the device:
-<pre><code>mknod /dev/gpi-bb c 180 0</pre></code>
+<pre><code>mknod /dev/gpio-bb c 180 0</pre></code>
 Please apply your GPIO settings in /root/.k8048 .
 ### Test
 <pre><code>root@OpenWrt:~# ls -l /usr/bin/k\*
