@@ -1,6 +1,6 @@
 ## OpenWrt Feeds
 
-This Git contains an OpenWrt feed. The main purpose is an in system low-voltage programmer for PIC18 Microcontroller.
+This Git contains an OpenWrt feed. The main purpose is an in system low-voltage programmer for PIC Microcontroller.
 
 The mc-icsp module was written by Eran Duchan http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/ -
 I just added a GPIO customizing module (mc-icsp-gpio-custom).
