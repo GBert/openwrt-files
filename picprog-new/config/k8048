@@ -76,6 +76,7 @@ BUSY=0
 
 # WR-841N(D) BIT-BANG GPIO (single PGD DATA I/O)
 #
+#  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
 # !MCLR/VPP        - PI/O 
 VPP=2
 # PGM              - PI/O 
