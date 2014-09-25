@@ -50,4 +50,9 @@ define Build/Compile
 	modules
 endef
 
+define Package/postinst
+#!/bin/sh
+mknod /dev/gpio-bb c 180 0
+endef
+
 $(eval $(call KernelPackage,bit-bang-gpio))
