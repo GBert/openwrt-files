@@ -75,7 +75,7 @@ sys	0m 0.87s
 ### Todo
 
 Darron Broad is doing a very good job getting more PICs integrated. The speed is impressive.
-PIC32 is also supported on some devices (mainly in SPDIP package)
+PIC32 is also supported for some devices (mainly in SPDIP package)
  
 ### Thanks
 
