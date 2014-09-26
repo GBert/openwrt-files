@@ -6,7 +6,7 @@ The mc-icsp module was written by Eran Duchan http://www.pavius.net/2011/06/lpic
 I just added a GPIO customizing module (mc-icsp-gpio-custom).
 
 Darron Broad was so kind to adapt his k8048 programmer code and greatly optimzed the modules. He is still
-active and is on the way to get more PICs working (eg PIC32). 
+active and got more PICs working (including PIC32).
 
 ### OpenWrt Compiling
 
@@ -75,7 +75,7 @@ sys	0m 0.87s
 ### Todo
 
 Darron Broad is doing a very good job getting more PICs integrated. The speed is impressive.
-Hopefully sometime the PIC32 are supported.
+PIC32 is also supported on some devices (mainly in SPDIP package)
  
 ### Thanks
 
