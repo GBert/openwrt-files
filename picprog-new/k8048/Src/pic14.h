@@ -62,12 +62,16 @@ struct pic14_dsmap {
 	uint8_t nconfig;	/* NUMBER OF CONFIG WORDS AT CONFIG BASE + 7           */
 	uint8_t ncalib;		/* NUMBER OF CALIB. WORDS AT CONFIG BASE + 7 + nconfig */
 	uint8_t nlatches;	/* PROGRAM FLASH MULTI-WORD LATCHES                    */
-        uint8_t erasesize;	/* ERASE BLOCK SIZE IF ROW ERASE SUPPORTED             */
+	uint8_t erasesize;	/* ERASE BLOCK SIZE IF ROW ERASE SUPPORTED             */
 #if 0
 	uint16_t dataflash;	/* data flash size in bytes 0=none                     */
 	uint8_t idlatches;	/* USERID MULTI-WORD LATCHES                           */
 #endif
 };
+
+/******************************************************************************
+ * MEMORY
+ *****************************************************************************/
 
 #define PIC14_WORD(X) (((X) * 8192.0) / 14) /* KB to words */
 
@@ -80,14 +84,6 @@ struct pic14_dsmap {
 #define PIC14_CONFIG_WORD1 (7)		/* 2007 or 8007 */
 #define PIC14_CONFIG_WORD2 (8)		/* 2008 or 8008 */
 #define PIC14_CONFIG_WORD3 (9)		/* 8009         */
-
-/*
- * MEMORY REGIONS
- */
-#define PIC14_REGIONNOTSUP (0)		/* ?                   */
-#define PIC14_REGIONCODE   (1)		/* 0 .. FLASH SIZE     */
-#define PIC14_REGIONCONFIG (2)		/* 0x2000 or 0x8000 .. */
-#define PIC14_REGIONDATA   (3)		/* 0x2100 or 0xf000 .. */
 
 /*
  * DEVICE ID / REVISION
@@ -722,6 +718,27 @@ struct pic14_dsmap {
 #define PIC16LF1613 (0x304D)
 
 /*
+ * DS40001720B
+ *  PIC16F1614	--11 0000 0111 1000 0x2XXX
+ *  PIC16LF1614	--11 0000 0111 1010 0x2XXX
+ *  PIC16F1615	--11 0000 0111 1100 0x2XXX
+ *  PIC16LF1615	--11 0000 0111 1110 0x2XXX
+ *  PIC16F1618	--11 0000 0111 1001 0x2XXX
+ *  PIC16LF1618	--11 0000 0111 1011 0x2XXX
+ *  PIC16F1619	--11 0000 0111 1101 0x2XXX
+ *  PIC16LF1619	--11 0000 0111 1111 0x2XXX
+ */
+#define DS40001720B (40001720)
+#define PIC16F1614  (0x3078)
+#define PIC16LF1614 (0x307A)
+#define PIC16F1615  (0x307C)
+#define PIC16LF1615 (0x307E)
+#define PIC16F1618  (0x3079)
+#define PIC16LF1618 (0x307B)
+#define PIC16F1619  (0x307D)
+#define PIC16LF1619 (0x307F)
+
+/*
  * DS40001714C
  *  PIC16F1713  0x3049 0x2xxx
  *  PIC16LF1713 0x304B 0x2xxx
@@ -759,9 +776,49 @@ struct pic14_dsmap {
 #define PIC12F1572  (0x3050)
 #define PIC12LF1572 (0x3052)
 
-/******************************************************************************
- * PROTOTYPES
- *****************************************************************************/
+/*
+ * DS40001754A
+ *  PIC16F1764  0x3080 0x2xxx
+ *  PIC16LF1764 0x3082 0x2xxx
+ *  PIC16F1765  0x3081 0x2xxx
+ *  PIC16LF1765 0x3083 0x2xxx
+ *  PIC16F1768  0x3084 0x2xxx
+ *  PIC16LF1768 0x3086 0x2xxx
+ *  PIC16F1769  0x3085 0x2xxx
+ *  PIC16LF1769 0x3087 0x2xxx
+ */
+#define DS40001754A (40001754)
+#define PIC16F1764  (0x3080)
+#define PIC16LF1764 (0x3082)
+#define PIC16F1765  (0x3081)
+#define PIC16LF1765 (0x3083)
+#define PIC16F1768  (0x3084)
+#define PIC16LF1768 (0x3086)
+#define PIC16F1769  (0x3085)
+#define PIC16LF1769 (0x3087)
+
+/*
+ * DS40001766A
+ *  PIC16F1574	0x3000 0x2xxx
+ *  PIC16LF1574	0x3004 0x2xxx
+ *  PIC16F1575	0x3001 0x2xxx
+ *  PIC16LF1575	0x3005 0x2xxx
+ *  PIC16F1578	0x3002 0x2xxx
+ *  PIC16LF1578	0x3006 0x2xxx
+ *  PIC16F1579	0x3003 0x2xxx
+ *  PIC16LF1579	0x3007 0x2xxx
+ */
+#define DS40001766A (40001766)
+#define PIC16F1574  (0x3000)
+#define PIC16LF1574 (0x3004)
+#define PIC16F1575  (0x3001)
+#define PIC16LF1575 (0x3005)
+#define PIC16F1578  (0x3002)
+#define PIC16LF1578 (0x3006)
+#define PIC16F1579  (0x3003)
+#define PIC16LF1579 (0x3007)
+
+/******************************************************************************/
 
 uint32_t pic14_arch(struct k8048 *);
 void pic14_selector(void);

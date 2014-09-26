@@ -45,8 +45,10 @@ struct pic_ops pic12_ops = {
 	.get_program_size          = pic12_get_program_size,
 	.get_data_size             = pic12_get_data_size,
 	.get_executive_size        = NULL,
+	.get_boot_size             = NULL,
 	.read_program_memory_block = pic12_read_program_memory_block,
 	.read_data_memory_block    = pic12_read_data_memory_block,
+	.write_panel               = NULL,
 	.program                   = pic12_program,
 	.verify                    = pic12_verify,
 	.bulk_erase                = pic12_bulk_erase,
@@ -711,24 +713,30 @@ pic12_write_config(struct k8048 *k, uint16_t config)
  *****************************************************************************/
 
 /*
- * DETERMINE MEMORY REGION: CODE (PROGRAM FLASH + DATA FLASH + USERID) OR CONFIG WORD
+ * DETERMINE MEMORY REGION: CODE (PROGRAM FLASH + DATA FLASH + USERID) OR CONFIG
+ *
+ *  RETURN PIC_REGIONCODE:
+ *  	0 .. FLASH SIZE
+ *
+ *  RETURN PIC_REGIONCONFIG:
+ *  	0xFFF
  */
 uint16_t
 pic12_getregion(uint16_t address)
 {
-	/* CODE/DATA FLASH/USERID */
+	/* CODE: PROGRAM FLASH/DATA FLASH/USERID */
 	uint16_t code_high = pic12_map[pic12_index].flash + pic12_map[pic12_index].dataflash + 3;
 
 	if (address <= code_high) {
-		return PIC12_REGIONCODE;
+		return PIC_REGIONCODE;
 	}
 	/* CONFIG */
 	if (address == PIC12_CONFIG) {
-		return PIC12_REGIONCONFIG;
+		return PIC_REGIONCONFIG;
 	}
 	printf("%s: warning: address unsupported [%04X]\n",
 		__func__, address);
-	return PIC12_REGIONNOTSUP;
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -738,13 +746,13 @@ uint16_t
 pic12_initregion(struct k8048 *k, uint16_t region, uint16_t *address)
 {
 	switch (region) {
-	case PIC12_REGIONCODE:
+	case PIC_REGIONCODE:
 		/* Skip config word */
 		pic12_increment_address(k);
 		*address = 0;
 		return region;
 		break;
-	case PIC12_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		*address = PIC12_CONFIG;
 		return region;
 		break;
@@ -752,7 +760,7 @@ pic12_initregion(struct k8048 *k, uint16_t region, uint16_t *address)
 		__func__, region);
 		break;
 	}
-	return PIC12_REGIONNOTSUP;
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -762,8 +770,8 @@ void
 pic12_loadregion(struct k8048 *k, uint16_t region, uint16_t word)
 {
 	switch (region) {
-	case PIC12_REGIONCODE:
-	case PIC12_REGIONCONFIG:
+	case PIC_REGIONCODE:
+	case PIC_REGIONCONFIG:
 		pic12_load_data_for_program_memory(k, word);
 		break;
 	default:printf("%s: warning: region unsupported [%d]\n",
@@ -794,7 +802,7 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 	/*
 	 * Cache config word
 	 */
-	if (region == PIC12_REGIONCONFIG) {
+	if (region == PIC_REGIONCONFIG) {
 		pic12_conf.config = data;
 		return;
 	}
@@ -802,7 +810,7 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 	/*
 	 * Write single or multi-word code
 	 */
-	if (region == PIC12_REGIONCODE) {
+	if (region == PIC_REGIONCODE) {
 		if (data != PIC_VOID) {
 			/* Ignore OSCCAL */
 			if (pic12_map[pic12_index].backupaddr != 0) {
@@ -818,7 +826,7 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 				}
 			}
 			/* Cache */
-			pic12_loadregion(k, PIC12_REGIONCODE, data);
+			pic12_loadregion(k, PIC_REGIONCODE, data);
 			write_pending = 1;
 		}
 		/* Flush */
@@ -832,18 +840,6 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 		}
 		return;
 	}
-#if 0
-	/*
-	 * Write single word data EEPROM (NOT IMPLEMENTED IN HARDWARE)
-	 */
-
-	/* Store data in working register */
-	pic12_loadregion(k, region, data);
-
-	/* Program working register */
-	pic12_begin_programming(k);
-	pic12_end_programming(k);
-#endif
 }
 
 /*
@@ -857,8 +853,8 @@ pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 	uint16_t vdata = 0;
 
 	switch (region) {
-	case PIC12_REGIONCODE:
-	case PIC12_REGIONCONFIG:
+	case PIC_REGIONCODE:
+	case PIC_REGIONCONFIG:
 		vdata = pic12_read_data_from_program_memory(k);
 		break;
 	default:printf("%s: warning: region unsupported [%d]\n",
@@ -887,7 +883,7 @@ void
 pic12_program(struct k8048 *k, char *filename, int blank)
 {
 	uint16_t hex_address, PC_address = 0, wdata;
-	uint16_t new_region, current_region = PIC12_REGIONNOTSUP;
+	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
 	/* Get HEX */
@@ -906,21 +902,21 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);
 		new_region = pic12_getregion(hex_address);
-		if (new_region == PIC12_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
-			if (current_region == PIC12_REGIONCODE)
-				pic12_programregion(k, PIC_VOID, PIC12_REGIONCODE, PIC_VOID);
+			if (current_region == PIC_REGIONCODE)
+				pic12_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
 			pic12_program_verify(k); /* Reset P.C. */
-			if (pic12_initregion(k, new_region, &PC_address) == PIC12_REGIONNOTSUP)
+			if (pic12_initregion(k, new_region, &PC_address) == PIC_REGIONNOTSUP)
 				continue;
 			current_region = new_region;
 		}
 
 		/* Skip over unused P.C. locations */
 		while (hex_address > PC_address) {
-			if (current_region == PIC12_REGIONCODE)
-				pic12_programregion(k, PC_address, PIC12_REGIONCODE, PIC_VOID);
+			if (current_region == PIC_REGIONCODE)
+				pic12_programregion(k, PC_address, PIC_REGIONCODE, PIC_VOID);
 			PC_address++;
 			pic12_increment_address(k);
 		}
@@ -935,8 +931,8 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 			total++;
 		}
 	}
-	if (current_region == PIC12_REGIONCODE)
-		pic12_programregion(k, PIC_VOID, PIC12_REGIONCODE, PIC_VOID);
+	if (current_region == PIC_REGIONCODE)
+		pic12_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
 
 	pic12_standby(k);
 	
@@ -956,7 +952,7 @@ uint32_t
 pic12_verify(struct k8048 *k, char *filename)
 {
 	uint16_t hex_address, PC_address = 0, wdata;
-	uint16_t new_region, current_region = PIC12_REGIONNOTSUP;
+	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t fail = 0, total = 0;
 
 	/* Get HEX */
@@ -971,11 +967,11 @@ pic12_verify(struct k8048 *k, char *filename)
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);
 		new_region = pic12_getregion(hex_address);
-		if (new_region == PIC12_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
 			pic12_program_verify(k); /* Reset P.C. */
-			if (pic12_initregion(k, new_region, &PC_address) == PIC12_REGIONNOTSUP)
+			if (pic12_initregion(k, new_region, &PC_address) == PIC_REGIONNOTSUP)
 				continue;
 			current_region = new_region;
 		}
@@ -1109,7 +1105,7 @@ pic12_dumphexcode(struct k8048 *k, uint32_t address, uint32_t size, uint32_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: program flash empty\n", __func__);
+		printf("%s: information: flash empty\n", __func__);
 }
 
 /*
@@ -1162,7 +1158,7 @@ pic12_dumphexdata(struct k8048 *k, uint32_t address, uint32_t size, uint16_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: data flash empty\n", __func__);
+		printf("%s: information: data empty\n", __func__);
 }
 
 /*

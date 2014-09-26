@@ -33,18 +33,60 @@
 #ifndef _PIC32_H
 #define _PIC32_H
 
+/******************************************************************************
+ * 32-bit CONFIGURATION
+ *****************************************************************************/
+
+#define PIC32_MASK (0xFFFFFFFF)
+#define PIC32_CONFIG_MAX (4)
+
 struct pic32_config {
 	uint32_t deviceid;
-	uint8_t status;
+	uint32_t config[PIC32_CONFIG_MAX];	/* CONFIG WORDS              */
+	uint32_t configaddr;			/* BOOT ADDR + SIZE * 4 - 16 */
+	uint32_t status;
 };
 
 struct pic32_dsmap {
 	char devicename[STRLEN];
 	uint32_t deviceid;
 	uint32_t idmask;
+	uint32_t datasheet;
+	uint32_t boot;			/* BOOT FLASH SIZE IN WORDS    */
+	uint32_t prog;			/* PROGRAM FLASH SIZE IN WORDS */
+	uint32_t row;			/* PROGRAM ROW SIZE IN WORDS   */
+	uint32_t page;			/* PROGRAM PAGE SIZE IN WORDS  */
 };
 
-#define PIC32_TIMEOUT (1)
+/******************************************************************************
+ * MEMORY
+ *****************************************************************************/
+
+/*
+ * DEBUG SEGMENT
+ */
+#define PIC32_DMSEG (0xFF200000)	/* 0xFF200000 .. 0xFF2XXXXX */
+
+/*
+ * KSEG1 0xA0000000 .. 0xBFFFFFFF (CACHED DISABLED)
+ */
+#define PIC32_RAM   (0xA0000000)	/* 0xA0000000 .. 0xAXXXXXXX RAM           */
+#define PIC32_CODE  (0xBD000000)	/* 0xBD000000 .. 0xBDXXXXXX PROGRAM FLASH */
+#define PIC32_BOOT  (0xBFC00000)	/* 0xBFC00000 .. 0xBFC02FFF BOOT FLASH    */
+
+/*
+ * KSEG1 PERIPHERALS
+ */
+#define PIC32_PERI  (0xBF800000)	/* 0xBF800000 .. 0xBF8FFFFF PERIPHERAL    */
+#define PIC32_DEVID (0xBF80F220)	/* DEVICE ID */
+
+/*
+ * KSEG2 0x80000000 .. 0x9FFFFFFF (CACHE ENABLED)
+ */
+
+/******************************************************************************
+ * JTAG/EJTAG/ICSP
+ *****************************************************************************/
 
 /* TMS HEADER */
 #define PIC32_SELECT_DR			1,0x01	/* ENTER SELECT-DR-SCAN STATE   */
@@ -81,9 +123,11 @@ struct pic32_dsmap {
 
 #define PIC32_MCHP_STATUS_CPS    (0x80) /* CODE PROTECT  */
 #define PIC32_MCHP_STATUS_NVMERR (0x20) /* NVM ERROR     */
+	/* NVMERR N/A PIC32MX320/340/360/420/440/460	 */
 #define PIC32_MCHP_STATUS_CFGRDY (0x08) /* CONFIG READY  */
 #define PIC32_MCHP_STATUS_FCBUSY (0x04) /* FLASH BUSY    */
 #define PIC32_MCHP_STATUS_FAEN   (0x02) /* FLASH ENABLED */
+	/* FAEN N/A ON PIC32MZ EC			 */
 #define PIC32_MCHP_STATUS_DEVRST (0x01) /* DEVICE RESET  */
 
 #define PIC32_EJTAG_CONTROL_ROCC     (0x80000000) /* PROCESSOR RESET  */
@@ -101,109 +145,110 @@ struct pic32_dsmap {
 #define PIC32_EJTAG_CONTROL_EJTAGBRK (0x00001000) /* DEBUG INTERRUPT  */
 #define PIC32_EJTAG_CONTROL_DM       (0x00000008) /* DEBUG MODE       */
 
-#define PIC32_DEVID   (0xBF80F220)
-#if 0
-#define PIC32_DEVCFG3 (0xBFC02FF0)
-#define PIC32_DEVCFG2 (0xBFC02FF4)
-#define PIC32_DEVCFG1 (0xBFC02FF8)
-#define PIC32_DEVCFG0 (0xBFC02FFC)
-#else
-#define PIC32_DEVCFG3 (0xBFC00BF0)
-#define PIC32_DEVCFG2 (0xBFC00BF4)
-#define PIC32_DEVCFG1 (0xBFC00BF8)
-#define PIC32_DEVCFG0 (0xBFC00BFC)
-#endif
-#define PIC32_DMSEG   (0xFF200000)
+/******************************************************************************
+ * PICMicro devices
+ *****************************************************************************/
+
+/* 
+ * App. Data-sheet
+ *
+ * PIC32MX1XX/2XX DS60001168F
+ */
+#define DS60001168F (60001168)
 
 /*
+ * Programming Spec.
+ *
  * DS60001145M
  */
 #define DS60001145M (60001145)
-#define PIC32MX110F016B   (0x04A07053)
-#define PIC32MX110F016C   (0x04A09053)
-#define PIC32MX110F016D   (0x04A0B053)
-#define PIC32MX120F032B   (0x04A06053)
-#define PIC32MX120F032C   (0x04A08053)
-#define PIC32MX120F032D   (0x04A0A053)
-#define PIC32MX130F064B   (0x04D07053)
-#define PIC32MX130F064C   (0x04D09053)
-#define PIC32MX130F064D   (0x04D0B053)
-#define PIC32MX150F128B   (0x04D06053)
-#define PIC32MX150F128C   (0x04D08053)
-#define PIC32MX150F128D   (0x04D0A053)
-#define PIC32MX210F016B   (0x04A01053)
-#define PIC32MX210F016C   (0x04A03053)
-#define PIC32MX210F016D   (0x04A05053)
-#define PIC32MX220F032B   (0x04A00053)
-#define PIC32MX220F032C   (0x04A02053)
-#define PIC32MX220F032D   (0x04A04053)
-#define PIC32MX230F064B   (0x04D01053)
-#define PIC32MX230F064C   (0x04D03053)
-#define PIC32MX230F064D   (0x04D05053)
-#define PIC32MX250F128B   (0x04D00053)
-#define PIC32MX250F128C   (0x04D02053)
-#define PIC32MX250F128D   (0x04D04053)
-#define PIC32MX330F064H   (0x05600053)
-#define PIC32MX330F064L   (0x05601053)
-#define PIC32MX430F064H   (0x05602053)
-#define PIC32MX430F064L   (0x05603053)
-#define PIC32MX350F128H   (0x0570C053)
-#define PIC32MX350F128L   (0x0570D053)
-#define PIC32MX450F128H   (0x0570E053)
-#define PIC32MX450F128L   (0x0570F053)
-#define PIC32MX350F256H   (0x05704053)
-#define PIC32MX350F256L   (0x05705053)
-#define PIC32MX450F256H   (0x05706053)
-#define PIC32MX450F256L   (0x05707053)
-#define PIC32MX370F512H   (0x05808053)
-#define PIC32MX370F512L   (0x05809053)
-#define PIC32MX470F512H   (0x0580A053)
-#define PIC32MX470F512L   (0x0580B053)
-#define PIC32MX360F512L   (0x0938053)
-#define PIC32MX360F256L   (0x0934053)
-#define PIC32MX340F128L   (0x092D053)
-#define PIC32MX320F128L   (0x092A053)
-#define PIC32MX340F512H   (0x0916053)
-#define PIC32MX340F256H   (0x0912053)
-#define PIC32MX340F128H   (0x090D053)
-#define PIC32MX320F128H   (0x090A053)
-#define PIC32MX320F064H   (0x0906053)
-#define PIC32MX320F032H   (0x0902053)
-#define PIC32MX460F512L   (0x0978053)
-#define PIC32MX460F256L   (0x0974053)
-#define PIC32MX440F128L   (0x096D053)
-#define PIC32MX440F256H   (0x0952053)
-#define PIC32MX440F512H   (0x0956053)
-#define PIC32MX440F128H   (0x094D053)
-#define PIC32MX420F032H   (0x0942053)
-#define PIC32MX534F064H   (0x4400053)
-#define PIC32MX534F064L   (0x440C053)
-#define PIC32MX564F064H   (0x4401053)
-#define PIC32MX564F064L   (0x440D053)
-#define PIC32MX564F128H   (0x4403053)
-#define PIC32MX564F128L   (0x440F053)
-#define PIC32MX575F256H   (0x4317053)
-#define PIC32MX575F256L   (0x4333053)
-#define PIC32MX575F512H   (0x4309053)
-#define PIC32MX575F512L   (0x430F053)
-#define PIC32MX664F064H   (0x4405053)
-#define PIC32MX664F064L   (0x4411053)
-#define PIC32MX664F128H   (0x4407053)
-#define PIC32MX664F128L   (0x4413053)
-#define PIC32MX675F256H   (0x430B053)
-#define PIC32MX675F256L   (0x4305053)
-#define PIC32MX675F512H   (0x430C053)
-#define PIC32MX675F512L   (0x4311053)
-#define PIC32MX695F512H   (0x4325053)
-#define PIC32MX695F512L   (0x4341053)
-#define PIC32MX764F128H   (0x440B053)
-#define PIC32MX764F128L   (0x4417053)
-#define PIC32MX775F256H   (0x4303053)
-#define PIC32MX775F256L   (0x4312053)
-#define PIC32MX775F512H   (0x430D053)
-#define PIC32MX775F512L   (0x4306053)
-#define PIC32MX795F512H   (0x430E053)
-#define PIC32MX795F512L   (0x4307053)
+#define PIC32MX110F016B (0x04A07053)
+#define PIC32MX110F016C (0x04A09053)
+#define PIC32MX110F016D (0x04A0B053)
+#define PIC32MX120F032B (0x04A06053)
+#define PIC32MX120F032C (0x04A08053)
+#define PIC32MX120F032D (0x04A0A053)
+#define PIC32MX130F064B (0x04D07053)
+#define PIC32MX130F064C (0x04D09053)
+#define PIC32MX130F064D (0x04D0B053)
+#define PIC32MX150F128B (0x04D06053)
+#define PIC32MX150F128C (0x04D08053)
+#define PIC32MX150F128D (0x04D0A053)
+#define PIC32MX210F016B (0x04A01053)
+#define PIC32MX210F016C (0x04A03053)
+#define PIC32MX210F016D (0x04A05053)
+#define PIC32MX220F032B (0x04A00053)
+#define PIC32MX220F032C (0x04A02053)
+#define PIC32MX220F032D (0x04A04053)
+#define PIC32MX230F064B (0x04D01053)
+#define PIC32MX230F064C (0x04D03053)
+#define PIC32MX230F064D (0x04D05053)
+#define PIC32MX250F128B (0x04D00053)
+#define PIC32MX250F128C (0x04D02053)
+#define PIC32MX250F128D (0x04D04053)
+
+#define PIC32MX330F064H (0x05600053)
+#define PIC32MX330F064L (0x05601053)
+#define PIC32MX430F064H (0x05602053)
+#define PIC32MX430F064L (0x05603053)
+#define PIC32MX350F128H (0x0570C053)
+#define PIC32MX350F128L (0x0570D053)
+#define PIC32MX450F128H (0x0570E053)
+#define PIC32MX450F128L (0x0570F053)
+#define PIC32MX350F256H (0x05704053)
+#define PIC32MX350F256L (0x05705053)
+#define PIC32MX450F256H (0x05706053)
+#define PIC32MX450F256L (0x05707053)
+#define PIC32MX370F512H (0x05808053)
+#define PIC32MX370F512L (0x05809053)
+#define PIC32MX470F512H (0x0580A053)
+#define PIC32MX470F512L (0x0580B053)
+#define PIC32MX360F512L (0x0938053)
+#define PIC32MX360F256L (0x0934053)
+#define PIC32MX340F128L (0x092D053)
+#define PIC32MX320F128L (0x092A053)
+#define PIC32MX340F512H (0x0916053)
+#define PIC32MX340F256H (0x0912053)
+#define PIC32MX340F128H (0x090D053)
+#define PIC32MX320F128H (0x090A053)
+#define PIC32MX320F064H (0x0906053)
+#define PIC32MX320F032H (0x0902053)
+#define PIC32MX460F512L (0x0978053)
+#define PIC32MX460F256L (0x0974053)
+#define PIC32MX440F128L (0x096D053)
+#define PIC32MX440F256H (0x0952053)
+#define PIC32MX440F512H (0x0956053)
+#define PIC32MX440F128H (0x094D053)
+#define PIC32MX420F032H (0x0942053)
+#define PIC32MX534F064H (0x4400053)
+#define PIC32MX534F064L (0x440C053)
+#define PIC32MX564F064H (0x4401053)
+#define PIC32MX564F064L (0x440D053)
+#define PIC32MX564F128H (0x4403053)
+#define PIC32MX564F128L (0x440F053)
+#define PIC32MX575F256H (0x4317053)
+#define PIC32MX575F256L (0x4333053)
+#define PIC32MX575F512H (0x4309053)
+#define PIC32MX575F512L (0x430F053)
+#define PIC32MX664F064H (0x4405053)
+#define PIC32MX664F064L (0x4411053)
+#define PIC32MX664F128H (0x4407053)
+#define PIC32MX664F128L (0x4413053)
+#define PIC32MX675F256H (0x430B053)
+#define PIC32MX675F256L (0x4305053)
+#define PIC32MX675F512H (0x430C053)
+#define PIC32MX675F512L (0x4311053)
+#define PIC32MX695F512H (0x4325053)
+#define PIC32MX695F512L (0x4341053)
+#define PIC32MX764F128H (0x440B053)
+#define PIC32MX764F128L (0x4417053)
+#define PIC32MX775F256H (0x4303053)
+#define PIC32MX775F256L (0x4312053)
+#define PIC32MX775F512H (0x430D053)
+#define PIC32MX775F512L (0x4306053)
+#define PIC32MX795F512H (0x430E053)
+#define PIC32MX795F512L (0x4307053)
+
 #define PIC32MZ1024ECG064 (0x05103053)
 #define PIC32MZ1024ECG100 (0x0510D053)
 #define PIC32MZ1024ECG124 (0x05117053)
@@ -229,12 +274,34 @@ struct pic32_dsmap {
 #define PIC32MZ1024ECM144 (0x0514E053)
 #define PIC32MZ2048ECM144 (0x0514F053)
 
+/*
+ * Programming Spec.
+ *
+ * DS60001145N
+ */
+#define PIC32MX170F256B (0x06610053)
+#define PIC32MX170F256D (0x0661A053)
+#define PIC32MX270F256B (0x06600053)
+#define PIC32MX270F256D (0x0660A053)
+
+/******************************************************************************/
+
 uint32_t pic32_arch(struct k8048 *);
 void pic32_selector(void);
 void pic32_program_verify(struct k8048 *);
 void pic32_standby(struct k8048 *);
 void pic32_setmode(struct k8048 *, uint8_t, uint32_t);
 void pic32_read_config_memory(struct k8048 *, int);
+uint32_t pic32_get_program_size(uint32_t *);
+uint32_t pic32_get_boot_size(uint32_t *);
+uint32_t pic32_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
+void pic32_bulk_erase(struct k8048 *, uint16_t, uint16_t);
+void pic32_write_panel(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
+void pic32_program(struct k8048 *, char *, int);
+uint32_t pic32_verify(struct k8048 *, char *);
 void pic32_dumpdeviceid(struct k8048 *);
+void pic32_dumpconfig(struct k8048 *, int);
+void pic32_dumphexcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
+void pic32_dumpinhxcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
 
 #endif

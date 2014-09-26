@@ -1,42 +1,38 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F688 PS/2 to Serial protocol mouse
-;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
-;
-; Additionally this program may not be used in a commercial product without
-; permission from the author.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; 4096 words Flash (14-bit)
-; 256 bytes RAM
-; 256 bytes EEPROM
-;
-; Pinout
-; ------
-; VDD VCC                  1----14 VSS GND
-; RA5 T1CKI OSC1 CLKIN     2    13 RA0 AN0 C1IN+ ICSPDAT
-; RA4 AN3 !T1G OSC2 CLKOUT 3    12 RA1 AN1 C1IN- VREF ICSPCLK
-; RA3 !MCLR VPP            4    11 RA2 AN2 T0CKI INT C1OUT
-; RC5 RX DT                5    10 RC0 AN4 C2IN+
-; RC4 C2OUT TX CK          6     9 RC1 AN5 C2IN-
-; RC3 AN7                  7-----8 RC2 AN6
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-                LIST    P=PIC16F688
-ERRORLEVEL      -302
-#INCLUDE        "p16f688.inc"
-#INCLUDE        "device.inc"                ;DEVICE CONFIG
-#INCLUDE        "const.inc"                 ;CONSTANTS
-#INCLUDE        "macro.inc"                 ;MACROS
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; K8048 PIC16F688 PS/2 to Serial protocol mouse
 ;
 ; TEST MOUSE #1 GENIUS GM-050021 TRAVELER 320 OPTICAL MOUSE
 ; TEST MOUSE #2 EXCEL AM-1310U+P MINI OPTICAL MOUSE
@@ -71,6 +67,31 @@ ERRORLEVEL      -302
 ;   NOT WORKING
 ;   -----------
 ;   MS-DOS LOGITECH
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 4096 words Flash (14-bit)
+; 256 bytes RAM
+; 256 bytes EEPROM
+;
+; Pinout
+; ------
+; VDD VCC                  1----14 VSS GND
+; RA5 T1CKI OSC1 CLKIN     2    13 RA0 AN0 C1IN+ ICSPDAT
+; RA4 AN3 !T1G OSC2 CLKOUT 3    12 RA1 AN1 C1IN- VREF ICSPCLK
+; RA3 !MCLR VPP            4    11 RA2 AN2 T0CKI INT C1OUT
+; RC5 RX DT                5    10 RC0 AN4 C2IN+
+; RC4 C2OUT TX CK          6     9 RC1 AN5 C2IN-
+; RC3 AN7                  7-----8 RC2 AN6
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+                LIST    P=PIC16F688
+ERRORLEVEL      -302
+#INCLUDE        "p16f688.inc"
+#INCLUDE        "device.inc"                ;DEVICE CONFIG
+#INCLUDE        "const.inc"                 ;CONSTANTS
+#INCLUDE        "macro.inc"                 ;MACROS
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

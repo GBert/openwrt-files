@@ -1,10 +1,42 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Velleman K8048 10F320 ICSPIO Demo Test (Receive commands, send data).
-;
-; Copyright (c) 2005-2013 Darron Broad
+; Copyright (C) 2005-2014 Darron Broad
 ; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
 ;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Velleman K8048 PIC10F320 ICSPIO Demo Test (Receive commands, send data).
+;
+; This demonstrates how we may receive commands from the host computer
+; via the ISCP port and execute them. One command is implemented.
+; The command takes one argument which sets the LED to that value.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -54,19 +86,11 @@ ERRORLEVEL      -312
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;******************************************************************************
-;
-; K8048 PIC10F320 ICSPIO Demo Test (Receive commands, send data).
-;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. One command is implemented.
-; The command takes one argument which sets the LED to that value.
-;
-;******************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Config
 ;
-  __CONFIG _FOSC_INTOSC & _BOREN_OFF & _WDTE_ON & _PWRTE_ON & _MCLRE_ON & _CP_OFF & _LVP_OFF & _LPBOR_OFF & _BORV_HI & _WRT_OFF
+  __CONFIG _FOSC_INTOSC & _BOREN_OFF & _WDTE_SWDTEN & _PWRTE_ON & _MCLRE_ON & _CP_OFF & _LVP_OFF & _LPBOR_OFF & _BORV_HI & _WRT_OFF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -74,8 +98,8 @@ ERRORLEVEL      -312
 ;
   __IDLOCS 0x1234
 ;
-; INTOSC = 8MHz
-    CONSTANT CLOCK = 8000000
+; INTOSC = 16MHz
+    CONSTANT CLOCK = 16000000
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -109,7 +133,10 @@ ENDC
 ;
 ; Initialise
 ;
-INIT            BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
+INIT            MOVLW   b'01110000'         ;INIT CLOCK 16MHZ INTRC
+                MOVWF   OSCCON
+
+                BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
                 GOTO    POWERUP
 
                 MOVLW   0xFF
@@ -120,11 +147,9 @@ INIT            BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
 POWERUP         CLRF    LATA                ;INIT PORTA
                 DECF    LATA,F
 
-WATCHDOG        CLRWDT                      ;INIT WATCHDOG
+WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
 
-                CLRF    INTCON              ;DISABLE INTERRUPTS
-
-                MOVLW   B'10001111'         ;DISABLE PULLUPS / WATCHDOG PRESCALE
+                MOVLW   B'10000000'         ;DISABLE PULLUPS
                 MOVWF   OPTION_REG
 
                 CLRF    ADCON               ;SHUTDOWN A/D CONVERTERS
@@ -133,6 +158,10 @@ WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 
                 MOVLW   B'11111011'         ;PORTA LD O/P
                 MOVWF   TRISA
+
+                CLRWDT                      ;INIT WATCHDOG TIMER
+                MOVLW   b'00010011'         ;WATCHDOG TIMER PRESCALE 512ms + ENABLE
+                MOVWF   WDTCON              ;START WATCHDOG TIMER
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

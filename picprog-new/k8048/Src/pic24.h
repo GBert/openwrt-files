@@ -73,6 +73,10 @@ struct pic24_dsmap {
 	uint8_t datapanelsize;	/* DATA EEPROM PANEL SIZE                */
 };
 
+/******************************************************************************
+ * MEMORY
+ *****************************************************************************/
+
 /*
  * MEMORY MAP
  */
@@ -94,16 +98,6 @@ struct pic24_dsmap {
 #define PIC24_DEVREV         (0x00FF0002)
 
 /*
- * MEMORY REGIONS
- */
-#define PIC24_REGIONNOTSUP (0) /* NOT BELOW         */
-#define PIC24_REGIONCODE   (1) /*  000000 .. FLASH  */
-#define PIC24_REGIONDATA   (2) /*  7FFXXX .. 7FFFFE */
-#define PIC24_REGIONCONFIG (3) /*  F80000 .. F8000E */
-#define PIC24_REGIONEXEC   (4) /*  800000 .. 8005BE */
-#define PIC24_REGIONFUID   (5) /*  8005C0 .. 8005FE */
-
-/*
  * DEVID / DEVREV
  */
 #define PIC24FJ_FAMILY_MASK (0x3FC0) /* FAMID<7:0>                            */
@@ -116,14 +110,6 @@ struct pic24_dsmap {
 #define dsPIC30F_PROC_MASK   (0xF000) /* PROC<3:0> = 0x001                     */
 #define dsPIC30F_REV_MASK    (0x0FC0) /* REV <5:0> 0000000=A 000001=B 000010=C */
 #define dsPIC30F_DOT_MASK    (0x003F) /* DOT <5:0>                             */
-
-/*
- * PROGRAM / ERASE
- */
-#define PIC24_PANEL_BEGIN  (1)
-#define PIC24_PANEL_UPDATE (2)
-#define PIC24_PANEL_END    (3)
-#define PIC24_TIMEOUT      (1) /* seconds */
 
 /*
  * PIC24FJ NVCON  NVMOP<3:0>
@@ -586,9 +572,43 @@ struct pic24_dsmap {
 #define PIC24FJ32GB004 (0x420B)
 #define PIC24FJ64GB004 (0x420F)
 
-/******************************************************************************
- * PROTOTYPES
- *****************************************************************************/
+/*
+ * DS30000510E
+ */
+#define DS30000510E (30000510)
+#define PIC24FJ128GB204 (0x4C5B)
+#define PIC24FJ128GB202 (0x4C5A)
+#define PIC24FJ64GB204  (0x4C59)
+#define PIC24FJ64GB202  (0x4C58)
+#define PIC24FJ128GA204 (0x4C53)
+#define PIC24FJ128GA202 (0x4C52)
+#define PIC24FJ64GA204  (0x4C51)
+#define PIC24FJ64GA202  (0x4C50)
+
+/*
+ * DS70005137C
+ */
+#define DS70005137C (70005137)
+#define dsPIC33EV64GM002  (0x5D11)
+#define dsPIC33EV64GM004  (0x5D10)
+#define dsPIC33EV64GM006  (0x5D13)
+#define dsPIC33EV64GM102  (0x5D19)
+#define dsPIC33EV64GM104  (0x5D18)
+#define dsPIC33EV64GM106  (0x5D1B)
+#define dsPIC33EV128GM002 (0x5D21)
+#define dsPIC33EV128GM004 (0x5D20)
+#define dsPIC33EV128GM006 (0x5D23)
+#define dsPIC33EV128GM102 (0x5D29)
+#define dsPIC33EV128GM104 (0x5D28)
+#define dsPIC33EV128GM106 (0x5D2B)
+#define dsPIC33EV256GM002 (0x5D31)
+#define dsPIC33EV256GM004 (0x5D30)
+#define dsPIC33EV256GM006 (0x5D33)
+#define dsPIC33EV256GM102 (0x5D39)
+#define dsPIC33EV256GM104 (0x5D38)
+#define dsPIC33EV256GM106 (0x5D3B)
+
+/******************************************************************************/
 
 #define _PCL (0x002E)
 uint32_t pic24_arch(struct k8048 *);
@@ -603,10 +623,9 @@ uint32_t pic24_get_data_size(uint32_t *);
 uint32_t pic24_get_executive_size(uint32_t *);
 uint32_t pic24_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
 uint32_t pic24_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
+void pic24_write_program_init(struct k8048 *);
 void pic24_write_program(struct k8048 *, uint32_t, uint32_t *, uint32_t);
-void pic24_write_buffer_init(struct k8048 *);
-void pic24_write_buffer(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
-void pic24_write_buffered(struct k8048 *, uint32_t, uint32_t, int);
+void pic24_write_panel(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
 void pic24_write_config_init1(struct k8048 *);
 void pic24_write_config_init2(struct k8048 *);
 void pic24_write_config_word(struct k8048 *, uint32_t, uint16_t);

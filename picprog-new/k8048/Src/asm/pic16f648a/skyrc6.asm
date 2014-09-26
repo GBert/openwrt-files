@@ -1,10 +1,67 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F648A Sky RC6 Remote Control Demo
 ;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
+; See:
 ;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; RC6 overview        http://www.sbprojects.com/knowledge/ir/rc6.htm
+; Sky RC6 (RC-6-20)   http://john.fine.home.comcast.net/ir/DecodeIr.html
+; Sky magic eye       http://groups.google.co.uk/group/uk.tech.tv.sky/browse_thread/thread/616289ac2ef88dc4/1ad625df42dc9de0
+; Sky key codes       http://www.dusky-control.com/sky-control-codes.shtml
+;
+; Demo: SKY BLUE BUTTON (00-0-70)
+;
+;                4  2  1         8  4  2  1   8  4  2  1   8  4  2  1   8  4  2  1   8  4  2  1
+; -- -- -- __ -_ -_ -_ _- __ --  _- _- _- _-  _- _- _- _-  _- _- _- _-  _- -_ -_ -_  _- _- _- _-
+; YY YY YY XX YX YX YX XY XX YY  XY XY XY XY  XY XY XY XY  YX YX XY XY  XY YX YX YX  XY XY XY XY
+;                                0  0  0  0   0  0  0  0   0  0  0  0   0  1  1  1   0  0  0  0  00-0-70
+; ===LEADER== SB ==MODE== =TR==  ==CONTROL ADDRESS=======  ==INFORMATION COMMAND================
+;
+; X=OFF Y=ON XY=0 YX=1 SB=START-BIT TR=TRAILER-BIT
+;
+; BITSTREAM (MANCHESTER ENCODED BYTES)
+;  
+; PRE     [0] F C A 9 3              [0]=SPACER [FC]=LEADER [A9]=SB+MODE [3]=TRAILER = 0f ca 93
+; ADDRESS     5 5 5 5
+; DATA        5 5 6 A 5 5 (BLUE)
+;
+; TEST EMITTER SETUP ON K8048 BOARD
+;
+; 1 x VISHAY TSAL4400 connected to 14P DIL socket PIN7 (RB3) tied to ground via 390R
+;
+; RB3 MAY ALSO HAVE A PULL DOWN RESISTOR (EG. 1M) IF DRIVING LOGIC
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -48,39 +105,6 @@ ERRORLEVEL      -302
 #INCLUDE        "device.inc"                ;DEVICE CONFIG
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; K8048 PIC16F648A Sky RC6 Remote Control Demo
-;
-; See:
-;
-; RC6 overview        http://www.sbprojects.com/knowledge/ir/rc6.htm
-; Sky RC6 (RC-6-20)   http://john.fine.home.comcast.net/ir/DecodeIr.html
-; Sky magic eye       http://groups.google.co.uk/group/uk.tech.tv.sky/browse_thread/thread/616289ac2ef88dc4/1ad625df42dc9de0
-; Sky key codes       http://www.dusky-control.com/sky-control-codes.shtml
-;
-; Demo: SKY BLUE BUTTON (00-0-70)
-;
-;                4  2  1         8  4  2  1   8  4  2  1   8  4  2  1   8  4  2  1   8  4  2  1
-; -- -- -- __ -_ -_ -_ _- __ --  _- _- _- _-  _- _- _- _-  _- _- _- _-  _- -_ -_ -_  _- _- _- _-
-; YY YY YY XX YX YX YX XY XX YY  XY XY XY XY  XY XY XY XY  YX YX XY XY  XY YX YX YX  XY XY XY XY
-;                                0  0  0  0   0  0  0  0   0  0  0  0   0  1  1  1   0  0  0  0  00-0-70
-; ===LEADER== SB ==MODE== =TR==  ==CONTROL ADDRESS=======  ==INFORMATION COMMAND================
-;
-; X=OFF Y=ON XY=0 YX=1 SB=START-BIT TR=TRAILER-BIT
-;
-; BITSTREAM (MANCHESTER ENCODED BYTES)
-;  
-; PRE     [0] F C A 9 3              [0]=SPACER [FC]=LEADER [A9]=SB+MODE [3]=TRAILER = 0f ca 93
-; ADDRESS     5 5 5 5
-; DATA        5 5 6 A 5 5 (BLUE)
-;
-; TEST EMITTER SETUP ON K8048 BOARD
-;
-; 1 x VISHAY TSAL4400 connected to 14P DIL socket PIN7 (RB3) tied to ground via 390R
-;
-; RB3 MAY ALSO HAVE A PULL DOWN RESISTOR (EG. 1M) IF DRIVING LOGIC
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

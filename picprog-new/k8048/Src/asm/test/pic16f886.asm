@@ -1,10 +1,45 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F886 ICSPIO Demo Test (Receive commands, send data).
 ;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; This demonstrates how we may receive commands from the host computer
+; via the ISCP port and execute them. Two commands are implemented.
+; The first command takes one argument which sets the six LEDs to that
+; value and the second command takes no argument yet demonstrates how
+; we may send a value back to the host which, in this case, is the
+; current status of the four switches.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -78,22 +113,11 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;******************************************************************************
-;
-; K8048 PIC16F886 ICSPIO Demo Test (Receive commands, send data).
-;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the six LEDs to that
-; value and the second command takes no argument yet demonstrates how
-; we may send a value back to the host which, in this case, is the
-; current status of the four switches.
-;
-;******************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Config
 ;
-  __CONFIG _CONFIG1, _DEBUG_OFF & _LVP_ON & _FCMEN_OFF & _IESO_OFF & _BOR_OFF & _CPD_OFF & _CP_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_OFF & _HS_OSC
+  __CONFIG _CONFIG1, _DEBUG_OFF & _LVP_ON & _FCMEN_OFF & _IESO_OFF & _BOR_OFF & _CPD_OFF & _CP_OFF & _MCLRE_ON & _PWRTE_ON & _WDT_OFF & _INTOSCIO
   __CONFIG _CONFIG2, _WRT_OFF & _BOR21V
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -103,7 +127,9 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
   __IDLOCS 0x1234
 ;
 ; XTAL = 11059200Hz
-    CONSTANT CLOCK = 11059200
+;   CONSTANT CLOCK = 11059200
+; INTOSC
+    CONSTANT CLOCK = 8000000
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -142,29 +168,39 @@ NPINS           SET     .28                 ;28-PIN PDIP
 ;
 ; Initialise
 ;
-INIT            BANKSEL BANK0
+INIT            BANKSEL BANK1
+
+                MOVLW   b'01110000'         ;INIT CLOCK 8MHZ INTRC
+                MOVWF   OSCCON
+INITHTS         BTFSS   OSCCON,HTS          ;WAIT FOR INTOSC FREQUENCY STABLE
+                GOTO    INITHTS
+
+                BANKSEL BANK0
 
                 BTFSC   STATUS,NOT_TO       ;WATCHDOG TIME-OUT
                 GOTO    POWERUP
 
-                MOVLW   0xFF                ;TOGGLE PORT A LD1..LD6
+                MOVLW   0xFF                ;TOGGLE PORT A
                 XORWF   LATA,F
                 MOVF    LATA,W
                 MOVWF   PORTA
 
+                MOVLW   0xFF                ;TOGGLE PORT B
+                XORWF   LATB,F
+                MOVF    LATB,W
+                MOVWF   PORTB
+
                 GOTO    WATCHDOG            ;CONTINUE
 
-POWERUP         CLRF    LATA                ;INIT PORT A SHADOW
-                CLRF    PORTA               ;INIT PORT A
+POWERUP         MOVLW   0xFF
+                MOVWF   LATA                ;INIT PORT A SHADOW
+                MOVWF   PORTA               ;INIT PORT A
 
                 CLRF    LATB                ;INIT PORT B SHADOW
                 CLRF    PORTB               ;INIT PORT B
 
                 CLRF    LATC                ;INIT PORT C SHADOW
                 CLRF    PORTC               ;INIT PORT C
-
-                CLRF    LATE                ;INIT PORT E SHADOW
-                CLRF    PORTE               ;INIT PORT E
 
 WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
 
@@ -181,20 +217,17 @@ WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
                 MOVLW   B'10000000'         ;A/D RIGHT JUSTIFIED
                 MOVWF   ADCON1
 
-                MOVLW   B'10001111'         ;DISABLE PULLUPS/WATCHDOG PRESCALE
+                MOVLW   B'10001100'         ;DISABLE PULLUPS/WATCHDOG PRESCALE
                 MOVWF   OPTION_REG
 
-                MOVLW   B'11000000'         ;PORT A: LD1..LD6 O/P    
+                MOVLW   B'00000000'         ;PORT A: LD1..LD6 O/P    
                 MOVWF   TRISA
 
-                MOVLW   B'11111111'         ;PORT B: SW1..SW4 I/P
+                MOVLW   B'00010111'         ;PORT B: SW1..SW4 I/P
                 MOVWF   TRISB
 
-                MOVLW   B'11111111'         ;PORT C: ALL I/P
+                MOVLW   B'00000000'         ;PORT C: ALL O/P
                 MOVWF   TRISC
-
-                MOVLW   B'11111111'         ;PORT E: ALL I/P
-                MOVWF   TRISE
 
                 BANKSEL BANK2
                 CLRWDT                      ;INIT WATCHDOG TIMER
@@ -217,11 +250,11 @@ MAINLOOP        COMMON  MAINLOOP, INIT      ;DO COMMON COMMANDS
                 MOVF    BUFFER,W            ;IS SWITCH?
                 XORLW   CMD_SWITCH
                 BZ      DOSWITCH
-
+#IF 1
                 MOVF    BUFFER,W            ;IS ANALOG?
                 XORLW   CMD_ANALOG
                 BZ      DOANALOG
-
+#ENDIF
                 GOTO    UNSUPPORTED
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

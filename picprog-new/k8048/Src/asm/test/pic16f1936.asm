@@ -1,14 +1,49 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Velleman K8048 PIC16F1936 ICSPIO Demo Test (Receive commands, send data).
-;
-; Copyright (c) 2005-2013 Darron Broad
+; Copyright (C) 2005-2014 Darron Broad
 ; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
 ;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; 2048 words Flash (14-bit)
+; Velleman K8048 PIC16F1936 ICSPIO Demo Test (Receive commands, send data).
+;
+; This demonstrates how we may receive commands from the host computer
+; via the ISCP port and execute them. Two commands are implemented.
+; The first command takes one argument which sets the six LEDs to that
+; value and the second command takes no argument yet demonstrates how
+; we may send a value back to the host which, in this case, is the
+; current status of the four switches.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 8192 words Flash (14-bit)
 ; 512 bytes RAM
 ; 256 bytes EEPROM
 ;
@@ -60,17 +95,6 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
 #INCLUDE        "device.inc"                ;DEVICE CONFIG
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; K8048 PIC16F1936 ICSPIO Demo Test (Receive commands, send data).
-;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the six LEDs to that
-; value and the second command takes no argument yet demonstrates how
-; we may send a value back to the host which, in this case, is the
-; current status of the four switches.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -142,13 +166,8 @@ INITHFIOFS      BTFSS   OSCSTAT,HFIOFS      ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    WATCHDOG            ;CONTINUE
 
 POWERUP         CLRF    LATA                ;INIT PORT A SHADOW
-                CLRF    PORTA               ;INIT PORT A
-
                 CLRF    LATB                ;INIT PORT B SHADOW
-                CLRF    PORTB               ;INIT PORT B
-
                 CLRF    LATC                ;INIT PORT C SHADOW
-                CLRF    PORTC               ;INIT PORT C
 
 WATCHDOG        BANKSEL BANK0
 
@@ -158,7 +177,7 @@ WATCHDOG        BANKSEL BANK0
 
                 CLRF    ADCON0              ;A/D OFF
 
-                MOVLW   B'10001111'         ;DISABLE PULLUPS/WATCHDOG PRESCALE
+                MOVLW   B'10000000'         ;DISABLE PULLUPS
                 MOVWF   OPTION_REG
 
                 MOVLW   B'11000000'         ;PORT A: LD1..LD6 O/P    
@@ -178,7 +197,8 @@ WATCHDOG        BANKSEL BANK0
                 BANKSEL BANK1
 
                 CLRWDT                      ;INIT WATCHDOG TIMER
-                BSF     WDTCON,SWDTEN       ;START WATCHDOG TIMER
+                MOVLW   b'00010011'         ;WATCHDOG TIMER PRESCALE 512ms + ENABLE
+                MOVWF   WDTCON              ;START WATCHDOG TIMER
 
                 BANKSEL BANK0
 ;

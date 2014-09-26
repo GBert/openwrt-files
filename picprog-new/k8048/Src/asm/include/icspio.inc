@@ -1,18 +1,39 @@
-                LIST
-;
-; Velleman K8048 12/14/16-bit word architecture library include
-;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
-;
-; See README.icspio
-;
                 NOLIST
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; ICSP I/O
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; ICSP I/O for 12/14/16-bit word architecture
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -146,12 +167,12 @@ INITIO          CLRF    LASTERROR
 ;
 ; DATA/CLOCK = LOW
 ;
-IF ARCH == ENHANCED
+IF ARCH == MIDRANGE || ARCH == ENHANCED
                 BANKSEL ICSPLAT
 ENDIF
                 BCF     ICSPLAT,ICSPDAT ;INIT LATCH
                 BCF     ICSPLAT,ICSPCLK
-IF ARCH == ENHANCED
+IF ARCH == MIDRANGE || ARCH == ENHANCED
                 BANKSEL BANK0
 ENDIF
 IFDEF SHADOWLATCH                       ;INIT PORT
@@ -235,6 +256,8 @@ GETBYTE         CLRF    BUFFER          ;CLEAR INPUT BYTE
                 CLRF    PARITY          ;EVEN PARITY
                 MOVLW   0x08            ;8 BITS IN A BYTE
                 MOVWF   COUNTER0
+
+                CALL    INITTRIS        ;RE-INIT I/O TRIS
 ;
 ; START BIT CLOCK HIGH
 ;
@@ -381,6 +404,8 @@ SENDBYTE        MOVWF   BUFFER          ;SAVE OUTPUT BYTE
                 CLRF    PARITY          ;EVEN PARITY
                 MOVLW   0x08            ;8 BITS IN A BYTE
                 MOVWF   COUNTER0
+
+                CALL    INITTRIS        ;RE-INIT I/O TRIS
 ;
 ; START BIT CLOCK HIGH
 ;
@@ -400,13 +425,13 @@ ENDIF
 ;
                 CALL    WAITLOW         ;START BIT CLOCK LOW
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ; DATA BIT CLOCK HIGH
 ;
 SENDBIT         CALL    WAITHIGH        ;DATA BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ; DATA BIT OUTPUT (ICSPDAT = I/P OR O/P)
 ;
@@ -438,7 +463,7 @@ SENDPAR
 ;
                 CALL    WAITLOW         ;DATA BIT CLOCK LOW
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 
                 DJNZ    COUNTER0,SENDBIT;FOR ALL BITS
 ;
@@ -446,7 +471,7 @@ SENDPAR
 ; 
                 CALL    WAITHIGH        ;PARITY BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ; PARITY BIT OUTPUT
 ;
@@ -466,13 +491,13 @@ ENDIF
 ; 
                 CALL    WAITLOW         ;PARITY BIT CLOCK LOW
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ; STOP BIT CLOCK HIGH
 ;
                 CALL    WAITHIGH        ;STOP BIT CLOCK HIGH
                 BTFSC   STATUS,C
-                GOTO    TIMEDOUT        ;TIME-OUT
+                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ; STOP BIT OUTPUT (ICSPDAT = I/P)
 ;
@@ -488,11 +513,6 @@ ENDIF
                 BTFSC   STATUS,C
                 RETLW   ERRTIMEOUT      ;TIME-OUT
                 RETLW   ERRNONE         ;SUCCESS
-;
-; TIME-OUT (RE-INIT ICSPDAT = I/P)
-;
-TIMEDOUT        CALL    INITTRIS        ;ICSPDAT = I/P
-                RETLW   ERRTIMEOUT      ;TIME-OUT
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

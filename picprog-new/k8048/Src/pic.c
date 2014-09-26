@@ -32,24 +32,6 @@
 
 #include "k8048.h"
 
-#ifdef DEBUG
-void
-pic_x(struct k8048 *k)
-{
-	pic_read_config(k, PIC_CONFIG_ALL);
-#if 0
-	pic_dump_program(k, 0x000000, 128, PIC_HEXDEC);
-	pic_dump_program(k, 0x000000, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0x800000, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0x800800, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0x801000, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0xF80000, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0xFA0000, 256, PIC_HEXDEC);
-	pic_dump_program(k, 0xFF0000, 256, PIC_HEXDEC);
-#endif
-}
-#endif
-
 /*
  * DETERMINE ARCH
  *
@@ -59,24 +41,24 @@ uint32_t
 pic_arch(struct k8048 *k, const char *execname)
 {
 #ifdef K12
-        if (strcmp(execname, "k12") == 0)
-		return pic12_arch(k);	/* 12-bit word PIC10F/PIC12F/PIC16F */
+	if (strcmp(execname, "k12") == 0)
+		return pic12_arch(k);	/* 12-bit word PIC10F/PIC12F/PICF */
 #endif
 #ifdef K14
-        if (strcmp(execname, "k14") == 0)
-                return pic14_arch(k);	/* 14-bit word PIC10F/PIC12F/PIC16F */
+	if (strcmp(execname, "k14") == 0)
+		return pic14_arch(k);	/* 14-bit word PIC10F/PIC12F/PICF */
 #endif
 #ifdef K16
-        if (strcmp(execname, "k16") == 0)
-                return pic16_arch(k);	/* 16-bit word PIC18F */
+	if (strcmp(execname, "k16") == 0)
+		return pic16_arch(k);	/* 16-bit word PIC18F */
 #endif
 #ifdef K24
-        if (strcmp(execname, "k24") == 0)
-                return pic24_arch(k);	/* 24-bit word PIC24/dsPIC */
+	if (strcmp(execname, "k24") == 0)
+		return pic24_arch(k);	/* 24-bit word PIC24/dsPIC */
 #endif
 #ifdef K32
-        if (strcmp(execname, "k32") == 0)
-                return pic32_arch(k);	/* 32-bit word PIC32 */
+	if (strcmp(execname, "k32") == 0)
+		return pic32_arch(k);	/* 32-bit word PIC32 */
 #endif
 	return 0;
 }
@@ -171,6 +153,24 @@ pic_get_executive_size(struct k8048 *k, uint32_t *addr)
 }
 
 /*
+ * DETERMINE BOOT FLASH SIZE
+ *
+ *  INVOKE AFTER `pic_read_config'
+ */
+uint32_t
+pic_get_boot_size(struct k8048 *k, uint32_t *addr)
+{
+	uint32_t size = UINT32_MAX;
+
+	if (k->pic->get_boot_size)
+		size = k->pic->get_boot_size(addr);
+	else
+		printf("%s: information: unimplemented\n", __func__);
+
+	return size;
+}
+
+/*
  * READ PROGRAM FLASH / DATA FLASH MEMORY BLOCK
  *
  *  INVOKE AFTER `pic_get_program_size'
@@ -230,7 +230,7 @@ pic_verify(struct k8048 *k, char *filename)
 {
 	uint32_t fail = UINT32_MAX;
 	
-	if (k->pic->program) {
+	if (k->pic->verify) {
 		pic_read_config(k, PIC_CONFIG_ONLY);
 
 		fail = k->pic->verify(k, filename);
@@ -440,35 +440,54 @@ pic_dumpword32(uint32_t addr, uint32_t word)
 void
 pic_dumpdevice(struct k8048 *k)
 {
-	if (!k->pic->dumpdevice) {
-		printf("%s: information: unimplemented\n", __func__);
-		return;
-	}
+	uint32_t addr, size;
 
 	/* Get userid/config */
 	pic_read_config(k, PIC_CONFIG_ALL);
 
-	/* Get program flash size */
-	uint32_t faddr, fsize = pic_get_program_size(k, &faddr);
-	if (fsize == 0 || fsize == UINT32_MAX) {
-		printf("%s: fatal error: program flash size invalid\n", __func__);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+	/* Program flash */
+	if (k->pic->get_program_size) {
+		/* Get program flash size */
+		size = pic_get_program_size(k, &addr);
+		if (size == UINT32_MAX) {
+			printf("%s: fatal error: program flash size invalid\n", __func__);
+			io_exit(k, EX_SOFTWARE); /* Panic */
+		}
+		/* Dump program flash */
+		if (size)
+			pic_dump_program(k, addr, size, PIC_INHX32);
 	}
-	/* Dump program flash */
-	pic_dump_program(k, faddr, fsize, PIC_INHX32);
 
-	/* Get data EEPROM/flash size */
-	uint32_t daddr, dsize = pic_get_data_size(k, &daddr);
-	if (dsize == UINT32_MAX) {
-		printf("%s: fatal error: data EEPROM/flash size invalid\n", __func__);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+	/* Boot flash */
+	if (k->pic->get_boot_size) {
+		/* Get boot flash size */
+		size = pic_get_boot_size(k, &addr);
+		if (size == UINT32_MAX) {
+			printf("%s: fatal error: program flash size invalid\n", __func__);
+			io_exit(k, EX_SOFTWARE); /* Panic */
+		}
+		/* Dump boot flash */
+		if (size)
+			pic_dump_program(k, addr, size, PIC_INHX32);
 	}
-	/* Dump data EEPROM/flash */
-	if (dsize)
-		pic_dump_data(k, daddr, dsize, PIC_INHX32);
 
-	/* Dump userid/config */
-	k->pic->dumpdevice(k);
+	/* Data EEPROM/flash */
+	if (k->pic->get_data_size) {
+		/* Get data EEPROM/flash size */
+		size = pic_get_data_size(k, &addr);
+		if (size == UINT32_MAX) {
+			printf("%s: fatal error: data EEPROM/flash size invalid\n", __func__);
+			io_exit(k, EX_SOFTWARE); /* Panic */
+		}
+		/* Dump data EEPROM/flash */
+		if (size)
+			pic_dump_data(k, addr, size, PIC_INHX32);
+	}
+
+	/* Userid/Config */
+	if (k->pic->dumpdevice) {
+		k->pic->dumpdevice(k);
+	}
 
 	/* EOF */
 	printf(":00000001FF\n");
@@ -482,20 +501,31 @@ pic_dumpdevice(struct k8048 *k)
  * DUMP PROGRAM FLASH IN HEX
  */
 void
-pic_dumpprogram(struct k8048 *k, uint32_t size)
+pic_dumpprogram(struct k8048 *k, uint32_t n)
 {
+	uint32_t addr, size;
+
+	if (!k->pic->get_program_size) {
+		printf("%s: information: program flash is not supported on this architecture\n", __func__);
+		return;
+	}
+
 	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get program flash size */
-	uint32_t faddr, fsize = pic_get_program_size(k, &faddr);
-	if (fsize == 0 || fsize == UINT32_MAX) {
+	size = pic_get_program_size(k, &addr);
+	if (size == UINT32_MAX) {
 		printf("%s: fatal error: program flash size invalid\n", __func__);
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-	if (size > fsize)
-		size = fsize;
+	if (size == 0) {
+		printf("%s: information: program flash is not supported on this device\n", __func__);
+		return;
+	}
+	if (n > size)
+		n = size;
 	/* Dump program flash */
-	pic_dump_program(k, faddr, size, PIC_HEXDEC);
+	pic_dump_program(k, addr, n, PIC_HEXDEC);
 }
 
 /*
@@ -504,43 +534,85 @@ pic_dumpprogram(struct k8048 *k, uint32_t size)
 void
 pic_dumpdata(struct k8048 *k)
 {
+	uint32_t addr, size;
+
+	if (!k->pic->get_data_size) {
+		printf("%s: information: data EEPROM/flash is not supported on this architecture\n", __func__);
+		return;
+	}
+
 	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get data EEPROM/data flash size */
-	uint32_t daddr, dsize = pic_get_data_size(k, &daddr);
-	if (dsize == UINT32_MAX) {
+	size = pic_get_data_size(k, &addr);
+	if (size == UINT32_MAX) {
 		printf("%s: fatal error: data EEPROM/flash size invalid\n", __func__);
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-	if (dsize == 0) {
+	if (size == 0) {
 		printf("%s: information: data EEPROM/flash is not supported on this device\n", __func__);
 		return;
 	}
 	/* Dump data EEPROM/flash */
-	pic_dump_data(k, daddr, dsize, PIC_HEXDEC);
+	pic_dump_data(k, addr, size, PIC_HEXDEC);
 }
 
 /*
- * DUMP PROGRAM EXECUTIVE IN HEX
+ * DUMP EXECUTIVE FLASH IN HEX
  */
 void
 pic_dumpexec(struct k8048 *k)
 {
+	uint32_t addr, size;
+
 	if (!k->pic->get_executive_size) {
-		printf("%s: information: EXECUTIVE is not supported on this architecture\n", __func__);
+		printf("%s: information: EXECUTIVE flash is not supported on this architecture\n", __func__);
 		return;
 	}
 
 	pic_read_config(k, PIC_CONFIG_ONLY);
 
 	/* Get program executive size */
-	uint32_t eaddr, esize = pic_get_executive_size(k, &eaddr);
-	if (esize == UINT32_MAX || esize == 0) {
-		printf("%s: fatal error: EXECUTIVE size invalid\n", __func__);
+	size = pic_get_executive_size(k, &addr);
+	if (size == UINT32_MAX) {
+		printf("%s: fatal error: EXECUTIVE flash size invalid\n", __func__);
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
+	if (size == 0) {
+		printf("%s: information: EXECUTIVE flash is not supported on this device\n", __func__);
+		return;
+	}
 	/* Dump program executive */
-	pic_dump_program(k, eaddr, esize, PIC_HEXDEC);
+	pic_dump_program(k, addr, size, PIC_HEXDEC);
+}
+
+/*
+ * DUMP BOOT FLASH IN HEX
+ */
+void
+pic_dumpboot(struct k8048 *k)
+{
+	uint32_t addr, size;
+
+	if (!k->pic->get_boot_size) {
+		printf("%s: information: BOOT flash is not supported on this architecture\n", __func__);
+		return;
+	}
+
+	pic_read_config(k, PIC_CONFIG_ONLY);
+
+	/* Get boot flash size */
+	size = pic_get_boot_size(k, &addr);
+	if (size == UINT32_MAX) {
+		printf("%s: fatal error: BOOT flash size invalid\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+	if (size == 0) {
+		printf("%s: information: BOOT flash is not supported on this device\n", __func__);
+		return;
+	}
+	/* Dump boot flash */
+	pic_dump_program(k, addr, size, PIC_HEXDEC);
 }
 
 /******************************************************************************
@@ -675,4 +747,88 @@ pic_dumpinhxdata(struct k8048 *k, uint32_t addr, uint32_t size, uint16_t *data)
 		k->pic->dumpinhxdata(k, addr, size, data);
 	else
 		printf("%s: information: unimplemented\n", __func__);
+}
+
+/******************************************************************************
+  PANEL WRITING
+ *****************************************************************************/
+
+/*
+ * WRITE PANEL
+ *
+ *  mode:
+ *  	PIC_PANEL_BEGIN
+ *  		data1: 	memory region
+ *  		data2:	memory size
+ *
+ *  	PIC_PANEL_UPDATE
+ *  		data1:	memory address
+ *  		data2:	memory data
+ *
+ *  	PIC_PANEL_END
+ *  		data1:	void
+ *  		data2:	void
+ */
+void
+pic_write_panel(struct k8048 *k, int mode, uint32_t data1, uint32_t data2)
+{
+	static uint32_t write_pending = 0;
+	static uint32_t panel_region = PIC_REGIONNOTSUP;
+	static uint32_t panel_address = 0;
+	static uint32_t *panel = NULL;
+	static uint32_t panel_size = 0;
+
+	if (k->pic->write_panel == NULL) {
+		printf("%s: fatal error: write panel unimplemented\n", __func__);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+	if (mode == PIC_PANEL_BEGIN || mode == PIC_PANEL_END) {
+		if (panel) {
+			if (write_pending) {
+				write_pending = 0;
+				k->pic->write_panel(k, panel_region, panel_address, panel, panel_size);
+			}
+			free(panel);
+			panel_region = PIC_REGIONNOTSUP;
+			panel_address = 0;
+			panel = NULL;
+			panel_size = 0;
+		}
+	}
+	if (mode == PIC_PANEL_BEGIN) {
+		panel_region = data1;		/* MEMORY REGION */
+		panel_size = data2;		/* MEMORY SIZE   */
+	}
+	if (mode == PIC_PANEL_BEGIN || mode == PIC_PANEL_UPDATE) {
+		if (panel == NULL) {
+			if (panel_size == 0) {
+				printf("%s: fatal error: zero sized panel\n", __func__);
+				io_exit(k, EX_SOFTWARE); /* Panic */
+			}
+			panel = malloc(sizeof(uint32_t) * panel_size);
+			if (panel == NULL) {
+				printf("%s: fatal error: malloc failed\n", __func__);
+				io_exit(k, EX_SOFTWARE); /* Panic */
+			}
+			memset((void *)panel, -1, sizeof(uint32_t) * panel_size);
+		}
+	}
+	if (mode == PIC_PANEL_UPDATE) {
+		uint32_t address, new_address, boundary, mask;
+
+		boundary = 0 - panel_size;
+		mask = panel_size - 1;
+		address = data1;		/* MEMORY ADDRESS */
+		new_address = address & boundary;
+		if (new_address != panel_address) {
+			if (write_pending) {
+				write_pending = 0;
+				k->pic->write_panel(k, panel_region, panel_address, panel, panel_size);
+				memset((void *)panel, -1, sizeof(uint32_t) * panel_size);
+			}
+			panel_address = new_address;
+		}
+		panel[address & mask] = data2;	/* MEMORY DATA */
+		write_pending++;
+	}
 }

@@ -1,10 +1,45 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F88 ICSPIO Demo Test (Receive commands, send data).
 ;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; This demonstrates how we may receive commands from the host computer
+; via the ISCP port and execute them. Two commands are implemented.
+; The first command takes one argument which sets the six LEDs to that
+; value and the second command takes no argument yet demonstrates how
+; we may send a value back to the host which, in this case, is the
+; current status of the four switches.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -79,22 +114,11 @@ ERRORLEVEL      -302,+306                   ;SEE gperror.h
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;******************************************************************************
-;
-; K8048 PIC16F88 ICSPIO Demo Test (Receive commands, send data).
-;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets the six LEDs to that
-; value and the second command takes no argument yet demonstrates how
-; we may send a value back to the host which, in this case, is the
-; current status of the four switches.
-;
-;******************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Config
 ;
-  __CONFIG _CONFIG1, _CP_OFF & _CCP1_RB0 & _DEBUG_OFF & _WRT_PROTECT_OFF & _CPD_OFF & _LVP_OFF & _BODEN_OFF & _MCLR_ON & _PWRTE_ON & _WDT_OFF & _INTRC_CLKOUT
+  __CONFIG _CONFIG1, _CP_OFF & _CCP1_RB0 & _DEBUG_OFF & _WRT_PROTECT_OFF & _CPD_OFF & _LVP_ON & _BODEN_OFF & _MCLR_ON & _PWRTE_ON & _WDT_OFF & _INTRC_CLKOUT
   __CONFIG _CONFIG2, _IESO_OFF & _FCMEN_OFF
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -156,17 +180,15 @@ INITIOFS        BTFSS   OSCCON,IOFS         ;WAIT FOR INTRC FREQUENCY STABLE
                 GOTO    POWERUP
 
                 MOVLW   0xFF
-                XORWF   LATB,F
+                XORWF   LATB,F              ;TOGGLE PORT B
                 MOVF    LATB,W
                 MOVWF   PORTB
 
                 GOTO    WATCHDOG            ;CONTINUE
 
-POWERUP         CLRF    LATA                ;INIT PORTA SHADOW
-                CLRF    PORTA               ;INIT PORT A
-
-                CLRF    LATB                ;INIT PORTB SHADOW
-                CLRF    PORTB               ;INIT PORT B
+POWERUP         MOVLW   0xFF
+                MOVWF   LATB                ;INIT PORT B SHADOW
+                MOVWF   PORTB               ;INIT PORT B
 
 WATCHDOG        CLRF    INTCON              ;DISABLE INTERRUPTS
 

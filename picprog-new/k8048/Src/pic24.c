@@ -45,8 +45,10 @@ struct pic_ops pic24_ops = {
 	.get_program_size          = pic24_get_program_size,
 	.get_data_size             = pic24_get_data_size,
 	.get_executive_size        = pic24_get_executive_size,
+	.get_boot_size             = NULL,
 	.read_program_memory_block = pic24_read_program_memory_block,
 	.read_data_memory_block    = pic24_read_data_memory_block,
+	.write_panel               = pic24_write_panel,
 	.program                   = pic24_program,
 	.verify                    = pic24_verify,
 	.bulk_erase                = pic24_bulk_erase,
@@ -441,6 +443,15 @@ struct pic24_dsmap pic24_map[] =
 {"PIC24FJ32GB004",     PIC24FJ32GB004,     11264, 0,     DS39934B,  0x0057F8, 4, 0,0,         0x800880, 8, 64,0},
 {"PIC24FJ64GB004",     PIC24FJ64GB004,     22016, 0,     DS39934B,  0x00ABF8, 4, 0,0,         0x800880, 8, 64,0},
 
+{"PIC24FJ64GA204",     PIC24FJ64GA204,     22016, 0,  DS30000510E,  0x00ABF8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ64GA202",     PIC24FJ64GA202,     22016, 0,  DS30000510E,  0x00ABF8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ64GB204",     PIC24FJ64GB204,     22016, 0,  DS30000510E,  0x00ABF8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ64GB202",     PIC24FJ64GB202,     22016, 0,  DS30000510E,  0x00ABF8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ128GA204",    PIC24FJ128GA204,    44032, 0,  DS30000510E,  0x0157F8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ128GA202",    PIC24FJ128GA202,    44032, 0,  DS30000510E,  0x0157F8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ128GB204",    PIC24FJ128GB204,    44032, 0,  DS30000510E,  0x0157F8, 4, 0,0,         0x800880, 8, 64,0},
+{"PIC24FJ128GB202",    PIC24FJ128GB202,    44032, 0,  DS30000510E,  0x0157F8, 4, 0,0,         0x800880, 8, 64,0},
+
 {"(null)",             0,                  0,     0,     0,         0,        0, 0, 0,        0, 0,        0, 0},
 /*Device name          Device id           Flash  EEPROM Data-sheet Config    #  Fuid #       Calib #      PanelSizes*/
 };
@@ -460,12 +471,12 @@ pic24_selector(void)
 	}
 	qsort(dnames, PIC24_SIZE, sizeof(char *), pic_cmp);
 	for (i = 0; i < PIC24_SIZE; ++i) {
-		if ((i % (PIC_NCOLS - 1)) == (PIC_NCOLS - 2))
+		if ((i % PIC_NCOLS) == (PIC_NCOLS - 1))
 			printf("%s\n", dnames[i]);
 		else
 			printf("%-19s", dnames[i]);
 	}
-	if (i % (PIC_NCOLS - 1))
+	if (i % PIC_NCOLS)
 		printf("\n");
 	printf("Total: %u\n", (uint32_t)PIC24_SIZE);
 }
@@ -515,9 +526,10 @@ pic24_program_verify(struct k8048 *k)
 {
 	/* RESET & ACQUIRE GPIO */
 	io_set_vpp(k, LOW);
-	/* DS39768D PIC24FJ64GA002    P6(100ns) */
-	/* DS70102H dsPIC30F4013      P6(100ns) */
-	/* DS70663D dsPIC33EP128GP502 P6(100ns) */
+	/* DS39768D    PIC24FJ64GA002    P6(100ns) */
+	/* DS70102H    dsPIC30F4013      P6(100ns) */
+	/* DS70663D    dsPIC33EP128GP502 P6(100ns) */
+	/* DS30000510E PIC24FJXXXGA2/GB2 P6(100ns) */
 	io_usleep(k, 1000);
 	/* PGD + PGC + PGM(N/A) LOW */
 	io_set_pgd(k, LOW);
@@ -533,27 +545,31 @@ pic24_program_verify(struct k8048 *k)
 
 		/* VPP HIGH */
 		io_set_vpp(k, HIGH);
-		/* DS39768D PIC24FJ64GA002    UNSPECIFIED */
-		/* DS70663D dsPIC33EP128GP502 P21(500us)  */
+		/* DS39768D    PIC24FJ64GA002    UNKNOWN    */
+		/* DS70663D    dsPIC33EP128GP502 P21(500us) */
+		/* DS30000510E PIC24FJXXXGA2/GB2 UNKNOWN    */
 		io_usleep(k, 500);
 
 		/* VPP LOW */
 		io_set_vpp(k, LOW);
-		/* DS39768D PIC24FJ64GA002    P18(40ns) */
-		/* DS70663D dsPIC33EP128GP502 P18(1ms)  */
-		io_usleep(k, 1000);
+		/* DS39768D    PIC24FJ64GA002    P18(40ns) */
+		/* DS70663D    dsPIC33EP128GP502 P18(1ms)  */
+		/* DS30000510E PIC24FJXXXGA2/GB2 P18(10ms) */
+		io_usleep(k, 10000);
 
 		/* PROGRAM/VERIFY ENTRY CODE */
 		io_program_out(k, QHCMKEY, 32);
-		/* DS39768D PIC24FJ64GA002    P19(1ms)  */
-		/* DS70663D dsPIC33EP128GP502 P19(25ns) */
+		/* DS39768D    PIC24FJ64GA002    P19(1ms)  */
+		/* DS70663D    dsPIC33EP128GP502 P19(25ns) */
+		/* DS30000510E PIC24FJXXXGA2/GB2 P19(1ms)  */
 		io_usleep(k, 1000);
 
 		/* VPP HIGH */
 		io_set_vpp(k, HIGH);
-		/* DS39768D PIC24FJ64GA002    P7(25ms)      */
-		/* DS70663D dsPIC33EP128GP502 P7(50ms)  +   */
-		/* DS70663D dsPIC33EP128GP502 P1(200ns) x 5 */
+		/* DS39768D    PIC24FJ64GA002    P7(25ms)      */
+		/* DS70663D    dsPIC33EP128GP502 P7(50ms)  +   */
+		/* DS70663D    dsPIC33EP128GP502 P1(200ns) x 5 */
+		/* DS30000510E PIC24FJXXXGA2/GB2 P7(25ms)      */
 		io_usleep(k, 50001);
 	
 		/*
@@ -875,9 +891,9 @@ pic24_nvmcon_write_completion(struct k8048 *k, uint16_t mask, uint16_t word)
 		regout = pic24_readreg(k, pic24_conf.nvmcon) & mask;
 		pic24_goto200(k); /* GOTO 200 */
 	}
-	while ((regout != word) && (tv3.tv_sec < PIC24_TIMEOUT));
+	while ((regout != word) && (tv3.tv_sec < PIC_TIMEOUT));
 
-	if (tv3.tv_sec >= PIC24_TIMEOUT)
+	if (tv3.tv_sec >= PIC_TIMEOUT)
 		printf("%s: information: program/erase timed out.\n", __func__);
 }
 
@@ -923,15 +939,15 @@ pic24_restore_calibration(struct k8048 *k)
 	if (pic24_map[pic24_index].calibaddr == 0)
 		return; /* Not supported */
 	
-	pic24_write_buffer_init(k);
+	pic24_write_program_init(k);
 
-	pic24_write_buffered(k, PIC24_REGIONEXEC, pic24_map[pic24_index].codepanelsize, PIC24_PANEL_BEGIN);
+	pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONEXEC, pic24_map[pic24_index].codepanelsize);
 	uint32_t address = pic24_map[pic24_index].calibaddr;
 	for (uint32_t i = 0; i < pic24_map[pic24_index].ncalib; ++i) {
-		pic24_write_buffered(k, address, pic24_conf.calib[i], PIC24_PANEL_UPDATE);
+		pic_write_panel(k, PIC_PANEL_UPDATE, address >> 1, pic24_conf.calib[i]);
 		address += 2;
 	}
-	pic24_write_buffered(k, PIC_VOID, PIC_VOID, PIC24_PANEL_END);
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 }
 
 /*
@@ -1122,27 +1138,28 @@ pic24_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint1
 	memset(pic24_conf.config, -1, sizeof(uint32_t) * PIC24_CONFIG_MAX);
 
 	switch (pic24_map[pic24_index].datasheet) {
-	case DS70102H: /* dsPIC30F         */
-	case DS70284B: /* dsPIC30F SMP S   */
+	case DS70102H: /* dsPIC30F      */
+	case DS70284B: /* dsPIC30F SMPS */
 		/* DS70284C-page 28 dsPIC30F1010 EXTERNALLY TIMED(200ms) */
 		pic24_dsPIC30F_erase(k, 200000);
 		break;
-	case DS39786D: /* PIC24FJ          */
-	case DS39934B: /* PIC24FJXXGA1/GB0 */
+	case DS39786D:	  /* PIC24FJ           */
+	case DS39934B:	  /* PIC24FJXXGA1/GB0  */
+	case DS30000510E: /* PIC24FJXXXGA2/GB2 */
 		pic24_PIC24FJ_erase(k);
 		break;
-	case DS70659C: /* dsPIC33FJ        */
-	case DS75012B: /* PIC24FJXXMC      */
+	case DS70659C: /* dsPIC33FJ         */
+	case DS75012B: /* PIC24FJXXMC       */
 		pic24_dsPIC33FJ_erase(k);
 		break;
-	case DS39919C: /* PIC24F KA        */
-	case DS30625D: /* PIC24F KM/KL     */
+	case DS39919C: /* PIC24F KA         */
+	case DS30625D: /* PIC24F KM/KL      */
 		pic24_PIC24FKA_erase(k);
 		break;
-	case DS70152H: /* dsPIC33F/PIC24H  */
+	case DS70152H: /* dsPIC33F/PIC24H   */
 		pic24_dsPIC33F_PIC24H_erase(k);
 		break;
-	case DS70663D: /* dsPIC33E/PIC24E  */
+	case DS70663D: /* dsPIC33EP/PIC24EP */
 		pic24_dsPIC33E_PIC24E_erase(k);
 		break;
 	default:printf("%s: information: unimplemented\n", __func__);
@@ -1157,13 +1174,32 @@ pic24_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint1
  *****************************************************************************/
 
 /*
+ * GET DEVICE INDEX
+ */
+static uint32_t
+pic24_get_dev(struct k8048 *k)
+{
+	uint32_t dev = 0;
+
+	/* Device id/rev */
+	pic24_set_read_pointer(k, PIC24_DEVID);
+	pic24_conf.deviceid = pic24_table_read16_post_increment(k);
+	pic24_conf.revision = pic24_table_read16_post_increment(k);
+
+	while (pic24_map[dev].deviceid) {
+		if (pic24_map[dev].deviceid == pic24_conf.deviceid)
+			break;
+		++dev;
+	}
+	return dev;
+}
+
+/*
  * GET CONFIGURATION
  */
 void
 pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 {
-	uint32_t dev;
-
 	/* NULL device */
 	pic24_index = PIC24_SIZE;
 
@@ -1172,6 +1208,7 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 
 	/* Device selected by user */
 	if (k->devicename[0]) {
+		uint32_t dev;
 		for (dev = 0; pic24_map[dev].deviceid; ++dev) {
 			if (strcasecmp(pic24_map[dev].devicename, k->devicename) == 0) {
 				/* Device recognised */
@@ -1185,13 +1222,24 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		}
 	}
 
-	/* Device configuration */
+	/* Device id/rev */
 	switch (pic24_map[pic24_index].datasheet) {
-	default:pic24_conf.tblpag  = 0x0032;
+	default:
+		pic24_conf.tblpag  = 0x0032;
 		pic24_conf.nvmcon  = 0x0760;
 		pic24_conf.visi    = 0x0784;
 		pic24_conf.tblnop  = 2 + 1 - 1;	/* TBLRD: 2 CYCLES + 1 STALL */
 		pic24_conf.gotonop = 2 + 0 - 1;	/* GOTO:  2 CYCLES + 0 STALL */
+		pic24_program_verify(k);
+		pic24_index = pic24_get_dev(k);
+#if 0
+		if (!pic24_map[pic24_index].deviceid) {
+			pic24_standby(k);
+			pic24_conf.tblpag  = 0x0054;
+			pic24_program_verify(k);
+			pic24_index = pic24_get_dev(k);
+		}
+#endif
 		break;
 	case DS70663D:
 		pic24_conf.tblpag  = 0x0054;
@@ -1199,23 +1247,20 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		pic24_conf.visi    = 0x0F88;
 		pic24_conf.tblnop  = 5 + 1 - 1;	/* TBLRD: 5 CYCLES + 1 STALL */
 		pic24_conf.gotonop = 4 + 0 - 1;	/* GOTO:  4 CYCLES + 0 STALL */
+		pic24_program_verify(k);
+		pic24_index = pic24_get_dev(k);
+		break;
+	case DS30000510E:
+		pic24_conf.tblpag  = 0x0054;
+		pic24_conf.nvmcon  = 0x0760;
+		pic24_conf.visi    = 0x0784;
+		pic24_conf.tblnop  = 2 + 1 - 1; /* TBLRD: 2 CYCLES + 1 STALL */
+		pic24_conf.gotonop = 2 + 0 - 1; /* GOTO:  2 CYCLES + 0 STALL */
+		pic24_program_verify(k);
+		pic24_index = pic24_get_dev(k);
 		break;
 	}
-	
-	pic24_program_verify(k);
-
-	/* Device id/rev */
-	pic24_set_read_pointer(k, PIC24_DEVID);
-	pic24_conf.deviceid = pic24_table_read16_post_increment(k);
-	pic24_conf.revision = pic24_table_read16_post_increment(k);
-
-	dev = 0;
-	while (pic24_map[dev].deviceid) {
-		if (pic24_map[dev].deviceid == pic24_conf.deviceid)
-			break;
-		++dev;
-	}
-	if (!pic24_map[dev].deviceid) {
+	if (!pic24_map[pic24_index].deviceid) {
 		if (pic24_conf.deviceid == 0x0000 || pic24_conf.deviceid == 0xFFFF) {
 			printf("%s: fatal error: %s.\n",
 				__func__, io_fault(k, pic24_conf.deviceid));
@@ -1226,9 +1271,6 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		pic24_standby(k);
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
-
-	/* Device recognised */
-	pic24_index = dev;
 
 	/* App-id */
 	if ((pic24_map[pic24_index].datasheet == DS70102H) ||	/* dsPIC30F      */
@@ -1306,7 +1348,7 @@ pic24_get_executive_size(uint32_t *addr)
 	if ((pic24_map[pic24_index].datasheet == DS70102H) ||	/* dsPIC30F      */
 		(pic24_map[pic24_index].datasheet == DS70284B))	/* dsPIC30F SMPS */
 		size = dsPIC30F_EXEC_HIGH - PIC24_EXEC_LOW;
-	else if (pic24_map[pic24_index].datasheet == DS70663D)	/* dsPIC33E */
+	else if (pic24_map[pic24_index].datasheet == DS70663D)	/* dsPIC33EP/PIC24EP */
 		size = dsPIC33E_EXEC_HIGH - PIC24_EXEC_LOW;
 	else
 		size = PIC24_EXEC_HIGH - PIC24_EXEC_LOW;
@@ -1389,21 +1431,22 @@ pic24_read_data_memory_block(struct k8048 *k, uint16_t *data, uint32_t addr, uin
  *****************************************************************************/
 
 /*
- * WRITE BUFFER INIT
+ * WRITE PROGRAM INIT
  *
  *  SETUP FOR PROGRAM OR DATA WRITING
  */
 void
-pic24_write_buffer_init(struct k8048 *k)
+pic24_write_program_init(struct k8048 *k)
 {
 	/* RESET CONFIG & FUID FOR PROGRAMMING */
 	memset(pic24_conf.fuid, 0, sizeof(uint32_t) * PIC24_FUID_MAX);
 	memset(pic24_conf.config, 0, sizeof(uint32_t) * PIC24_CONFIG_MAX);
 
 	switch (pic24_map[pic24_index].datasheet) {
-	case DS39786D: /* PIC24FJ          */
-	case DS70152H: /* dsPIC33F/PIC24H  */
-	case DS39934B: /* PIC24FJXXGA1/GB0 */
+	case DS39786D:    /* PIC24FJ           */
+	case DS70152H:    /* dsPIC33F/PIC24H   */
+	case DS39934B:    /* PIC24FJXXGA1/GB0  */
+	case DS30000510E: /* PIC24FJXXXGA2/GB2 */
  		/* NVMCON = 0x760 */
 		pic24_six(k, 0x24001A, 0); 	/* MOV #0x4001, W10     */
 		pic24_six(k, 0x883B0A, 0);	/* MOV W10, NVMCON      */
@@ -1420,7 +1463,7 @@ pic24_write_buffer_init(struct k8048 *k)
 		pic24_six(k, 0x24004A, 0); 	/* MOV #0x4004, W10     */
 		pic24_six(k, 0x883B0A, 0);	/* MOV W10, NVMCON      */
 		break;
-	case DS70663D: /* dsPIC33E/PIC24E */
+	case DS70663D: /* dsPIC33EP/PIC24EP */
 		pic24_six(k, 0x200FAC, 0);	/* MOV #0xFA, W12       */
 		pic24_six(k, 0x8802AC, 0);	/* MOV W12, TBLPAG      */
 	default:break;
@@ -1638,95 +1681,31 @@ pic24_write_data_word16(struct k8048 *k, uint32_t address, uint32_t word)
 }
 
 /*
- * WRITE BUFFER TO 24-BIT PROGRAM FLASH OR 16-BIT DATA EEPROM
+ * WRITE PANEL TO 24-BIT PROGRAM FLASH OR 16-BIT DATA EEPROM
  */
 void
-pic24_write_buffer(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *buffer, uint32_t buffer_size)
+pic24_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *panel, uint32_t panel_size)
 {
 	switch (region) {
-	case PIC24_REGIONCODE:
-	case PIC24_REGIONEXEC:
-		if (buffer_size == 1) {		/* dsPIC33FJ/PIC24FJXXMC WORD WRITING */
-			pic24_write_program_word24(k, address, buffer[0]);
-		} else if (buffer_size == 2) {	/* dsPIC33E/PIC24E DWORD WRITING */
-			pic24_write_program_word48(k, address, buffer[0], buffer[1]);
+	case PIC_REGIONCODE:
+	case PIC_REGIONEXEC:
+		if (panel_size == 1) {		/* dsPIC33FJ/PIC24FJXXMC WORD WRITING */
+			pic24_write_program_word24(k, address << 1, panel[0]);
+		} else if (panel_size == 2) {	/* dsPIC33E/PIC24E DWORD WRITING */
+			pic24_write_program_word48(k, address << 1, panel[0], panel[1]);
 		} else {			/* PANEL WRITING */
-			pic24_write_program(k, address, buffer, buffer_size);
+			pic24_write_program(k, address << 1, panel, panel_size);
 		}
 		break;
-	case PIC24_REGIONDATA:
-		if (buffer_size == 1) {		/* PIC24F KA KM/KL WORD WRITING */
-			pic24_write_data_word16(k, address, buffer[0]);
+	case PIC_REGIONDATA:
+		if (panel_size == 1) {		/* PIC24F KA KM/KL WORD WRITING */
+			pic24_write_data_word16(k, address << 1, panel[0]);
 		} else {			/* PANEL WRITING */
-			pic24_write_data(k, address, buffer, buffer_size);
+			pic24_write_data(k, address << 1, panel, panel_size);
 		}
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		break;
-	}
-}
-
-/*
- * WRITE BUFFERED
- */
-void
-pic24_write_buffered(struct k8048 *k, uint32_t data1, uint32_t data2, int mode)
-{
-	static uint32_t buffer_region = PIC24_REGIONNOTSUP;
-	static uint32_t buffer_address = 0;
-	static uint32_t *buffer = NULL;
-	static uint32_t buffer_size = 0;
-	static uint32_t write_pending = 0;
-
-	if (mode == PIC24_PANEL_BEGIN || mode == PIC24_PANEL_END) {
-		if (buffer) {
-			if (write_pending) {
-				write_pending = 0;
-				pic24_write_buffer(k, buffer_region, buffer_address << 1, buffer, buffer_size);
-			}
-			free(buffer);
-			buffer_region = PIC24_REGIONNOTSUP;
-			buffer_address = 0;
-			buffer = NULL;
-			buffer_size = 0;
-		}
-	}
-	if (mode == PIC24_PANEL_BEGIN) {
-		buffer_region = data1;
-		buffer_size = data2;
-	}
-	if (mode == PIC24_PANEL_BEGIN || mode == PIC24_PANEL_UPDATE) {
-		if (buffer == NULL) {
-			if (buffer_size == 0) {
-				printf("%s: fatal error: zero sized buffer\n", __func__);
-				io_exit(k, EX_SOFTWARE); /* Panic */
-			}
-			buffer = malloc(sizeof(uint32_t) * buffer_size);
-			if (buffer == NULL) {
-				printf("%s: fatal error: malloc failed\n", __func__);
-				io_exit(k, EX_SOFTWARE); /* Panic */
-			}
-			memset((void *)buffer, -1, sizeof(uint32_t) * buffer_size);
-		}
-	}
-	if (mode == PIC24_PANEL_UPDATE) {
-		uint32_t address, new_address, boundary, mask;
-
-		boundary = 0 - buffer_size;
-		mask = buffer_size - 1;
-		address = data1 >> 1;
-		new_address = address & boundary;
-		if (new_address != buffer_address) {
-			if (write_pending) {
-				write_pending = 0;
-				pic24_write_buffer(k, buffer_region, buffer_address << 1, buffer, buffer_size);
-				memset((void *)buffer, -1, sizeof(uint32_t) * buffer_size);
-			}
-			buffer_address = new_address;
-		}
-		buffer[address & mask] = data2;
-		write_pending++;
 	}
 }
 
@@ -1755,6 +1734,7 @@ pic24_write_config_init1(struct k8048 *k)
 	default:break;
 	}
 }
+
 void
 pic24_write_config_init2(struct k8048 *k)
 {
@@ -1876,7 +1856,22 @@ pic24_write_config(struct k8048 *k)
  *****************************************************************************/
 
 /*
- * DETERMINE MEMORY REGION: CODE, DATA, CONFIG, EXEC, OR FUID
+ * DETERMINE MEMORY REGION: CODE, DATA, CONFIG, EXEC, OR ID
+ *
+ *  RETURN PIC_REGIONCODE:
+ *	000000 .. FLASH - 2
+ *
+ *  RETURN PIC_REGIONDATA:
+ *	7FFXXX .. 7FFFFE
+ *
+ *  RETURN PIC_REGIONCONFIG:
+ *	F80000 .. F8000E
+ *
+ *  RETURN PIC_REGIONEXEC:
+ *	800000 .. 8005BE
+ *
+ *  RETURN PIC_REGIONID:
+ *	8005C0 .. 8005FE
  */
 uint32_t
 pic24_getregion(uint32_t address)
@@ -1885,7 +1880,7 @@ pic24_getregion(uint32_t address)
 	uint32_t code_high = (pic24_map[pic24_index].flash << 1) - 2;
 
 	if (address <= code_high) {
-		return PIC24_REGIONCODE;
+		return PIC_REGIONCODE;
 	}
 	/* EEPROM */
 	if (pic24_map[pic24_index].eeprom) {
@@ -1893,28 +1888,28 @@ pic24_getregion(uint32_t address)
 		uint32_t data_high = PIC24_EXEC_LOW - 2;
 
 		if (address >= data_low && address <= data_high) {
-			return PIC24_REGIONDATA;
+			return PIC_REGIONDATA;
 		}
 	}
 	/* EXEC */
 	if ((pic24_map[pic24_index].datasheet == DS70102H) ||		/* dsPIC30F      */
 		(pic24_map[pic24_index].datasheet == DS70102H)) {	/* dsPIC30F SMPS */
 		if (address >= PIC24_EXEC_LOW && address <= dsPIC30F_EXEC_HIGH) {
-			return PIC24_REGIONEXEC;
+			return PIC_REGIONEXEC;
 		}
-	} else if (pic24_map[pic24_index].datasheet == DS70663D) {	/* dsPIC33E */
+	} else if (pic24_map[pic24_index].datasheet == DS70663D) {	/* dsPIC33EP/PIC24EP */
 		if (address >= PIC24_EXEC_LOW && address <= dsPIC33E_EXEC_HIGH) {
-			return PIC24_REGIONEXEC;
+			return PIC_REGIONEXEC;
 		}
 	} else if (address >= PIC24_EXEC_LOW && address <= PIC24_EXEC_HIGH) {
-		return PIC24_REGIONEXEC;
+		return PIC_REGIONEXEC;
 	}
 	/* FUID */
 	if (pic24_map[pic24_index].fuidaddr) {
 		uint32_t fuid_high = pic24_map[pic24_index].fuidaddr + 2 * pic24_map[pic24_index].nfuid - 2;
 
 		if (address >= pic24_map[pic24_index].fuidaddr && address <= fuid_high) {
-			return PIC24_REGIONFUID;
+			return PIC_REGIONID;
 		}
 	}
 	/* CONFIG */
@@ -1922,12 +1917,11 @@ pic24_getregion(uint32_t address)
 		uint32_t config_high = PIC24_CONFIG_ADDR + 2 * pic24_map[pic24_index].nconfig - 2;
 
 		if (address >= PIC24_CONFIG_ADDR && address <= config_high) {
-			return PIC24_REGIONCONFIG;
+			return PIC_REGIONCONFIG;
 		}
 	}
-	printf("%s: warning: address unsupported [%06X]\n",
-		__func__, address);
-	return PIC24_REGIONNOTSUP;
+	printf("%s: warning: address unsupported [%06X]\n", __func__, address);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -1939,33 +1933,32 @@ uint32_t
 pic24_init_writeregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
-	case PIC24_REGIONCODE:
-	case PIC24_REGIONEXEC:
+	case PIC_REGIONCODE:
+	case PIC_REGIONEXEC:
 		if (pic24_map[pic24_index].codepanelsize == 1) { /* dsPIC33FJ WORD WRITING */
 			/* TBLPAG = 0x00 */
 			pic24_six(k, 0x200001, 1);/* MOV #0x00, W1  */
 			pic24_six(k, 0x880191, 0);/* MOV W1, TBLPAG */
 		}
-		pic24_write_buffered(k, PIC24_REGIONCODE, pic24_map[pic24_index].codepanelsize, PIC24_PANEL_BEGIN);
+		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONCODE, pic24_map[pic24_index].codepanelsize);
 		return region;
 		break;
-	case PIC24_REGIONDATA:
+	case PIC_REGIONDATA:
 		if (pic24_map[pic24_index].datapanelsize == 1) { /* PIC24F KM/KL WORD WRITING */
 			/* TBLPAG = 0x7F */
 			pic24_six(k, 0x2007F1, 1); /* MOV #0x7F, W1  */
 			pic24_six(k, 0x880191, 0); /* MOV W1, TBLPAG */
 		}
-		pic24_write_buffered(k, PIC24_REGIONDATA, pic24_map[pic24_index].datapanelsize, PIC24_PANEL_BEGIN);
+		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONDATA, pic24_map[pic24_index].datapanelsize);
 		return region;
 		break;
-	case PIC24_REGIONCONFIG:
-	case PIC24_REGIONFUID:
+	case PIC_REGIONCONFIG:
+	case PIC_REGIONID:
 		return region;
 		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-	return PIC24_REGIONNOTSUP;
+	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -1975,25 +1968,24 @@ void
 pic24_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t data)
 {
 	switch (region) {
-	case PIC24_REGIONCODE:
-	case PIC24_REGIONDATA:
-	case PIC24_REGIONEXEC:
-		pic24_write_buffered(k, address, data, PIC24_PANEL_UPDATE);
+	case PIC_REGIONCODE:
+	case PIC_REGIONDATA:
+	case PIC_REGIONEXEC:
+		pic_write_panel(k, PIC_PANEL_UPDATE, address >> 1, data);
 		break;
-	case PIC24_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		{
 		uint32_t i = (address - pic24_map[pic24_index].configaddr) >> 1;
 		pic24_conf.config[i] = (data & PIC24_CONFIG_MASK) | PIC24_CONFIG_PENDING;
 		}
 		break;
-	case PIC24_REGIONFUID:
+	case PIC_REGIONID:
 		{
 		uint32_t i = (address - pic24_map[pic24_index].fuidaddr) >> 1;
 		pic24_conf.fuid[i] = (data & PIC24_CONFIG_MASK) | PIC24_CONFIG_PENDING;
 		}
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		break;
 	}
 }
@@ -2006,12 +1998,11 @@ pic24_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t d
 uint32_t
 pic24_init_verifyregion(struct k8048 *k, uint32_t region)
 {
-	if (region != PIC24_REGIONNOTSUP) {
+	if (region != PIC_REGIONNOTSUP) {
 		return region;
 	}
-	printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-	return PIC24_REGIONNOTSUP;
+	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -2024,11 +2015,10 @@ pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 {
 	uint32_t vdata = 0;
 
-	if (region == PIC24_REGIONNOTSUP) {
-		printf("%s: warning: region unsupported [%d]\n",
-			__func__, region);
+	if (region == PIC_REGIONNOTSUP) {
+		printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		return 1;
-	} else if (region == PIC24_REGIONCONFIG) {
+	} else if (region == PIC_REGIONCONFIG) {
 		/* Can't verify the config area (assume okay) */
 		return 0;
 	}
@@ -2052,7 +2042,7 @@ void
 pic24_program(struct k8048 *k, char *filename, int blank)
 {
 	uint32_t PC_address, wdata;
-	uint32_t new_region, current_region = PIC24_REGIONNOTSUP;
+	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
 	/* Get HEX */
@@ -2068,18 +2058,18 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	 */
 
 	pic24_program_verify(k);
-	pic24_write_buffer_init(k);
+	pic24_write_program_init(k);
 
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = (k->pdata[i]->address >> 1);
 		new_region = pic24_getregion(PC_address);
-		if (new_region == PIC24_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
-			pic24_write_buffered(k, PIC_VOID, PIC_VOID, PIC24_PANEL_END);
+			pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 			current_region = pic24_init_writeregion(k, new_region);
-			if (current_region == PIC24_REGIONNOTSUP)
+			if (current_region == PIC_REGIONNOTSUP)
 				continue;
 		}
 
@@ -2092,7 +2082,7 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 			total++;
 		}
 	}
-	pic24_write_buffered(k, PIC_VOID, PIC_VOID, PIC24_PANEL_END);
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 
 	pic24_standby(k);
 
@@ -2112,7 +2102,7 @@ uint32_t
 pic24_verify(struct k8048 *k, char *filename)
 {
 	uint32_t PC_address, fail = 0, total = 0, wdata;
-	uint32_t new_region, current_region = PIC24_REGIONNOTSUP;
+	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 
 	/* Get HEX */
 	if (!inhx32(k, filename, 4))
@@ -2128,11 +2118,11 @@ pic24_verify(struct k8048 *k, char *filename)
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = (k->pdata[i]->address >> 1);
 		new_region = pic24_getregion(PC_address);
-		if (new_region == PIC24_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
 			current_region = pic24_init_verifyregion(k, new_region);
-			if (current_region == PIC24_REGIONNOTSUP)
+			if (current_region == PIC_REGIONNOTSUP)
 				continue;
 		}
 
@@ -2259,7 +2249,8 @@ pic24_dumpdeviceid(struct k8048 *k)
 	}
 
 	/* PIC24F with 4 volatile config words */
-	else if (pic24_map[pic24_index].datasheet == DS39934B) {
+	else if (pic24_map[pic24_index].datasheet == DS39934B ||
+		pic24_map[pic24_index].datasheet == DS30000510E) {
 		pic24_dumpconfig(k, PIC_BRIEF);
 		printf("[%06X] [APPID]    %02X\n", PIC24_APPID_ADDR, 0xFF & pic24_conf.appid);
 		for (uint32_t i = 0; i < pic24_map[pic24_index].ncalib; ++i) {
@@ -2275,7 +2266,7 @@ pic24_dumpdeviceid(struct k8048 *k)
 			PIC24_DEVREV, pic24_conf.revision, rev);
 	}
 
-	/* dsPIC33E/PIC24E with volatile config */
+	/* dsPIC33EP/PIC24EP with volatile config */
 	else if (pic24_map[pic24_index].datasheet == DS70663D) {
 		pic24_dumpconfig(k, PIC_BRIEF);
 		printf("[%06X] [APPID]    %02X\n", dsPIC33E_APPID_ADDR, 0xFF & pic24_conf.appid);
@@ -2408,7 +2399,8 @@ pic24_dumpconfig(struct k8048 *k, int mode)
 	}
 
 	/* PIC24F with 4 volatile config words */
-	else if (pic24_map[pic24_index].datasheet == DS39934B) {
+	else if (pic24_map[pic24_index].datasheet == DS39934B ||
+		pic24_map[pic24_index].datasheet == DS30000510E) {
 		printf("[%06X] [CONFIG4]  %04X\n",
 			pic24_map[pic24_index].configaddr + 0, pic24_conf.config[0]);
 		printf("[%06X] [CONFIG3]  %04X\n",
@@ -2419,7 +2411,7 @@ pic24_dumpconfig(struct k8048 *k, int mode)
 			pic24_map[pic24_index].configaddr + 6, pic24_conf.config[3]);
 	}
 
-	/* dsPIC33E/PIC24E with volatile config */
+	/* dsPIC33EP/PIC24EP with volatile config */
 	else if (pic24_map[pic24_index].datasheet == DS70663D) {
 		char config[10][11] = {
 			/* 0x00XXEC */ "[RESERVED]",
@@ -2485,7 +2477,7 @@ pic24_dumphexcode(struct k8048 *k, uint32_t address, uint32_t size, uint32_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: program flash empty\n", __func__);
+		printf("%s: information: flash empty\n", __func__);
 }
 
 /*
@@ -2543,7 +2535,7 @@ pic24_dumphexdata(struct k8048 *k, uint32_t address, uint32_t size, uint16_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: data eeprom empty\n", __func__);
+		printf("%s: information: data empty\n", __func__);
 }
 
 /*

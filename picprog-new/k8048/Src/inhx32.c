@@ -121,12 +121,9 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 		return 0;
 	}
 #ifdef DEBUG
-	if (k->debug >= 100) {
-		printf("FILE [%s]\n", filename);
-	}
+	printf("FILE [%s]\n", filename);
 #endif
-	while (tt != TT_EOF && fgets(line, STRLEN, f1) != NULL)
-	{
+	while (tt != TT_EOF && fgets(line, STRLEN, f1) != NULL) {
 		line[STRMAX] = '\0';
 
 		/* Strip CRLF */
@@ -205,14 +202,12 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 					ix += 2;
 				}
 #ifdef DEBUG
-				if (k->debug >= 100) {
-					printf("AAAA=%04X BB=%02X ADDR=%06X >> %06X ",
-						aaaa, bb, data->address, data->address >> 1);
-					for (n = 0; n < bb; n++) {
-						printf("%02X ", data->bytes[n]);
-					}
-					putchar('\n');
+				printf("AAAA=%04X BB=%02X ADDR=%06X >> %06X ",
+					aaaa, bb, data->address, data->address >> 1);
+				for (n = 0; n < bb; n++) {
+					printf("%02X ", data->bytes[n]);
 				}
+				putchar('\n');
 #endif
 				/* Find entry in tree */
 				if (tfind((void *)(data), (void **)(&root), inhx32_compare) != NULL) {
@@ -234,9 +229,7 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 				if (aaaa == 0 && bb == 2) {
 					extended_address = (inhx32_gethexb(&line[HHHH]) << 24) | (inhx32_gethexb(&line[HHHH + 2]) << 16);
 #ifdef DEBUG
-					if (k->debug >= 100) {
-						printf("AAAA=%04X BB=%02X ADDR=%06X\n", aaaa, bb, extended_address);
-					}
+					printf("AAAA=%04X BB=%02X ADDR=%06X\n", aaaa, bb, extended_address);
 #endif
 				} else {
 					printf("%s: warning: ignoring invalid extended linear address [aaaa=%04X, bb=%d]\n", __func__, aaaa, bb);
@@ -292,18 +285,16 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 		io_exit(k, EX_OSERR); /* Panic */
 	}
 #ifdef DEBUG
-	if (k->debug >= 100) {
-		printf("DATA\n");
-		for (uint32_t i = 0; i < k->count; ++i) {
-			printf("          NB=%02X ADDR=%06X >> %06X ",
-				k->pdata[i]->nbytes,
-				k->pdata[i]->address,
-				k->pdata[i]->address >> 1);
-			for (uint32_t j = 0; j < k->pdata[i]->nbytes; ++j) {
-				printf("%02X ", k->pdata[i]->bytes[j]);
-			}
-			putchar('\n');
+	printf("DATA\n");
+	for (uint32_t i = 0; i < k->count; ++i) {
+		printf("          NB=%02X ADDR=%06X >> %06X ",
+			k->pdata[i]->nbytes,
+			k->pdata[i]->address,
+			k->pdata[i]->address >> 1);
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; ++j) {
+			printf("%02X ", k->pdata[i]->bytes[j]);
 		}
+		putchar('\n');
 	}
 #endif
 	/* Return the program data line count */

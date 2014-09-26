@@ -1,14 +1,60 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; Simple tone generator
-;
-; Copyright (C) 2013 Darron Broad
+; Copyright (C) 2005-2014 Darron Broad
 ; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
 ;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
-; This file may be assembled with gpasm-0.15.0 and later.
+; Simple tone generator
+;
+; Beep like an IBM PC and POKE like a VIC=20
+;
+; $ i2cdetect -y 1
+;      0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+; 00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 40: 40 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
+; 70: -- -- -- -- -- -- -- --                         
+;
+; $ i2cset -y 1 0x40 0x00 0x1C              # SOUND ON  VOICE=0 NOTE=28
+;
+; $ i2cset -y 1 0x40 0x00 0x00              # SOUND OFF VOICE=0 NOTE=0
+;
+; Voice may range from 0 to 3. All voices are square waves.
+;
+; Note may range from 24 to 107 and this value is equivalent to that
+; found in the midi specification.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -41,30 +87,6 @@
 #INCLUDE        "device.inc"                ;DEVICE CONFIG
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Beep like an IBM PC and POKE like a VIC=20
-;
-; $ i2cdetect -y 1
-;      0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
-; 00:          -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 40: 40 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-; 70: -- -- -- -- -- -- -- --                         
-;
-; $ i2cset -y 1 0x40 0x00 0x1C              # SOUND ON  VOICE=0 NOTE=28
-;
-; $ i2cset -y 1 0x40 0x00 0x00              # SOUND OFF VOICE=0 NOTE=0
-;
-; Voice may range from 0 to 3. All voices are square waves.
-;
-; Note may range from 24 to 107 and this value is equivalent to that
-; found in the midi specification.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -344,7 +366,93 @@ RESETSFR
 ; Out:  OK:    W=0 CARRY=SET   (FSR0)=TIMER RELOAD
 ;       ERROR: W=1 CARRY=CLEAR
 ;
-#INCLUDE        "notetable.inc"
+NOTEFIRST EQU .24
+NOTELAST  EQU .107
+NOTETABLE
+    DW 0x111C ;MIDI= 24(0x18) OCTAVE=-3 NOTE=C     f=32.70    (32.70)
+    DW 0x1E84 ;MIDI= 25(0x19) OCTAVE=-3 NOTE=C#/Db f=34.65    (34.65)
+    DW 0x2B2C ;MIDI= 26(0x1A) OCTAVE=-3 NOTE=D     f=36.71    (36.71)
+    DW 0x371E ;MIDI= 27(0x1B) OCTAVE=-3 NOTE=D#/Eb f=38.89    (38.89)
+    DW 0x4264 ;MIDI= 28(0x1C) OCTAVE=-3 NOTE=E     f=41.20    (41.20)
+    DW 0x4D09 ;MIDI= 29(0x1D) OCTAVE=-3 NOTE=F     f=43.65    (43.65)
+    DW 0x5714 ;MIDI= 30(0x1E) OCTAVE=-3 NOTE=F#/Gb f=46.25    (46.25)
+    DW 0x608F ;MIDI= 31(0x1F) OCTAVE=-3 NOTE=G     f=49.00    (49.00)
+    DW 0x6982 ;MIDI= 32(0x20) OCTAVE=-3 NOTE=G#,Ab f=51.91    (51.91)
+    DW 0x71F4 ;MIDI= 33(0x21) OCTAVE=-3 NOTE=A     f=55.00    (55.00)
+    DW 0x79ED ;MIDI= 34(0x22) OCTAVE=-3 NOTE=A#/Bb f=58.27    (58.27)
+    DW 0x8174 ;MIDI= 35(0x23) OCTAVE=-3 NOTE=B     f=61.74    (61.74)
+    DW 0x888E ;MIDI= 36(0x24) OCTAVE=-2 NOTE=C     f=65.41    (65.41)
+    DW 0x8F42 ;MIDI= 37(0x25) OCTAVE=-2 NOTE=C#/Db f=69.30    (69.30)
+    DW 0x9596 ;MIDI= 38(0x26) OCTAVE=-2 NOTE=D     f=73.42    (73.42)
+    DW 0x9B8F ;MIDI= 39(0x27) OCTAVE=-2 NOTE=D#/Eb f=77.78    (77.78)
+    DW 0xA132 ;MIDI= 40(0x28) OCTAVE=-2 NOTE=E     f=82.41    (82.41)
+    DW 0xA684 ;MIDI= 41(0x29) OCTAVE=-2 NOTE=F     f=87.31    (87.31)
+    DW 0xAB8A ;MIDI= 42(0x2A) OCTAVE=-2 NOTE=F#/Gb f=92.50    (92.50)
+    DW 0xB048 ;MIDI= 43(0x2B) OCTAVE=-2 NOTE=G     f=98.00    (98.00)
+    DW 0xB4C1 ;MIDI= 44(0x2C) OCTAVE=-2 NOTE=G#,Ab f=103.83   (103.83)
+    DW 0xB8FA ;MIDI= 45(0x2D) OCTAVE=-2 NOTE=A     f=110.00   (110.00)
+    DW 0xBCF7 ;MIDI= 46(0x2E) OCTAVE=-2 NOTE=A#/Bb f=116.54   (116.54)
+    DW 0xC0BA ;MIDI= 47(0x2F) OCTAVE=-2 NOTE=B     f=123.47   (123.47)
+    DW 0xC447 ;MIDI= 48(0x30) OCTAVE=-1 NOTE=C     f=130.81   (130.81)
+    DW 0xC7A1 ;MIDI= 49(0x31) OCTAVE=-1 NOTE=C#/Db f=138.59   (138.59)
+    DW 0xCACB ;MIDI= 50(0x32) OCTAVE=-1 NOTE=D     f=146.83   (146.83)
+    DW 0xCDC8 ;MIDI= 51(0x33) OCTAVE=-1 NOTE=D#/Eb f=155.56   (155.57)
+    DW 0xD099 ;MIDI= 52(0x34) OCTAVE=-1 NOTE=E     f=164.81   (164.81)
+    DW 0xD342 ;MIDI= 53(0x35) OCTAVE=-1 NOTE=F     f=174.61   (174.61)
+    DW 0xD5C5 ;MIDI= 54(0x36) OCTAVE=-1 NOTE=F#/Gb f=185.00   (185.00)
+    DW 0xD824 ;MIDI= 55(0x37) OCTAVE=-1 NOTE=G     f=196.00   (196.00)
+    DW 0xDA61 ;MIDI= 56(0x38) OCTAVE=-1 NOTE=G#,Ab f=207.65   (207.66)
+    DW 0xDC7D ;MIDI= 57(0x39) OCTAVE=-1 NOTE=A     f=220.00   (220.00)
+    DW 0xDE7B ;MIDI= 58(0x3A) OCTAVE=-1 NOTE=A#/Bb f=233.08   (233.07)
+    DW 0xE05D ;MIDI= 59(0x3B) OCTAVE=-1 NOTE=B     f=246.94   (246.94)
+    DW 0xE223 ;MIDI= 60(0x3C) OCTAVE=0  NOTE=C     f=261.63   (261.61)
+    DW 0xE3D1 ;MIDI= 61(0x3D) OCTAVE=0  NOTE=C#/Db f=277.18   (277.20)
+    DW 0xE566 ;MIDI= 62(0x3E) OCTAVE=0  NOTE=D     f=293.66   (293.69)
+    DW 0xE6E4 ;MIDI= 63(0x3F) OCTAVE=0  NOTE=D#/Eb f=311.13   (311.14)
+    DW 0xE84D ;MIDI= 64(0x40) OCTAVE=0  NOTE=E     f=329.63   (329.65)
+    DW 0xE9A1 ;MIDI= 65(0x41) OCTAVE=0  NOTE=F     f=349.23   (349.22)
+    DW 0xEAE3 ;MIDI= 66(0x42) OCTAVE=0  NOTE=F#/Gb f=369.99   (370.03)
+    DW 0xEC12 ;MIDI= 67(0x43) OCTAVE=0  NOTE=G     f=392.00   (392.00)
+    DW 0xED30 ;MIDI= 68(0x44) OCTAVE=0  NOTE=G#,Ab f=415.30   (415.28)
+    DW 0xEE3F ;MIDI= 69(0x45) OCTAVE=0  NOTE=A     f=440.00   (440.04)
+    DW 0xEF3E ;MIDI= 70(0x46) OCTAVE=0  NOTE=A#/Bb f=466.16   (466.20)
+    DW 0xF02E ;MIDI= 71(0x47) OCTAVE=0  NOTE=B     f=493.88   (493.83)
+    DW 0xF112 ;MIDI= 72(0x48) OCTAVE=1  NOTE=C     f=523.25   (523.29)
+    DW 0xF1E8 ;MIDI= 73(0x49) OCTAVE=1  NOTE=C#/Db f=554.37   (554.32)
+    DW 0xF2B3 ;MIDI= 74(0x4A) OCTAVE=1  NOTE=D     f=587.33   (587.37)
+    DW 0xF372 ;MIDI= 75(0x4B) OCTAVE=1  NOTE=D#/Eb f=622.25   (622.28)
+    DW 0xF426 ;MIDI= 76(0x4C) OCTAVE=1  NOTE=E     f=659.26   (659.20)
+    DW 0xF4D1 ;MIDI= 77(0x4D) OCTAVE=1  NOTE=F     f=698.46   (698.57)
+    DW 0xF571 ;MIDI= 78(0x4E) OCTAVE=1  NOTE=F#/Gb f=739.99   (739.92)
+    DW 0xF609 ;MIDI= 79(0x4F) OCTAVE=1  NOTE=G     f=783.99   (784.01)
+    DW 0xF698 ;MIDI= 80(0x50) OCTAVE=1  NOTE=G#,Ab f=830.61   (830.56)
+    DW 0xF71F ;MIDI= 81(0x51) OCTAVE=1  NOTE=A     f=880.00   (879.89)
+    DW 0xF79F ;MIDI= 82(0x52) OCTAVE=1  NOTE=A#/Bb f=932.33   (932.40)
+    DW 0xF817 ;MIDI= 83(0x53) OCTAVE=1  NOTE=B     f=987.77   (987.65)
+    DW 0xF889 ;MIDI= 84(0x54) OCTAVE=2  NOTE=C     f=1046.50  (1046.57)
+    DW 0xF8F4 ;MIDI= 85(0x55) OCTAVE=2  NOTE=C#/Db f=1108.73  (1108.65)
+    DW 0xF959 ;MIDI= 86(0x56) OCTAVE=2  NOTE=D     f=1174.66  (1174.40)
+    DW 0xF9B9 ;MIDI= 87(0x57) OCTAVE=2  NOTE=D#/Eb f=1244.51  (1244.56)
+    DW 0xFA13 ;MIDI= 88(0x58) OCTAVE=2  NOTE=E     f=1318.51  (1318.39)
+    DW 0xFA68 ;MIDI= 89(0x59) OCTAVE=2  NOTE=F     f=1396.91  (1396.65)
+    DW 0xFAB9 ;MIDI= 90(0x5A) OCTAVE=2  NOTE=F#/Gb f=1479.98  (1480.38)
+    DW 0xFB04 ;MIDI= 91(0x5B) OCTAVE=2  NOTE=G     f=1567.98  (1567.40)
+    DW 0xFB4C ;MIDI= 92(0x5C) OCTAVE=2  NOTE=G#,Ab f=1661.22  (1661.13)
+    DW 0xFB90 ;MIDI= 93(0x5D) OCTAVE=2  NOTE=A     f=1760.00  (1760.56)
+    DW 0xFBCF ;MIDI= 94(0x5E) OCTAVE=2  NOTE=A#/Bb f=1864.66  (1863.93)
+    DW 0xFC0C ;MIDI= 95(0x5F) OCTAVE=2  NOTE=B     f=1975.53  (1976.28)
+    DW 0xFC44 ;MIDI= 96(0x60) OCTAVE=3  NOTE=C     f=2093.00  (2092.05)
+    DW 0xFC7A ;MIDI= 97(0x61) OCTAVE=3  NOTE=C#/Db f=2217.46  (2217.29)
+    DW 0xFCAD ;MIDI= 98(0x62) OCTAVE=3  NOTE=D     f=2349.32  (2350.18)
+    DW 0xFCDC ;MIDI= 99(0x63) OCTAVE=3  NOTE=D#/Eb f=2489.02  (2487.56)
+    DW 0xFD0A ;MIDI=100(0x64) OCTAVE=3  NOTE=E     f=2637.02  (2638.52)
+    DW 0xFD34 ;MIDI=101(0x65) OCTAVE=3  NOTE=F     f=2793.83  (2793.30)
+    DW 0xFD5C ;MIDI=102(0x66) OCTAVE=3  NOTE=F#/Gb f=2959.96  (2958.58)
+    DW 0xFD82 ;MIDI=103(0x67) OCTAVE=3  NOTE=G     f=3135.96  (3134.80)
+    DW 0xFDA6 ;MIDI=104(0x68) OCTAVE=3  NOTE=G#,Ab f=3322.44  (3322.26)
+    DW 0xFDC8 ;MIDI=105(0x69) OCTAVE=3  NOTE=A     f=3520.00  (3521.13)
+    DW 0xFDE8 ;MIDI=106(0x6A) OCTAVE=3  NOTE=A#/Bb f=3729.31  (3731.34)
+    DW 0xFE06 ;MIDI=107(0x6B) OCTAVE=3  NOTE=B     f=3951.07  (3952.57)
 RELOAD
 ;RANGECHECK=http://www.piclist.com/techref/microchip/rangechk.htm
                 MOVF    ARG0,W

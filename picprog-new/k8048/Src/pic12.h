@@ -57,6 +57,10 @@ struct pic12_dsmap {
 	uint8_t nlatches;
 };
 
+/******************************************************************************
+ * MEMORY
+ *****************************************************************************/
+
 #define PIC12_WORD(X) (((X) * 8192.0) / 12) /* KB to words */
 
 /*
@@ -67,13 +71,6 @@ struct pic12_dsmap {
 #endif
 #define PIC12_CODE_HIGH (0x07FF)	/* 2K words (3KB) is the largest flash size available */
 #define PIC12_CONFIG    (0x0FFF)	/* default config address */
-
-/*
- * MEMORY REGIONS
- */
-#define PIC12_REGIONNOTSUP (0)		/* ?               */
-#define PIC12_REGIONCODE   (1)		/* 0 .. FLASH SIZE */
-#define PIC12_REGIONCONFIG (2)		/* 0xFFF           */
 
 /*
  * PROGRAM / ERASE
@@ -144,9 +141,7 @@ struct pic12_dsmap {
 #define DS41317B (41317)
 #define PIC16F526 (16526)
 
-/******************************************************************************
- * PROTOTYPES
- *****************************************************************************/
+/******************************************************************************/
 
 uint32_t pic12_arch(struct k8048 *);
 void pic12_selector(void);

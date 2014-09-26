@@ -1,10 +1,45 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F506 ICSPIO Demo Test (Receive commands, send data).
 ;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; This demonstrates how we may receive commands from the host computer
+; via the ISCP port and execute them. Two commands are implemented.
+; The first command takes one argument which sets five LEDs to that
+; value and the second command takes no argument yet demonstrates how
+; we may send a value back to the host which, in this case, is the
+; current status of the first two switches.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -20,7 +55,7 @@
 ; RB3/!MCLR/VPP   4   11 RB2/AN2/C1OUT
 ; RC5/TOCKI       5   10 RC0/C2IN+
 ; RC4/C2OUT       6    9 RC1/C2IN-
-; RC3             7----8 RC2/VCREF
+; RC3             7----8 RC2/CVREF
 ;
 ; K8048 Pin
 ; ----- ------
@@ -45,18 +80,7 @@ ERRORLEVEL      -302
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;******************************************************************************
-;
-; K8048 PIC16F506 ICSPIO Demo Test (Receive commands, send data).
-;
-; This demonstrates how we may receive commands from the host computer
-; via the ISCP port and execute them. Two commands are implemented.
-; The first command takes one argument which sets five LEDs to that
-; value and the second command takes no argument yet demonstrates how
-; we may send a value back to the host which, in this case, is the
-; current status of the first two switches.
-;
-;******************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Config
 ;
@@ -75,7 +99,7 @@ ERRORLEVEL      -302
 ;
 ; Variables
 ;
-CBLOCK          0x10                        ;RAM 0x10..
+CBLOCK          0x0D                        ;RAM 0x0D..
 ENDC
 #INCLUDE        "shadow.inc"                ;SHADOW I/O
 ;
@@ -111,28 +135,29 @@ INIT            MOVWF   OSCCAL              ;SAVE OSCILLATOR CALIBRATION
 
                 GOTO    WATCHDOG            ;CONTINUE
 
-POWERUP         CLRF    LATB                ;INIT PORTB SHADOW
-                CLRF    PORTB               ;INIT PORTB
+POWERUP         CLRF    LATB                ;INIT PORT B SHADOW
+                CLRF    PORTB               ;INIT PORT B
 
-                CLRF    LATC                ;INIT PORTC SHADOW
+                CLRF    LATC                ;INIT PORT C SHADOW
                 DECF    LATC,F
-                MOVF    LATC,W              ;INIT PORTC
+                MOVF    LATC,W              ;INIT PORT C
                 MOVWF   PORTC
 
 WATCHDOG        CLRWDT                      ;INIT WATCHDOG
 
-                MOVLW   B'00001111'         ;WATCHDOG PRESCALE/T0CS=0
+                MOVLW   B'11001111'         ;DISABLE PULLUPS / WATCHDOG PRESCALE
                 OPTION
 
-                CLRF    ADCON0
-                CLRF    CM1CON0
-                CLRF    CM2CON0
+                CLRF    ADCON0              ;SHUTDOWN A/D CONVERTER
+                CLRF    CM1CON0             ;DISABLE COMPARATOR 1
+                CLRF    CM2CON0             ;DISABLE COMPARATOR 2
+                CLRF    VRCON               ;DISABLE VOLTAGE REFERENCE
 
-                MOVLW   B'11111111'         ;PORT B SW2 I/P
+                MOVLW   B'11111111'         ;PORT B SW2 I/P PGC+PDD I/P
                 MOVWF   TRISB               ;INIT TRIS SHADOW
                 TRIS    PORTB               ;INIT TRIS
 
-                MOVLW   B'11100000'         ;PORT C PGD+PDC I/P LD1..LD5 O/P SW1 I/P
+                MOVLW   B'11100000'         ;PORT C SW1 I/P LD1..LD5 O/P
                 MOVWF   TRISC               ;INIT TRIS SHADOW
                 TRIS    PORTC               ;INIT TRIS
 ;

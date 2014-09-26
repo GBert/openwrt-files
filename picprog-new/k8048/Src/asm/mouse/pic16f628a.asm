@@ -1,44 +1,38 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Velleman K8048 PIC16F627A/628A/628A PS/2 to Serial protocol mouse
-;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
-;
-; Additionally this program may not be used in a commercial product without
-; permission from the author.
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; 2048 words Flash (14-bit)
-; 224 bytes RAM
-; 128 bytes EEPROM
-;
-; Pinout
-; ------
-; RA2 AN2   VREF 1----18 RA1 AN1
-; RA3 AN3   CMP1 2    17 RA0 AN0
-; RA4 T0CKI CMP2 3    16 RA7 OSC1  CLKIN
-; RA5 !MCLR VPP  4    15 RA6 OSC2  CLKOUT
-; VSS GND        5    14 VDD VCC
-; RB0 INT        6    13 RB7 T1OSI PGD
-; RB1 RX    DT   7    12 RB6 T1OSO T1CKI PGC
-; RB2 TX    CK   8    11 RB5
-; RB3 CCP1       9----10 RB4 PGM
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-                LIST    P=PIC16F628A
-ERRORLEVEL      -302
-#INCLUDE        "p16f628a.inc"
-#INCLUDE        "device.inc"                ;DEVICE CONFIG
-#INCLUDE        "const.inc"                 ;CONSTANTS
-#INCLUDE        "macro.inc"                 ;MACROS
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; K8048 PIC16F627A/628A/628A PS/2 to Serial protocol mouse
 ;
 ; TEST MOUSE #1 GENIUS GM-050021 TRAVELER 320 OPTICAL MOUSE
 ; TEST MOUSE #2 EXCEL AM-1310U+P MINI OPTICAL MOUSE
@@ -73,6 +67,33 @@ ERRORLEVEL      -302
 ;   NOT WORKING
 ;   -----------
 ;   MS-DOS LOGITECH
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; 2048 words Flash (14-bit)
+; 224 bytes RAM
+; 128 bytes EEPROM
+;
+; Pinout
+; ------
+; RA2 AN2   VREF 1----18 RA1 AN1
+; RA3 AN3   CMP1 2    17 RA0 AN0
+; RA4 T0CKI CMP2 3    16 RA7 OSC1  CLKIN
+; RA5 !MCLR VPP  4    15 RA6 OSC2  CLKOUT
+; VSS GND        5    14 VDD VCC
+; RB0 INT        6    13 RB7 T1OSI PGD
+; RB1 RX    DT   7    12 RB6 T1OSO T1CKI PGC
+; RB2 TX    CK   8    11 RB5
+; RB3 CCP1       9----10 RB4 PGM
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+                LIST    P=PIC16F628A
+ERRORLEVEL      -302
+#INCLUDE        "p16f628a.inc"
+#INCLUDE        "device.inc"                ;DEVICE CONFIG
+#INCLUDE        "const.inc"                 ;CONSTANTS
+#INCLUDE        "macro.inc"                 ;MACROS
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;

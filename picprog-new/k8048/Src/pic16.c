@@ -45,8 +45,10 @@ struct pic_ops pic16_ops = {
 	.get_program_size          = pic16_get_program_size,
 	.get_data_size             = pic16_get_data_size,
 	.get_executive_size        = NULL,
+	.get_boot_size             = NULL,
 	.read_program_memory_block = pic16_read_program_memory_block,
 	.read_data_memory_block    = pic16_read_data_memory_block,
+	.write_panel               = pic16_write_panel,
 	.program                   = pic16_program,
 	.verify                    = pic16_verify,
 	.bulk_erase                = pic16_bulk_erase,
@@ -882,7 +884,7 @@ pic16_row_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 			return; /* NO EEPROM */
 		}
 
-		uint16_t address = PIC16_REGIONDATA;
+		uint16_t address = PIC_REGIONDATA;
 		
 		pic16_program_verify(k);
 
@@ -1202,11 +1204,11 @@ pic16_write_data_memory(struct k8048 *k, uint8_t data)
 
 		incomplete = pic16_shift_out_tablat_register(k) & 0x02;
 	}
-	while (incomplete && (tv3.tv_sec < PIC16_TIMEOUT));
+	while (incomplete && (tv3.tv_sec < PIC_TIMEOUT));
 
 	pic16_write_disable(k);				/* BCF EECON1, WREN     */
 
-	if (tv3.tv_sec >= PIC16_TIMEOUT)
+	if (tv3.tv_sec >= PIC_TIMEOUT)
 		printf("%s: information: data write timed out.\n", __func__);
 }
 
@@ -1217,10 +1219,10 @@ pic16_write_data_memory(struct k8048 *k, uint8_t data)
  *****************************************************************************/
 
 /*
- * WRITE BUFFER INIT
+ * WRITE PANEL INIT
  */
 void
-pic16_write_buffer_init(struct k8048 *k)
+pic16_write_panel_init(struct k8048 *k)
 {
 	switch (pic16_map[pic16_index].datasheet) {
  		/* INIT SINGLE PANEL WRITES */
@@ -1240,13 +1242,13 @@ pic16_write_buffer_init(struct k8048 *k)
 }
 
 /*
- * WRITE BUFFER
+ * WRITE PANEL
  *
  * DS39622L-page 18 HIGH=P9(1ms)   LOW=P10(100us)
  * DS39687E-page 13 HIGH=P9(3.4ms) LOW=NDELAY
  */
 void
-pic16_write_buffer(struct k8048 *k, uint32_t region, uint32_t address, uint8_t *buffer, uint32_t buffer_size)
+pic16_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *panel, uint32_t panel_size)
 {
 	uint32_t h, l, i;
 	uint16_t word;
@@ -1264,79 +1266,16 @@ pic16_write_buffer(struct k8048 *k, uint32_t region, uint32_t address, uint8_t *
 	pic16_write_enable(k);				/* BSF EECON1, WREN	*/
 #endif
 	pic16_set_table_pointer(k, address);
-	for (i = 0; i < (buffer_size - 2); i += 2) {
-		word = (buffer[i + 1] << 8) | buffer[i];
+	for (i = 0; i < (panel_size - 2); i += 2) {
+		word = (panel[i + 1] << 8) | panel[i];
 		pic16_table_write_post_increment_2(k, word);
 	}
-	word = (buffer[i + 1] << 8) | buffer[i];
+	word = (panel[i + 1] << 8) | panel[i];
 	pic16_table_write_start_programming(k, word);
 	pic16_core_instruction_nopp(k, h, l);		/* PANEL PROGRAM	*/
 #if 0
 	pic16_write_disable(k);				/* BCF EECON1, WREN	*/
 #endif
-}
-
-/*
- * WRITE BUFFERED
- */
-void
-pic16_write_buffered(struct k8048 *k, uint32_t data1, uint32_t data2, int mode)
-{
-	static uint32_t buffer_region = PIC16_REGIONNOTSUP;
-	static uint32_t buffer_address = 0;
-	static uint8_t *buffer = NULL;
-	static uint32_t buffer_size = 0;
-	static uint32_t write_pending = 0;
-
-	if (mode == PIC16_PANEL_BEGIN || mode == PIC16_PANEL_END) {
-		if (buffer) {
-			if (write_pending) {
-				write_pending = 0;
-				pic16_write_buffer(k, buffer_region, buffer_address, buffer, buffer_size);
-			}
-			free(buffer);
-			buffer_region = PIC16_REGIONNOTSUP;
-			buffer_address = 0;
-			buffer = NULL;
-			buffer_size = 0;
-		}
-	}
-	if (mode == PIC16_PANEL_BEGIN) {
-		buffer_region = data1;
-		buffer_size = data2;
-	}
-	if (mode == PIC16_PANEL_BEGIN || mode == PIC16_PANEL_UPDATE) {
-		if (buffer == NULL) {
-			if (buffer_size == 0) {
-				printf("%s: fatal error: zero sized buffer\n", __func__);
-				io_exit(k, EX_SOFTWARE); /* Panic */
-			}
-			buffer = malloc(sizeof(uint8_t) * buffer_size);
-			if (buffer == NULL) {
-				printf("%s: fatal error: malloc failed\n", __func__);
-				io_exit(k, EX_SOFTWARE); /* Panic */
-			}
-			memset((void *)buffer, -1, sizeof(uint8_t) * buffer_size);
-		}
-	}
-	if (mode == PIC16_PANEL_UPDATE) {
-		uint32_t address, new_address, boundary, mask;
-
-		boundary = 0 - buffer_size;
-		mask = buffer_size - 1;
-		address = data1;
-		new_address = address & boundary;
-		if (new_address != buffer_address) {
-			if (write_pending) {
-				write_pending = 0;
-				pic16_write_buffer(k, buffer_region, buffer_address, buffer, buffer_size);
-				memset((void *)buffer, -1, sizeof(uint8_t) * buffer_size);
-			}
-			buffer_address = new_address;
-		}
-		buffer[address & mask] = data2;
-		write_pending++;
-	}
 }
 
 /*****************************************************************************
@@ -1420,6 +1359,18 @@ pic16_write_config(struct k8048 *k)
 
 /*
  * DETERMINE MEMORY REGION: CODE, ID, CONFIG or DATA
+ *
+ *  RETURN PIC_REGIONCODE:
+ *	000000 .. 1fffff
+ *
+ *  RETURN PIC_REGIONID:
+ *	200000 .. 200007
+ *
+ *  RETURN PIC_REGIONCONFIG:
+ *	300000 .. 30000d
+ *
+ *  RETURN PIC_REGIONDATA:
+ *	f00000 .. ffffff
  */
 uint32_t
 pic16_getregion(uint32_t address)
@@ -1428,29 +1379,28 @@ pic16_getregion(uint32_t address)
 	uint32_t code_high = (pic16_map[pic16_index].flash << 1) - 1;
 
 	if (address <= code_high) {
-		return PIC16_REGIONCODE;
+		return PIC_REGIONCODE;
 	}
 	/* EEPROM */
 	if (pic16_map[pic16_index].eeprom) {
 		uint32_t data_high = PIC16_DATA_LOW + pic16_map[pic16_index].eeprom - 1;
 
 		if (address >= PIC16_DATA_LOW && address <= data_high) {
-			return PIC16_REGIONDATA;
+			return PIC_REGIONDATA;
 		}
 	}
 	/* IDLOC/CONFIG */
 	if (pic16_map[pic16_index].datasheet != DS39687E) { /* !PIC18J */
 
 		if (address >= PIC16_ID_LOW && address <= PIC16_ID_HIGH) {
-			return PIC16_REGIONID;
+			return PIC_REGIONID;
 		}
 		if (address >= PIC16_CONFIG_LOW && address <= PIC16_CONFIG_HIGH) {
-			return PIC16_REGIONCONFIG;
+			return PIC_REGIONCONFIG;
 		}
 	}
-	printf("%s: warning: address unsupported [%06X]\n",
-		__func__, address);
-	return PIC16_REGIONNOTSUP;
+	printf("%s: warning: address unsupported [%06X]\n", __func__, address);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -1462,27 +1412,24 @@ uint32_t
 pic16_init_writeregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
-	case PIC16_REGIONCODE:
-		pic16_write_buffered(k, region,
-			pic16_map[pic16_index].panelsize, PIC16_PANEL_BEGIN);
+	case PIC_REGIONCODE:
+		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONCODE, pic16_map[pic16_index].panelsize);
 		return region;
 		break;
-	case PIC16_REGIONID:
-		pic16_write_buffered(k, region,
-			PIC16_ID_PANEL_SIZE, PIC16_PANEL_BEGIN);
+	case PIC_REGIONID:
+		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONID, PIC16_ID_PANEL_SIZE);
 		return region;
 		break;
-	case PIC16_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		return region;
 		break;
-	case PIC16_REGIONDATA:
+	case PIC_REGIONDATA:
 		pic16_init_data_memory_access(k);
 		return region;
 		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-	return PIC16_REGIONNOTSUP;
+	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -1492,19 +1439,18 @@ void
 pic16_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint8_t data)
 {
 	switch (region) {
-	case PIC16_REGIONCODE:
-	case PIC16_REGIONID:
-		pic16_write_buffered(k, address, data, PIC16_PANEL_UPDATE);
+	case PIC_REGIONCODE:
+	case PIC_REGIONID:
+		pic_write_panel(k, PIC_PANEL_UPDATE, address, data);
 		break;
-	case PIC16_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		pic16_conf.config[address & PIC16_CONFIG_MASK] = data;
 		break;
-	case PIC16_REGIONDATA:
+	case PIC_REGIONDATA:
 		pic16_set_data_pointer(k, address & PIC16_DATA_MASK);
 		pic16_write_data_memory(k, data);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		break;
 	}
 }
@@ -1518,20 +1464,19 @@ uint32_t
 pic16_init_verifyregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
-	case PIC16_REGIONCODE:
-	case PIC16_REGIONID:
-	case PIC16_REGIONCONFIG:
+	case PIC_REGIONCODE:
+	case PIC_REGIONID:
+	case PIC_REGIONCONFIG:
 		pic16_init_code_memory_access(k);
 		return region;
 		break;
-	case PIC16_REGIONDATA:
+	case PIC_REGIONDATA:
 		pic16_init_data_memory_access(k);
 		return region;
 		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-	return PIC16_REGIONNOTSUP;
+	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -1545,22 +1490,21 @@ pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 	uint8_t vdata = 0;
 
 	switch (region) {
-	case PIC16_REGIONCODE:
-	case PIC16_REGIONID:
+	case PIC_REGIONCODE:
+	case PIC_REGIONID:
 		if (index == 0)
 			pic16_set_table_pointer(k, address);
 		vdata = pic16_table_read_post_increment(k);
 		break;
-	case PIC16_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		/* Can't verify the config area (assume okay) */
 		return 0;
 		break;
-	case PIC16_REGIONDATA:
+	case PIC_REGIONDATA:
 		pic16_set_data_pointer(k, address & PIC16_DATA_MASK);
 		vdata = pic16_read_data_memory(k);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		return 1;
 		break;
 	}
@@ -1579,7 +1523,7 @@ void
 pic16_program(struct k8048 *k, char *filename, int blank)
 {
 	uint32_t PC_address;
-	uint32_t new_region, current_region = PIC16_REGIONNOTSUP;
+	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
 	/* Get HEX */
@@ -1595,18 +1539,18 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 	 */
 
 	pic16_program_verify(k);
-	pic16_write_buffer_init(k);
+	pic16_write_panel_init(k);
 
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = k->pdata[i]->address;
 		new_region = pic16_getregion(PC_address);
-		if (new_region == PIC16_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
-			pic16_write_buffered(k, PIC_VOID, PIC_VOID, PIC16_PANEL_END);
+			pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 			current_region = pic16_init_writeregion(k, new_region);
-			if (current_region == PIC16_REGIONNOTSUP)
+			if (current_region == PIC_REGIONNOTSUP)
 				continue;
 		}
 
@@ -1616,7 +1560,7 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 			total++;
 		}
 	}
-	pic16_write_buffered(k, PIC_VOID, PIC_VOID, PIC16_PANEL_END);
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 
 	pic16_standby(k);
 
@@ -1636,7 +1580,7 @@ uint32_t
 pic16_verify(struct k8048 *k, char *filename)
 {
 	uint32_t PC_address;
-	uint32_t new_region, current_region = PIC16_REGIONNOTSUP;
+	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t fail = 0, total = 0;
 
 	/* Get HEX */
@@ -1653,11 +1597,11 @@ pic16_verify(struct k8048 *k, char *filename)
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = k->pdata[i]->address;
 		new_region = pic16_getregion(PC_address);
-		if (new_region == PIC16_REGIONNOTSUP)
+		if (new_region == PIC_REGIONNOTSUP)
 			continue;
 		if (new_region != current_region) {
 			current_region = pic16_init_verifyregion(k, new_region);
-			if (current_region == PIC16_REGIONNOTSUP)
+			if (current_region == PIC_REGIONNOTSUP)
 				continue;
 		}
 
@@ -2012,7 +1956,7 @@ pic16_dumphexcode(struct k8048 *k, uint32_t address, uint32_t size, uint32_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: program flash empty\n", __func__);
+		printf("%s: information: flash empty\n", __func__);
 }
 
 /*
@@ -2067,7 +2011,7 @@ pic16_dumphexdata(struct k8048 *k, uint32_t address, uint32_t size, uint16_t *da
 		nlines++;
 	}
 	if (!nlines)
-		printf("%s: information: data eeprom empty\n", __func__);
+		printf("%s: information: data empty\n", __func__);
 }
 
 /*

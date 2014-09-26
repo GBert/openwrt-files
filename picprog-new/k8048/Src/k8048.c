@@ -45,7 +45,7 @@ usage_k8048(struct k8048 *k)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
 
 	printf("BACKENDS:\n"
 #ifdef TTY
@@ -66,6 +66,10 @@ usage_k8048(struct k8048 *k)
 #endif
 		"\n");
 
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
+
 	printf("EXAMPLES:\n"
 #ifdef K12
 		" k12 SELECT DEVICE OPERATION [ARG]\n"
@@ -84,7 +88,7 @@ usage_k8048(struct k8048 *k)
 		"\t\t24-bit word PIC24/dsPIC operations.\n"
 #endif
 #ifdef K32
-		" k32 [SELECT DEVICE] [LVP] OPERATION [ARG]\n"
+		" k32 OPERATION [ARG]\n"
 		"\t\t32-bit word PIC32 operations.\n"
 #endif
 #ifdef KCTRL
@@ -117,7 +121,11 @@ usage_kctrl(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n"
 		" kctrl RUN\n"
@@ -151,7 +159,11 @@ usage_ktest(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n"
 		" ktest VPP|PGC|PGD|PGM 5\n"
@@ -201,7 +213,11 @@ usage_k12(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
 	printf(" k12 %ss%select\n"
@@ -252,7 +268,11 @@ usage_k14(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
 	printf(" k14 %ss%select\n"
@@ -311,7 +331,11 @@ usage_k16(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
 	printf(" k16 %ss%select\n"
@@ -366,13 +390,19 @@ usage_k24(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
 	printf(" k24 %ss%select\n"
 		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
 	printf(" k24 %ss%select 33EP128GP502 OPERATION [ARG]\n"
 		"\t\tSelect device dsPIC33EP128GP502.\n", UL_ON, UL_OFF);
+	printf(" k24 %ss%select 24FJ128GB202 OPERATION [ARG]\n"
+		"\t\tSelect device PIC24FJ128GB202.\n", UL_ON, UL_OFF);
 	printf(" k24 %sl%svp OPERATION [ARG]\n"
 		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
 	printf(" k24 %sh%svp OPERATION [ARG]\n"
@@ -386,7 +416,7 @@ usage_k24(struct k8048 *k, char *msg)
 	printf(" k24 %sd%sump\n"
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k24 %sex%sec\n"
-		"\t\tDisplay program executive content.\n", UL_ON, UL_OFF);
+		"\t\tDisplay executive flash content.\n", UL_ON, UL_OFF);
 	printf(" k24 %sf%slash [n]\n"
 		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
 	printf(" k24 %si%sd\n"
@@ -413,7 +443,7 @@ usage_k24(struct k8048 *k, char *msg)
 void
 usage_k32(struct k8048 *k, char *msg)
 {
-	printf("USAGE: k32 [SELECT DEVICE] OPERATION [ARG]\n");
+	printf("USAGE: k32 OPERATION [ARG]\n");
 	printf("32-bit word PIC32 operations.\n\n");
 
 	if (msg)
@@ -421,9 +451,31 @@ usage_k32(struct k8048 *k, char *msg)
 
 	printf("FILES:\n"
 		" %s\n"
-		"\t\tConfiguration.\n\n", k->dotfile);
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
+	printf(" k32 %ss%select\n"
+		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+	printf(" k32 %sbo%sot\n"
+		"\t\tDisplay boot flash content.\n", UL_ON, UL_OFF);
+	printf(" k32 %sb%slank\n"
+		"\t\tBlank device (erase).\n", UL_ON, UL_OFF);
+	printf(" k32 %sc%sonfig\n"
+		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+	printf(" k32 %sd%sump\n"
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k32 %sf%slash [n]\n"
+		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
+	printf(" k32 %si%sd\n"
+		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+	printf(" k32 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k32 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -650,10 +702,16 @@ main(int argc, char **argv)
 	argv1 = tolower((int)argv[1][0]);
 	int argv11 = tolower((int)argv[1][1]);
 	switch (argv1) {
-	case 'b':	if (argc > 2)
-				usage(&k, execname, "Too many args [blank]");
-			if (areyousure("Blank device"))
-				pic_blank(&k);
+	case 'b':	if (argv11 == 'o') {		/* BOOT */
+				if (argc > 2)
+					usage(&k, execname, "Too many args [boot]");
+				pic_dumpboot(&k);
+			} else {			/* BLANK */
+				if (argc > 2)
+					usage(&k, execname, "Too many args [blank]");
+				if (areyousure("Blank device"))
+					pic_blank(&k);
+			}
 			break;
 
 	case 'c':	if (argc > 3)

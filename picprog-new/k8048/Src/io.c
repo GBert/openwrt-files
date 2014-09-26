@@ -671,7 +671,7 @@ io_clock_bit_4phase(struct k8048 *k, uint8_t tms, uint8_t tdi)
 	/*********
 	 * PHASE 4
 	 */
-	tdo = io_get_pgd(k);	/* TDO INPUT  */
+	tdo = io_get_pgd(k);	/* TDO INPUT (0 or 1) */
 	io_clock_bit(k, k->sleep_low, k->sleep_high);
 
 #ifdef DEBUG

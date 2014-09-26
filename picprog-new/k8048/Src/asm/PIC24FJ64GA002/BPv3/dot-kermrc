@@ -1,0 +1,6 @@
+set modem type none
+set line /dev/ttyAMA0
+set carrier-watch off
+set speed 115200
+set flow none
+connect

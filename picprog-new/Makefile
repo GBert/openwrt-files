@@ -1,4 +1,4 @@
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=picprog-new
-PKG_RELEASE:=2.8-dev
+PKG_RELEASE:=3.0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
@@ -33,7 +33,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DKIO -DKTEST -DBITBANG" \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DK24 -DK32 -DKIO -DKTEST -DBITBANG" \
 		build
 endef
 
@@ -48,6 +48,8 @@ endef
 define Package/picprog-new/postinst
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k14
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k16
+	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k24
+	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k32
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/ktest
 endef
 

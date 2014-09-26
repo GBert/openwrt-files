@@ -190,15 +190,139 @@ Y	16F1788		14	28P	41675A		PIC16(L)F1788/9 Data Sheet
 
 					VPP 9V.
 
-N       PIC16F1518	14	28	40001452D	PIC16(L)F1516/7/8/9 Data Sheet
+Y	16F570		12	28P	40001684D	PIC16F570 Data Sheet
+					41670A		PIC16F570 Memory Programming Specification
+
+Y	16F721		14	ICSP	40001430E	PIC16(L)F720/721 Data Sheet
+					41409B		PIC16(L)F720/721 Flash Memory Programming
+
+					VPP 9V.
+
+Y	16F527		12	ICSP	41652A		PIC16F527 Data Sheet
+					41640A		PIC16F527 Memory Programming Specification
+
+Y	12F752		14	8P	41576B		PIC12F752/HV752 Data Sheet
+					41561C		PIC12F752/HV752 Flash Memory Programming Specification
+
+Y	12LF1552	14	N/A	41674B		PIC12LF1552 Data Sheet
+					41642A		PIC12LF1552 Memory Programming Specification
+
+					VDD 3V3.
+
+Y	16F1518		14	28P	40001452D	PIC16(L)F1516/7/8/9 Data Sheet
 					41442B		PIC16(L)F151X/152X Memory Programming Specification
 
 					VPP 9V.
 
-N       PIC16F1455	14	N/A	41639A		PIC16(L)F1454/5/9 Data Sheet
+Y	16F1455		14	N/A	41639A		PIC16(L)F1454/5/9 Data Sheet
 					41620C		PIC16(L)F145X Memory Programming Specification
-			
+
 					VPP 9V. PGC/PGD 3V3.
+
+Y	18LF2539	16	28P	30485B		PIC18FXX39 Enhanced Flash Microcontrollers
+					30480c		PIC18FXX39 Programming
+
+					VDD 2..5V
+
+Y	16F526		12	14P	41326E		PIC16F526 Data Sheet
+					41317B		PIC16F526 Memory Programming Specification
+
+Y	16F753		14	14P	40001709B	PIC16F753/HV753 Data Sheet
+					41686A		PIC16F753/HV753 Flash Memory Programming Specification
+
+Y	16F785 		14	ICSP	41294E		PIC16F785/HV785 Data Sheet
+					41237D		PIC16F785/HV785 Memory Programming Specification
+
+Y	16F707		14	ICSP	41418B		PIC16(L)F707 Data Sheet
+					41405A		PIC16F/LF707 Memory Programming Specification
+
+Y	18F14K22	16	ICSP	41365E		PIC18(L)F1XK22 Data Sheet
+					41357B		PIC18F1XK22/LF1XK22 Flash Memory Programming Specification
+
+Y	18F26K20	16	N/A	41303G		PIC18F23K20/24K20/25K20/26K20/43K20/44K20/45K20/46K20 Data Sheet
+					41297F		PIC18F2XK20/4XK20 Flash Memory Programming Specification
+
+					VPP 3V3.
+
+Y	16F1459		14	N/A	41639A		PIC16(L)F1454/5/9 Data Sheet
+					41620C		PIC16(L)F145X Memory Programming Specification
+
+					VPP 9V. PGC/PGD 3V3.
+
+Y	24F04KA201	24	N/A	39937B		PIC24F04KA201 Family Data Sheet
+					39919C		PIC24FXXKA1XX/FVXXKA3XX Family Flash Programming Specifications
+
+Y	33FJ06GS101A	24	N/A	75018C		dsPIC33FJ06GS001/101A/102A/202A and dsPIC33FJ09GS302 Data Sheet
+					70659C		dsPIC33F Flash Programming Specification for Devices with Volatile Configuration Bits
+
+Y	24FJ16MC101	24	N/A	39997C		PIC24FJ16MC101/102 and PIC24FJ32MC101/102/104 Data Sheet
+					75012B		PIC24FJXXMC PIC24FJXXMC Family Flash Programming Specification
+
+Y	30F1010		24	N/A	70178C		dsPIC30F1010/202X Data Sheet
+					70284B		dsPIC30F SMPS Flash Programming Specification
+
+Y	24F16KL402	24	N/A	30001037C	PIC24F16KL402 Family Data Sheet
+					30625D		PIC24FXXKMXXX/KLXXX Flash Programming Specifications
+
+Y	33FJ16GS502	24	N/A	70318F		dsPIC33FJ06GS101/X02 and dsPIC33FJ16GSX02/X04 Data Sheet
+					70152H		dsPIC33F/PIC24H Flash Programming Specification
+
+Y	33FJ32MC102	24	N/A	70652E		dsPIC33FJ16(GP/MC)101/102 and dsPIC33FJ32(GP/MC)101/102/104 Data Sheet
+					70659C		dsPIC33F Flash Programming Specification for Devices with Volatile Configuration Bits
+
+Y	33EP128GP502	24	N/A	70000657H	dsPIC33EPXXXGP50X, dsPIC33EPXXXMC20X/50X and PIC24EPXXXGP/MC20X Data Sheet
+					70663D		dsPIC33E/PIC24E Flash Programming Spec. for Devices with Volatile Config. Bits
+
+Y	24HJ128GP502	24	N/A	70293G		PIC24HJ32GP302/304, PIC24HJ64GPX02/X04 and PIC24HJ128GPX02/X04 Data Sheet
+					70152H		dsPIC33F/PIC24H Flash Programming Specification
+
+Y	24FJ64GB002	24	N/A	39940D		PIC24FJ64GB004 Family Data Sheet
+					30009934C	PIC24FJ64GA1/GB0 Families Flash Programming Specification
+
+Y	24FJ64GA002	24	N/A	39881e		PIC24FJ64GA004 Family Data Sheet
+					39768D 		PIC24FJXXXGA0XX Flash Programming Specification
+
+Y	24FV32KA302	24	N/A	39995D		PIC24FV32KA304 FAMILY Data Sheet
+					39919B		PIC24FXXKA1XX/FVXXKA3XX Flash Programming Specifications
+
+Y	30F4013		24	ICSP	70138G		dsPIC30F3014/4013 Data Sheet
+					70102H		dsPIC30F Flash Programming Specification
+
+Y	33FJ128GP802	24	N/A	70292G		dsPIC33FJ32GP302/304, dsPIC33FJ64GPX02/X04, and dsPIC33FJ128GPX02/X04 Data Sheet
+					70152H		dsPIC33F/PIC24H Flash Programming Specification
+
+Y	16F1708		14	ICSP	40001715B	PIC16(L)F1704/8 Data Sheet
+					40001683B	PIC16(L)F170X Memory Programming Specification
+
+Y	12F1612		14	8P	40001737A	PIC12(L)F1612/16(L)F1613 Data Sheet
+					40001720A	PIC12(L)F1612/16(L)F1613 Memory Programming Specification
+
+Y	16F636		14	14P	41232D		PIC12F635/PIC16F636/639 Data Sheet
+					41204H		PIC12F6XX/16F6XX Memory Programming Specification
+
+Y	16LF1716	14	N/A	40001726B	PIC16(L)F1713/6 Data Sheet
+					40001714C	PIC16(L)F171X Memory Programming Specification
+
+					VDD 3V3.
+
+Y	12LF1572	14	N/A	40001723B	PIC12(L)F1571/2 Data Sheet
+					40001713A	PIC12(L)F1571/2 Memory Programming Specification
+
+					VDD 3V3.
+
+Y	24FJ128GB202	24	N/A	30005009B	PIC24FJ128GB204 Family Data Sheet
+					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
+					80000613A	PIC24FJ128GB204 Family Silicon Errata and Data Sheet Clarification
+
+Y	16LF1559	14	N/A	40001761A	PIC16LF1554/1559 Data Sheet
+					40001743A	PIC16LF1554/1559 Memory Programming Specification
+					80000621B	PIC16LF1554/1559 Errata
+
+					VDD 3V3.
+
+Y	24FJ128GA202	24	N/A	30010038B	PIC24FJ128GA204 Family Data Sheet
+					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
+					80000615A	PIC24FJ128GA204 Family Silicon Errata and Data Sheet Clarification
 
 N/A = HARDWARE SUPPORT NOT AVAILABLE ON THE VELLEMAN K8048
 
@@ -207,15 +331,11 @@ UNSUPPORTED
 TEST	DEVICE		ARCH	SOCKET	DATASHEETS
 ----	------		----	------	------------------------------------------------------------------------------------------------
 
-N/A	dsPIC30F4013	24	N/A	70138E		dsPIC30F4013 DataSheets
-					70102H		dsPIC30F Flash Programming Specification
-
-N/A	PIC32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+N/A	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
-N/A     PIC24FJ64GA002	24	N/A	39881e		PIC24FJ64GA004 Family Data Sheet
-					39768D 		PIC24FJXXXGA0XX Flash Programming Specification
+N/A	32MX250F128B	32	N/A	AS ABOVE
 
 OTHER
 ----------------------------------------------------------------------------------------------------------------------------------------
@@ -228,3 +348,9 @@ N/A	25LC640		21223f	25AA640/25LC640 64K SPI Bus Serial EEPROM
 N/A	MCP23016	20090c	MCP23016 16-Bit I2C I/O Expander (400Khz)
 N/A	MCP23017	21952b	MCP23017 16-Bit I2C I/O Expander (1.7Mhz)
 N/A	MCP3008		21295d	MCP3004/3008 4-Channel/8-Channel 10-Bit A/D Converters with SPI Serial Interface
+N/A	MCP1700		21826b	Low Quiescent Current LDO
+N/A	MCP2562		25167B	MCP2561/2 High-Speed CAN Transceiver
+N/A	MCP6023		21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps
+N/A	TC4627		21426C	Power CMOS Drivers With Voltage Tripler
+N/A	TC74		21462C	Tiny Serial Digital Thermal Sensor
+N/A	MCP6022		21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps

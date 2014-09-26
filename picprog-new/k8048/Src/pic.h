@@ -41,8 +41,10 @@ struct pic_ops {
 	uint32_t (*get_program_size)(uint32_t *);
 	uint32_t (*get_data_size)(uint32_t *);
 	uint32_t (*get_executive_size)(uint32_t *);
+	uint32_t (*get_boot_size)(uint32_t *);
 	uint32_t (*read_program_memory_block)(struct k8048 *, uint32_t *, uint32_t, uint32_t);
 	uint32_t (*read_data_memory_block)(struct k8048 *, uint16_t *, uint32_t, uint16_t);
+	void (*write_panel)(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
 	void (*program)(struct k8048 *, char *, int);
 	uint32_t (*verify)(struct k8048 *, char *);
 	void (*bulk_erase)(struct k8048 *k, uint16_t, uint16_t);
@@ -69,12 +71,10 @@ struct pic_ops {
 /* dsPIC33F DS70152B-page 37 ICSP/STDP = ???? (0x5B982073) REVERSED */
 #define P30FKEY (0xCE0419DA)
 
-void pic_x(struct k8048 *); /* DEBUGGING */
-
 uint32_t pic_arch(struct k8048 *, const char *);
 
 int pic_cmp(const void *, const void *);
-#define PIC_NCOLS (5)
+#define PIC_NCOLS (4)
 void pic_selector(struct k8048 *);
 
 #define PIC_CONFIG_ONLY (0)
@@ -84,6 +84,7 @@ void pic_read_config(struct k8048 *, int);
 uint32_t pic_get_program_size(struct k8048 *, uint32_t *);
 uint32_t pic_get_data_size(struct k8048 *, uint32_t *);
 uint32_t pic_get_executive_size(struct k8048 *, uint32_t *);
+uint32_t pic_get_boot_size(struct k8048 *, uint32_t *);
 
 uint32_t pic_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
 uint32_t pic_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
@@ -120,6 +121,7 @@ void pic_dumpdevice(struct k8048 *);
 void pic_dumpprogram(struct k8048 *, uint32_t);
 void pic_dumpdata(struct k8048 *);
 void pic_dumpexec(struct k8048 *);
+void pic_dumpboot(struct k8048 *);
 
 #define PIC_HEXDEC (1)
 #define PIC_INHX32 (2)
@@ -132,5 +134,21 @@ void pic_dump_data(struct k8048 *, uint32_t, uint32_t, int);
 int pic_mtdata(uint16_t, uint32_t, uint16_t *);
 void pic_dumphexdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 void pic_dumpinhxdata(struct k8048 *, uint32_t, uint32_t, uint16_t *);
+
+/* MEMORY REGIONS */
+#define PIC_REGIONNOTSUP (0)	/* NOT BELOW      */
+#define PIC_REGIONCODE   (1)	/* PROGRAM CODE   */
+#define PIC_REGIONCONFIG (2)	/* CONFIG WORD(S) */
+#define PIC_REGIONDATA   (3)	/* DATA EEPROM    */
+#define PIC_REGIONID     (4)	/* USER ID        */
+#define PIC_REGIONEXEC   (5)	/* EXECUTIVE      */
+#define PIC_REGIONBOOT   (6)	/* BOOT SECTOR    */
+
+/* PANEL WRITING */
+#define PIC_PANEL_BEGIN  (1)
+#define PIC_PANEL_UPDATE (2)
+#define PIC_PANEL_END    (3)
+#define PIC_TIMEOUT      (1) /* 1 second */
+void pic_write_panel(struct k8048 *, int, uint32_t, uint32_t);
 
 #endif /* !_PIC_H */

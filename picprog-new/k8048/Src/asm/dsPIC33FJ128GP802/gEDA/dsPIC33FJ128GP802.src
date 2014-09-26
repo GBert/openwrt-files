@@ -1,0 +1,51 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=2400
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20140116 1
+name=dsPIC33FJ128GP802
+device=dsPIC33FJ128GP802
+refdes=U?
+footprint=SPDIP28
+description=Microcontroller
+documentation=70292g.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	dot	l		\_MCLR\_
+2		io	line	l		RA0
+3		io	line	l		RA1
+4		io	line	l		RP0 PGD
+5		io	line	l		RP1 PGC
+6		io	line	l		RP2
+7		io	line	l		RP3
+8		pwr	line	l	GND	VSS
+9		io	line	l		RA2
+10		io	line	l		RA3
+11		io	line	l		RP4
+12		io	line	l		RA4
+13		pwr	line	l		VDD
+14		io	line	l		RP5
+28		pwr	line	r		AVDD
+27		pwr	line	r	GND	AVSS
+26		io	line	r		DAC1LN RP15
+25		io	line	r		DAC1LP RP14
+24		io	line	r		DAC1RN RP13
+23		io	line	r		DAC1RP RP12
+22		io	line	r		RP11
+21		io	line	r		RP10
+20		pwr	line	r	VCAP	VCAP
+19		pwr	line	r	GND	VSS
+18		io	line	r		RP9
+17		io	line	r		RP8
+16		io	line	r		RP7
+15		io	line	r		RP6

@@ -60,6 +60,10 @@ struct pic16_dsmap {
 	uint16_t erasesize;	/* ERASE BLOCK SIZE 64 or 1024 for PIC18J */
 };
 
+/******************************************************************************
+ * MEMORY
+ *****************************************************************************/
+
 #define PIC16_WORD(X) ((X) * 512) /* KB to words */
 
 /*
@@ -77,15 +81,6 @@ struct pic16_dsmap {
 #define PIC16_DATA_LOW    (0xf00000)	/* pseudo address */
 #define PIC16_DATA_HIGH   (0xffffff)
 #define PIC16_DATA_MASK   (0x0fffff)
-
-/*
- * MEMORY REGIONS
- */
-#define PIC16_REGIONNOTSUP (0)	/* 1000000+ */
-#define PIC16_REGIONCODE   (1)	/*  000000 .. 1fffff PANEL WRITING  */
-#define PIC16_REGIONID     (2)	/*  200000 .. 200007 PANEL WRITING  */
-#define PIC16_REGIONCONFIG (3)	/*  300000 .. 30000d BYTE WRITING   */
-#define PIC16_REGIONDATA   (4)	/*  f00000 .. ffffff EEPROM WRITING */
 
 /*
  * DEVICE ID / REVISION
@@ -140,7 +135,6 @@ struct pic16_dsmap {
 #define PIC16_PANEL_UPDATE  (2)
 #define PIC16_PANEL_END     (3)
 #define PIC16_ID_PANEL_SIZE (8)
-#define PIC16_TIMEOUT       (1)
 
 /******************************************************************************
  * PICMicro devices
@@ -399,9 +393,7 @@ struct pic16_dsmap {
 #define PIC18F45K20 (0x2040)
 #define PIC18F46K20 (0x2000)
 
-/******************************************************************************
- * PROTOTYPES
- *****************************************************************************/
+/******************************************************************************/
 
 uint32_t pic16_arch(struct k8048 *);
 void pic16_selector(void);
@@ -427,9 +419,8 @@ uint32_t pic16_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint
 void pic16_set_data_pointer(struct k8048 *, uint16_t);
 uint8_t pic16_read_data_memory(struct k8048 *);
 void pic16_write_data_memory(struct k8048 *, uint8_t);
-void pic16_write_buffer(struct k8048 *, uint32_t, uint32_t, uint8_t *, uint32_t);
-void pic16_write_buffered(struct k8048 *, uint32_t, uint32_t, int);
-void pic16_write_buffer_init(struct k8048 *);
+void pic16_write_panel(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
+void pic16_write_panel_init(struct k8048 *);
 void pic16_goto100000(struct k8048 *);
 void pic16_write_configreg(struct k8048 *, uint8_t, uint32_t, uint32_t);
 uint32_t pic16_write_config(struct k8048 *);

@@ -1,10 +1,40 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Copyright (C) 2005-2014 Darron Broad
+; All rights reserved.
+; 
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
+; are met:
+; 
+; 1. Redistributions of source code must retain the above copyright
+;    notice, this list of conditions and the following disclaimer.
+; 
+; 2. Redistributions in binary form must reproduce the above copyright
+;    notice, this list of conditions and the following disclaimer in the
+;    documentation and/or other materials provided with the distribution.
+;
+; 3. Neither the name `Darron Broad' nor the names of any contributors
+;    may be used to endorse or promote products derived from this
+;    software without specific prior written permission.
+; 
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+; IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+; ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+; LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+; CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+; SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+; CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+; ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+; POSSIBILITY OF SUCH DAMAGE.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; R-PI 3V3 PIC18LF27J53
 ;
-; Copyright (c) 2005-2013 Darron Broad
-; All rights reserved.
-;
-; Licensed under the terms of the BSD license, see file LICENSE for details.
+; This demo allows control from `kio' to perform ICSPIO common operations.
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -26,7 +56,7 @@
 ; VDDCORE/VCAP 6     23 RB2
 ; RA5          7     22 RB1
 ; VSS GND      8     21 RB0
-; RA7          9     20 VDD VCC
+; RA7          9     20 VDD 3V3
 ; RA6          10    19 VSS GND
 ; RC0          11    18 RC7
 ; RC1          12    17 RC6
@@ -62,22 +92,47 @@
 ; -------
 ; k16 lvp program pic18lf27j53.hex
 ;
+; Program timings
+; ---------------
+; $ k16 lvp blank
+; Blank device: are you sure [y/N]? y
+; Time: 0:00.98s
+;
+; $ k16 lvp dump
+; :020000040000FA
+; :020000040001F9
+; :10FFF000FFFFFFFFFFFFFFFFFFF7FFFFFFFFFFFF19
+; :00000001FF
+; Time: 0:02.22s
+;
+; $ k16 lvp program pic18_128kb.hex 
+; Total: 131072
+; Time: 0:04.60s
+;
+; $ k16 lvp verify pic18_128kb.hex
+; pic16_verifyregion: error: read [F7] expected [FF] at [1FFF9]
+; Total: 131072 Pass: 131071 Fail: 1
+; Time: 0:03.16s
+; 
+; $ k16 lvp program pic18lf27j53.hex 
+; Total: 1102
+; Time: 0:00.59s
+;
+; $ k16 lvp verify pic18lf27j53.hex
+; Total: 1102 Pass: 1102 Fail: 0
+; Time: 0:00.05s
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
                 LIST    P=PIC18LF27J53
 ERRORLEVEL      -302
+ERRORLEVEL      -305
 #INCLUDE        "p18lf27j53.inc"
 #INCLUDE        "device.inc"                ;DEVICE CONFIG
 #INCLUDE        "const.inc"                 ;CONSTANTS
 #INCLUDE        "macro.inc"                 ;MACROS
 ;
-;******************************************************************************
-;
-; R-PI 3V3 PIC18LF27J53
-;
-; This demo allows control from `kio' to perform ICSPIO common operations.
-;
-;******************************************************************************
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Config
 ;
