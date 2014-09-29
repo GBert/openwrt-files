@@ -1,0 +1,101 @@
+-------------------------------------------------------------------------------
+
+ Copyright (C) 2005-2014 Darron Broad
+ All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+
+ 3. Neither the name `Darron Broad' nor the names of any contributors
+    may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+ 
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+-------------------------------------------------------------------------------
+
+Micromite Pi Setup
+==================
+
+The Circuit
+-----------
+
+TO-DO
+
+k8048 config
+------------
+
+TO-DO
+
+Detect the PIC32MX150F128B
+-------------------------
+
+beethoven:~> ssh pi3 k32 id
+[1D000000] [PROGRAM]  00008000 WORDS
+[1F80F220] [DEVICEID] 14D06053 PIC32MX150F128B
+[1FC00000] [BOOT]     00000300 WORDS
+[1FC00BF0] [DEVCFG3]  FFFFFFFF
+[1FC00BF4] [DEVCFG2]  FFFFFFFF
+[1FC00BF8] [DEVCFG1]  FFFFFFFF
+[1FC00BFC] [DEVCFG0]  7FFFFFFF
+Time: 0:00.04s [pi3]
+Time: 0:00.71s [beethoven]
+
+Program the PIC32MX150F128B
+--------------------------
+
+beethoven:~> ssh pi3 k32 program < Micromite\ 4.5C\ \(28-pin\).hex 
+Total: 134144
+Time: 1:08.79s [pi3]
+Time: 1:09.49s [beethoven]
+
+Verify the PIC32MX150F128B
+-------------------------
+
+beethoven:~> ssh pi3 k32 verify < Micromite\ 4.5C\ \(28-pin\).hex
+Total: 134144 Pass: 134144 Fail: 0
+Time: 1:47.89s [pi3]
+Time: 1:48.57s [beethoven]
+
+Install and setup kermit
+------------------------
+
+> apt-get install ckermit
+
+~/.kermrc:
+set modem type none
+set line /dev/ttyAMA0
+set carrier-watch off
+set speed 115200
+set flow none
+connect
+
+Test the Micromite Pi
+---------------------
+
+> kermit
+
+TO-DO
+
+Micromite Pi Demo
+=================
+
+TO-DO
