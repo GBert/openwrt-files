@@ -41,9 +41,23 @@ NC						2  D2 INT2
 SDA						1  D1 TXD
 SCL						0  D0 RXD
 
-ICSP
-====
-BITRULES=0700
+chipKITPi ICSP
+-------------------------------------------------------------------------------
+
+PIC32MX250F128B			RASPBERRY Pi
+===============			============
+
+	!MCLR 1 ----330R---- GPIO4
+	PGD1  4 ------------ GPIO15
+	PGC1  5 ------------ GPIO14
+
+.k8048
+======
+DEVICE=RPI
+SLEEP=1
+BITRULES=0x0700
+BUSY=0
 VPP=4
 PGC=14
 PGD=15
+PGM=255

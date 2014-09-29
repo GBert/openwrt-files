@@ -187,36 +187,63 @@ $ cd /embedded/raspbian/usr/src/sdcc-svn/sdcc
 $ ln -s /embedded/raspbian/usr/src/sdcc-svn/ /usr/src/
 $ make install
 
+XC16 C30/ASM30
+==============
+
+Fetch microchip X16 C30/ASM30 v1.22 for Linux.
+
+$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/xc16-v1.22-full-install-linux-installer.run
+
+Install microchip C30/ASM30 for Linux in /opt/microchip/xc16/v1.22
+
+$ chmod +x xc16-v1.22-full-install-linux-installer.run
+$ ./xc16-v1.22-full-install-linux-installer.run
+
+Copy build scripts for microchip C30/ASM30 for Linux.
+
+$ rm -Rf /opt/pic30-tools
+$ rm -Rf /var/tmp/pic30*
+$ cp -Rp $HOME/k8048/Src/tools/pic30 /var/tmp
+
+Fetch source for microchip C30/ASM30 for Linux.
+
+$ cd /var/tmp/pic30
+$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/xc16_v1.22-src.zip
+
+Build C30/ASM30.
+
+$ apt-get install unzip libelf-dev libgmp-dev libppl-dev libcloog-ppl-dev libz-dev
+$ ./install
+
 XC16 C30/ASM30 for the R-PI using the raspbian emulator
 =======================================================
 
 Fetch microchip X16 C30/ASM30 v1.21 for Linux.
 
-$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/xc16-v1.21-linux-installer.run.tar
+$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/xc16-v1.22-full-install-linux-installer.run
 
-Install microchip C30/ASM30 for Linux in /opt/microchip/xc16/v1.21
+Install microchip C30/ASM30 for Linux in /opt/microchip/xc16/v1.22
 
-$ tar xvf xc16-v1.21-linux-installer.run.tar
-$ chmod +x xc16-v1.21-linux-installer.run
-$ ./xc16-v1.21-linux-installer.run
+$ chmod +x xc16-v1.22-full-install-linux-installer.run
+$ ./xc16-v1.22-full-install-linux-installer.run
  
 Copy microchip C30/ASM30 for Linux to emulator.
 
-$ mkdir -p /embedded/raspbian/opt/microchip/xc16/v1.21/
-$ cd /embedded/raspbian/opt/microchip/xc16/v1.21/
-$ cp -Rp /opt/microchip/xc16/v1.21/* .
+$ mkdir -p /embedded/raspbian/opt/microchip/xc16/v1.22/
+$ cd /embedded/raspbian/opt/microchip/xc16/v1.22/
+$ cp -Rp /opt/microchip/xc16/v1.22/* .
 $ rm -Rf ./rollbackBackupDirectory
 
 Copy build scripts for microchip C30/ASM30 for Linux to emulator.
 
-$ rm -Rf /embedded/raspbian/opt/pic30*
+$ rm -Rf /embedded/raspbian/opt/pic30-tools
 $ rm -Rf /embedded/raspbian/var/tmp/pic30*
 $ cp -Rp $HOME/k8048/Src/tools/pic30 /embedded/raspbian/var/tmp
 
 Fetch source for microchip C30/ASM30 for Linux.
 
 $ cd /embedded/raspbian/var/tmp/pic30
-$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/XC16_v1_21_src.zip
+$ wget http://ww1.microchip.com/downloads/en/DeviceDoc/xc16_v1.22-src.zip
 
 Enter emulator and build C30/ASM30 for raspbian.
 
@@ -245,12 +272,35 @@ $ rm -Rf pic30-tools
 $ tar zxf ~/pic30-tools.tgz
 $ rm -f ~/pic30-tools.tgz
 
+Alternatively, if using NFS (see later in this document) you may copy
+directly from the network instead of copying the file archives to the R-PI.
+
+On the R-PI mount the emulator directory over the network and install.
+
+$ mount /embedded/raspbian
+$ cd /opt
+$ rm -Rf pic30-tools
+$ cp -Rpa /embedded/raspbian/opt/pic30-tools .
+
+PIC32 for Linux AMD64 using CHIPKIT
+===================================
+
+See: http://chipkit.net/started/install-chipkit-software/
+
+$ cd /opt/
+$ wget https://chipkit.s3.amazonaws.com/builds/mpide-0023-linux64-20140821.tgz
+$ tar zxvf mpide-0023-linux64-20140821.tgz
+$ ln -s mpide-0023-linux64-20140821/hardware/pic32/compiler/pic32-tools
+
 PIC32 for the R-PI using CHIPKIT
 ================================
 
+See: http://chipkit.net/started/install-chipkit-software/
+
 $ cd /opt/
-$ wget http://chipkit.s3.amazonaws.com/compilers/pic32-tools-chipKIT-cxx-master-arm-linux-image.zip
-$ unzip pic32-tools-chipKIT-cxx-master-arm-linux-image.zip
+$ wget https://chipkit.s3.amazonaws.com/builds/mpide-0023-raspberrypi-20140821.tgz
+$ tar zxvf mpide-0023-raspberrypi-20140821.tgz
+$ ln -s mpide-0023-raspberrypi-20140821/hardware/pic32/compiler/pic32-tools
 
 NFS
 ===

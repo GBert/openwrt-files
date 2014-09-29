@@ -40,7 +40,7 @@
  * via the ISCP port and execute them. One command is implemented.
  * The command takes one argument which sets the LED to that value.
  *
- ******************************************************************************
+ *******************************************************************************
  *
  * 44032 words Flash (24-bit)
  * 8192 bytes RAM
@@ -134,7 +134,7 @@
 
 _CONFIG4(DSWDTPS_DSWDTPS5 & DSWDTOSC_LPRC & DSBOREN_OFF & DSWDTEN_OFF & DSSWEN_OFF & PLLDIV_DISABLED & I2C1SEL_DISABLE & IOL1WAY_OFF)
 _CONFIG3(WPFP_WPFP63 & SOSCSEL_OFF & WDTWIN_PS75_0 & PLLSS_PLL_FRC & BOREN_OFF & WPDIS_WPDIS & WPCFG_WPCFGDIS & WPEND_WPSTARTMEM)
-_CONFIG2(POSCMD_NONE & WDTCLK_LPRC & OSCIOFCN_OFF & FCKSM_CSDCMD & FNOSC_FRC & ALTCMPI_CxINC_RX & WDTCMX_WDTCLK & VBTBOR_OFF & IESO_OFF)
+_CONFIG2(POSCMD_NONE & WDTCLK_LPRC & OSCIOFCN_OFF & FCKSM_CSDCMD & FNOSC_FRC & ALTCMPI_CxINC_RX & WDTCMX_WDTCLK & IESO_OFF)
 _CONFIG1(WDTPS_PS1024 & FWPSA_PR128 & WINDIS_OFF & FWDTEN_OFF & ICS_PGx1 & LPCFG_ON & GCP_OFF & JTAGEN_OFF)
 
 /*

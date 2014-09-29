@@ -77,6 +77,10 @@
 ; -------
 ; k16 p pic18f2320.hex
 ;
+; Usage
+; -----
+; ktest 5 1000
+;
 ; OSCCON Power management
 ; -----------------------
 ; IDLEN SCS1:SCS0   Mode            Clock

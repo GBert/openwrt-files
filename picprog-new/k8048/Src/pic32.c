@@ -638,7 +638,7 @@ pic32_erase_device(struct k8048 *k)
 	 * 4. XferData (MCHP_DE_ASSERT_RST), PIC32MZ devices only.
 	 */
 
-	if (0) {
+	if (pic32_map[pic32_index].datasheet == DS60001191C) { /* MZ EC */
 		pic32_xferdata(k, PIC32_MCHP_DE_ASSERT_RST);
 	}
 
@@ -789,7 +789,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 *    register (0xBF80_F400).
 	 */
 
-	if (1) {
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
 		pic32_xferinstruction(k, 0x3c04bf80); /* lui a0,0xbf80	  */
 		pic32_xferinstruction(k, 0x3484f400); /* ori a0,a0,0xf400 */
 	}
@@ -834,8 +834,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 *    source SRAM address (offset is 64).
 	 */
 
-	if (1) {
-
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
 		pic32_xferinstruction(k, 0x36100000 + ramaddr); /* ori s0,s0,<RAM_ADDR(15:0)> */
 		pic32_xferinstruction(k, 0xac900040);           /* sw s0,64(a0)               */
 	}
@@ -860,7 +859,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 * 7. PIC32MX devices only: Poll the LVDSTAT register.
 	 */
 
-	if (1) {
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
 		/* here1: */
 		pic32_xferinstruction(k, 0x8C880000); /* lw t0,0(a0)       */
 		pic32_xferinstruction(k, 0x31080800); /* andi t0,t0,0x0800 */
@@ -1010,7 +1009,7 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 
 	uint32_t dev = 0;
 	while (pic32_map[dev].deviceid) {
-		if (pic32_map[dev].deviceid == pic32_conf.deviceid)
+		if (pic32_map[dev].deviceid == (pic32_conf.deviceid & PIC32_IDMASK))
 			break;
 		++dev;
 	}
@@ -1142,7 +1141,7 @@ pic32_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *
  *	0x1D000000 .. 0x1D1FFFFF (2048KB)
  *
  *  RETURN PIC_REGIONBOOT:
- *  	0x1FC00000 .. 0x1FC13FFF (80KB)
+ *  	0x1FC00000 .. 0x1FC1XXXX
  *
  * DS60001145N-page 10
  */
@@ -1151,13 +1150,13 @@ pic32_getregion(uint32_t address)
 {
 	uint32_t vaddr = pic32_kseg1(address);
 
-	if (vaddr >= PIC32_CODE && vaddr < (PIC32_CODE + (1024 * 2048))) {
+	if (vaddr >= PIC32_CODE && vaddr < (PIC32_CODE + (pic32_map[pic32_index].prog << 2))) {
 		return PIC_REGIONCODE;
 	}
-	if (vaddr >= PIC32_BOOT && vaddr < (PIC32_BOOT + (1024 * 80))) {
+	if (vaddr >= PIC32_BOOT && vaddr < (PIC32_BOOT + (pic32_map[pic32_index].boot << 2))) {
 		return PIC_REGIONBOOT;
 	}
-	printf("%s: warning: address unsupported [%06X]\n", __func__, address);
+	printf("%s: warning: address unsupported [%08X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 

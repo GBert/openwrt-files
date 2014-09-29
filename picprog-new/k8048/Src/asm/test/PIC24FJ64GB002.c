@@ -40,7 +40,7 @@
  * via the ISCP port and execute them. One command is implemented.
  * The command takes one argument which sets the LED to that value.
  *
- ******************************************************************************
+ *******************************************************************************
  *
  * 22016 words Flash (24-bit)
  * 8192 bytes RAM
