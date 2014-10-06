@@ -525,7 +525,7 @@ main(int argc, char **argv)
 	struct k8048 k;
 	char *execdup, *execname;
 
-	/* Initialise */
+	/* Initialise to NULL/0 */
 	memset(&k, 0, sizeof(k));
 
 	/* Get exec name */

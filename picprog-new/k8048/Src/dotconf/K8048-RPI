@@ -83,6 +83,8 @@ SLEEP=10
 # 0x1000 VPP_RUN
 #       This rule enables shift with irq lock for GPIO BIT-BANG
 # 0x2000 BB_LOCK
+#       This rule re-enables the ALT0 function when an R-PI GPIO is released.
+# 0x4000 ALT_RELEASE
 #
 # TTY VELLEMAN K8048 = PGD_IN_PULLUP + PGD_OUT_FLIP + PGC_OUT_FLIP + VPP_OUT_FLIP + PGD_IN_FLIP
 # TTY VELLEMAN K8076 = PGD_IN_PULLUP
@@ -100,6 +102,8 @@ BITRULES=0x0010
 #BITRULES=0x1010
 # GPIO BIT-BANG
 #BITRULES=0x1000
+# CHIPKIT PI PIC32 ICSP
+#BITRULES=0x4F00
 
 # I/O busy cursor (0=DISABLED)
 # 
@@ -165,6 +169,17 @@ PGDI=25
 #PGC=10
 # PGD DATA_I/O     - RPi-Connect 20
 #PGD=11
+
+# R-PI OR GPIO BIT-BANG (single PGD DATA I/O)
+#                  = CHIPKIT PI PIC32 ICSP =
+# !MCLR/VPP        - /RESET
+#VPP=4
+# PGM              - N/A
+#PGM=255
+# PGC CLOCK        - PGC1 RX2
+#PGC=14
+# PGD DATA_I/O     - PGD1 TX2
+#PGD=15
 
 # MCP23017 I2C ADDRESS (README.i2c)
 #

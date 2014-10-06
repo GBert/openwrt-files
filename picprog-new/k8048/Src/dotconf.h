@@ -34,7 +34,9 @@
 #define _DOTCONF_H
 
 #define DOTFILENAME ".k8048"
+#define DOTCONFIGNAME "config"
 
+int getdotpath(struct k8048 *);
 void getdotfile(struct k8048 *);
 void getconf(struct k8048 *, char *);
 

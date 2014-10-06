@@ -2045,10 +2045,6 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 4))
-		return;
-
 	/* Initialise device for programming */
 	if (blank)
 		pic24_bulk_erase(k, PIC_VOID, PIC_VOID);
@@ -2060,6 +2056,11 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	pic24_program_verify(k);
 	pic24_write_program_init(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 4)) {
+		pic24_standby(k);
+		return;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = (k->pdata[i]->address >> 1);
@@ -2104,16 +2105,17 @@ pic24_verify(struct k8048 *k, char *filename)
 	uint32_t PC_address, fail = 0, total = 0, wdata;
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 4))
-		return 1;
-
 	/*
 	 * Verify device
 	 */
 
 	pic24_program_verify(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 4)) {
+		pic24_standby(k);
+		return 1;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = (k->pdata[i]->address >> 1);

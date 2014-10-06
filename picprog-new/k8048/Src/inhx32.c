@@ -112,9 +112,10 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 	void *root = NULL;
 	inhx32_data *data = NULL;
 
-	k->count = 0;
-	k->pdata = NULL;
+	/* (Re-)Initialise */
+	inhx32_free(k);
 	
+	/* Open file or stdin */
 	if (strcmp(filename, "-") && (f1 = fopen(filename, "rb")) == NULL) {
 		printf("%s: error: file open failed [%s] [%s]\n",
 		__func__, filename, strerror(errno));

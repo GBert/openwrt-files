@@ -52,8 +52,8 @@ Breadboard connections for LVP programming with VPP at 3V3
 
 (1) Not used by all LVP compatible devices.
 
-How to build gpio bit-bang kernel module for raspbian on the R-PI
-=================================================================
+Build gpio bit-bang kernel module for raspbian on the R-PI
+==========================================================
 
 Determine the running kernel and it's config on the Raspberry Pi target machine.
 
@@ -124,10 +124,10 @@ install gpio-bb modprobe --ignore-install gpio-bb && modprobe gpio-bb && mknod /
 
 $ modprobe gpio-bb
 
-How to build gpio bit-bang kernel modules for OpenWRT 
-=====================================================
+Build gpio bit-bang kernel module and programmer for OpenWRT 
+============================================================
 
-This example builds the firmware for a TP-LINK TL-WR941ND V3.2 (UNTESTED)
+This example builds the firmware for a TP-LINK TL-WR941ND V3.2
 
 $ mkdir -p /embedded/openwrt/
 $ cd /embedded/openwrt/
@@ -179,4 +179,122 @@ Enter 'help' for a list of built-in commands.
   * 1 1/2 oz Dark Rum       with crushed ice. Stir.
   * 2 tsp. Creme de Cacao
  -----------------------------------------------------
-root@OpenWrt:/# 
+root@OpenWrt:/# passwd
+
+root@OpenWrt:/# exit
+
+Install gpio bit-bang kernel module and programmer for OpenWRT 
+==============================================================
+
+$ cd /embedded/openwrt/openwrt.git/bin/ar71xx/packages/
+$ scp kmod-bit-bang-gpio_3.10.32-1_ar71xx.ipk picprog-new_3.0-dev_ar71xx.ipk root@192.168.1.1:/tmp
+$ ssh root@192.168.1.1
+$ cd /tmp
+$ opkg install kmod-bit-bang-gpio_3.10.32-1_ar71xx.ipk 
+Installing kmod-bit-bang-gpio (3.10.32-1) to root...
+Configuring kmod-bit-bang-gpio.
+$ opkg install picprog-new_3.0-dev_ar71xx.ipk 
+Installing picprog-new (3.0-dev) to root...
+Configuring picprog-new.
+$ rm kmod-bit-bang-gpio_3.10.32-1_ar71xx.ipk picprog-new_3.0-dev_ar71xx.ipk 
+$ k8048
+USAGE: k8048
+Usage information.
+
+FILES:
+ /root/.k8048
+                Configuration file.
+
+BACKENDS:
+ BIT-BANG
+                Linux GPIO bit-bang.
+
+ENVIRONMENT:
+ K8048
+                Configuration file.
+
+EXAMPLES:
+ k14 [SELECT DEVICE] [LVP] OPERATION [ARG]
+                14-bit word PIC10F/12F/16F operations.
+ k16 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]
+                16-bit word PIC18F operations.
+ k24 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]
+                24-bit word PIC24/dsPIC operations.
+ k32 OPERATION [ARG]
+                32-bit word PIC32 operations.
+ ktest TEST [ARG]
+                Hardware tests.
+
+VERSION:
+ 3.0
+
+Test gpio bit-bang kernel module and programmer for OpenWRT 
+===========================================================
+
+$ ssh root@192.168.1.1
+$ rmmod leds_gpio
+$ modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
+$ vi /root/.k8048
+ [CONFIGURE VPP=2]
+$ ktest vpp 5
+
+TEST MODE VPP|PGD|PGC|PGM
+
+VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]
+VPP HIGH (ICSP 1) (D-SUB-9 TX 3) [5 seconds]
+VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]
+
+TEST DONE
+
+TP-LINK TL-WR941ND V3.2 gpio
+============================
+
+0 ?
+1 ?
+2 TL_WR941ND_GPIO_LED_SYSTEM		LED5
+3 TL_WR941ND_GPIO_BTN_RESET		SW6
+4 TL_WR941ND_GPIO_LED_QSS_RED
+5 TL_WR941ND_GPIO_LED_QSS_GREEN		LED4
+6 ?
+7 TL_WR941ND_GPIO_BTN_QSS		SW9
+8 ?
+9 TL_WR941ND_GPIO_LED_WLAN		LED2
+
+TP-LINK TL-WR941ND V3.2 FRONT PANEL
+===================================
+
+LED8 LED5 LED2 LED1 LED9 LED7 LED6 LED3 LED4 SW8 SW9
+PWR  SYS  WLAN LAN4 LAN3 LAN2 LAN1 WAN  QSS
+
+Update build gpio bit-bang kernel module and programmer for OpenWRT 
+===================================================================
+
+$ scripts/feeds update -a
+Updating feed 'packages' from 'git://git.openwrt.org/packages.git' ...
+ [WAIT FOR A WHILE...]
+$ make V=s
+ [WAIT FOR A WHILE...]
+$ scp bin/ar71xx/openwrt-ar71xx-generic-tl-wr941nd-v3-squashfs-sysupgrade.bin root@192.168.1.1:/tmp/
+$ ssh root@192.168.1.1
+$ sysupgrade -v /tmp/openwrt-ar71xx-generic-tl-wr941nd-v3-squashfs-sysupgrade.bin
+ [WAIT FOR REBOOT]
+$ ssh root@192.168.1.1
+
+BusyBox v1.19.4 (2014-03-17 16:43:34 GMT) built-in shell (ash)
+Enter 'help' for a list of built-in commands.
+
+  _______                     ________        __
+ |       |.-----.-----.-----.|  |  |  |.----.|  |_
+ |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+ |_______||   __|_____|__|__||________||__|  |____|
+          |__| W I R E L E S S   F R E E D O M
+ -----------------------------------------------------
+ BARRIER BREAKER (Bleeding Edge, r39935)
+ -----------------------------------------------------
+  * 1/2 oz Galliano         Pour all ingredients into
+  * 4 oz cold Coffee        an irish coffee mug filled
+  * 1 1/2 oz Dark Rum       with crushed ice. Stir.
+  * 2 tsp. Creme de Cacao
+ -----------------------------------------------------
+$ uname -a
+Linux OpenWrt 3.10.32 #2 Fri Oct 3 17:52:15 BST 2014 mips GNU/Linux

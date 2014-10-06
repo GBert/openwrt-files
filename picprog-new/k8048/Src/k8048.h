@@ -49,6 +49,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <errno.h> 
 #include <libgen.h>
@@ -117,6 +118,7 @@ struct k8048 {
 	char dotfile[STRLEN];	/* configuration file name			*/
 	char device[STRLEN];	/* I/O device name: tty or rpi			*/
 	char devicename[STRLEN];/* overridden PICMicro device name		*/ 
+	char etc[STRLEN];	/* overridden etc directory path		*/ 
 	uint16_t bitrules;	/* I/O bit rules				*/
 	uint32_t key;		/* MCHP LVP key					*/
 	uint32_t busy;		/* I/O busy cursor speed			*/

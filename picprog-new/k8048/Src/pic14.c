@@ -786,6 +786,7 @@ pic14_increment_address(struct k8048 *k)
 	io_program_out(k, 0x06, 6);
 }
 
+#if 0
 /*
  * RESET ADDRESS
  *  PC <= 0
@@ -811,6 +812,7 @@ pic14_reset_address(struct k8048 *k)
 {
 	io_program_out(k, 0x16, 6);
 }
+#endif
 
 /*PROG************************************************************************/
 
@@ -2056,10 +2058,6 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint16_t total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 2))
-		return;
-
 	/* Initialise device for programming */
 	if (blank)
 		pic14_bulk_erase(k, PIC_INTERNAL, PIC_NOINTERNAL);
@@ -2068,6 +2066,10 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 	 * Program device
 	 */
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 2)) {
+		return;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);
@@ -2130,14 +2132,14 @@ pic14_verify(struct k8048 *k, char *filename)
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint16_t fail = 0, total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 2))
-		return 1;
-
 	/*
 	 * Verify device
 	 */
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 2)) {
+		return 1;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);

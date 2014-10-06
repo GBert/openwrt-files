@@ -33,46 +33,72 @@
 #include "k8048.h"
 
 /*
+ * Dot path
+ */
+int
+getdotpath(struct k8048 *k)
+{
+	struct stat st;
+
+	if (stat(k->dotfile, &st) < 0) {
+		if (errno == ENOENT)
+			return -1;
+		printf("%s: fatal error: stat failed [%s]\n", __func__, k->dotfile);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+	if (S_ISREG(st.st_mode)) {
+		return access(k->dotfile, R_OK);
+	}
+	if (S_ISDIR(st.st_mode)) {
+		char *dotdup = (char *)strdup(k->dotfile);
+		if (dotdup == NULL) {
+			printf("%s: fatal error: strdup failed\n", __func__);
+			io_exit(k, EX_OSERR); /* Panic */
+		}
+		snprintf(k->dotfile, STRLEN, "%s/%s", dotdup, DOTCONFIGNAME);
+		free(dotdup);
+		return access(k->dotfile, R_OK);
+	}
+	return -1;
+}
+
+/*
  * Dot file
  */
 void
 getdotfile(struct k8048 *k)
 {
-	char dir[STRLEN], *filename, *homedir, *username;
-
-	filename = getenv("K8048");
-	if (filename != NULL && access(filename, R_OK) == 0) {
+	char *filename = getenv("K8048");
+	if (filename != NULL) {
 		snprintf(k->dotfile, STRLEN, "%s", filename);
-		return;
+		if (getdotpath(k) == 0)
+			return;
 	}
-	
+
+	char dir[STRLEN];
 	if (getcwd(dir, STRLEN) == NULL) {
 		printf("%s: fatal error: getcwd failed\n", __func__);
 		io_exit(k, EX_OSERR); /* Panic */
 	}
-
 	snprintf(k->dotfile, STRLEN, "%s/%s", dir, DOTFILENAME);
-	if (access(k->dotfile, R_OK) == 0) {
+	if (getdotpath(k) == 0)
 		return;
-	}
 
-	homedir = getenv("HOME");
+	char *homedir = getenv("HOME");
 	if (homedir != NULL) {
 		snprintf(k->dotfile, STRLEN, "%s/%s", homedir, DOTFILENAME);
-		if (access(k->dotfile, R_OK) == 0) {
+		if (getdotpath(k) == 0)
 			return;
-		}
 	}
 
-	username = getenv("USER");
+	char *username = getenv("USER");
 	if (username != NULL) {
 		snprintf(k->dotfile, STRLEN, "/home/%s/%s", username, DOTFILENAME);
-		if (access(k->dotfile, R_OK) == 0) {
+		if (getdotpath(k) == 0)
 			return;
-		}
 	}
 
-	/* No dot file available */
+	/* No dot file found */
 	k->dotfile[0] = '\0';
 }
 
@@ -85,18 +111,16 @@ getconf(struct k8048 *k, char *e)
 	FILE *f1;
 	char line[STRLEN];
 
-	/* Configure defaults */
+	/* Clear configuration */
 	bzero(k, sizeof(struct k8048));
-	k->bitrules = (PGD_IN_PULLUP | PGD_OUT_FLIP | PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP);
-	k->sleep_low = 1;
-	k->sleep_high = 1;
-	k->fwsleep = 30;
 
-	/* Configure I/O defaults */
+	/* Configure defaults */
 	io_config(k);
 
-	/* Load dot file if available */
+	/* Determine dot file name */
 	getdotfile(k);
+
+	/* Load dot file when available */
 #ifdef DEBUG
 	printf("%s: DOTFILE=%s\n", __func__, k->dotfile);
 #endif
@@ -200,6 +224,12 @@ getconf(struct k8048 *k, char *e)
 				printf("%s: DEBUG=%s\n", __func__, &line[6]);
 #endif
 				k->debug = strtoul(&line[6], NULL, 0);
+			}
+			else if (mystrcasestr(line, "ETC=") == line) {
+#ifdef DEBUG
+				printf("%s: ETC=%s\n", __func__, &line[4]);
+#endif
+				strncpy(k->etc, &line[4], STRLEN);
 			}
 		}
 		fclose(f1);

@@ -59,6 +59,16 @@ struct pic_ops {
 	void (*dumpinhxdata)(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 };
 
+/* PROGRAMMING EXECUTIVE */
+struct pic_pe {
+	uint32_t datasheet;
+	char filename[STRLEN];
+};
+
+/*
+ * 32-bit keys
+ */
+
 /* ENHANCED MID-RANGE ICSP             = MCHP (0x4D434850)          */
 #define MCHPKEY (0x4D434850)
 
@@ -76,6 +86,8 @@ uint32_t pic_arch(struct k8048 *, const char *);
 int pic_cmp(const void *, const void *);
 #define PIC_NCOLS (4)
 void pic_selector(struct k8048 *);
+
+int pic_pelookup(struct k8048 *, char *, const char *);
 
 #define PIC_CONFIG_ONLY (0)
 #define PIC_CONFIG_ALL (1)

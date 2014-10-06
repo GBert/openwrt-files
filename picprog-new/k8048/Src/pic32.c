@@ -275,6 +275,53 @@ pic32_selector(void)
 
 /*****************************************************************************
  *
+ * Programming executive lookup
+ *
+ *****************************************************************************/
+
+struct pic_pe pic32_pe[] =
+{
+	/* PIC32MX1XX/2XX DS60001168F		      */
+	{DS60001168F,	"RIPE_11_000301.hex"},
+	/* PIC32MX330/350/370/430/450/470 DS60001185C */
+	{DS60001185C,	"RIPE_06_000201.hex"},
+	/* PIC32MX3XX/4XX DS61143H		      */
+	{DS61143H,	"RIPE_06_000201.hex"},
+	/* PIC32MX5XX/6XX/7XX DS61156H		      */
+	{DS61156H,	"RIPE_06_000201.hex"},
+	/* PIC32MZ EC DS60001191C		      */
+	{DS60001191C,	"RIPE_15_000502.hex"},
+	/* EOF					      */
+	{0,		"(null)"},
+};
+
+/*
+ * LOOKUP PE
+ *
+ *  RETURN
+ *   0 PE FOUND
+ *  -1 PE NOT FOUND
+ *
+ *  MODIFIES PEPATH IF FOUND
+ */
+int
+pic32_pelookup(struct k8048 *k)
+{
+	uint32_t i = 0;
+
+	do {
+		if (pic32_pe[i].datasheet == pic32_map[pic32_index].datasheet) {
+			int rc = pic_pelookup(k, pic32_conf.pepath, pic32_pe[i].filename);
+			return rc;
+		}
+	}
+	while (pic32_pe[++i].datasheet);
+
+	return -1;
+}
+
+/*****************************************************************************
+ *
  * Program/Verify mode
  *
  *****************************************************************************/
@@ -473,6 +520,7 @@ pic32_xferdata(struct k8048 *k, uint8_t nbits, uint32_t tdi)
 uint32_t
 pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 {
+	struct timeval tv1, tv2, tv3;
 	uint8_t pracc;
 	uint32_t tdo;
 
@@ -485,7 +533,16 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 	io_clock_bit_4phase(k, 1, 0);		/* SELECT-DR 		*/
 	io_clock_bit_4phase(k, 0, 0);		/* CAPTURE-DR		*/
 
-	pracc = io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR		*/
+	gettimeofday(&tv1, NULL);
+	do {
+		pracc =
+		io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR		*/
+
+		gettimeofday(&tv2, NULL);
+		timersub(&tv2, &tv1, &tv3);
+	}
+	while (!pracc && (tv3.tv_sec < PIC_TIMEOUT));
+
 	if (!pracc) {
 		printf("%s: fatal error: processor access invalid\n", __func__);
 		pic32_standby(k);
@@ -524,10 +581,10 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
  *
  * DS60001145M-page 18
  */
-void
+uint32_t
 pic32_xferinstruction(struct k8048 *k, uint32_t instruction)
 {
-	uint32_t controlVal;
+	uint32_t controlVal, response;
 	struct timeval tv1, tv2, tv3;
 
 	/* Select control register */
@@ -554,13 +611,15 @@ pic32_xferinstruction(struct k8048 *k, uint32_t instruction)
 	pic32_sendcommand(k, PIC32_ETAP_DATA);
 
 	/* Send the instruction */
-	pic32_xferdata(k, 32, instruction);
+	response = pic32_xferdata(k, 32, instruction);
 
 	/* Select control register */
 	pic32_sendcommand(k, PIC32_ETAP_CONTROL);
 
 	/* Tell CPU to execute instruction */
 	pic32_xferdata(k, 32, PIC32_EJTAG_CONTROL_PROBEN | PIC32_EJTAG_CONTROL_PROBTRAP);
+
+	return response;
 }
 
 /*****************************************************************************
@@ -652,7 +711,7 @@ pic32_erase_device(struct k8048 *k)
 
 	gettimeofday(&tv1, NULL);
 	do {
-		io_usleep(k, 10000); /* 10ms */
+		io_usleep(k, 10000); /* 10 ms */
 		statusVal = pic32_xferdata(k, PIC32_MCHP_STATUS) &
 			(PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FCBUSY);
 		gettimeofday(&tv2, NULL);
@@ -709,6 +768,145 @@ pic32_enter_serial_execution_mode(struct k8048 *k)
 	}
 
 	pic32_sendcommand(k, PIC32_MTAP_SW_ETAP);
+}
+
+/*
+ * Download the PE
+ *
+ * DS60001145N-page 23
+ */
+void
+pic32_download_pe(struct k8048 *k, uint32_t addr, uint32_t *words, uint32_t nwords)
+{
+	/* PE LOADER OP CODES */
+	static uint32_t peloader[] = {
+		0x3c07dead, // lui a3, 0xdead
+		0x3c06ff20, // lui a2, 0xff20
+		0x3c05ff20, // lui al, 0xff20
+			    // here1:
+		0x8cc40000, // lw a0, 0 (a2)
+		0x8cc30000, // lw v1, 0 (a2)
+		0x1067000b, // beq v1, a3, <here3>
+		0x00000000, // nop
+		0x1060fffb, // beqz v1, <here1>
+		0x00000000, // nop
+			    // here2:
+		0x8ca20000, // lw v0, 0 (a1)
+		0x2463ffff, // addiu v1, v1, -1
+		0xac820000, // sw v0, 0 (a0)
+		0x24840004, // addiu a0, a0, 4
+		0x1460fffb, // bnez v1, <here2>
+		0x00000000, // nop
+		0x1000fff3, // b <here1>
+		0x00000000, // nop
+			    // here3:
+		0x3c02a000, // lui v0, 0xa000
+		0x34420900, // ori v0, v0, 0x900
+		0x00400008, // jr v0
+		0x00000000, // nop
+	};
+	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
+
+	/*
+	 * 1. PIC32MX devices only: Initialize BMXCON to 0x1F0040.
+	 *
+	 *	lui a0,0xbf88
+	 *	ori a0,a0,0x2000 // address of BMXCON
+	 *	lui a1,0x1f
+	 *	ori a1,a1,0x40   // $a1 has 0x1f0040
+	 *	sw a1,0(a0)      // BMXCON initialized
+	 */
+
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
+		pic32_xferinstruction(k, 0x3c04bf88);
+		pic32_xferinstruction(k, 0x34842000);
+		pic32_xferinstruction(k, 0x3c05001f);
+		pic32_xferinstruction(k, 0x34a50040);
+		pic32_xferinstruction(k, 0xac850000);
+
+	/*
+	 * 2. PIC32MX devices only: Initialize BMXDKPBA to 0x800.
+	 *
+	 *	li a1,0x800
+	 *	sw a1,16(a0)
+	 */
+
+		pic32_xferinstruction(k, 0x34050800);
+		pic32_xferinstruction(k, 0xac850010);
+
+	/*
+	 * 3. PIC32MX devices only: Initialize BMXDUDBA and BMXDUPBA to the
+	 *    value of BMXDRMSZ.
+	 *
+	 *	lw a1,64(a0) // load BMXDMSZ
+	 *	sw a1,32(a0)
+	 *	sw a1,48(a0)
+	 */
+
+		pic32_xferinstruction(k, 0x8C850040);
+		pic32_xferinstruction(k, 0xac850020);
+		pic32_xferinstruction(k, 0xac850030);
+	}
+
+	/*
+	 * 4. Set up PIC32 RAM address for PE.
+	 *
+	 *	lui a0,0xa000
+	 *	ori a0,a0,0x800
+	 */
+
+	pic32_xferinstruction(k, 0x3c04a000);
+	pic32_xferinstruction(k, 0x34840800);
+
+	/*
+	 * 5. Load the PE_Loader.
+	 *
+	 *	lui a2, <PE_loader hi++>
+	 *	ori a2,a2, <PE_loader lo++>
+	 *	sw a2,0(a0)
+	 *	addiu a0,a0,4
+	 */
+
+	for (uint32_t i = 0; i < PESIZE; ++i) {
+		uint32_t datah = peloader[i] >> 16;
+		uint32_t datal = peloader[i] & 0xFFFF;
+
+		pic32_xferinstruction(k, 0x3c060000 + datah);
+		pic32_xferinstruction(k, 0x34c60000 + datal);
+		pic32_xferinstruction(k, 0xac860000);
+		pic32_xferinstruction(k, 0x24840004);
+	}
+
+	/*
+	 * 6. Jump to the PE_Loader.
+	 *
+	 *	lui t9,0xa000
+	 *	ori t9,t9,0x800
+	 *	jr t9
+	 *	nop
+	 */
+
+	pic32_xferinstruction(k, 0x3c19a000);
+	pic32_xferinstruction(k, 0x37390800);
+	pic32_xferinstruction(k, 0x03200008);
+	pic32_xferinstruction(k, 0x00000000);
+
+	/*
+	 * 7. Load the PE using the PE_Loader.
+	 */
+
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+	pic32_xferfastdata(k, pic32_kseg1(addr));
+	pic32_xferfastdata(k, nwords);
+	for (uint32_t i = 0; i < nwords; ++i)
+		pic32_xferfastdata(k, words[i]);
+
+	/*
+	 * 8. Jump to the PE.
+	 */
+
+	pic32_xferfastdata(k, 0x00000000);
+	pic32_xferfastdata(k, 0xDEAD0000);
 }
 
 /*
@@ -772,7 +970,6 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 *    initialized to ‘0’.
 	 */
 
-	/* NVMOP = 0011 = WRITE ROW */
 	pic32_xferinstruction(k, 0x34054003); /* ori a1,$0,0x4003 */
 	pic32_xferinstruction(k, 0x34068000); /* ori a2,$0,0x8000 */
 	pic32_xferinstruction(k, 0x34074000); /* ori a3,$0,0x4000 */
@@ -914,7 +1111,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	pic32_xferinstruction(k, 0x8c880000);          /* lw t0,0(a0)                   */
 	pic32_xferinstruction(k, 0x30082000);          /* andi t0,zero,0x2000           */
 	pic32_xferinstruction(k, 0x15000000 + offset); /* bne t0, $0, <err_proc_offset> */
-	pic32_xferinstruction(k, 0x00000000);          /* nop */
+	pic32_xferinstruction(k, 0x00000000);          /* nop                           */
 #endif
 }
 
@@ -968,12 +1165,192 @@ pic32_readmemorylocation(struct k8048 *k, uint32_t addr)
 	return data;
 }
 
+/*
+ * Get PE Resonse
+ *
+ * DS60001145N-page 30
+ */
+static inline uint32_t
+pic32_getperesponse(struct k8048 *k)
+{
+	return pic32_xferinstruction(k, 0x00000000);
+}
+
+/*****************************************************************************
+ *
+ * PE Commands
+ *
+ *****************************************************************************/
+
+/*
+ * PE READ
+ *
+ *  Op code 0x1
+ *
+ * DS60001145N-page 33
+ */
+void
+pic32_pe_read(struct k8048 *k, uint32_t addr, uint16_t nwords, uint32_t *data)
+{
+	/* Select the Fastdata Register */
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+
+	/* Op code + Operand */
+	pic32_xferfastdata(k, 0x00010000 + nwords);
+
+	/* KSEG1 Address */
+	pic32_xferfastdata(k, pic32_kseg1(addr));
+
+	/* Check response */
+	uint32_t rc = pic32_getperesponse(k);
+	if (rc != 0x00010000) {
+		printf("%s: fatal error: PE READ failed [0x%08X]\n",
+			__func__, rc);
+		pic32_standby(k);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+
+	/* Select the Fastdata Register */
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+
+	/* Get Data */
+	for (uint32_t i = 0; i < nwords; ++i)
+		data[i]	= pic32_xferfastdata(k, 0);
+}
+
+/*
+ * PE PROGRAM
+ *
+ *  Op code 0x2
+ *
+ * DS60001145N-page 34
+ */
+void
+pic32_pe_program(struct k8048 *k, uint32_t addr, uint32_t *panel, uint32_t panel_size)
+{
+	/* Select the Fastdata Register */
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+
+	/* Op code */
+	pic32_xferfastdata(k, 0x00020000);
+
+	/* PHYSICAL Address */
+	pic32_xferfastdata(k, pic32_phy(addr));
+
+	/* Byte Length */
+	pic32_xferfastdata(k, panel_size);
+
+	/* Data */
+	for (uint32_t i = 0; i < panel_size; i += 4) {
+		uint32_t wdata = panel[i] |
+			(panel[i + 1] << 8) |
+			(panel[i + 2] << 16) |
+			(panel[i + 3] << 24);
+		pic32_xferfastdata(k, wdata);
+	}
+	
+	/* Check response */
+	uint32_t rc = pic32_getperesponse(k);
+	if (rc & 0xFFFF) {
+		printf("%s: fatal error: PE PROGRAM failed [0x%08X]\n",
+			__func__, rc);
+		pic32_standby(k);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+}
+
+/*****************************************************************************
+ *
+ * PE functions
+ *
+ *****************************************************************************/
+
+/*
+ * PE LOAD
+ */
+void
+pic32_pe_load(struct k8048 *k)
+{
+	/* Validate PE */
+	if (pic32_conf.pepath[0] == '\0') {
+		return;
+	}
+
+	/* Get PE */
+	if(!inhx32(k, pic32_conf.pepath, 4)) {
+		bzero(pic32_conf.pepath, STRLEN);
+		return;
+	}
+
+	/* Inspect PE */
+	uint32_t addr = k->pdata[0]->address, nwords = 0;
+	for (uint32_t i = 0; i < k->count; ++i)
+		nwords += (k->pdata[i]->nbytes >> 2);
+
+	/* Allocate PE array */
+	uint32_t *words = (uint32_t *)malloc(sizeof(uint32_t) * nwords);
+ 	if (words == NULL) {
+		printf("%s: fatal error: malloc failed\n", __func__);
+		pic32_standby(k);
+		io_exit(k, EX_OSERR); /* Panic */
+	}
+
+	/*
+	 * Populate PE array
+	 */
+
+	uint32_t word = 0;
+
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; ++i) {
+
+		/* For each 32-bit word in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
+			uint32_t wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8) |
+				(k->pdata[i]->bytes[j + 2] << 16) |
+				(k->pdata[i]->bytes[j + 3] << 24);
+			words[word++] = wdata;
+		}
+	}
+
+	/* Download PE (upload to chip) */
+	pic32_download_pe(k, addr, words, nwords);
+
+	/* Tidy up */
+	free(words);
+	inhx32_free(k);
+}
+
+/*
+ * PE READ WITH CACHE
+ */
+uint32_t
+pic32_pe_readword(struct k8048 *k, uint32_t address)
+{
+	static uint32_t cache_addr = UINT32_MAX;
+	static uint32_t cache_data[PIC32_PE_READWORDS];
+
+	uint32_t new_address = address & PIC32_PE_READPAGE;
+
+	if (new_address != cache_addr) {
+		pic32_pe_read(k, new_address, PIC32_PE_READWORDS, cache_data);
+		cache_addr = new_address;
+	}
+	return cache_data[(address >> 2) & PIC32_PE_READMASK];
+}
+
 /*****************************************************************************
  *
  * Compound functions
  *
  *****************************************************************************/
 
+/*
+ * BLANK DEVICE
+ *
+ * DISABLE PROTECTION AND BULK ERASE
+ */
 void
 pic32_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint16_t bandgap __attribute__((unused)))
 {
@@ -1054,6 +1431,9 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	for (uint32_t i = 0; i < 4; ++i)
 		pic32_conf.config[3 - i] = pic32_readmemorylocation(k, pic32_conf.configaddr + 4 * i);
 
+	/* Lookup PE */
+	pic32_pelookup(k);
+
 	pic32_standby(k);
 }
 
@@ -1092,11 +1472,17 @@ uint32_t
 pic32_read_program_memory_block(struct k8048 *k, uint32_t *data, uint32_t addr, uint32_t size)
 {
 	pic32_program_verify(k);
-
 	pic32_enter_serial_execution_mode(k);
+	pic32_pe_load(k);
 
 	for (uint32_t i = 0; i < size; ++i) {
-		data[i] = pic32_readmemorylocation(k, addr);
+		if (pic32_conf.pepath[0]) {
+			/* PE */
+			data[i] = pic32_pe_readword(k, addr);
+		} else {
+			/* !PE */
+			data[i] = pic32_readmemorylocation(k, addr);
+		}
 		addr += 4;
 	}
 
@@ -1120,8 +1506,14 @@ pic32_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *
 	switch (region) {
 	case PIC_REGIONCODE:
 	case PIC_REGIONBOOT:
-		pic32_download_data_block(k, panel, panel_size);
-		pic32_flash_row_write(k, address, 0x0000);
+		if (pic32_conf.pepath[0]) {
+			/* PE */
+			pic32_pe_program(k, address, panel, panel_size);
+		} else {
+			/* !PE */
+			pic32_download_data_block(k, panel, panel_size);
+			pic32_flash_row_write(k, address, 0x0000);
+		}
 		break;
 	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		break;
@@ -1224,7 +1616,13 @@ pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		printf("%s: warning: region unsupported [%d]\n", __func__, region);
 		return 4;
 	}
-	vdata = pic32_readmemorylocation(k, pic32_kseg1(address));
+	if (pic32_conf.pepath[0]) {
+		/* PE */
+		vdata = pic32_pe_readword(k, address);
+	} else {
+		/* !PE */
+		vdata = pic32_readmemorylocation(k, pic32_kseg1(address));
+	}
 	if (vdata != data) {
 		printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
 			__func__, vdata, data, pic32_phy(address));
@@ -1243,10 +1641,6 @@ pic32_program(struct k8048 *k, char *filename, int blank)
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 4))
-		return;
-
 	/* Initialise device for programming */
 	if (blank)
 		pic32_bulk_erase(k, PIC_VOID, PIC_VOID);
@@ -1256,11 +1650,16 @@ pic32_program(struct k8048 *k, char *filename, int blank)
 	 */
 
 	pic32_program_verify(k);
-
 	pic32_enter_serial_execution_mode(k);
+	pic32_pe_load(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 4)) {
+		pic32_standby(k);
+		return;
+	}
 	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
+	for (uint32_t i = 0; i < k->count; ++i) {
 		PC_address = k->pdata[i]->address;
 		new_region = pic32_getregion(PC_address);
 		if (new_region == PIC_REGIONNOTSUP)
@@ -1296,20 +1695,21 @@ pic32_verify(struct k8048 *k, char *filename)
 	uint32_t PC_address, fail = 0, total = 0, wdata = 0;
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 4))
-		return 1;
-
 	/*
 	 * Verify device
 	 */
 
 	pic32_program_verify(k);
-
 	pic32_enter_serial_execution_mode(k);
+	pic32_pe_load(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 4)) {
+		pic32_standby(k);
+		return 1;
+	}
 	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
+	for (uint32_t i = 0; i < k->count; ++i) {
 		PC_address = k->pdata[i]->address;
 		new_region = pic32_getregion(PC_address);
 		if (new_region == PIC_REGIONNOTSUP)
@@ -1358,6 +1758,15 @@ pic32_dumpdeviceid(struct k8048 *k)
 		pic32_phy(PIC32_DEVID), pic32_conf.deviceid, pic32_map[pic32_index].devicename);
 	printf("[%08X] [BOOT]     %08X WORDS\n", pic32_phy(PIC32_BOOT), pic32_map[pic32_index].boot);
 	pic32_dumpconfig(k, PIC_BRIEF);
+	if (pic32_conf.pepath[0]) {
+		char *pedup = (char *)strdup(pic32_conf.pepath);
+		if (pedup == NULL) {
+			printf("%s: fatal error: strdup failed\n", __func__);
+			io_exit(k, EX_OSERR); /* Panic */
+		}
+		printf("           [PE]       %s\n", basename(pedup));
+		free(pedup);
+	}
 }
 
 /*

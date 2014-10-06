@@ -87,6 +87,39 @@ pic_selector(struct k8048 *k)
 }
 
 /*
+ * LOOKUP PE FILE
+ */
+int
+pic_pelookup(struct k8048 *k, char *pathname, const char *filename)
+{
+	int rc;
+
+	if (k->etc[0]) {
+		snprintf(pathname, STRLEN, "%s/%s", k->etc, filename);
+		rc = access(pathname, R_OK);
+		if (rc < 0)
+			bzero(pathname, STRLEN);
+
+		return rc;
+	}
+
+	char *dotdup = (char *)strdup(k->dotfile);
+	if (dotdup == NULL) {
+		printf("%s: fatal error: strdup failed\n", __func__);
+		io_exit(k, EX_OSERR); /* Panic */
+	}
+
+	char *dname = dirname(dotdup);
+	snprintf(pathname, STRLEN, "%s/%s", dname, filename);
+	free(dotdup);
+	rc = access(pathname, R_OK);
+	if (rc < 0)
+		bzero(pathname, STRLEN);
+
+	return rc;
+}
+
+/*
  * READ CONFIG
  */
 void

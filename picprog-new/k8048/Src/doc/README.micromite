@@ -32,18 +32,37 @@
 
 -------------------------------------------------------------------------------
 
+Micomite Pi
+===========
+
+For an overview and assistance with a working micromite system, visit:
+
+http://geoffg.net/micromite.html
+
 Micromite Pi Setup
 ==================
 
 The Circuit
 -----------
 
-TO-DO
+http://dev.kewl.org/k8048/Src/asm/PIC32MX150F128B/gEDA/micromitepi.png
+
+This layout is the same as the original with the addition of the
+power section and having a direct connection to the Raspberry-Pi
+UART and GPIO for ICSP.
 
 k8048 config
 ------------
 
-TO-DO
+~/.k8048:
+DEVICE=RPI
+SLEEP=1
+BITRULES=0x1700
+BUSY=0
+VPP=9
+PGM=255
+PGC=10
+PGD=11
 
 Detect the PIC32MX150F128B
 -------------------------
@@ -62,6 +81,17 @@ Time: 0:00.71s [beethoven]
 Program the PIC32MX150F128B
 --------------------------
 
+beethoven:~> wget -q http://geoffg.net/Downloads/Micromite/Micromite_Firmware.zip
+Time: 0:04.98s [beethoven]
+
+beethoven:~> unzip Micromite_Firmware.zip
+Archive:  Micromite_Firmware.zip
+  inflating: Micromite 4.5C (28-pin).hex  
+  inflating: Micromite 4.5C (44-pin).hex  
+  inflating: Micromite Manual.pdf    
+  inflating: Change Log.pdf          
+Time: 0:00.02s [beethoven]
+
 beethoven:~> ssh pi3 k32 program < Micromite\ 4.5C\ \(28-pin\).hex 
 Total: 134144
 Time: 1:08.79s [pi3]
@@ -75,27 +105,83 @@ Total: 134144 Pass: 134144 Fail: 0
 Time: 1:47.89s [pi3]
 Time: 1:48.57s [beethoven]
 
-Install and setup kermit
-------------------------
+Install screen and xmodem support
+---------------------------------
 
-> apt-get install ckermit
-
-~/.kermrc:
-set modem type none
-set line /dev/ttyAMA0
-set carrier-watch off
-set speed 115200
-set flow none
-connect
+pi3:~> apt-get install screen lrzsz
 
 Test the Micromite Pi
 ---------------------
 
-> kermit
+pi3:~> screen /dev/ttyAMA0 38400
+Micromite MMBasic Ver 4.5C
+Copyright 2011-2014 Geoff Graham
 
-TO-DO
+> print "hello, world"
+hello, world
+>
+<CTRL>A:quit
+
+<CTRL>A is the CONTROL key pressed and then A entered without releasing control.
+Hold and release this and afterward enter :quit. This will quit screen and return
+to the UNIX shell.
 
 Micromite Pi Demo
 =================
 
-TO-DO
+Flashing a LED Micromite Manual page 10
+---------------------------------------
+
+Connect a LED via a current limiting resistor to ground on pin 15 of the PIC32MX150F128B.
+
+pi3:~> screen /dev/ttyAMA0 38400
+
+> EDIT
+
+SETPIN 15, DOUT
+DO
+  PIN(15) = 1
+  PAUSE 300
+  PIN(15) = 0
+  PAUSE 300
+LOOP
+
+<F2> to RUN
+<CTRL>C to STOP
+
+Download program
+----------------
+
+<F12>
+> XMODEM SEND
+<CTRL>A:exec !!. rx prog.bas
+
+rx: ready to receive prog.bas
+Bytes received:     128   BPS:124                   
+
+Transfer complete
+
+Upload program
+--------------
+
+<F11>
+> XMODEM RECEIVE
+<CTRL>A:exec !!. sx prog.bas
+Sending prog.bas, 1 blocks: Give your local XMODEM receive command now.                                                         
+Xmodem sectors/kbytes sent:   0/ 0kRetry 0: NAK on sector
+Retry 0: NAK on sector
+Retry 0: NAK on sector
+Retry 0: NAK on sector
+Bytes Sent:    128   BPS:4206                            
+
+Transfer complete
+
+Saved 69 bytes
+> list
+SetPin 15, DOUT
+Do
+Pin(15) = 1
+Pause 300
+Pin(15) = 0
+Pause 300
+Loop

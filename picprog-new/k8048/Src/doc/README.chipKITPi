@@ -19,45 +19,75 @@ GPIO7		21	22 GND
 chipKITPi I/O headers (Arduino 3V3 compatible)
 -------------------------------------------------------------------------------
 
-						JA1
-						===
-JA4 POWER					NC NC
-=========					G  GND
-RESET						13 D13 SCK
-3V3						12 D12 MISO
-5V0						11 D11 MOSI PWM
-GND						10 D10 SS
-GND						9  D9 PWM
-VIN						8  D8
+						JA1		PIC32MX250F128B
+						===		===============
+JA4 POWER	PIC32MX250F128B			NC NC
+=========	===============			G  GND		8,19,27 GND
+RESET		1	!MCLR			13 D13 SCK	25	RB14
+3V3		13,28	3V3			12 D12 MISO	17	RB8
+5V0						11 D11 MOSI PWM	3	RA1
+GND		8,19,27	GND			10 D10 SS	16	RB7
+GND		8,19,27 GND			9  D9 PWM	22	RB11	JP12
+VIN						8  D8		21	RB10	JP13
 
 						JA2
 						===
-JA3 ANALOG					7  D7 AIN1
-==========					6  D6 AIN0 PWM
-A0						5  D5 T1 PWM
-A1						4  D4 T0
-NC						3  D3 INT1 PWM
-NC						2  D2 INT2
-SDA						1  D1 TXD
-SCL						0  D0 RXD
+JA3 ANALOG					7  NC
+==========					6  NC
+A0 		2	RA0	JP15		5  NC
+A1 		26	RB15	JP11		4  NC
+NC						3  D3 INT1 PWM	24	RB13
+NC						2  D2 INT2	14	RB5
+SDA		6	RB2			1  D1 TXD	11	RB4
+SCL		7	RB3			0  D0 RXD	12	RA4
+
+chipKITPi LED/SW/JTAG
+-------------------------------------------------------------------------------
+
+LED		PIC32MX250F128B
+===		===============
+LED3		13,28	3V3
+LED1		2	RA0	JP15
+LED2		26	RB15	JP11
+RX1		12	RA4
+TX1		11	RB4
+
+SW		PIC32MX250F128B
+==		===============
+BOOTLOAD-EN	18	RB9
+RESET		1	!MCLR
+
+JTAG	PIC32MX250128B		JTAG	PIC32MX250128B
+====	==============		====	==============
+6	8,19,27 GND		5	14	RB5	JP10
+4	18	RB9	JP6	3	17	RB8	JP8
+2	13,28	3V3		1	16	RB7	JP14
+
+Orientation is ICSP port to the left and JTAG port to the right.
 
 chipKITPi ICSP
 -------------------------------------------------------------------------------
 
-PIC32MX250F128B			RASPBERRY Pi
-===============			============
+PIC32MX250F128B		RASPBERRY Pi
+===============		============
 
-	!MCLR 1 ----330R---- GPIO4
-	PGD1  4 ------------ GPIO15
-	PGC1  5 ------------ GPIO14
+1	!MCLR  --330R--	GPIO4
+4	PGD1   --------	GPIO15
+5	PGC1   --------	GPIO14
+
+ICSP is wired internally to the chipKITPi and no other wiring is necessary.
 
 .k8048
 ======
 DEVICE=RPI
 SLEEP=1
-BITRULES=0x0700
+BITRULES=0x4F00
 BUSY=0
 VPP=4
 PGC=14
 PGD=15
 PGM=255
+
+Firmware update
+================
+k32 program chipKIT_Pi.hex

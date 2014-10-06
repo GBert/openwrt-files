@@ -886,10 +886,6 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 2))
-		return;
-
 	/* Initialise device for programming */
 	if (blank)
 		pic12_bulk_erase(k, PIC_INTERNAL, PIC_VOID);
@@ -898,6 +894,10 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	 * Program device
 	 */
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 2)) {
+		return;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);
@@ -955,14 +955,14 @@ pic12_verify(struct k8048 *k, char *filename)
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t fail = 0, total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 2))
-		return 1;
-
 	/*
 	 * Verify device
 	 */
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 2)) {
+		return 1;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		hex_address = (k->pdata[i]->address >> 1);

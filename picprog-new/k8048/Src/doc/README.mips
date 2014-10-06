@@ -69,3 +69,8 @@ NUMBER       REGISTER NAME   USAGE
 0x1D         SP              STACK POINTER
 0x1E         FP              FRAME POINTER
 0x1F         RA              RETURN ADDRESS
+
+MIPS32 INSTRUCTIONS
+===================
+
+See http://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html

@@ -45,8 +45,9 @@
 #define PGC_RELEASE   (0x0200)	/* pgc released on exit */
 #define PGM_RELEASE   (0x0400)	/* pgm released on exit */
 #define VPP_RELEASE   (0x0800)	/* vpp released on exit */
-#define VPP_RUN       (0x1000)	/* vpp high on exit (if not released) */
+#define VPP_RUN       (0x1000)	/* vpp high on exit if not released */
 #define BB_LOCK       (0x2000)	/* gpio-bb shift with lock */
+#define ALT_RELEASE   (0x4000)	/* re-enable ALT function if released */
 
 /* I/O backends */
 #define IONONE  (0)

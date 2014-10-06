@@ -473,6 +473,7 @@ pic16_shift_out_tablat_register(struct k8048 *k)
 	return io_program_in(k, 16) >> 8;
 }
 
+#if 0
 /*
  * 1000 = 0x08
  *
@@ -484,6 +485,7 @@ pic16_table_read(struct k8048 *k)
 	io_program_out(k, 0x08, 4);
 	return io_program_in(k, 16) >> 8;
 }
+#endif
 
 /*
  * 1001 = 0x09
@@ -497,6 +499,7 @@ pic16_table_read_post_increment(struct k8048 *k)
 	return io_program_in(k, 16) >> 8;
 }
 
+#if 0
 /*
  * 1010 = 0x0A
  *
@@ -520,6 +523,7 @@ pic16_table_read_pre_increment(struct k8048 *k)
 	io_program_out(k, 0x0B, 4);
 	return io_program_in(k, 16) >> 8;
 }
+#endif
 
 /*
  * 1100 = 0x0C
@@ -545,6 +549,7 @@ pic16_table_write_post_increment_2(struct k8048 *k, uint16_t word)
 	io_program_out(k, word, 16);
 }
 
+#if 0
 /*
  * 1110 = 0x0E
  *
@@ -570,6 +575,7 @@ pic16_table_write_start_programming_2(struct k8048 *k, uint16_t word)
 	io_program_out(k, 0x0E, 4);
 	io_program_out(k, word, 16);
 }
+#endif
 
 /*
  * 1111 = 0x0F
@@ -1526,10 +1532,6 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 1))
-		return;
-
 	/* Initialise device for programming */
 	if (blank)
 		pic16_bulk_erase(k, PIC_VOID, PIC_VOID);
@@ -1541,6 +1543,11 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 	pic16_program_verify(k);
 	pic16_write_panel_init(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 1)) {
+		pic16_standby(k);
+		return;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = k->pdata[i]->address;
@@ -1583,16 +1590,17 @@ pic16_verify(struct k8048 *k, char *filename)
 	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
 	uint32_t fail = 0, total = 0;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, 1))
-		return 1;
-
 	/*
 	 * Verify device
 	 */
 
 	pic16_program_verify(k);
 
+	/* Get HEX */
+	if (!inhx32(k, filename, 1)) {
+		pic16_standby(k);
+		return 1;
+	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
 		PC_address = k->pdata[i]->address;

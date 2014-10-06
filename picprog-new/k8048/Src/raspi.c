@@ -137,10 +137,39 @@ gpio_pud(uint8_t pin, uint8_t pud)
 	gpio_write(GPPUDCLK0, 0);
 }
 
+/*
+ * Determine GPFSEL register offset for GPIO
+ *
+ *  GPIO00 .. GPIO09 GPFSEL0
+ *  GPIO10 .. GPIO19 GPFSEL1
+ *  GPIO20 .. GPIO29 GPFSEL2
+ *  GPIO30 .. GPIO39 GPFSEL3
+ *  GPIO40 .. GPIO49 GPFSEL4
+ *  GPIO50 .. GPIO59 GPFSEL5
+ *
+ * BCM2835-ARM-Peripherals Page 92
+ */
 static inline uint32_t
 gpio_gpfsel(uint8_t pin)
 {
-	return /* GPFSEL0 + */(pin / 10);
+	return (pin / 10) /* + GPFSEL0 */;
+}
+
+/*
+ * Determine GPFSEL bit shift for GPIO
+ *
+ *  GPIO0 0	GPIO5 15
+ *  GPIO1 3	GPIO6 18
+ *  GPIO2 6	GPIO7 21
+ *  GPIO3 9	GPIO8 24
+ *  GPIO4 12	GPIO9 27
+ *
+ * BCM2835-ARM-Peripherals Page 92
+ */
+static inline uint32_t
+gpio_lshift(uint8_t pin)
+{
+	return (pin % 10) * 3;
 }
 
 static inline void
@@ -148,7 +177,7 @@ gpio_select_input(uint8_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_gpfsel(pin);
 
-	uint32_t val = ~(7 << ((pin % 10) * 3));
+	uint32_t val = ~(7 << gpio_lshift(pin));
 	*reg &= val; /* 000 = Input */
 
 	gpio_dirs[pin] = 1;
@@ -159,10 +188,19 @@ gpio_select_output(uint8_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_gpfsel(pin);
 	
-	uint32_t val = 1 << ((pin % 10) * 3);
+	uint32_t val = 1 << gpio_lshift(pin);
 	*reg |= val; /* 001 = Output */
 
 	gpio_dirs[pin] = 0;
+}
+
+static inline void
+gpio_select_alt(uint8_t pin, uint8_t alt)
+{
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_gpfsel(pin);
+
+	uint32_t val = alt << gpio_lshift(pin);
+	*reg |= val; /* ALT0 .. ALT5 */
 }
 
 int
@@ -210,16 +248,21 @@ gpio_set(uint8_t pin, uint8_t level)
 	return 0;
 }
 
+/*
+ * Select pin as input, re-enable ALT0 for UART
+ */
 int
-gpio_release(uint8_t pin)
+gpio_release(uint8_t pin, uint8_t alt)
 {
 	if (pin > 31)
 		return -1;
 
 	gpio_pud(pin, GPPUD_OFF);
-	if (gpio_dirs[pin] == 0)
-		gpio_select_input(pin);
-
+	gpio_select_input(pin);
+	if (alt) {
+		if (pin == 14 || pin == 15)
+			gpio_select_alt(pin, GPIO_ALT0);
+	}
 	return 0;
 }
 

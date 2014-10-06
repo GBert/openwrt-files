@@ -108,13 +108,20 @@ typedef volatile uint32_t *GPIO_ADDR;
 #define GPPUD_RESERVED (3)
 #define GPPUD_DELAY (150)
 
+#define GPIO_ALT0 (4) /* 100 */
+#define GPIO_ALT1 (5) /* 101 */
+#define GPIO_ALT2 (6) /* 110 */
+#define GPIO_ALT3 (7) /* 111 */
+#define GPIO_ALT4 (3) /* 011 */
+#define GPIO_ALT5 (2) /* 010 */
+
 int gpio_open(const char *);
 void gpio_close(void);
 
 void gpio_delay(void);
 int gpio_get(uint8_t, uint8_t *);
 int gpio_set(uint8_t, uint8_t);
-int gpio_release(uint8_t);
+int gpio_release(uint8_t, uint8_t);
 void gpio_test(struct k8048 *k, int);
 
 #endif /* !_RASPI_H */

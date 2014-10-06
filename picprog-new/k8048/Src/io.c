@@ -31,7 +31,6 @@
  */
 
 #include "k8048.h"
-#define DEBUG
 
 /******************************************************************************
  * CTRL-C signal handlers
@@ -85,6 +84,15 @@ io_config(struct k8048 *k)
 	/* mcp23017 */
 	k->mcp = MCP_ADDR;
 #endif
+	/* default:Velleman K8048 */
+        k->bitrules = PGD_IN_PULLUP | PGD_OUT_FLIP | PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP;
+
+	/* Mark/space time */
+        k->sleep_high = 1;
+        k->sleep_low = 1;
+
+	/* ICSPIO mark/space time */
+        k->fwsleep = 30;
 }
 
 /*
@@ -149,14 +157,18 @@ io_release(struct k8048 *k)
 	switch (k->iot) {
 #ifdef RPI
 	case IORPI:	/* rpi */
+		{
+		uint8_t alt = (k->bitrules & ALT_RELEASE) != 0;
+
 		if (k->bitrules & PGD_RELEASE)
-			gpio_release(k->pgdo);
+			gpio_release(k->pgdo, alt);
 		if (k->bitrules & PGC_RELEASE)
-			gpio_release(k->pgc);
+			gpio_release(k->pgc, alt);
 		if (k->bitrules & PGM_RELEASE && k->pgm != GPIO_PGM_DISABLED)
-			gpio_release(k->pgm);
+			gpio_release(k->pgm, alt);
 		if (k->bitrules & VPP_RELEASE)
-			gpio_release(k->vpp);
+			gpio_release(k->vpp, alt);
+		}
 		break;
 #endif
 #ifdef BITBANG
@@ -272,7 +284,6 @@ io_error(struct k8048 *k)
 	default:msg = "Unsupported I/O";
 		break;
 	}
-
 	return msg;
 }
 
@@ -674,11 +685,6 @@ io_clock_bit_4phase(struct k8048 *k, uint8_t tms, uint8_t tdi)
 	tdo = io_get_pgd(k);	/* TDO INPUT (0 or 1) */
 	io_clock_bit(k, k->sleep_low, k->sleep_high);
 
-#ifdef DEBUG
-	if (k->debug >= 10)
-		printf("%s: tdo [%d] tms [%d] tdi [%d]\n",
-			__func__, tdo, tms, tdi);
-#endif
 	return tdo;
 }
 
@@ -690,13 +696,13 @@ io_clock_bits_4phase(struct k8048 *k, uint8_t nbits, uint32_t tms, uint32_t tdi)
 {
 	uint32_t tdo = 0;
 
+	/* FEEDBACK IN/OUT */
+	if (k->busy)
+		io_program_feedback(k, '+');
+
 	for (int i = 0; i < nbits; ++i)
 		tdo |= io_clock_bit_4phase(k, (tms >> i) & 1, (tdi >> i) & 1) << i;
-#ifdef DEBUG
-	if (k->debug >= 10)
-		printf("%s: tdo [%08X] nbits [%d] tms [0x%08X] tdi [0x%08X]\n",
-			__func__, tdo, nbits, tms, tdi);
-#endif
+
 	return tdo;
 }
 #endif /* K32 */
@@ -736,11 +742,6 @@ io_program_in(struct k8048 *k, uint8_t nbits)
 		break;
 #endif
 	}
-#ifdef DEBUG
-	if (k->debug >= 10)
-		printf("%s:  bits [0x%08X] nbits [%d]\n",
-			__func__, bits, nbits);
-#endif
 	return bits;
 }
 
@@ -753,11 +754,7 @@ io_program_out(struct k8048 *k, uint32_t bits, uint8_t nbits)
 	/* FEEDBACK OUT */
 	if (k->busy)
 		io_program_feedback(k, 'o');
-#ifdef DEBUG
-	if (k->debug >= 10)
-		printf("%s: bits [0x%08X] nbits [%d]\n",
-			__func__, bits, nbits);
-#endif
+
 	/* OUTPUT BITS */
 	switch (k->iot) {
 	default:/* tty */
