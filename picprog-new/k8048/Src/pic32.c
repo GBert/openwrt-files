@@ -1431,10 +1431,10 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	for (uint32_t i = 0; i < 4; ++i)
 		pic32_conf.config[3 - i] = pic32_readmemorylocation(k, pic32_conf.configaddr + 4 * i);
 
-	/* Lookup PE */
-	pic32_pelookup(k);
-
 	pic32_standby(k);
+
+	/* PE */
+	pic32_pelookup(k);
 }
 
 /*
@@ -1475,15 +1475,18 @@ pic32_read_program_memory_block(struct k8048 *k, uint32_t *data, uint32_t addr, 
 	pic32_enter_serial_execution_mode(k);
 	pic32_pe_load(k);
 
-	for (uint32_t i = 0; i < size; ++i) {
-		if (pic32_conf.pepath[0]) {
-			/* PE */
+	if (pic32_conf.pepath[0]) {
+		/* PE */
+		for (uint32_t i = 0; i < size; ++i) {
 			data[i] = pic32_pe_readword(k, addr);
-		} else {
-			/* !PE */
-			data[i] = pic32_readmemorylocation(k, addr);
+			addr += 4;
 		}
-		addr += 4;
+	} else {
+		/* !PE */
+		for (uint32_t i = 0; i < size; ++i) {
+			data[i] = pic32_readmemorylocation(k, addr);
+			addr += 4;
+		}
 	}
 
 	pic32_standby(k);

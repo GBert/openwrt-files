@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=picprog-new
-PKG_RELEASE:=3.01-dev
+PKG_RELEASE:=3.01
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
@@ -41,8 +41,11 @@ define Package/picprog-new/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/k8048 $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/kio $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/root
-	$(INSTALL_BIN) ./config/k8048 $(1)/root/.k8048
+	$(INSTALL_DIR) $(1)/root/.k8048
+	$(INSTALL_DIR) $(1)/root/.k8048/config
+	$(INSTALL_BIN) ./config/RIPE_06_000201.hex $(1)/root/.k8048
+	$(INSTALL_BIN) ./config/RIPE_11_000301.hex $(1)/root/.k8048
+	$(INSTALL_BIN) ./config/k8048/config $(1)/root/.k8048/config
 endef
 
 define Package/picprog-new/postinst
