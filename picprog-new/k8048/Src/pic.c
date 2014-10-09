@@ -533,10 +533,10 @@ pic_dumpadj(struct k8048 *k, uint32_t *baddr, uint32_t *bsize, uint32_t naddr, u
 {
 	if (naddr != UINT32_MAX) {
 		uint32_t laddr = *baddr + (*bsize * k->pic->dumpadj);
-		if (naddr > *baddr && naddr < laddr) {
+		if (naddr >= *baddr && naddr < laddr) {
 			*bsize -= (naddr - *baddr) / k->pic->dumpadj;
 			*baddr = naddr;
-		} else {
+		} else if (naddr != *baddr) {
 			printf("%s: information: address invalid\n", __func__);
 			return -1;
 		}

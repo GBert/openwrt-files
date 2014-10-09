@@ -730,10 +730,10 @@ pic32_enter_serial_execution_mode(struct k8048 *k)
 	pic32_xferdata(k, PIC32_MCHP_DE_ASSERT_RST);
 
 	/*
-	 * Flash Enable, PIC32MX1XX/2XX devices only
+	 * Flash Enable, PIC32MX devices only
 	 */
 
-	if (pic32_map[pic32_index].datasheet == DS60001168F) {
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
 		pic32_xferdata(k, PIC32_MCHP_FLASH_ENABLE);
 		statusVal = pic32_xferdata(k, PIC32_MCHP_STATUS);
 		if (statusVal != (PIC32_MCHP_STATUS_CPS | PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FAEN)) {
@@ -1159,6 +1159,44 @@ pic32_getperesponse(struct k8048 *k)
  *****************************************************************************/
 
 /*
+ * PE ROW PROGRAM
+ *
+ *  Op code 0x0
+ *
+ * DS60001145N-page 32
+ */
+void
+pic32_pe_row_program(struct k8048 *k, uint32_t addr, uint32_t *panel, uint32_t panel_size)
+{
+	/* Select the Fastdata Register */
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+
+	/* Op code + Operand */
+	pic32_xferfastdata(k, panel_size >> 2);
+
+	/* PHYSICAL Address */
+	pic32_xferfastdata(k, pic32_phy(addr));
+
+	/* Data */
+	for (uint32_t i = 0; i < panel_size; i += 4) {
+		uint32_t wdata = panel[i] |
+			(panel[i + 1] << 8) |
+			(panel[i + 2] << 16) |
+			(panel[i + 3] << 24);
+		pic32_xferfastdata(k, wdata);
+	}
+	
+	/* Check response */
+	uint32_t rc = pic32_getperesponse(k);
+	if (rc & 0xFFFF) {
+		printf("%s: fatal error: PE ROW PROGRAM failed [0x%08X]\n",
+			__func__, rc);
+		pic32_standby(k);
+		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+}
+
+/*
  * PE READ
  *
  *  Op code 0x1
@@ -1192,47 +1230,6 @@ pic32_pe_read(struct k8048 *k, uint32_t addr, uint16_t nwords, uint32_t *data)
 	/* Get Data */
 	for (uint32_t i = 0; i < nwords; ++i)
 		data[i]	= pic32_xferfastdata(k, 0);
-}
-
-/*
- * PE PROGRAM
- *
- *  Op code 0x2
- *
- * DS60001145N-page 34
- */
-void
-pic32_pe_program(struct k8048 *k, uint32_t addr, uint32_t *panel, uint32_t panel_size)
-{
-	/* Select the Fastdata Register */
-	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
-
-	/* Op code */
-	pic32_xferfastdata(k, 0x00020000);
-
-	/* PHYSICAL Address */
-	pic32_xferfastdata(k, pic32_phy(addr));
-
-	/* Byte Length */
-	pic32_xferfastdata(k, panel_size);
-
-	/* Data */
-	for (uint32_t i = 0; i < panel_size; i += 4) {
-		uint32_t wdata = panel[i] |
-			(panel[i + 1] << 8) |
-			(panel[i + 2] << 16) |
-			(panel[i + 3] << 24);
-		pic32_xferfastdata(k, wdata);
-	}
-	
-	/* Check response */
-	uint32_t rc = pic32_getperesponse(k);
-	if (rc & 0xFFFF) {
-		printf("%s: fatal error: PE PROGRAM failed [0x%08X]\n",
-			__func__, rc);
-		pic32_standby(k);
-		io_exit(k, EX_SOFTWARE); /* Panic */
-	}
 }
 
 /*****************************************************************************
@@ -1490,7 +1487,7 @@ pic32_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *
 	case PIC_REGIONBOOT:
 		if (pic32_conf.pepath[0]) {
 			/* PE */
-			pic32_pe_program(k, address, panel, panel_size);
+			pic32_pe_row_program(k, address, panel, panel_size);
 		} else {
 			/* !PE */
 			pic32_download_data_block(k, panel, panel_size);
