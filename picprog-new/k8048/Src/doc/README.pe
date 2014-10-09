@@ -32,18 +32,19 @@
 
 -------------------------------------------------------------------------------
 
-Programming Executive
-=====================
+PIC32 Programming Executive
+===========================
 
 On dsPIC/PIC24 and PIC32 devices, Microchip provide a `programming executive'.
 
 This software is loaded into the chip to speed up ICSP.
 
-k8048 currently supports ICSP with the programming executive (PE) on the PIC32
-but not dsPIC/PIC24 devices. dsPIC/PIC24 support may come later.
+k8048 supports ICSP with the programming executive (PE) on the PIC32 but not
+the dsPIC/PIC24 devices. Currently there are no plans to add PE support for the
+dsPIC/PIC24.
 
-By default, PE mode is not enabled and a few steps must be completed to
-activate this mode of operation.
+By default, PIC32 PE mode is not enabled and a few steps must be completed to
+activate this mode of operation (also see footnote).
 
 1. rename your .k8048 config file with a temporary name.
 
@@ -65,11 +66,11 @@ activate this mode of operation.
  $ unzip RIPE_11_000301.zip
  
 A file named RIPE_11_000301.hex will now exist in the .k8048 directory. When
-we use k32 and it finds this file it will automatically load it into the chip.
+we use k32, and it finds this file, it will automatically load it into the chip.
 
 To test that it has been registered correctly, we can issue the id command,
-and if the PE is found, it's filename is shown. If the file name is not
-shown then something went wrong.
+and if the PE is found the filename is shown. If the filename is not
+shown then something is wrong.
 
  $ k32 id
  [1D000000] [PROGRAM]  00008000 WORDS
@@ -85,3 +86,9 @@ The speed up when using the PIC32 PE to read and write to flash file is consider
 For example, 128KB written without PE takes about 60 seconds on the R-PI, with the
 PE it takes about 7.5 seconds. Reading the same data takes 2 minutes without the PE
 and 5.5 seconds with it.
+
+Note
+----
+Internally k8048 uses the directory of the current config file to locate the PE
+hex file. This means that if you don't follow the procedure above and keep .k8048
+as a file in your home directory, then k8048 will search in there.

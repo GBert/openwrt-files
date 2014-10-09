@@ -230,8 +230,8 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tDisplay data flash content.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %sd%sump\n"
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-	printf(" k12 %ss%select PIC1XFXXX %sf%slash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %so%ssccal\n"
@@ -293,8 +293,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k14 %ser%sase eeprom | flash | id | row [n]\n"
 		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
-	printf(" k14 %sf%slash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
+	printf(" k14 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" k14 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
 	printf(" k14 %so%ssccal\n"
@@ -356,8 +356,8 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k16 %ser%sase eeprom | flash | id | row [n]\n"
 		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
-	printf(" k16 %sf%slash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
+	printf(" k16 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" k16 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
 	printf(" k16 %sp%srogram [file.hex] [noblank]\n"
@@ -415,10 +415,10 @@ usage_k24(struct k8048 *k, char *msg)
 		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
 	printf(" k24 %sd%sump\n"
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k24 %sex%sec\n"
-		"\t\tDisplay executive flash content.\n", UL_ON, UL_OFF);
-	printf(" k24 %sf%slash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
+	printf(" k24 %sex%sec [n] [address]\n"
+		"\t\tDisplay all or n words of executive flash content from address.\n", UL_ON, UL_OFF);
+	printf(" k24 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" k24 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
 	printf(" k24 %sp%srogram [file.hex] [noblank]\n"
@@ -460,16 +460,16 @@ usage_k32(struct k8048 *k, char *msg)
 	printf("EXAMPLES:\n");
 	printf(" k32 %ss%select\n"
 		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
-	printf(" k32 %sbo%sot\n"
-		"\t\tDisplay boot flash content.\n", UL_ON, UL_OFF);
+	printf(" k32 %sbo%sot [n] [address]\n"
+		"\t\tDisplay all or n words of boot flash content from address.\n", UL_ON, UL_OFF);
 	printf(" k32 %sb%slank\n"
 		"\t\tBlank device (erase).\n", UL_ON, UL_OFF);
 	printf(" k32 %sc%sonfig\n"
 		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
 	printf(" k32 %sd%sump\n"
 		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k32 %sf%slash [n]\n"
-		"\t\tDisplay all or n words of program flash content.\n", UL_ON, UL_OFF);
+	printf(" k32 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" k32 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
 	printf(" k32 %sp%srogram [file.hex] [noblank]\n"
@@ -703,9 +703,18 @@ main(int argc, char **argv)
 	int argv11 = tolower((int)argv[1][1]);
 	switch (argv1) {
 	case 'b':	if (argv11 == 'o') {		/* BOOT */
-				if (argc > 2)
+				uint32_t addr = UINT32_MAX, words = UINT32_MAX;
+				if (argc > 4)
 					usage(&k, execname, "Too many args [boot]");
-				pic_dumpboot(&k);
+				if (argc >= 3) {
+					words = strtoul(argv[2], NULL, 0);
+					if (words == 0)
+						usage(&k, execname, "Invalid arg [boot]");
+				}
+				if (argc == 4) {
+					addr = strtoul(argv[3], NULL, 0);
+				}
+				pic_dumpboot(&k, addr, words);
 			} else {			/* BLANK */
 				if (argc > 2)
 					usage(&k, execname, "Too many args [blank]");
@@ -777,9 +786,18 @@ main(int argc, char **argv)
 				if (areyousure(prompt))
 					pic_erase(&k, row, nrows);
 			} else if (argv11 == 'x') {	/* EXECUTIVE */
-				if (argc > 2)
+				uint32_t addr = UINT32_MAX, words = UINT32_MAX;
+				if (argc > 4)
 					usage(&k, execname, "Too many args [executive]");
-				pic_dumpexec(&k);
+				if (argc >= 3) {
+					words = strtoul(argv[2], NULL, 0);
+					if (words == 0)
+						usage(&k, execname, "Invalid arg [executive]");
+				}
+				if (argc == 4) {
+					addr = strtoul(argv[3], NULL, 0);
+				}
+				pic_dumpexec(&k, addr, words);
 			} else {			/* EEPROM */
 				if (argc > 2)
 					usage(&k, execname, "Too many args [eeprom]");
@@ -788,15 +806,18 @@ main(int argc, char **argv)
 			break;
 
 	case 'f':	{
-			uint32_t words = UINT32_MAX;
-			if (argc > 3)
+			uint32_t words = UINT32_MAX, addr = UINT32_MAX;
+			if (argc > 4)
 				usage(&k, execname, "Too many args [program flash]");
-			if (argc == 3) {
+			if (argc >= 3) {
 				words = strtoul(argv[2], NULL, 0);
 				if (words == 0)
 					usage(&k, execname, "Invalid arg [program flash]");
 			}
-			pic_dumpprogram(&k, words);
+			if (argc == 4) {
+				addr = strtoul(argv[3], NULL, 0);
+			}
+			pic_dumpprogram(&k, addr, words);
 			}
 			break;
 

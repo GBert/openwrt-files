@@ -30,4 +30,4 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-const char VERSION[] = "3.01";
+const char VERSION[] = "3.02";

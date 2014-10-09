@@ -57,6 +57,7 @@ struct pic_ops pic16_ops = {
 	.dumpconfig                = pic16_dumpconfig,
 	.dumposccal                = NULL,
 	.dumpdevice                = pic16_dumpdevice,
+	.dumpadj                   = 2,
 	.dumphexcode               = pic16_dumphexcode,
 	.dumpinhxcode              = pic16_dumpinhxcode,
 	.dumphexdata               = pic16_dumphexdata,
@@ -1544,7 +1545,7 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 	pic16_write_panel_init(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 1)) {
+	if (!inhx32(k, filename, sizeof(uint8_t))) {
 		pic16_standby(k);
 		return;
 	}
@@ -1597,7 +1598,7 @@ pic16_verify(struct k8048 *k, char *filename)
 	pic16_program_verify(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 1)) {
+	if (!inhx32(k, filename, sizeof(uint8_t))) {
 		pic16_standby(k);
 		return 1;
 	}

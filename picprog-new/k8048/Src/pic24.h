@@ -49,12 +49,19 @@ struct pic24_config {
 	uint32_t fuid[PIC24_FUID_MAX];		/* UNIT/FUID BYTES/WORDS */
 	uint32_t deviceid;			/* FF0000 		 */
 	uint32_t revision;			/* FF0002 		 */
+        char pepath[STRLEN];                    /* PE FILE PATH          */
 	/* required for program verify mode entry and device detection   */
 	uint16_t tblpag;			/* TBLPAG REGISTER ADDR  */
 	uint16_t nvmcon;			/* NVMCON REGISTER ADDR  */
 	uint16_t visi;				/* VISI REGISTER ADDR    */
 	uint8_t tblnop;				/* TBL READ NOP COUNT    */
 	uint8_t gotonop;			/* GOTO NOP COUNT        */
+};
+
+struct pic24_dstab {
+	uint32_t datasheet;
+	char filename[STRLEN];
+	uint8_t appid;
 };
 
 struct pic24_dsmap {

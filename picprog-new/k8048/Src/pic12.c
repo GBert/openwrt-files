@@ -57,6 +57,7 @@ struct pic_ops pic12_ops = {
 	.dumpconfig                = pic12_dumpconfig,
 	.dumposccal                = pic12_dumposccal,
 	.dumpdevice                = pic12_dumpdevice,
+	.dumpadj                   = 1,
 	.dumphexcode               = pic12_dumphexcode,
 	.dumpinhxcode              = pic12_dumpinhxcode,
 	.dumphexdata               = pic12_dumphexdata,
@@ -895,7 +896,7 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	 */
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 2)) {
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
 		return;
 	}
 	/* For each line */
@@ -960,7 +961,7 @@ pic12_verify(struct k8048 *k, char *filename)
 	 */
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 2)) {
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
 		return 1;
 	}
 	/* For each line */

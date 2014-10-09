@@ -57,6 +57,7 @@ struct pic_ops pic14_ops = {
 	.dumpconfig                = pic14_dumpconfig,
 	.dumposccal                = pic14_dumposccal,
 	.dumpdevice                = pic14_dumpdevice,
+	.dumpadj                   = 1,
 	.dumphexcode               = pic14_dumphexcode,
 	.dumpinhxcode              = pic14_dumpinhxcode,
 	.dumphexdata               = pic14_dumphexdata,
@@ -2067,7 +2068,7 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 	 */
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 2)) {
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
 		return;
 	}
 	/* For each line */
@@ -2137,7 +2138,7 @@ pic14_verify(struct k8048 *k, char *filename)
 	 */
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 2)) {
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
 		return 1;
 	}
 	/* For each line */

@@ -123,6 +123,9 @@ main()
 {
 	SYSTEMConfigPerformance(FCY);
 
+	/* JTAG off */
+	DDPCONbits.JTAGEN = 0;
+
 	/* RA0 = 0 */
 	mPORTAClearBits(BIT_0);
 

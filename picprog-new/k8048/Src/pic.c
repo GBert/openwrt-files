@@ -87,20 +87,15 @@ pic_selector(struct k8048 *k)
 }
 
 /*
- * LOOKUP PE FILE
+ * LOOK UP PE FILE
  */
 int
-pic_pelookup(struct k8048 *k, char *pathname, const char *filename)
+pic_pe_lookup(struct k8048 *k, char *pathname, const char *filename)
 {
-	int rc;
-
 	if (k->etc[0]) {
 		snprintf(pathname, STRLEN, "%s/%s", k->etc, filename);
-		rc = access(pathname, R_OK);
-		if (rc < 0)
-			bzero(pathname, STRLEN);
-
-		return rc;
+		if (access(pathname, R_OK) == 0)
+			return 0;
 	}
 
 	char *dotdup = (char *)strdup(k->dotfile);
@@ -112,11 +107,11 @@ pic_pelookup(struct k8048 *k, char *pathname, const char *filename)
 	char *dname = dirname(dotdup);
 	snprintf(pathname, STRLEN, "%s/%s", dname, filename);
 	free(dotdup);
-	rc = access(pathname, R_OK);
-	if (rc < 0)
-		bzero(pathname, STRLEN);
+	if (access(pathname, R_OK) == 0)
+		return 0;
 
-	return rc;
+	bzero(pathname, STRLEN);
+	return -1;
 }
 
 /*
@@ -531,10 +526,33 @@ pic_dumpdevice(struct k8048 *k)
  *****************************************************************************/
 
 /*
+ * DUMP ADDRESS/SIZE ADJUST
+ */
+int
+pic_dumpadj(struct k8048 *k, uint32_t *baddr, uint32_t *bsize, uint32_t naddr, uint32_t nwords)
+{
+	if (naddr != UINT32_MAX) {
+		uint32_t laddr = *baddr + (*bsize * k->pic->dumpadj);
+		if (naddr > *baddr && naddr < laddr) {
+			*bsize -= (naddr - *baddr) / k->pic->dumpadj;
+			*baddr = naddr;
+		} else {
+			printf("%s: information: address invalid\n", __func__);
+			return -1;
+		}
+	}
+	if (nwords != UINT32_MAX) {
+		if (nwords < *bsize)
+			*bsize = nwords;
+	}
+	return 0;
+}
+
+/*
  * DUMP PROGRAM FLASH IN HEX
  */
 void
-pic_dumpprogram(struct k8048 *k, uint32_t n)
+pic_dumpprogram(struct k8048 *k, uint32_t a, uint32_t n)
 {
 	uint32_t addr, size;
 
@@ -555,10 +573,11 @@ pic_dumpprogram(struct k8048 *k, uint32_t n)
 		printf("%s: information: program flash is not supported on this device\n", __func__);
 		return;
 	}
-	if (n > size)
-		n = size;
+	/* Adjust address and size */
+	if (pic_dumpadj(k, &addr, &size, a, n))
+		return;
 	/* Dump program flash */
-	pic_dump_program(k, addr, n, PIC_HEXDEC);
+	pic_dump_program(k, addr, size, PIC_HEXDEC);
 }
 
 /*
@@ -594,7 +613,7 @@ pic_dumpdata(struct k8048 *k)
  * DUMP EXECUTIVE FLASH IN HEX
  */
 void
-pic_dumpexec(struct k8048 *k)
+pic_dumpexec(struct k8048 *k, uint32_t a, uint32_t n)
 {
 	uint32_t addr, size;
 
@@ -615,6 +634,9 @@ pic_dumpexec(struct k8048 *k)
 		printf("%s: information: EXECUTIVE flash is not supported on this device\n", __func__);
 		return;
 	}
+	/* Adjust address and size */
+	if (pic_dumpadj(k, &addr, &size, a, n))
+		return;
 	/* Dump program executive */
 	pic_dump_program(k, addr, size, PIC_HEXDEC);
 }
@@ -623,7 +645,7 @@ pic_dumpexec(struct k8048 *k)
  * DUMP BOOT FLASH IN HEX
  */
 void
-pic_dumpboot(struct k8048 *k)
+pic_dumpboot(struct k8048 *k, uint32_t a, uint32_t n)
 {
 	uint32_t addr, size;
 
@@ -644,6 +666,9 @@ pic_dumpboot(struct k8048 *k)
 		printf("%s: information: BOOT flash is not supported on this device\n", __func__);
 		return;
 	}
+	/* Adjust address and size */
+	if (pic_dumpadj(k, &addr, &size, a, n))
+		return;
 	/* Dump boot flash */
 	pic_dump_program(k, addr, size, PIC_HEXDEC);
 }

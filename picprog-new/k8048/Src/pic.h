@@ -53,16 +53,11 @@ struct pic_ops {
 	void (*dumpconfig)(struct k8048 *, int);
 	void (*dumposccal)(struct k8048 *);
 	void (*dumpdevice)(struct k8048 *);
+	uint32_t dumpadj;
 	void (*dumphexcode)(struct k8048 *, uint32_t, uint32_t, uint32_t *);
 	void (*dumpinhxcode)(struct k8048 *, uint32_t, uint32_t, uint32_t *);
 	void (*dumphexdata)(struct k8048 *, uint32_t, uint32_t, uint16_t *);
 	void (*dumpinhxdata)(struct k8048 *, uint32_t, uint32_t, uint16_t *);
-};
-
-/* PROGRAMMING EXECUTIVE */
-struct pic_pe {
-	uint32_t datasheet;
-	char filename[STRLEN];
 };
 
 /*
@@ -87,7 +82,7 @@ int pic_cmp(const void *, const void *);
 #define PIC_NCOLS (4)
 void pic_selector(struct k8048 *);
 
-int pic_pelookup(struct k8048 *, char *, const char *);
+int pic_pe_lookup(struct k8048 *, char *, const char *);
 
 #define PIC_CONFIG_ONLY (0)
 #define PIC_CONFIG_ALL (1)
@@ -130,10 +125,10 @@ void pic_dumpword32(uint32_t, uint32_t);
 
 void pic_dumpdevice(struct k8048 *);
 
-void pic_dumpprogram(struct k8048 *, uint32_t);
+void pic_dumpprogram(struct k8048 *, uint32_t, uint32_t);
 void pic_dumpdata(struct k8048 *);
-void pic_dumpexec(struct k8048 *);
-void pic_dumpboot(struct k8048 *);
+void pic_dumpexec(struct k8048 *, uint32_t, uint32_t);
+void pic_dumpboot(struct k8048 *, uint32_t, uint32_t);
 
 #define PIC_HEXDEC (1)
 #define PIC_INHX32 (2)

@@ -1064,9 +1064,6 @@ io_test4(struct k8048 *k, int t)
  * Software test routines for `kio' (ICSP I/O)
  *****************************************************************************/
 
-/*
- * Start or stop firmware (not Velleman K8048)
- */
 #ifdef KIO
 /*
  * Send an 8-bit byte

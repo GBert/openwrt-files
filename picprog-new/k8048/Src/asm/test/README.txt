@@ -324,6 +324,14 @@ Y	24FJ128GA202	24	N/A	30010038B	PIC24FJ128GA204 Family Data Sheet
 					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
 					80000615A	PIC24FJ128GA204 Family Silicon Errata and Data Sheet Clarification
 
+N	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
+					60001145M	PIC32 Flash Programming Specification
+
+N	32MX250F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
+					60001145M	PIC32 Flash Programming Specification
+
 N/A = HARDWARE SUPPORT NOT AVAILABLE ON THE VELLEMAN K8048
 
 UNSUPPORTED
@@ -331,11 +339,7 @@ UNSUPPORTED
 TEST	DEVICE		ARCH	SOCKET	DATASHEETS
 ----	------		----	------	------------------------------------------------------------------------------------------------
 
-N/A	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
-					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
-					60001145M	PIC32 Flash Programming Specification
-
-N/A	32MX250F128B	32	N/A	AS ABOVE
+N/A
 
 OTHER
 ----------------------------------------------------------------------------------------------------------------------------------------

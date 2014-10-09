@@ -189,8 +189,9 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 					io_exit(k, EX_OSERR); /* Panic */
 				}
 
-				/* Increment line counter */
+				/* Increment counters */
 				k->count++;
+				k->nbytes += bb;
 
 				/* Save address and word count */
 				data->address = extended_address | aaaa;
@@ -314,5 +315,6 @@ inhx32_free(struct k8048 *k)
 		free(k->pdata);
 		k->count = 0;
 		k->pdata = NULL;
+		k->nbytes = 0;
 	}
 }

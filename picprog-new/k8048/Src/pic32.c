@@ -45,10 +45,10 @@ struct pic_ops pic32_ops = {
 	.get_program_size	   = pic32_get_program_size,
 	.get_data_size		   = NULL,
 	.get_executive_size	   = NULL,
-	.get_boot_size             = pic32_get_boot_size,
+	.get_boot_size		   = pic32_get_boot_size,
 	.read_program_memory_block = pic32_read_program_memory_block,
 	.read_data_memory_block    = NULL,
-	.write_panel               = pic32_write_panel,
+	.write_panel		   = pic32_write_panel,
 	.program		   = pic32_program,
 	.verify			   = pic32_verify,
 	.bulk_erase		   = pic32_bulk_erase,
@@ -56,11 +56,12 @@ struct pic_ops pic32_ops = {
 	.dumpdeviceid		   = pic32_dumpdeviceid,
 	.dumpconfig		   = pic32_dumpconfig,
 	.dumposccal		   = NULL,
-	.dumpdevice                = NULL,
-	.dumphexcode               = pic32_dumphexcode,
-	.dumpinhxcode              = pic32_dumpinhxcode,
-	.dumphexdata               = NULL,
-	.dumpinhxdata              = NULL,
+	.dumpdevice		   = NULL,
+	.dumpadj		   = 4,
+	.dumphexcode		   = pic32_dumphexcode,
+	.dumpinhxcode		   = pic32_dumpinhxcode,
+	.dumphexdata		   = NULL,
+	.dumpinhxdata		   = NULL,
 };
 
 uint32_t
@@ -81,7 +82,7 @@ struct pic32_config pic32_conf;
 
 /*****************************************************************************
  *
- * Hardware algorithm map
+ * Hardware algorithm map: Device
  *
  *****************************************************************************/
 
@@ -275,11 +276,11 @@ pic32_selector(void)
 
 /*****************************************************************************
  *
- * Programming executive lookup
+ * Hardware algorithm map: Device family
  *
  *****************************************************************************/
 
-struct pic_pe pic32_pe[] =
+struct pic32_dstab pic32_tab[] =
 {
 	/* PIC32MX1XX/2XX DS60001168F		      */
 	{DS60001168F,	"RIPE_11_000301.hex"},
@@ -294,31 +295,6 @@ struct pic_pe pic32_pe[] =
 	/* EOF					      */
 	{0,		"(null)"},
 };
-
-/*
- * LOOKUP PE
- *
- *  RETURN
- *   0 PE FOUND
- *  -1 PE NOT FOUND
- *
- *  MODIFIES PEPATH IF FOUND
- */
-int
-pic32_pelookup(struct k8048 *k)
-{
-	uint32_t i = 0;
-
-	do {
-		if (pic32_pe[i].datasheet == pic32_map[pic32_index].datasheet) {
-			int rc = pic_pelookup(k, pic32_conf.pepath, pic32_pe[i].filename);
-			return rc;
-		}
-	}
-	while (pic32_pe[++i].datasheet);
-
-	return -1;
-}
 
 /*****************************************************************************
  *
@@ -1277,17 +1253,13 @@ pic32_pe_load(struct k8048 *k)
 	}
 
 	/* Get PE */
-	if(!inhx32(k, pic32_conf.pepath, 4)) {
+	if (!inhx32(k, pic32_conf.pepath, sizeof(uint32_t))) {
 		bzero(pic32_conf.pepath, STRLEN);
 		return;
 	}
 
-	/* Inspect PE */
-	uint32_t addr = k->pdata[0]->address, nwords = 0;
-	for (uint32_t i = 0; i < k->count; ++i)
-		nwords += (k->pdata[i]->nbytes >> 2);
-
 	/* Allocate PE array */
+	uint32_t nwords = k->nbytes >> 2;
 	uint32_t *words = (uint32_t *)malloc(sizeof(uint32_t) * nwords);
  	if (words == NULL) {
 		printf("%s: fatal error: malloc failed\n", __func__);
@@ -1315,7 +1287,7 @@ pic32_pe_load(struct k8048 *k)
 	}
 
 	/* Download PE (upload to chip) */
-	pic32_download_pe(k, addr, words, nwords);
+	pic32_download_pe(k, k->pdata[0]->address, words, nwords);
 
 	/* Tidy up */
 	free(words);
@@ -1426,15 +1398,22 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 
+	/* Device family */
+	dev = 0;
+	while (pic32_tab[dev].datasheet) {
+		if (pic32_tab[dev].datasheet == pic32_map[pic32_index].datasheet) {
+			pic_pe_lookup(k, pic32_conf.pepath, pic32_tab[dev].filename);
+			break;
+		}
+		++dev;
+	}
+
 	/* Config */
 	pic32_conf.configaddr = PIC32_BOOT + (pic32_map[pic32_index].boot << 2) - (4 << 2);
 	for (uint32_t i = 0; i < 4; ++i)
 		pic32_conf.config[3 - i] = pic32_readmemorylocation(k, pic32_conf.configaddr + 4 * i);
 
 	pic32_standby(k);
-
-	/* PE */
-	pic32_pelookup(k);
 }
 
 /*
@@ -1445,7 +1424,7 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 uint32_t
 pic32_get_program_size(uint32_t *addr)
 {
-	*addr = PIC32_CODE;
+	*addr = pic32_phy(PIC32_CODE);
 
 	return pic32_map[pic32_index].prog;
 }
@@ -1458,7 +1437,7 @@ pic32_get_program_size(uint32_t *addr)
 uint32_t
 pic32_get_boot_size(uint32_t *addr)
 {
-	*addr = PIC32_BOOT;
+	*addr = pic32_phy(PIC32_BOOT);
 
 	return pic32_map[pic32_index].boot;
 }
@@ -1657,7 +1636,7 @@ pic32_program(struct k8048 *k, char *filename, int blank)
 	pic32_pe_load(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 4)) {
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
 		pic32_standby(k);
 		return;
 	}
@@ -1707,7 +1686,7 @@ pic32_verify(struct k8048 *k, char *filename)
 	pic32_pe_load(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 4)) {
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
 		pic32_standby(k);
 		return 1;
 	}

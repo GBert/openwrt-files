@@ -44,14 +44,19 @@ struct pic32_config {
 	uint32_t deviceid;
 	uint32_t config[PIC32_CONFIG_MAX];	/* CONFIG WORDS              */
 	uint32_t configaddr;			/* BOOT ADDR + SIZE * 4 - 16 */
-	uint32_t status;
+	uint32_t status;			/* INITIAL DEVICE STATUS     */
 	char pepath[STRLEN];			/* PE FILE PATH              */
+};
+
+struct pic32_dstab {
+	uint32_t datasheet;		/* DEVICE APP. DATASHEET */
+	char filename[STRLEN];		/* PE HEX FILE NAME      */
 };
 
 struct pic32_dsmap {
 	char devicename[STRLEN];
 	uint32_t deviceid;
-	uint32_t datasheet;
+	uint32_t datasheet;		/* DEVICE APP. DATASHEET       */
 	uint32_t boot;			/* BOOT FLASH SIZE IN WORDS    */
 	uint32_t prog;			/* PROGRAM FLASH SIZE IN WORDS */
 	uint32_t row;			/* PROGRAM ROW SIZE IN WORDS   */
@@ -145,6 +150,7 @@ struct pic32_dsmap {
 #define PIC32_EJTAG_CONTROL_EJTAGBRK (0x00001000) /* DEBUG INTERRUPT  */
 #define PIC32_EJTAG_CONTROL_DM       (0x00000008) /* DEBUG MODE       */
 
+/* PIC32 PROGRAMMING EXECUTIVE */
 #define PIC32_PE_READWORDS (0x00000100)	/* PE BLOCK READ */
 #define PIC32_PE_READMASK  (0x000000FF)
 #define PIC32_PE_READBYTES (0x00000400)

@@ -36,6 +36,8 @@
 ;
 ; Increment LD1..LD6 with switch inversion control.
 ;
+; This demo is also compatible with the PIC16F627.
+;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; Pinout

@@ -57,6 +57,7 @@ struct pic_ops pic24_ops = {
 	.dumpconfig                = pic24_dumpconfig,
 	.dumposccal                = NULL,
 	.dumpdevice                = pic24_dumpdevice,
+	.dumpadj                   = 2,
 	.dumphexcode               = pic24_dumphexcode,
 	.dumpinhxcode              = pic24_dumpinhxcode,
 	.dumphexdata               = pic24_dumphexdata,
@@ -81,7 +82,7 @@ struct pic24_config pic24_conf;
 
 /*****************************************************************************
  *
- * Hardware algorithm map
+ * Hardware algorithm map: Device
  *
  *****************************************************************************/
 
@@ -480,6 +481,18 @@ pic24_selector(void)
 		printf("\n");
 	printf("Total: %u\n", (uint32_t)PIC24_SIZE);
 }
+
+/*****************************************************************************
+ *
+ * Hardware algorithm map: Device family
+ *
+ *****************************************************************************/
+
+struct pic24_dstab pic24_tab[] =
+{
+	/* EOF */
+	{0, "(null)"},
+};
 
 /*****************************************************************************
  *
@@ -1200,6 +1213,8 @@ pic24_get_dev(struct k8048 *k)
 void
 pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 {
+	uint32_t dev;
+
 	/* NULL device */
 	pic24_index = PIC24_SIZE;
 
@@ -1208,7 +1223,6 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 
 	/* Device selected by user */
 	if (k->devicename[0]) {
-		uint32_t dev;
 		for (dev = 0; pic24_map[dev].deviceid; ++dev) {
 			if (strcasecmp(pic24_map[dev].devicename, k->devicename) == 0) {
 				/* Device recognised */
@@ -1270,6 +1284,16 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		}
 		pic24_standby(k);
 		io_exit(k, EX_SOFTWARE); /* Panic */
+	}
+
+	/* Device family */
+	dev = 0;
+	while (pic24_tab[dev].datasheet) {
+		if (pic24_tab[dev].datasheet == pic24_map[pic24_index].datasheet) {
+			pic_pe_lookup(k, pic24_conf.pepath, pic24_tab[dev].filename);
+			break;
+		}
+		++dev;
 	}
 
 	/* App-id */
@@ -2057,7 +2081,7 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	pic24_write_program_init(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 4)) {
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
 		pic24_standby(k);
 		return;
 	}
@@ -2112,7 +2136,7 @@ pic24_verify(struct k8048 *k, char *filename)
 	pic24_program_verify(k);
 
 	/* Get HEX */
-	if (!inhx32(k, filename, 4)) {
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
 		pic24_standby(k);
 		return 1;
 	}

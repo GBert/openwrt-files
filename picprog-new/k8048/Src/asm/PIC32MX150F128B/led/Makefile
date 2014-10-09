@@ -31,7 +31,6 @@
 #
 
 CPU     = 32MX150F128B
-LDCONF  = p$(CPU).ld
 
 HEAP    =
 STACK   =
@@ -66,8 +65,8 @@ ELF     = $(TARGET:.hex=.elf)
 MAP     = $(TARGET:.hex=.map)
 
 CFLAGS  = -Os -mprocessor=$(CPU) -std=gnu99 -pedantic-errors -Wall -g -fno-short-double -fverbose-asm -save-temps
-CFLAGS += -mno-smart-io -ffunction-sections -fdata-sections -Wcast-align -fframe-base-loclist
-CLINK   = -Wl,-T$(LDCONF),-Map=$(MAP),--gc-sections -mno-peripheral-libs -lm
+CFLAGS += -mno-smart-io -ffunction-sections -fdata-sections -mdebugger -Wcast-align -fframe-base-loclist
+CLINK   = -Wl,-Tp32MX150F128B.ld,-Map=$(MAP),--gc-sections -mno-peripheral-libs -lm
 
 PIHOST  = pi3
 
@@ -81,7 +80,7 @@ $(ELF):$(COBJECT)
 	@echo -n "[LINK] "
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(AOBJECT) $(COBJECT) -o $(ELF) $(CLINK)
 
-$(COBJECT):$(CHEADER) Makefile $(LDCONF)
+$(COBJECT):$(CHEADER) Makefile p32MX150F128B.ld
 
 program:build
 	k32 program $(TARGET)

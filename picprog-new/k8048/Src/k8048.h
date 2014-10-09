@@ -130,6 +130,7 @@ struct k8048 {
 
 	inhx32_data **pdata;    /* hex32 data lines                             */
 	uint32_t count;		/* hex32 data line count                        */
+	uint32_t nbytes;	/* hex32 data byte count                        */
 
 	/* I/O backends */
 	uint8_t iot;		/* I/O type (tty, rpi or i2c)			*/

@@ -489,13 +489,12 @@ SECTIONS
    *  C32 v1.xx releases.
    */
 /*******************************************************************************
- * Disabled to allow linker to operate
- *
+ * DISABLED XXX DISABLED XXX DISABLED XXX DISABLED XXX DISABLED
   .startup ORIGIN(kseg0_boot_mem) :
   {
     KEEP(*(.startup))
   } > kseg0_boot_mem
- *
+ * DISABLED XXX DISABLED XXX DISABLED XXX DISABLED XXX DISABLED
  ******************************************************************************/
   /* Code Sections - Note that input sections *(.text) and *(.text.*)
   ** are not mapped here. The best-fit allocator locates them,

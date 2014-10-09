@@ -42,6 +42,8 @@ build:
 	cd pic18f2550		&& $(MAKE)
 	cd pic18f25k22		&& $(MAKE)
 	cd PIC24FJ64GA002	&& $(MAKE)
+	cd PIC32MX150F128B	&& $(MAKE)
+	cd PIC32MX250F128B	&& $(MAKE)
 	cd rkp28sb		&& $(MAKE)
 	cd test			&& $(MAKE)
 	cd util			&& $(MAKE)
@@ -59,6 +61,8 @@ install:
 	cd pic18f2550		&& $(MAKE) install
 	cd pic18f25k22		&& $(MAKE) install
 	cd PIC24FJ64GA002	&& $(MAKE) install
+	cd PIC32MX150F128B	&& $(MAKE) install
+	cd PIC32MX250F128B	&& $(MAKE) install
 	cd rkp28sb		&& $(MAKE) install
 	cd test			&& $(MAKE) install
 	cd util			&& $(MAKE) install
@@ -76,6 +80,8 @@ uninstall:
 	cd pic18f2550		&& $(MAKE) uninstall
 	cd pic18f25k22		&& $(MAKE) uninstall
 	cd PIC24FJ64GA002	&& $(MAKE) uninstall
+	cd PIC32MX150F128B	&& $(MAKE) uninstall
+	cd PIC32MX250F128B	&& $(MAKE) uninstall
 	cd rkp28sb		&& $(MAKE) uninstall
 	cd test			&& $(MAKE) uninstall
 	cd util			&& $(MAKE) uninstall
@@ -93,6 +99,8 @@ clean:
 	cd pic18f2550		&& $(MAKE) clean
 	cd pic18f25k22		&& $(MAKE) clean
 	cd PIC24FJ64GA002	&& $(MAKE) clean
+	cd PIC32MX150F128B	&& $(MAKE) clean
+	cd PIC32MX250F128B	&& $(MAKE) clean
 	cd rkp28sb		&& $(MAKE) clean
 	cd test			&& $(MAKE) clean
 	cd util			&& $(MAKE) clean
