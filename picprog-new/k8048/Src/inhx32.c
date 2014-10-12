@@ -117,13 +117,11 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 	
 	/* Open file or stdin */
 	if (strcmp(filename, "-") && (f1 = fopen(filename, "rb")) == NULL) {
-		printf("%s: error: file open failed [%s] [%s]\n",
-		__func__, filename, strerror(errno));
+		printf("%s: error: file open failed [%s] [%s]\n", __func__, filename, strerror(errno));
 		return 0;
 	}
-#ifdef DEBUG
-	printf("FILE [%s]\n", filename);
-#endif
+
+	/* While not EOF, process a line */
 	while (tt != TT_EOF && fgets(line, STRLEN, f1) != NULL) {
 		line[STRMAX] = '\0';
 
@@ -134,9 +132,8 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 
 		/* Validate line prefix and length */
 		if (line[0] != ':' || (strlen(line) & 1) == 0 || strlen(line) < 11) {
-			if (k->debug >= 10) {
+			if (k->debug >= 10)
 				printf("%s: warning: ignoring malformed line [%s] invalid format\n", __func__, line);
-			}
 			continue;
 		}
 
@@ -145,9 +142,8 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 		for (n = 1; line[n]; n += 2)
 			cc += inhx32_gethexb(&line[n]); 
 		if (cc != 0) {
-			if (k->debug >= 10) {
+			if (k->debug >= 10)
 				printf("%s: warning: ignoring malformed line [%s] invalid checksum [%02X]\n", __func__, line, cc);
-			}
 			continue;
 		}
 
@@ -156,9 +152,8 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 
 		/* Validate line length */
 		if (strlen(line) != (2 * bb + 11)) {
-			if (k->debug >= 10) {
+			if (k->debug >= 10)
 				printf("%s: warning: ignoring malformed line [%s] invalid length [%zu != %u] (BB=0x%02x)\n", __func__, line, strlen(line), 2 * bb + 11, bb);
-			}
 			continue;
 		}
 
@@ -170,15 +165,13 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 
 		switch (tt) {
 		case TT_DATA:   if (bb == 0) {
-					if (k->debug >= 10) {
+					if (k->debug >= 10)
 						printf("%s: warning: ignoring empty line [%s]\n", __func__, line);
-					}
 					break;
 				}
 				if (bb % alignment) {
-					if (k->debug >= 10) {
+					if (k->debug >= 10)
 						printf("%s: warning: ignoring line with incomplete word [%s]\n", __func__, line);
-					}
 					break;
 				}
 
@@ -203,18 +196,10 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 					data->bytes[n] = inhx32_gethexb(&line[ix]);
 					ix += 2;
 				}
-#ifdef DEBUG
-				printf("AAAA=%04X BB=%02X ADDR=%06X >> %06X ",
-					aaaa, bb, data->address, data->address >> 1);
-				for (n = 0; n < bb; n++) {
-					printf("%02X ", data->bytes[n]);
-				}
-				putchar('\n');
-#endif
+
 				/* Find entry in tree */
 				if (tfind((void *)(data), (void **)(&root), inhx32_compare) != NULL) {
-					printf("%s: fatal error: duplicate address [%08X]\n",
-					__func__, data->address);
+					printf("%s: fatal error: duplicate address [%08X]\n", __func__, data->address);
 					io_exit(k, EX_SOFTWARE); /* Panic */
 				}
 
@@ -225,32 +210,32 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 				}
 				break;
 
-		case TT_EOF:	break;
+		case TT_EOF:	break;			/* END OF FILE */
 
 		case TT_EXTENDED_LINEAR_ADDRESS:
-				if (aaaa == 0 && bb == 2) {
+				if (aaaa == 0 && bb == 2)
 					extended_address = (inhx32_gethexb(&line[HHHH]) << 24) | (inhx32_gethexb(&line[HHHH + 2]) << 16);
-#ifdef DEBUG
-					printf("AAAA=%04X BB=%02X ADDR=%06X\n", aaaa, bb, extended_address);
-#endif
-				} else {
+				else if (k->debug >= 10)
 					printf("%s: warning: ignoring invalid extended linear address [aaaa=%04X, bb=%d]\n", __func__, aaaa, bb);
-				}
 				break;
 
 		case TT_EXTENDED_SEGMENT_ADDRESS:
-				printf("%s: warning: ignoring unhandled extended segment address\n", __func__);
+				if (k->debug >= 10)
+					printf("%s: warning: ignoring unhandled extended segment address\n", __func__);
 				break;
 
-		case TT_START_LINEAR_ADDRESS:
-				printf("%s: warning: ignoring unhandled start linear address\n", __func__);
+		case TT_START_LINEAR_ADDRESS:		/* EXECUTION ADDRESS */
+				if (k->debug >= 10)
+					printf("%s: warning: ignoring unhandled start linear address [aaaa=%04X, bb=%d]\n", __func__, aaaa, bb);
 				break;
 
 		case TT_START_SEGMENT_ADDRESS:
-				printf("%s: warning: ignoring unhandled start segment address\n", __func__);
+				if (k->debug >= 10)
+					printf("%s: warning: ignoring unhandled start segment address\n", __func__);
 				break;
 
-		default:	printf("%s: warning: ignoring unknown record type [%d]\n", __func__, tt);
+		default:	if (k->debug >= 10)
+					printf("%s: warning: ignoring unknown record type [%d]\n", __func__, tt);
 				break;
 		}
 	}
@@ -259,9 +244,8 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 
 	/* Return error if no program data lines found */
 	if (k->count == 0) {
-		if (k->debug >= 10) {
+		if (k->debug >= 10)
 			printf("%s: warning: file contains no data records [%s]\n", __func__, filename);
-		}
 		return 0;
 	}
 	
@@ -286,19 +270,7 @@ inhx32(struct k8048 *k, const char *filename, uint32_t alignment)
 		printf("%s: fatal error: tree destroy failed\n", __func__);
 		io_exit(k, EX_OSERR); /* Panic */
 	}
-#ifdef DEBUG
-	printf("DATA\n");
-	for (uint32_t i = 0; i < k->count; ++i) {
-		printf("          NB=%02X ADDR=%06X >> %06X ",
-			k->pdata[i]->nbytes,
-			k->pdata[i]->address,
-			k->pdata[i]->address >> 1);
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; ++j) {
-			printf("%02X ", k->pdata[i]->bytes[j]);
-		}
-		putchar('\n');
-	}
-#endif
+
 	/* Return the program data line count */
 	return k->count;
 }

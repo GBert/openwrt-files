@@ -51,6 +51,7 @@ struct pic_ops pic24_ops = {
 	.write_panel               = pic24_write_panel,
 	.program                   = pic24_program,
 	.verify                    = pic24_verify,
+	.dryrun                    = pic24_dryrun,
 	.bulk_erase                = pic24_bulk_erase,
 	.row_erase                 = NULL,
 	.dumpdeviceid              = pic24_dumpdeviceid,
@@ -2032,7 +2033,7 @@ pic24_init_verifyregion(struct k8048 *k, uint32_t region)
 /*
  * VERIFY REGION
  *
- *  RETURN FAILURE COUNT
+ *  RETURN BYTE FAILURE COUNT
  */
 uint32_t
 pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint32_t data)
@@ -2041,7 +2042,7 @@ pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 
 	if (region == PIC_REGIONNOTSUP) {
 		printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		return 1;
+		return 0;
 	} else if (region == PIC_REGIONCONFIG) {
 		/* Can't verify the config area (assume okay) */
 		return 0;
@@ -2054,7 +2055,7 @@ pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 	if (vdata != data) {
 		printf("%s: error: read [%06X] expected [%06X] at [%06X]\n",
 			__func__, vdata, data, address);
-		return 1;
+		return 4;
 	}
 	return 0;
 }
@@ -2087,7 +2088,7 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = (k->pdata[i]->address >> 1);
+		PC_address = k->pdata[i]->address >> 1;
 		new_region = pic24_getregion(PC_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -2101,10 +2102,11 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 		/* For each 32-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
 			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) | (k->pdata[i]->bytes[j + 2] << 16);
+				(k->pdata[i]->bytes[j + 1] << 8) |
+				(k->pdata[i]->bytes[j + 2] << 16);
 			pic24_writeregion(k, PC_address, current_region, wdata);
 			PC_address += 2;
-			total++;
+			total += 4;
 		}
 	}
 	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
@@ -2113,7 +2115,7 @@ pic24_program(struct k8048 *k, char *filename, int blank)
 
 	/* Finalise device programming (write config & fuid words) */
 	if (blank)
-		total += pic24_write_config(k);
+		pic24_write_config(k);
 
 	printf("Total: %u\n", total);
 
@@ -2142,7 +2144,7 @@ pic24_verify(struct k8048 *k, char *filename)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = (k->pdata[i]->address >> 1);
+		PC_address = k->pdata[i]->address >> 1;
 		new_region = pic24_getregion(PC_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -2155,19 +2157,57 @@ pic24_verify(struct k8048 *k, char *filename)
 		/* For each 32-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
 			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) | (k->pdata[i]->bytes[j + 2] << 16);
+				(k->pdata[i]->bytes[j + 1] << 8) |
+				(k->pdata[i]->bytes[j + 2] << 16);
 			fail += pic24_verifyregion(k, PC_address, current_region, j, wdata);
 			PC_address += 2;
-			total++;
+			total += 4;
 		}
 	}
 	pic24_standby(k);
 
-	printf("Total: %u Pass: %u Fail: %u\n", total, total-fail, fail);
+	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
 
 	inhx32_free(k);
 
 	return fail;
+}
+
+/*
+ * DRY RUN
+ */
+void
+pic24_dryrun(struct k8048 *k, char *filename)
+{
+	uint32_t total = 0, wdata;
+
+	/*
+	 * Dry run
+	 */
+
+	/* Get HEX */
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
+		pic24_standby(k);
+		return;
+	}
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; i++) {
+		printf("[%06X] ", k->pdata[i]->address >> 1);
+
+		/* For each 32-bit word in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8) |
+				(k->pdata[i]->bytes[j + 2] << 16);
+			printf("%06X ", wdata);
+			total += 4;
+		}
+		putchar('\n');
+	}
+
+	printf("Total: %u\n", total);
+
+	inhx32_free(k);
 }
 
 /*****************************************************************************

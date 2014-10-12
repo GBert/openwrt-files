@@ -39,8 +39,6 @@ Y	18F252		16	28P	39564c		PIC18F252 DataSheets
 Y	16F716		14	18P	41206B		PIC16F716 DataSheets
 					40245B		FLASH Memory Programming Specification for the PIC16F716
 
-					POWER CYCLE TO VERIFY.
-
 Y	16F505		12	14P	41236C		PIC16F505 DataSheets 
 					41226E		PIC16F505 Memory Programming
 
@@ -67,8 +65,6 @@ Y	16F628A		14	18P	40044F		PIC16F627A/628A/648A Data Sheet
 
 Y	16F726		14	28P	41341E		PIC16F72X/PIC16LF72X Data Sheet
 					41332D		PIC16(L)F72X Memory Programming
-
-					VPP 9V.
 
 Y	12F508		12	8P	41236E		PIC12F508/509/16F505 8/14-Pin, 8-Bit Flash Microcontrollers
 					41227E		PIC12F508/509 Memory Programming
@@ -112,8 +108,6 @@ Y	16F1507		14	ICSP	41586A		PIC16(L)F1507 Data Sheet
 Y	18F25K22	16	28P	41412F		PIC18(L)F2X/4XK22 Data Sheet
 					41398B		PIC18(L)F2XK22/4XK22 Flash Memory Programming
 
-					VPP 9V.
-
 Y	18F4620		16	ICSP	39626E		PIC18F2525/2620/4525/4620 Data Sheet
 					39622L		PIC18F2XXX/4XXX Flash MCU Programming Specification
 
@@ -141,41 +135,27 @@ Y	18F2431		16	N/A	39616d		PIC18F2331/2431/4331/4431 Data Sheet
 Y	18F26K80	16	N/A	39977f		PIC18F66K80 Family Data Sheet
 					39972b		PIC18F66K80 Family Flash MCU Programming Specification
 
-					VPP 9V.
-
 Y	16F1825		14	14P	41440C		PIC16(L)F1825/1829 Data Sheet
 					41390D		PIC12(L)F1822/PIC16(L)F182X Memory Programming Specification
-
-					VPP 9V.
 
 Y	16F1936		14	28P	41364E		PIC16(L)1934/6/7 Data Sheet
 					41397B		PIC16F193X/LF193X/PIC16F194X/LF194X/PIC16LF190X Memory Programming Specification
 
-					VPP 9V.
-
 Y	16F1847		14	18P	41453C		PIC16(L)1847 Data Sheet
 					41439A		PIC16F/LF1847/PIC12F/LF1840 Memory Programming Specification
-
-					VPP 9V.
 
 Y	18F25K50	16	28P	30684A		PIC18(L)F2X/45K50 Data Sheet
 					41630B		PIC18(L)F2X/45K50 Flash Memory Programming Specification
 
-					VPP 9V.
-
 Y	18F14K50	16	N/A	41350E		PIC18F/LF1XK50 Data Sheet
 					41342E		PIC18F1XK50/PIC18LF1XK50 Flash Memory Programming Specification
-
-					VPP 9V. PGC/PGD 3V3.
 
 Y	18LF27J53	16	N/A	39964B		PIC18F47J53 Data Sheet
 					39687e		PIC18F2XJXX/4XJXX Family Flash MCU Programming Specification
 
-					3V3.
-
 Y	16F690		14	ICSP	41262E		PIC16F631/677/685/689/690 Data Sheet
 					41204H		PIC12F6XX/16F6XX Memory Programming Specification
-					
+
 Y	12F510		12	8P	41268D		PIC12F510/PIC16F506 Data Sheet
 					41257B		PIC12F510 Memory Programming Specification
 
@@ -188,15 +168,11 @@ Y	16F767		14	28P	30498D		PIC16F7X7 Data Sheet
 Y	16F1788		14	28P	41675A		PIC16(L)F1788/9 Data Sheet
 					41457E		PIC16(L)F178X Memory Programming Specification
 
-					VPP 9V.
-
 Y	16F570		12	28P	40001684D	PIC16F570 Data Sheet
 					41670A		PIC16F570 Memory Programming Specification
 
 Y	16F721		14	ICSP	40001430E	PIC16(L)F720/721 Data Sheet
 					41409B		PIC16(L)F720/721 Flash Memory Programming
-
-					VPP 9V.
 
 Y	16F527		12	ICSP	41652A		PIC16F527 Data Sheet
 					41640A		PIC16F527 Memory Programming Specification
@@ -207,22 +183,14 @@ Y	12F752		14	8P	41576B		PIC12F752/HV752 Data Sheet
 Y	12LF1552	14	N/A	41674B		PIC12LF1552 Data Sheet
 					41642A		PIC12LF1552 Memory Programming Specification
 
-					VDD 3V3.
-
 Y	16F1518		14	28P	40001452D	PIC16(L)F1516/7/8/9 Data Sheet
 					41442B		PIC16(L)F151X/152X Memory Programming Specification
-
-					VPP 9V.
 
 Y	16F1455		14	N/A	41639A		PIC16(L)F1454/5/9 Data Sheet
 					41620C		PIC16(L)F145X Memory Programming Specification
 
-					VPP 9V. PGC/PGD 3V3.
-
 Y	18LF2539	16	28P	30485B		PIC18FXX39 Enhanced Flash Microcontrollers
 					30480c		PIC18FXX39 Programming
-
-					VDD 2..5V
 
 Y	16F526		12	14P	41326E		PIC16F526 Data Sheet
 					41317B		PIC16F526 Memory Programming Specification
@@ -230,7 +198,7 @@ Y	16F526		12	14P	41326E		PIC16F526 Data Sheet
 Y	16F753		14	14P	40001709B	PIC16F753/HV753 Data Sheet
 					41686A		PIC16F753/HV753 Flash Memory Programming Specification
 
-Y	16F785 		14	ICSP	41294E		PIC16F785/HV785 Data Sheet
+Y	16F785		14	ICSP	41294E		PIC16F785/HV785 Data Sheet
 					41237D		PIC16F785/HV785 Memory Programming Specification
 
 Y	16F707		14	ICSP	41418B		PIC16(L)F707 Data Sheet
@@ -242,12 +210,8 @@ Y	18F14K22	16	ICSP	41365E		PIC18(L)F1XK22 Data Sheet
 Y	18F26K20	16	N/A	41303G		PIC18F23K20/24K20/25K20/26K20/43K20/44K20/45K20/46K20 Data Sheet
 					41297F		PIC18F2XK20/4XK20 Flash Memory Programming Specification
 
-					VPP 3V3.
-
 Y	16F1459		14	N/A	41639A		PIC16(L)F1454/5/9 Data Sheet
 					41620C		PIC16(L)F145X Memory Programming Specification
-
-					VPP 9V. PGC/PGD 3V3.
 
 Y	24F04KA201	24	N/A	39937B		PIC24F04KA201 Family Data Sheet
 					39919C		PIC24FXXKA1XX/FVXXKA3XX Family Flash Programming Specifications
@@ -303,12 +267,8 @@ Y	16F636		14	14P	41232D		PIC12F635/PIC16F636/639 Data Sheet
 Y	16LF1716	14	N/A	40001726B	PIC16(L)F1713/6 Data Sheet
 					40001714C	PIC16(L)F171X Memory Programming Specification
 
-					VDD 3V3.
-
 Y	12LF1572	14	N/A	40001723B	PIC12(L)F1571/2 Data Sheet
 					40001713A	PIC12(L)F1571/2 Memory Programming Specification
-
-					VDD 3V3.
 
 Y	24FJ128GB202	24	N/A	30005009B	PIC24FJ128GB204 Family Data Sheet
 					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
@@ -317,8 +277,6 @@ Y	24FJ128GB202	24	N/A	30005009B	PIC24FJ128GB204 Family Data Sheet
 Y	16LF1559	14	N/A	40001761A	PIC16LF1554/1559 Data Sheet
 					40001743A	PIC16LF1554/1559 Memory Programming Specification
 					80000621B	PIC16LF1554/1559 Errata
-
-					VDD 3V3.
 
 Y	24FJ128GA202	24	N/A	30010038B	PIC24FJ128GA204 Family Data Sheet
 					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
@@ -330,6 +288,10 @@ N	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 
 N	32MX250F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
+					60001145M	PIC32 Flash Programming Specification
+
+N	32MX795F512H	32	N/A	61156H		PIC32MX5XX/6XX/7XX Family Data Sheet
+					80000480N	PIC32MX575/675/695/775/795 Family Errata and Datasheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
 N/A = HARDWARE SUPPORT NOT AVAILABLE ON THE VELLEMAN K8048

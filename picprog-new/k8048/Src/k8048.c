@@ -242,6 +242,8 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX %svi%sew [file.hex]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 
 	printf("\n");
 
@@ -305,6 +307,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k14 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k14 %svi%sew [file.hex]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 
@@ -364,6 +368,8 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k16 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k16 %svi%sew [file.hex]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 	
 	printf("\n");
 	
@@ -425,6 +431,8 @@ usage_k24(struct k8048 *k, char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k24 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k24 %svi%sew [file.hex]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -476,6 +484,8 @@ usage_k32(struct k8048 *k, char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k32 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k32 %svi%sew [file.hex]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -857,19 +867,23 @@ main(int argc, char **argv)
 			}
 			break;
 
-	case 'v':	if (argc > 3)
-				usage(&k, execname, "Too many args [verify]");
-			if (argc < 3)
-				pic_verify(&k, "-");
-			else
-				pic_verify(&k, argv[2]);
+	case 'v':	if (argv11 == 'i') {		/* VIEW */
+				if (argc > 3)
+					usage(&k, execname, "Too many args [view]");
+				if (argc < 3)
+					pic_dryrun(&k, "-");
+				else
+					pic_dryrun(&k, argv[2]);
+			} else {			/* VERIFY */
+				if (argc > 3)
+					usage(&k, execname, "Too many args [verify]");
+				if (argc < 3)
+					pic_verify(&k, "-");
+				else
+					pic_verify(&k, argv[2]);
+			}
 			break;
-#ifdef DEBUG
-	case 'x':	if (argc > 2)
-				usage(&k, execname, "Too many args [x]");
-			pic_x(&k);
-			break;
-#endif
+
 	default:	usage(&k, execname, "Unknown operation");
 			break;
 	}

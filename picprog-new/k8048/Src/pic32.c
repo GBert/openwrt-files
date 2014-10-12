@@ -51,6 +51,7 @@ struct pic_ops pic32_ops = {
 	.write_panel		   = pic32_write_panel,
 	.program		   = pic32_program,
 	.verify			   = pic32_verify,
+	.dryrun			   = pic32_dryrun,
 	.bulk_erase		   = pic32_bulk_erase,
 	.row_erase		   = NULL,
 	.dumpdeviceid		   = pic32_dumpdeviceid,
@@ -291,7 +292,7 @@ struct pic32_dstab pic32_tab[] =
 	/* PIC32MX5XX/6XX/7XX DS61156H		      */
 	{DS61156H,	"RIPE_06_000201.hex"},
 	/* PIC32MZ EC DS60001191C		      */
-	{DS60001191C,	"RIPE_15_000502.hex"},
+	{DS60001191C,	"RIPE_15_000400.hex"},
 	/* EOF					      */
 	{0,		"(null)"},
 };
@@ -322,6 +323,9 @@ pic32_program_verify(struct k8048 *k)
 
 	/* LVP(KEY) */
 	if (k->key == LVPKEY) {
+		/* INIT GPIO-BB SHIFT OUT */
+		io_configure(k, TRUE);
+
 		/* VPP HIGH */
 		io_set_vpp(k, HIGH);
 		/* DS60001145M P20(500us) */
@@ -1593,7 +1597,7 @@ pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 
 	if (region == PIC_REGIONNOTSUP) {
 		printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		return 4;
+		return 0;
 	}
 	if (pic32_conf.pepath[0]) {
 		/* PE */
@@ -1718,6 +1722,43 @@ pic32_verify(struct k8048 *k, char *filename)
 	inhx32_free(k);
 
 	return fail;
+}
+
+/*
+ * DRY RUN
+ */
+void
+pic32_dryrun(struct k8048 *k, char *filename)
+{
+	uint32_t total = 0, wdata;
+
+	/*
+	 * Dry run
+	 */
+
+	/* Get HEX */
+	if (!inhx32(k, filename, sizeof(uint32_t))) {
+		return;
+	}
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; ++i) {
+		printf("[%08X] ", k->pdata[i]->address);
+
+		/* For each 32-bit word in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8) |
+				(k->pdata[i]->bytes[j + 2] << 16) |
+				(k->pdata[i]->bytes[j + 3] << 24);
+			printf("%08X ", wdata);
+			total += 4;
+		}
+		putchar('\n');
+	}
+
+	printf("Total: %u\n", total);
+
+	inhx32_free(k);
 }
 
 /*****************************************************************************

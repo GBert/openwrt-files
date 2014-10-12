@@ -68,7 +68,7 @@ SLEEP_HIGH=1
 # LINUX MCP23017 I2C
 #BITRULES=0x10
 # BIT-BANG GPIO
-BITRULES=0x10
+BITRULES=0x1000
 
 # I/O busy cursor (0=DISABLED)
 # 
@@ -78,13 +78,13 @@ BUSY=0
 #
 #  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
 # !MCLR/VPP        - PI/O 
-VPP=2
+# VPP=2
 # PGM              - PI/O 
-PGM=1
+# PGM=1
 # PGC CLOCK        - PI/O 
-PGC=3
+# PGC=3
 # PGD DATA_I/O     - PI/O
-PGD=0
+# PGD=0
 
 # Carambola BIT-BANG GPIO (single PGD DATA I/O)
 #
@@ -97,12 +97,23 @@ PGD=0
 # PGD DATA_I/O	- GPIO11 J5 DTR PIN12
 # PGD=11
 
+# Elink M-Mini  BIT-BANG GPIO (single PGD DATA I/O)
+#
+#  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
+# !MCLR/VPP        - PI/O 
+VPP=20
+# PGM              - PI/O 
+PGM=255
+# PGC CLOCK        - PI/O 
+PGC=19
+# PGD DATA_I/O     - PI/O
+PGD=18
+
+# modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
+
 # LINUX MCP23017 I2C ADDRESS (README.i2c)
 #
 #MCP=0x20
-
-# AUTO-RUN AFTER I/O STANDBY ON CLOSE
-RUN=1
 
 # ICSP I/O per half-bit sleep time for `kio'.
 FWSLEEP=30

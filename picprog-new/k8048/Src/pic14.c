@@ -51,6 +51,7 @@ struct pic_ops pic14_ops = {
 	.write_panel               = NULL,
 	.program                   = pic14_program,
 	.verify                    = pic14_verify,
+	.dryrun                    = pic14_dryrun,
 	.bulk_erase                = pic14_bulk_erase,
 	.row_erase                 = pic14_row_erase,
 	.dumpdeviceid              = pic14_dumpdeviceid,
@@ -2009,7 +2010,7 @@ pic14_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 /*
  * VERIFY DATA FOR REGION
  *
- *  RETURN FAILURE COUNT
+ *  RETURN BYTE FAILURE COUNT
  */
 uint32_t
 pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
@@ -2024,21 +2025,20 @@ pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 	case PIC_REGIONDATA:
 		vdata = pic14_read_data_from_data_memory(k);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-		return 1;
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
+		return 0;
 		break;
 	}
 	if (pic14_map[pic14_index].datasheet == DS41191C) {
 		if (address == PIC14_BANDGAPADDR) {
 			vdata &= PIC14_CONFIGMASK;
-			data  &= PIC14_CONFIGMASK;
+			data &= PIC14_CONFIGMASK;
 		}
 	}
 	if (vdata != data) {
 		printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
 			__func__, vdata, data, address);
-		return 1;
+		return 2;
 	}
 	return 0;
 }
@@ -2057,7 +2057,7 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 {
 	uint16_t hex_address, PC_address = 0, wdata;
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint16_t total = 0;
+	uint32_t total = 0;
 
 	/* Initialise device for programming */
 	if (blank)
@@ -2073,7 +2073,7 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = (k->pdata[i]->address >> 1);
+		hex_address = k->pdata[i]->address >> 1;
 		new_region = pic14_getregion(hex_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -2096,12 +2096,13 @@ pic14_program(struct k8048 *k, char *filename, int blank)
 
 		/* For each 14-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] | (k->pdata[i]->bytes[j + 1] << 8);
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC14_MASK;
 			pic14_programregion(k, PC_address, current_region, wdata);
 			PC_address++;
 			pic14_increment_address(k);
-			total++;
+			total += 2;
 		}
 	}
 	if (current_region == PIC_REGIONCODE)
@@ -2131,7 +2132,7 @@ pic14_verify(struct k8048 *k, char *filename)
 {
 	uint16_t hex_address, PC_address = 0, wdata;
 	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint16_t fail = 0, total = 0;
+	uint32_t fail = 0, total = 0;
 
 	/*
 	 * Verify device
@@ -2143,7 +2144,7 @@ pic14_verify(struct k8048 *k, char *filename)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = (k->pdata[i]->address >> 1);
+		hex_address = k->pdata[i]->address >> 1;
 		new_region = pic14_getregion(hex_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -2162,20 +2163,58 @@ pic14_verify(struct k8048 *k, char *filename)
 
 		/* For each 14-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] | (k->pdata[i]->bytes[j + 1] << 8);
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC14_MASK;
 			fail += pic14_verifyregion(k, PC_address++, current_region, wdata);
 			pic14_increment_address(k);
-			total++;
+			total += 2;
 		}
 	}
 	pic14_standby(k);
 
-	printf("Total: %u Pass: %u Fail: %u\n", total, total-fail, fail);
+	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
 
 	inhx32_free(k);
 
 	return fail;
+}
+
+/*
+ * DRY RUN
+ */
+void
+pic14_dryrun(struct k8048 *k, char *filename)
+{
+	uint32_t total = 0;
+	uint16_t wdata;
+
+	/*
+	 * Dry run
+	 */
+
+	/* Get HEX */
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
+		return;
+	}
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; i++) {
+		printf("[%04X] ", k->pdata[i]->address >> 1);
+
+		/* For each 14-bit word in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
+			wdata &= PIC14_MASK;
+			printf("%04X ", wdata);
+			total += 2;
+		}
+		putchar('\n');
+	}
+
+	printf("Total: %u\n", total);
+
+	inhx32_free(k);
 }
 
 /*****************************************************************************

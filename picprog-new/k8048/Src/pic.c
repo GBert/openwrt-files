@@ -269,6 +269,18 @@ pic_verify(struct k8048 *k, char *filename)
 }
 
 /*
+ * DRY RUN
+ */
+void
+pic_dryrun(struct k8048 *k, char *filename)
+{
+	if (k->pic->dryrun)
+		k->pic->dryrun(k, filename);
+	else
+		printf("%s: information: unimplemented\n", __func__);
+}
+
+/*
  * WRITE BANDGAP CONFIG
  */
 void

@@ -47,6 +47,7 @@ struct pic_ops {
 	void (*write_panel)(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
 	void (*program)(struct k8048 *, char *, int);
 	uint32_t (*verify)(struct k8048 *, char *);
+	void (*dryrun)(struct k8048 *, char *);
 	void (*bulk_erase)(struct k8048 *k, uint16_t, uint16_t);
 	void (*row_erase)(struct k8048 *, uint32_t, uint32_t);
 	void (*dumpdeviceid)(struct k8048 *);
@@ -99,6 +100,7 @@ uint32_t pic_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16
 #define PIC_VOID (0xFFFF)
 void pic_program(struct k8048 *, char *, int);
 uint32_t pic_verify(struct k8048 *, char *);
+void pic_dryrun(struct k8048 *, char *);
 
 #define PIC_INTERNAL (0xFFFF)
 #define PIC_NOINTERNAL (0xFFFE)

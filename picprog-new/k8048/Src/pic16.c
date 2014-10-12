@@ -51,6 +51,7 @@ struct pic_ops pic16_ops = {
 	.write_panel               = pic16_write_panel,
 	.program                   = pic16_program,
 	.verify                    = pic16_verify,
+	.dryrun                    = pic16_dryrun,
 	.bulk_erase                = pic16_bulk_erase,
 	.row_erase                 = pic16_row_erase,
 	.dumpdeviceid              = pic16_dumpdeviceid,
@@ -1489,7 +1490,7 @@ pic16_init_verifyregion(struct k8048 *k, uint32_t region)
 /*
  * VERIFY REGION
  *
- *  RETURN FAILURE COUNT
+ *  RETURN BYTE FAILURE COUNT
  */
 uint32_t
 pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint8_t data)
@@ -1512,7 +1513,7 @@ pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		vdata = pic16_read_data_memory(k);
 		break;
 	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		return 1;
+		return 0;
 		break;
 	}
 	if (vdata != data) {
@@ -1574,7 +1575,7 @@ pic16_program(struct k8048 *k, char *filename, int blank)
 
 	/* Finalise device programming (write config words) */
 	if (blank)
-		total += pic16_write_config(k);
+		pic16_write_config(k);
 
 	printf("Total: %u\n", total);
 
@@ -1622,11 +1623,45 @@ pic16_verify(struct k8048 *k, char *filename)
 	}
 	pic16_standby(k);
 
-	printf("Total: %u Pass: %u Fail: %u\n", total, total-fail, fail);
+	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
 
 	inhx32_free(k);
 
 	return fail;
+}
+ 
+/*
+ * DRY RUN
+ */
+void
+pic16_dryrun(struct k8048 *k, char *filename)
+{
+	uint32_t total = 0;
+
+	/*
+	 * Dry run
+	 */
+
+	/* Get HEX */
+	if (!inhx32(k, filename, sizeof(uint8_t))) {
+		pic16_standby(k);
+		return;
+	}
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; i++) {
+		printf("[%04X] ", k->pdata[i]->address);
+
+		/* For each byte in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 1) {
+			printf("%02X ", k->pdata[i]->bytes[j]);
+			total++;
+		}
+		putchar('\n');
+	}
+
+	printf("Total: %u\n", total);
+
+	inhx32_free(k);
 }
  
 /*****************************************************************************

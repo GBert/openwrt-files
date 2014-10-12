@@ -51,6 +51,7 @@ struct pic_ops pic12_ops = {
 	.write_panel               = NULL,
 	.program                   = pic12_program,
 	.verify                    = pic12_verify,
+	.dryrun                    = pic12_dryrun,
 	.bulk_erase                = pic12_bulk_erase,
 	.row_erase                 = NULL,
 	.dumpdeviceid              = pic12_dumpdeviceid,
@@ -846,7 +847,7 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
 /*
  * VERIFY DATA FOR REGION
  *
- *  RETURN FAILURE COUNT
+ *  RETURN BYTE FAILURE COUNT
  */
 uint32_t
 pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
@@ -858,15 +859,14 @@ pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 	case PIC_REGIONCONFIG:
 		vdata = pic12_read_data_from_program_memory(k);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-		return 1;
+	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
+		return 0;
 		break;
 	}
 	if (vdata != data) {
 		printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
 			__func__, vdata, data, address);
-		return 1;
+		return 2;
 	}
 	return 0;
 }
@@ -901,7 +901,7 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = (k->pdata[i]->address >> 1);
+		hex_address = k->pdata[i]->address >> 1;
 		new_region = pic12_getregion(hex_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -924,12 +924,13 @@ pic12_program(struct k8048 *k, char *filename, int blank)
 
 		/* For each 12-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] | (k->pdata[i]->bytes[j + 1] << 8);
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC12_MASK;
 			pic12_programregion(k, PC_address, current_region, wdata);
 			PC_address++;
 			pic12_increment_address(k);
-			total++;
+			total += 2;
 		}
 	}
 	if (current_region == PIC_REGIONCODE)
@@ -966,7 +967,7 @@ pic12_verify(struct k8048 *k, char *filename)
 	}
 	/* For each line */
 	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = (k->pdata[i]->address >> 1);
+		hex_address = k->pdata[i]->address >> 1;
 		new_region = pic12_getregion(hex_address);
 		if (new_region == PIC_REGIONNOTSUP)
 			continue;
@@ -985,11 +986,12 @@ pic12_verify(struct k8048 *k, char *filename)
 
 		/* For each 12-bit word in line */
 		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] | (k->pdata[i]->bytes[j + 1] << 8);
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
 			wdata &= PIC12_MASK;
 			fail += pic12_verifyregion(k, PC_address++, current_region, wdata);
 			pic12_increment_address(k);
-			total++;
+			total += 2;
 		}
 	}
 	pic12_standby(k);
@@ -999,6 +1001,43 @@ pic12_verify(struct k8048 *k, char *filename)
 	inhx32_free(k);
 
 	return fail;
+}
+
+/*
+ * DRY RUN
+ */
+void
+pic12_dryrun(struct k8048 *k, char *filename)
+{
+	uint32_t total = 0;
+	uint16_t wdata;
+
+	/*
+	 * Dry run
+	 */
+
+	/* Get HEX */
+	if (!inhx32(k, filename, sizeof(uint16_t))) {
+		return;
+	}
+	/* For each line */
+	for (uint32_t i = 0; i < k->count; i++) {
+		printf("[%04X] ", k->pdata[i]->address >> 1);
+
+		/* For each 12-bit word in line */
+		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
+			wdata = k->pdata[i]->bytes[j] |
+				(k->pdata[i]->bytes[j + 1] << 8);
+			wdata &= PIC12_MASK;
+			printf("%04X ", wdata);
+			total += 2;
+		}
+		putchar('\n');
+	}
+
+	printf("Total: %u\n", total);
+
+	inhx32_free(k);
 }
 
 /*****************************************************************************

@@ -431,6 +431,7 @@ uint32_t pic16_init_verifyregion(struct k8048 *, uint32_t);
 uint32_t pic16_verifyregion(struct k8048 *, uint32_t, uint32_t, uint16_t, uint8_t);
 void pic16_program(struct k8048 *, char *, int);
 uint32_t pic16_verify(struct k8048 *, char *);
+void pic16_dryrun(struct k8048 *, char *);
 void pic16_dumpdeviceid(struct k8048 *);
 void pic16_dumpconfig(struct k8048 *, int);
 void pic16_dumpconfig_verbose(struct k8048 *);

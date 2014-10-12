@@ -1,0 +1,51 @@
+[options]
+wordswap=no
+rotate_labels=no
+sort_labels=no
+generate_pinseq=yes
+sym_width=2400
+pinwidthvertical=400
+pinwidthhorizontal=400
+
+[geda_attr]
+version=20140908 1
+name=PIC32MX150F128B
+device=PIC32MX150F128B
+refdes=U?
+footprint=SPDIP28
+description=Microcontroller
+documentation=http://ww1.microchip.com/downloads/en/DeviceDoc/60001168F.pdf
+author=Darron Broad
+dist-license=BSD
+use-license=BSD
+numslots=0
+
+[pins]
+1		io	dot	l		\_MCLR\_
+2		io	line	l		RA0
+3		io	line	l		RA1
+4		io	line	l		RB0
+5		io	line	l		RB1
+6		io	line	l		RB2
+7		io	line	l		RB3
+8		pwr	line	l	GND	VSS
+9		io	line	l		RA2
+10		io	line	l		RA3
+11		io	line	l		RB4
+12		io	line	l		RA4
+13		pwr	line	l		VDD
+14		io	line	l		RB5
+28		pwr	line	r		AVDD
+27		pwr	line	r	GND	AVSS
+26		io	line	r		RB15
+25		io	line	r		RB14
+24		io	line	r		RB13
+23		io	line	r		RB12
+22		io	line	r		RB11
+21		io	line	r		RB10
+20		pwr	line	r	VCAP	VCAP
+19		pwr	line	r	GND	VSS
+18		io	line	r		RB9
+17		io	line	r		RB8
+16		io	line	r		RB7
+15		io	line	r		RB6

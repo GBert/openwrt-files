@@ -646,6 +646,7 @@ uint32_t pic24_init_verifyregion(struct k8048 *, uint32_t);
 uint32_t pic24_verifyregion(struct k8048 *, uint32_t, uint32_t, uint16_t, uint32_t);
 void pic24_program(struct k8048 *, char *, int);
 uint32_t pic24_verify(struct k8048 *, char *);
+void pic24_dryrun(struct k8048 *, char *);
 void pic24_dumpdeviceid(struct k8048 *);
 void pic24_dumpconfig(struct k8048 *, int);
 void pic24_dumpconfig_verbose(struct k8048 *);

@@ -320,6 +320,7 @@ void pic32_bulk_erase(struct k8048 *, uint16_t, uint16_t);
 void pic32_write_panel(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
 void pic32_program(struct k8048 *, char *, int);
 uint32_t pic32_verify(struct k8048 *, char *);
+void pic32_dryrun(struct k8048 *, char *);
 void pic32_dumpdeviceid(struct k8048 *);
 void pic32_dumpconfig(struct k8048 *, int);
 void pic32_dumphexcode(struct k8048 *, uint32_t, uint32_t, uint32_t *);
