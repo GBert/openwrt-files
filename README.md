@@ -5,8 +5,8 @@ This Git contains an OpenWrt feed. The main purpose is an in system low-voltage 
 The mc-icsp module was written by Eran Duchan http://www.pavius.net/2011/06/lpicp-the-embedded-linux-pic-programmer/ -
 I just added a GPIO customizing module (mc-icsp-gpio-custom).
 
-Darron Broad was so kind to adapt his k8048 programmer code and greatly optimzed the modules. He is still
-active and got more PICs working (including PIC32).
+Darron Broad was so kind to adapt his k8048 programmer code and greatly optimzed the GPIO bit-banging module. He is still
+active and add new PICs. As of today all Microchip PICs (8, 16, and 32 bit) with LVP capability should be supported.
 
 ### OpenWrt Compiling
 
@@ -21,10 +21,8 @@ Mark 'picprog-new' under 'Utilities' to compile and install it.
 
 ### Using
 On the OpenWrt Router install the module:
-<pre><code>insmod gpio-bb</pre></code>
-and add the device:
-<pre><code>mknod /dev/gpio-bb c 180 0</pre></code>
-Please apply your GPIO settings in /root/.k8048 .
+<pre><code>modprobe gpio-bb && mknod /dev/gpio-bb c 180 0</pre></code>
+Please apply your GPIO settings in /root/.k8048/config .
 ### Test
 <pre><code>root@OpenWrt:~# ls -l /usr/bin/k\*
 lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k14 -> /usr/bin/k8048
@@ -74,8 +72,8 @@ sys	0m 0.87s
 
 ### Todo
 
-Darron Broad is doing a very good job getting more PICs integrated. The speed is impressive.
-PIC32 is also supported for some devices (mainly in SPDIP package)
+Darron Broad is doing a very good job getting more and more PICs integrated. Also the programming speed is impressive.
+PIC32 is also supported now and even the new MZ family (tests pending).
  
 ### Thanks
 
