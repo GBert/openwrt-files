@@ -58,6 +58,7 @@ endif
 ifeq "$(VERBOSE)" "1"
 CFLAGS+=-DVERBOSE
 endif
+
 ifneq (,$(findstring CYGWIN,$(SYSTEM)))
 CFLAGS+=-D__USE_LINUX_IOCTL_DEFS
 endif
@@ -66,7 +67,7 @@ BINDIR=/usr/local/bin
 
 CLIB1=$(CLIB)
 TARGET1=k8048
-SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c util.c
+SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c util.c stk500v2.c
 
 CLIB2=$(CLIB)
 TARGET2=kio
@@ -76,28 +77,35 @@ ifeq "$(K12)" "1"
 CFLAGS+=-DK12
 SOURCE1+=pic12.c
 endif
+
 ifeq "$(K14)" "1"
 CFLAGS+=-DK14
 SOURCE1+=pic14.c
 endif
+
 ifeq "$(K16)" "1"
 CFLAGS+=-DK16
 SOURCE1+=pic16.c
 endif
+
 ifeq "$(K24)" "1"
 CFLAGS+=-DK24
 SOURCE1+=pic24.c
 endif
+
 ifeq "$(K32)" "1"
 CFLAGS+=-DK32
 SOURCE1+=pic32.c
 endif
+
 ifeq "$(KCTRL)" "1"
 CFLAGS+=-DKCTRL
 endif
+
 ifeq "$(KTEST)" "1"
 CFLAGS+=-DKTEST
 endif
+
 ifeq "$(KIO)" "1"
 CFLAGS+=-DKIO
 endif
@@ -130,6 +138,10 @@ ifeq "$(SYSTEM)" "Linux"
  endif
 endif
 
+ifeq "$(QSORT)" "1"
+CFLAGS+=-DQSORT
+endif
+
 OBJECT1=$(SOURCE1:.c=.o)
 HEADER1=$(SOURCE1:.c=.h)
 
@@ -137,20 +149,13 @@ OBJECT2=$(SOURCE2:.c=.o)
 HEADER2=$(SOURCE2:.c=.h)
 
 #
-# COMMAND LINE TOOL
+# COMMAND LINE TOOL(S)
 #
-# DEBIAN:
-#  sudo apt-get install mercurial
-#  hg clone http://hg.kewl.org/pub/k8048/
-#  cd k8048
-#  make build
-#  sudo make install
-#
+TARGETS:=$(TARGET1)
 ifeq "$(KIO)" "1"
-build: $(TARGET1) $(TARGET2)
-else
-build: $(TARGET1)
+TARGETS:=$(TARGETS) $(TARGET2)
 endif
+build:$(TARGETS)
 
 $(TARGET1):$(OBJECT1)
 	@echo -n "[LINK] "
@@ -170,7 +175,7 @@ $(TARGET2):$(OBJECT2)
 # 	strip $(TARGET2)
 # endif
 
-$(OBJECT2):$(HEADER2) Makefile config.mk VERSION
+$(OBJECT2):$(HEADER2) Makefile config.mk VERSION k8048.h
 
 %.o:%.c
 	@echo -n "[CC] "
@@ -197,6 +202,9 @@ endif
 ifeq "$(KCTRL)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/kctrl
 endif
+ifeq "$(TTY)" "1"
+	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/kload
+endif
 ifeq "$(KTEST)" "1"
 	ln -sf $(BINDIR)/$(TARGET1) $(BINDIR)/ktest
 endif
@@ -206,14 +214,14 @@ endif
 ifeq (,$(findstring CYGWIN,$(SYSTEM)))
 	chown 0:0 $(BINDIR)/$(TARGET1)
 	chmod u+s $(BINDIR)/$(TARGET1)
-ifeq "$(KIO)" "1"
+ ifeq "$(KIO)" "1"
 	chown 0:0 $(BINDIR)/$(TARGET2)
 	chmod u+s $(BINDIR)/$(TARGET2)
-endif
+ endif
 endif
 
 uninstall:
-	rm -f $(BINDIR)/$(TARGET1)
+	rm -f $(BINDIR)/k8048
 	rm -f $(BINDIR)/k12
 	rm -f $(BINDIR)/k14
 	rm -f $(BINDIR)/k16
@@ -221,25 +229,16 @@ uninstall:
 	rm -f $(BINDIR)/k32
 	rm -f $(BINDIR)/kctrl
 	rm -f $(BINDIR)/ktest
-	rm -f $(BINDIR)/$(TARGET2)
+	rm -f $(BINDIR)/kload
+	rm -f $(BINDIR)/kio
 
 clean:
 	cd dotconf && $(MAKE) clean
 	cd etc     && $(MAKE) clean
 	cd tools   && $(MAKE) clean
-	rm -f $(TARGET1) $(TARGET2) *.o *~ .*~ *.err *.log *.map *.s *.i
+	rm -f k8048 kio *.o *~ .*~ *.err *.log *.map *.s *.i
 #
 # ASSEMBLER DEMOS
-#
-# REQUIRES: gpasm gEDA gEDA-utils
-#
-# DEBIAN:
-#  sudo apt-get install gputils
-#  sudo apt-get install geda
-#  sudo apt-get install geda-utils
-#  sudo apt-get install libreadline-dev
-#  sudo apt-get install libncurses-dev
-#  make build-asm
 #
 build-asm:
 	cd asm && $(MAKE)
@@ -254,17 +253,6 @@ clean-asm:
 	cd asm && $(MAKE) clean
 #
 # COMMAND LINE TOOL, AND DEMOS
-#
-# REQUIRES: gpasm sdcc pic30-tools gEDA gEDA-utils
-#
-# DEBIAN:
-#  view README.tools
-#  sudo apt-get install geda
-#  sudo apt-get install geda-utils
-#  sudo apt-get install libreadline-dev
-#  sudo apt-get install libncurses-dev
-#  make build-all
-#  sudo make install-all
 #
 build-all:build build-asm
 

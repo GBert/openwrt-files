@@ -33,7 +33,7 @@ endef
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DK24 -DK32 -DKIO -DKTEST -DBITBANG" \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DK14 -DK16 -DK24 -DK32 -DKIO -DKTEST -DBITBANG -DTTY" \
 		build
 endef
 
@@ -52,6 +52,8 @@ define Package/picprog-new/postinst
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k16
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k24
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/k32
+	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/kctrl
+	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/kload
 	ln -sf /usr/bin/k8048 $${IPKG_INSTROOT}/usr/bin/ktest
 endef
 

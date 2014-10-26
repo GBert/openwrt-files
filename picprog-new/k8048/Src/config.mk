@@ -41,7 +41,7 @@ KTEST=1
 KIO=1
 
 # back/front-ends (where available) (enable:1 disable:0)
-TTY=0
+TTY=1
 RPI=0
 MCP23017=0
 BITBANG=1
