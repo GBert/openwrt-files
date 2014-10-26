@@ -43,12 +43,13 @@
 #define PIC14_USERID_MAX (4)
 
 struct pic14_config {
-	uint16_t userid[PIC14_USERID_MAX];	/* X000 .. X003 */
-	uint16_t reserved;			/* X004         */
-	uint16_t revisionid;			/* X005         */
-	uint16_t deviceid;			/* X006         */
-	uint16_t config[PIC14_CONFIG_MAX];	/* X007 .. X009 */
-	uint16_t calib[PIC14_CALIB_MAX];	/* X00X .. X0XX */
+	uint16_t userid[PIC14_USERID_MAX];	/* X000 .. X003  */
+	uint16_t reserved;			/* X004          */
+	uint16_t revisionid;			/* X005          */
+	uint16_t deviceid;			/* X006          */
+	uint16_t config[PIC14_CONFIG_MAX];	/* X007 .. X009  */
+	uint16_t calib[PIC14_CALIB_MAX];	/* X00X .. X0XX  */
+	uint16_t osccal;			/* 03FF DS41191C */
 };
 
 struct pic14_dsmap {
@@ -81,9 +82,7 @@ struct pic14_dsmap {
 #if 0
 #define PIC14_CODE_LOW     (0x0000)	/* CODE ORIGIN  */
 #endif
-#define PIC14_CONFIG_WORD1 (7)		/* 2007 or 8007 */
-#define PIC14_CONFIG_WORD2 (8)		/* 2008 or 8008 */
-#define PIC14_CONFIG_WORD3 (9)		/* 8009         */
+#define PIC14_CONFIG_OFFSET (7)		/* 2007 or 8007 */
 
 /*
  * DEVICE ID / REVISION
@@ -826,26 +825,28 @@ void pic14_program_verify(struct k8048 *);
 void pic14_standby(struct k8048 *);
 uint16_t pic14_read_program_memory_increment(struct k8048 *);
 uint8_t  pic14_read_data_memory_increment(struct k8048 *);
-void pic14_bulk_erase(struct k8048 *, uint16_t, uint16_t);
+void pic14_bulk_erase(struct k8048 *);
 void pic14_row_erase(struct k8048 *, uint32_t, uint32_t);
-void pic14_read_config_memory(struct k8048 *, int);
+int pic14_read_config_memory(struct k8048 *);
 uint32_t pic14_get_program_size(uint32_t *);
 uint32_t pic14_get_data_size(uint32_t *);
 uint32_t pic14_read_program_memory_block(struct k8048 *, uint32_t *, uint32_t, uint32_t);
 uint32_t pic14_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16_t);
 uint32_t pic14_write_word(struct k8048 *, uint16_t);
-uint16_t pic14_read_osccal(struct k8048 *);
+uint16_t pic14_osccal_read(struct k8048 *);
+uint32_t pic14_osccal_write(struct k8048 *, uint16_t);
+uint32_t pic14_bandgap_write(struct k8048 *, uint16_t);
 uint32_t pic14_write_osccal(struct k8048 *, uint16_t);
-uint32_t pic14_write_calib(struct k8048 *, uint16_t);
-uint32_t pic14_write_config(struct k8048 *, uint16_t);
-uint16_t pic14_getregion(uint16_t);
+uint32_t pic14_write_bandgap(struct k8048 *, uint16_t);
+uint32_t pic14_write_calib(struct k8048 *, uint16_t, uint16_t);
+uint32_t pic14_write_config(struct k8048 *);
+uint16_t pic14_getregion(struct k8048 *, uint16_t);
 uint16_t pic14_initregion(struct k8048 *, uint16_t, uint16_t *);
 void pic14_loadregion(struct k8048 *, uint16_t, uint16_t);
-void pic14_programregion(struct k8048 *, uint16_t, uint16_t, uint16_t);
-uint32_t pic14_verifyregion(struct k8048 *, uint16_t, uint16_t, uint16_t);
-void pic14_program(struct k8048 *, char *, int);
-uint32_t pic14_verify(struct k8048 *, char *);
-void pic14_dryrun(struct k8048 *, char *);
+uint32_t pic14_program_data(struct k8048 *, uint32_t, pic_data *);
+void pic14_program_end(struct k8048 *, int);
+uint32_t pic14_verify_data(struct k8048 *, uint32_t, pic_data *, uint32_t *);
+void pic14_view_data(struct k8048 *, pic_data *);
 void pic14_dumpdeviceid(struct k8048 *);
 void pic14_dumposccal(struct k8048 *);
 void pic14_dumpconfig(struct k8048 *, int);

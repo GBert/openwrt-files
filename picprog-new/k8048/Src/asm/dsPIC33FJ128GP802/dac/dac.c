@@ -480,7 +480,8 @@ init_voices(void)
 void
 uart_putchar(uint8_t b)
 {
-	while (U1STAbits.UTXBF);
+	while (U1STAbits.UTXBF)
+		;
 
 	U1TXREG = b;
 }

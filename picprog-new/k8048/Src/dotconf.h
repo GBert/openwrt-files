@@ -38,6 +38,6 @@
 
 int getdotpath(struct k8048 *);
 void getdotfile(struct k8048 *);
-void getconf(struct k8048 *, char *);
+void getconf(struct k8048 *);
 
 #endif /* !_DOTCONF_H */

@@ -47,22 +47,33 @@ usage_k8048(struct k8048 *k)
 		" %s\n"
 		"\t\tConfiguration file.\n\n", k->dotfile);
 
-	printf("BACKENDS:\n"
+	printf("FRONTENDS:\n"
+		" FILE\n"
+		"\t\tFile input (INHX32 format).\n"
+		" STDIN\n"
+		"\t\tStandard input (INHX32 format).\n"
 #ifdef TTY
 		" TTY\n"
-		"\t\tPOSIX serial.\n"
+		"\t\tPOSIX serial I/O.\n"
 #endif
-#ifdef RPI
-		" RPI\n"
-		"\t\tRaspberry Pi GPIO.\n"
+		"\n");
+
+	printf("BACKENDS:\n"
+#ifdef BITBANG
+		" BIT-BANG\n"
+		"\t\tLinux GPIO bit-bang.\n"
 #endif
 #ifdef MCP23017
 		" MCP23017\n"
 		"\t\tLinux MCP23017 I2C.\n"
 #endif
-#ifdef BITBANG
-		" BIT-BANG\n"
-		"\t\tLinux GPIO bit-bang.\n"
+#ifdef RPI
+		" RPI\n"
+		"\t\tRaspberry Pi GPIO.\n"
+#endif
+#ifdef TTY
+		" TTY\n"
+		"\t\tPOSIX serial I/O.\n"
 #endif
 		"\n");
 
@@ -94,6 +105,10 @@ usage_k8048(struct k8048 *k)
 #ifdef KCTRL
 		" kctrl RUN|STOP|RESTORE\n"
 		"\t\tControl master clear.\n"
+#endif
+#ifdef TTY
+		" kload TTY FILE [AVR]\n"
+		"\t\tUpload file using TTY.\n"
 #endif
 #ifdef KTEST
 		" ktest TEST [ARG]\n"
@@ -134,6 +149,48 @@ usage_kctrl(struct k8048 *k, char *msg)
 		"\t\tLower master clear to put the device in reset.\n"
 		" kctrl RESTORE\n"
 		"\t\tLower then raise master clear to reset the device.\n"
+
+		"\n");
+
+	printf("VERSION:\n %s\n", VERSION);
+
+	if (msg)
+		io_exit(k, EX_USAGE);
+	io_exit(k, EX_OK);
+}
+#endif
+
+/*
+ * kload help
+ */
+#ifdef TTY
+void
+usage_kload(struct k8048 *k, char *msg)
+{
+	printf("USAGE: kload TTY FILE [AVR]\n");
+	printf("Upload file using TTY.\n\n");
+
+	if (msg)
+		printf("Error: %s.\n\n", msg);
+
+	printf("FILES:\n"
+		" %s\n"
+		"\t\tConfiguration file.\n\n", k->dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" K8048\n"
+		"\t\tConfiguration file.\n\n");
+
+	printf("EXAMPLES:\n"
+		" kload /dev/ttyS0 file.hex\n"
+		"\t\tUpload file.hex (INHX32 format) using /dev/ttyS0.\n"
+		" kload /dev/ttyS0 < led.hex\n"
+		"\t\tUpload stdin (INHX32 format) using /dev/ttyS0.\n"
+		" kload /dev/ttyS0 - avr\n"
+		"\t\tUpload stdin (INHX32 format) using /dev/ttyS0 to PIC32 AVR bootloader.\n"
+		" kload /dev/ttyUSB0 unix.hex avr\n"
+		"\t\tUpload unix.hex (INHX32 format) using /dev/ttyUSB0 to PIC32 AVR bootloader.\n"
+
 		"\n");
 
 	printf("VERSION:\n %s\n", VERSION);
@@ -244,6 +301,8 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX /dev/ttyUSB0\n"
+		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n", UL_ON, UL_OFF);
 
 	printf("\n");
 
@@ -309,6 +368,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k14 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k14 /dev/ttyUSB0\n"
+		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
 
 	printf("\n");
 
@@ -370,7 +431,9 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k16 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-	
+	printf(" k16 /dev/ttyUSB0\n"
+		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
+
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
@@ -433,6 +496,8 @@ usage_k24(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k24 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k24 /dev/ttyUSB0\n"
+		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
 
 	printf("\n");
 	
@@ -486,6 +551,8 @@ usage_k32(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k32 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" k32 /dev/ttyUSB0\n"
+		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
 
 	printf("\n");
 	
@@ -527,6 +594,20 @@ usage(struct k8048 *k, char *execname, char *msg)
 }
 
 /*
+ * Reset user
+ */
+void
+resetuid(struct k8048 *k)
+{
+	if (getuid() != geteuid()) {
+		if (setuid(getuid()) < 0) {
+			printf("%s: fatal error: setuid failed\n", __func__);
+			io_exit(k, EX_OSERR); /* Panic */
+		}
+	}
+}
+
+/*
  * Open device and perform command
  */
 int
@@ -551,12 +632,34 @@ main(int argc, char **argv)
 	}
 
 	/* Get configuration */
-	getconf(&k, execname);
+	getconf(&k);
 	
 	/* Command: k8048 */
-	if (strcmp(execname, "k8048") == 0)
+	if (strcmp(execname, "k8048") == 0) {
+		resetuid(&k);
 		usage_k8048(&k);
-
+	}
+#ifdef TTY
+	/* Command: kload */
+	if (strcmp(execname, "kload") == 0) {
+		resetuid(&k);
+		if (argc < 2)
+			usage_kload(&k, "Missing arg");
+		if (argc > 4)
+			usage_kload(&k, "Too many args");
+		if (strstr(argv[1], "/dev/tty") != argv[1])
+			usage_kload(&k, "Not a tty");
+		if (argc < 3)
+			stk500v2_sendfile(&k, argv[1], "-", /* Native */ 0);
+		else if (argc < 4)
+			stk500v2_sendfile(&k, argv[1], argv[2], /* Native */ 0);
+		else if (argv[3][0] == 'a' || argv[3][0] == 'A')
+			stk500v2_sendfile(&k, argv[1], argv[2], /* AVR */ 1);
+		else
+			usage_kload(&k, "Invalid mode");
+		io_exit(&k, EX_OK);
+	}
+#endif
 	/* Open device */
 	if (io_open(&k) < 0) {
 #ifdef KTEST
@@ -566,21 +669,17 @@ main(int argc, char **argv)
 		usage(&k, execname, io_error(&k));
 	}
 
+	/* Raise priority */
 	setpriority(PRIO_PROCESS, 0, -20);
 
-	/* Reset uid */
-	if (getuid() != geteuid()) {
-		if (setuid(getuid()) < 0) {
-			printf("%s: fatal error: setuid failed\n", __func__);
-			io_exit(&k, EX_OSERR); /* Panic */
-		}
-	}
+	/* Reset user */
+	resetuid(&k);
 #ifdef KCTRL
 	/* Command: kctrl */
 	if (strcmp(execname, "kctrl") == 0) {
 		if (argc < 2)
 			usage_kctrl(&k, "Missing arg");
-		else if (argc > 2)
+		if (argc > 2)
 			usage_kctrl(&k, "Too many args");
 		if (strcasecmp(argv[1], "RUN") == 0) {
 			io_close(&k, HIGH);
@@ -602,7 +701,7 @@ main(int argc, char **argv)
 	if (strcmp(execname, "ktest") == 0) {
 		if (argc < 3)
 			usage_ktest(&k, "Missing args");
-		else if (argc > 3)
+		if (argc > 3)
 			usage_ktest(&k, "Too many args");
 		int32_t testarg = strtol(argv[2], NULL, 0);
 		if (testarg < 0)
@@ -745,6 +844,8 @@ main(int argc, char **argv)
 				if (argc > 2)
 					usage(&k, execname, "Too many args [data]");
 				pic_dumpdata(&k);
+			} else if (argv11 == 'e') { 	/* DEBUG */
+				printf("Hello world!\n");
 			} else {			/* DUMP */
 				if (argc > 2)
 					usage(&k, execname, "Too many args [dump]");
@@ -871,9 +972,9 @@ main(int argc, char **argv)
 				if (argc > 3)
 					usage(&k, execname, "Too many args [view]");
 				if (argc < 3)
-					pic_dryrun(&k, "-");
+					pic_view(&k, "-");
 				else
-					pic_dryrun(&k, argv[2]);
+					pic_view(&k, argv[2]);
 			} else {			/* VERIFY */
 				if (argc > 3)
 					usage(&k, execname, "Too many args [verify]");
@@ -883,7 +984,16 @@ main(int argc, char **argv)
 					pic_verify(&k, argv[2]);
 			}
 			break;
-
+#ifdef TTY
+	case '/':	if (strstr(argv[1], "/dev/tty") != argv[1]) {
+				usage(&k, execname, "Invalid device [TTY]");
+			}
+			if (strstr(argv[1], k.device) != NULL) {
+				usage(&k, execname, "Device in use [TTY]");
+			}
+			stk500v2_recvfile(&k, argv[1]);
+			break;
+#endif
 	default:	usage(&k, execname, "Unknown operation");
 			break;
 	}

@@ -30,18 +30,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 build:
-	cd led && $(MAKE)
 	cd gEDA  && $(MAKE)
 
 install:
-	cd led && $(MAKE) install
 	cd gEDA  && $(MAKE) install
 
 uninstall:
-	cd led && $(MAKE) uninstall
 	cd gEDA  && $(MAKE) uninstall
 
 clean:
-	cd led && $(MAKE) clean
 	cd gEDA  && $(MAKE) clean
 	rm -f *.o *~ .*~

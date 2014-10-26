@@ -87,6 +87,37 @@ pic_selector(struct k8048 *k)
 }
 
 /*
+ * BEGIN PROGRAMMING
+ */
+void
+pic_program_begin(struct k8048 *k)
+{
+	if (k->pic->program_begin)
+		k->pic->program_begin(k);
+}
+
+/*
+ * PROGRAM DATA
+ */
+uint32_t
+pic_program_data(struct k8048 *k, uint32_t current_region, pic_data *pdata)
+{
+	if (k->pic->program_data)
+		return k->pic->program_data(k, current_region, pdata);
+
+	return PIC_REGIONNOTSUP;
+}
+
+/*
+ * END PROGRAMMING
+ */
+void pic_program_end(struct k8048 *k, int config)
+{
+	if (k->pic->program_end)
+		k->pic->program_end(k, config);
+}
+
+/*
  * LOOK UP PE FILE
  */
 int
@@ -116,14 +147,17 @@ pic_pe_lookup(struct k8048 *k, char *pathname, const char *filename)
 
 /*
  * READ CONFIG
+ *
+ *  Return -1 on error, 0 OK
  */
-void
-pic_read_config(struct k8048 *k, int flag)
+int
+pic_read_config(struct k8048 *k)
 {
 	if (k->pic->read_config_memory)
-		k->pic->read_config_memory(k, flag);
-	else
-		printf("%s: information: unimplemented\n", __func__);
+		return k->pic->read_config_memory(k);
+
+	printf("%s: information: unimplemented\n", __func__);
+	return -1;
 }
 
 /*
@@ -235,49 +269,123 @@ pic_read_data_memory_block(struct k8048 *k, uint16_t *data, uint32_t addr, uint1
 }
  
 /*
- * PROGRAM
+ * BULK ERASE DEVICE
+ *
+ *  INVOKE AFTER `pic_read_config'
  */
 void
-pic_program(struct k8048 *k, char *filename, int blank)
+pic_bulk_erase(struct k8048 *k)
 {
-	if (k->pic->program) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		k->pic->program(k, filename, blank);
+	if (k->pic->bulk_erase) {
+		k->pic->bulk_erase(k);
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
 
 /*
- * VERIFY DEVICE
+ * PROGRAM FILE
+ */
+void
+pic_program(struct k8048 *k, char *filename, int blank)
+{
+	uint32_t count = 0, nbytes;
+	pic_data **pdata = NULL;
+	uint32_t current_region = PIC_REGIONNOTSUP;
+
+	if (!k->pic->program_data || !k->pic->program_end) {
+		printf("%s: information: program unimplemented\n", __func__);
+		return;
+	}
+	if (!k->pic->bulk_erase) {
+		printf("%s: information: erase unimplemented\n", __func__);
+		return;
+	}
+	if (pic_read_config(k) < 0)
+		return;
+
+	if (blank)
+		k->pic->bulk_erase(k);
+
+	nbytes = inhx32_array_create(k, &pdata, filename, &count);
+	if (nbytes == 0)
+		return;
+
+	if (k->pic->program_begin)
+		k->pic->program_begin(k);
+
+	for (uint32_t i = 0; i < count; ++i)
+		current_region = k->pic->program_data(k, current_region, pdata[i]);
+
+	k->pic->program_end(k, blank);
+
+	printf("Total: %u\n", nbytes);
+
+	inhx32_array_free(k, pdata, count);
+}
+
+/*
+ * VERIFY FILE
  *
  *  RETURN NUMBER OF VERIFY ERRORS
  */
 uint32_t
 pic_verify(struct k8048 *k, char *filename)
 {
-	uint32_t fail = UINT32_MAX;
-	
-	if (k->pic->verify) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
+	uint32_t count = 0, nbytes;
+	pic_data **pdata = NULL;
+	uint16_t current_region = PIC_REGIONNOTSUP;
+	uint32_t fail = 0;
 
-		fail = k->pic->verify(k, filename);
-	} else
-		printf("%s: information: unimplemented\n", __func__);
+	if (!k->pic->verify_data || !k->pic->verify_end) {
+		printf("%s: information: verify unimplemented\n", __func__);
+		return fail;
+	}
+	if (pic_read_config(k) < 0)
+		return fail;
+
+	nbytes = inhx32_array_create(k, &pdata, filename, &count);
+	if (nbytes == 0)
+		return fail;
+
+	if (k->pic->verify_begin)
+		k->pic->verify_begin(k);
+
+	for (uint32_t i = 0; i < count; ++i)
+		current_region = k->pic->verify_data(k, current_region, pdata[i], &fail);
+
+	k->pic->verify_end(k);
+
+	printf("Total: %u Fail: %u\n", nbytes, fail);
+
+	inhx32_array_free(k, pdata, count);
 
 	return fail;
 }
 
 /*
- * DRY RUN
+ * VIEW FILE
  */
 void
-pic_dryrun(struct k8048 *k, char *filename)
+pic_view(struct k8048 *k, char *filename)
 {
-	if (k->pic->dryrun)
-		k->pic->dryrun(k, filename);
-	else
-		printf("%s: information: unimplemented\n", __func__);
+	uint32_t count = 0, nbytes;
+	pic_data **pdata = NULL;
+
+	if (!k->pic->view_data) {
+		printf("%s: information: view unimplemented\n", __func__);
+		return;
+	}
+
+	nbytes = inhx32_array_create(k, &pdata, filename, &count);
+	if (nbytes == 0)
+		return;
+
+	for (uint32_t i = 0; i < count; ++i)
+		k->pic->view_data(k, pdata[i]);
+
+	printf("Total: %u\n", nbytes);
+
+	inhx32_array_free(k, pdata, count);
 }
 
 /*
@@ -286,13 +394,9 @@ pic_dryrun(struct k8048 *k, char *filename)
 void
 pic_writebandgap(struct k8048 *k, uint16_t bandgap)
 {
-	if (k->pic->arch == ARCH14BIT) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		if (k->pic->bulk_erase)
-			k->pic->bulk_erase(k, PIC_INTERNAL, bandgap);
-		else
-			printf("%s: information: unimplemented\n", __func__);
+	if (k->pic->write_bandgap) {
+		if (!pic_read_config(k))
+			k->pic->write_bandgap(k, bandgap);
 	} else
 		printf("%s: information: BANDGAP is not supported on this architecture\n", __func__);
 }
@@ -303,29 +407,22 @@ pic_writebandgap(struct k8048 *k, uint16_t bandgap)
 void
 pic_writeosccal(struct k8048 *k, uint16_t osccal)
 {
-	if (k->pic->arch == ARCH12BIT || k->pic->arch == ARCH14BIT) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		if (k->pic->bulk_erase)
-			k->pic->bulk_erase(k, osccal, PIC_INTERNAL);
-		else
-			printf("%s: information: unimplemented\n", __func__);
+	if (k->pic->write_osccal) {
+		if (!pic_read_config(k))
+			k->pic->write_osccal(k, osccal);
 	} else
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
 }
 
 /*
- * BLANK A DEVICE
- *
- * DISABLE PROTECTION AND BULK ERASE
+ * BLANK DEVICE
  */
 void
 pic_blank(struct k8048 *k)
 {
 	if (k->pic->bulk_erase) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		k->pic->bulk_erase(k, PIC_INTERNAL, PIC_INTERNAL);
+		if (!pic_read_config(k))
+			k->pic->bulk_erase(k);
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -337,9 +434,8 @@ void
 pic_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 {
 	if (k->pic->row_erase) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		k->pic->row_erase(k, row, nrows);
+		if (!pic_read_config(k))
+			k->pic->row_erase(k, row, nrows);
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -351,9 +447,8 @@ void
 pic_dumpdeviceid(struct k8048 *k)
 {
 	if (k->pic->dumpdeviceid) {
-		pic_read_config(k, PIC_CONFIG_ALL);
-
-		k->pic->dumpdeviceid(k);
+		if (!pic_read_config(k))
+			k->pic->dumpdeviceid(k);
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -365,9 +460,8 @@ void
 pic_dumpconfig(struct k8048 *k)
 {
 	if (k->pic->dumpconfig) {
-		pic_read_config(k, PIC_CONFIG_ONLY);
-
-		k->pic->dumpconfig(k, PIC_VERBOSE);
+		if (!pic_read_config(k))
+			k->pic->dumpconfig(k, PIC_VERBOSE);
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -378,13 +472,9 @@ pic_dumpconfig(struct k8048 *k)
 void
 pic_dumposccal(struct k8048 *k)
 {
-	if (k->pic->arch == ARCH12BIT || k->pic->arch == ARCH14BIT) {
-		pic_read_config(k, PIC_CONFIG_ALL);
-
-		if (k->pic->dumposccal)
+	if (k->pic->dumposccal) {
+		if (!pic_read_config(k))
 			k->pic->dumposccal(k);
-		else
-			printf("%s: information: unimplemented\n", __func__);
 	} else
 		printf("%s: information: OSCCAL is not supported on this architecture\n", __func__);
 }
@@ -483,7 +573,8 @@ pic_dumpdevice(struct k8048 *k)
 	uint32_t addr, size;
 
 	/* Get userid/config */
-	pic_read_config(k, PIC_CONFIG_ALL);
+	if (pic_read_config(k) < 0)
+		return;
 
 	/* Program flash */
 	if (k->pic->get_program_size) {
@@ -573,7 +664,8 @@ pic_dumpprogram(struct k8048 *k, uint32_t a, uint32_t n)
 		return;
 	}
 
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (pic_read_config(k) < 0)
+		return;
 
 	/* Get program flash size */
 	size = pic_get_program_size(k, &addr);
@@ -605,7 +697,8 @@ pic_dumpdata(struct k8048 *k)
 		return;
 	}
 
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (pic_read_config(k) < 0)
+		return;
 
 	/* Get data EEPROM/data flash size */
 	size = pic_get_data_size(k, &addr);
@@ -634,7 +727,8 @@ pic_dumpexec(struct k8048 *k, uint32_t a, uint32_t n)
 		return;
 	}
 
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (pic_read_config(k) < 0)
+		return;
 
 	/* Get program executive size */
 	size = pic_get_executive_size(k, &addr);
@@ -666,7 +760,8 @@ pic_dumpboot(struct k8048 *k, uint32_t a, uint32_t n)
 		return;
 	}
 
-	pic_read_config(k, PIC_CONFIG_ONLY);
+	if (pic_read_config(k) < 0)
+		return;
 
 	/* Get boot flash size */
 	size = pic_get_boot_size(k, &addr);
@@ -695,12 +790,15 @@ pic_dumpboot(struct k8048 *k, uint32_t a, uint32_t n)
 void
 pic_dump_program(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
 {
+	uint32_t data_size = sizeof(uint32_t) * (size + 16);
+
 	/* Allocate program array */
-	uint32_t *data = (uint32_t *)calloc(size + 16, sizeof(uint32_t));
+	uint32_t *data = (uint32_t *)malloc(data_size);
 	if (data == NULL) {
-		printf("%s: fatal error: calloc failed\n", __func__);
+		printf("%s: fatal error: malloc failed\n", __func__);
 		io_exit(k, EX_OSERR); /* Panic */
 	}
+	memset((void *)data, -1, data_size);
 	/* Read program */
 	if (pic_read_program_memory_block(k, data, addr, size) == UINT32_MAX) {
 		printf("%s: fatal error: program flash read failed\n", __func__);
@@ -760,12 +858,15 @@ pic_dumpinhxcode(struct k8048 *k, uint32_t addr, uint32_t size, uint32_t *data)
 void
 pic_dump_data(struct k8048 *k, uint32_t addr, uint32_t size, int mode)
 {
+	uint32_t data_size = sizeof(uint16_t) * (size + 16);
+
 	/* Allocate data EEPROM/flash array */
-	uint16_t *data = (uint16_t *)calloc(size + 16, sizeof(uint16_t));
+	uint16_t *data = (uint16_t *)malloc(data_size);
 	if (data == NULL) {
-		printf("%s: fatal error: calloc failed\n", __func__);
+		printf("%s: fatal error: malloc failed\n", __func__);
 		io_exit(k, EX_OSERR); /* Panic */
 	}
+	memset((void *)data, -1, data_size);
 	/* Read data EEPROM/flash */
 	if (pic_read_data_memory_block(k, data, addr, size) == UINT32_MAX) {
 		printf("%s: fatal error: data EEPROM/flash read failed\n", __func__);

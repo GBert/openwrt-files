@@ -40,17 +40,18 @@
 #include <errno.h>   /* Error number definitions */
 #include <termios.h> /* POSIX terminal control definitions */
 
-/*
- * linux/cygwin
- */
+/* Linux / CYGWIN */
 #define SERIAL_DEVICE "/dev/ttyS0"
 
-int serial_open(const char *);
-void serial_close(void);
-
-int get_cts(void);
-void set_dtr(int);
-void set_rts(int);
-void set_tx(int);
+int serial_open(const char *, speed_t);
+void serial_close(int);
+int get_cts(int);
+void set_dtr(int, int);
+void set_rts(int, int);
+void set_tx(int, int);
+int serial_get(int, char *, int, int);
+int serial_read(int, char *, int, int);
+int serial_write(int, char *, int, int);
+speed_t serial_speed(uint32_t);
 
 #endif

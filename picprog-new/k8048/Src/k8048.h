@@ -50,15 +50,13 @@
 #include <sys/resource.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/select.h>
 #include <time.h>
 #include <errno.h> 
 #include <libgen.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
-#ifndef O_NDELAY
-#define O_NDELAY O_NONBLOCK
-#endif
 
 #define LOW  (0)
 #define HIGH (1)
@@ -71,8 +69,11 @@
 #define TRUE (HIGH)
 #endif
 
-#define STRLEN (1024)
+#define STRLEN (512)
 #define STRMAX (STRLEN - 1)
+
+#define BUFLEN (512)
+#define BUFMAX (BUFLEN - 1)
 
 #define UL_ON  ("\033[4m")
 #define UL_OFF ("\033[0m")
@@ -89,7 +90,7 @@
 
 struct k8048;
 
-/* I/O backends */
+/* OUTPUT BACKENDS */
 #ifdef TTY
 #include "serial_posix.h"
 #endif
@@ -105,7 +106,6 @@ struct k8048;
 
 #include "util.h"
 #include "dotconf.h"
-#include "inhx32.h"
 #include "io.h"
 #include "pic.h"
 #include "pic12.h"
@@ -114,26 +114,40 @@ struct k8048;
 #include "pic24.h"
 #include "pic32.h"
 
+/* INPUT FRONTENDS */
+#include "inhx32.h"
+#ifdef TTY
+#include "stk500v2.h"
+#endif
+
 struct k8048 {
+	/* Message output stream (NULL = disable)                               */
+	FILE *f;
+
+	/* Command line options */
+	char devicename[STRLEN];/* overridden PICMicro device name		*/ 
+	uint32_t key;		/* MCHP LVP key					*/
+
+	/* Dot file settings */
 	char dotfile[STRLEN];	/* configuration file name			*/
 	char device[STRLEN];	/* I/O device name: tty or rpi			*/
-	char devicename[STRLEN];/* overridden PICMicro device name		*/ 
 	char etc[STRLEN];	/* overridden etc directory path		*/ 
 	uint16_t bitrules;	/* I/O bit rules				*/
-	uint32_t key;		/* MCHP LVP key					*/
 	uint32_t busy;		/* I/O busy cursor speed			*/
 	uint32_t sleep_low;	/* I/O clock low duration			*/
 	uint32_t sleep_high;	/* I/O clock high duration			*/
 	uint32_t fwsleep;	/* ICSPIO bit time				*/
 	uint32_t debug;		/* default 0 (no debugging)			*/
 	uint8_t clock_falling;	/* Clock falling edge for shifting in bits      */
-
-	inhx32_data **pdata;    /* hex32 data lines                             */
-	uint32_t count;		/* hex32 data line count                        */
-	uint32_t nbytes;	/* hex32 data byte count                        */
+#ifdef TTY
+	uint32_t baudrate;	/* TTY baud rate                                */
+#endif
 
 	/* I/O backends */
 	uint8_t iot;		/* I/O type (tty, rpi or i2c)			*/
+#ifdef TTY
+	int serial_port;	/* tty bit-bang port descriptor                 */
+#endif
 #ifdef MCP23017
 	int mcp;		/* MCP23017 I2C address				*/
 #endif
@@ -150,6 +164,8 @@ struct k8048 {
 
 /* prototypes */
 void usage_k8048(struct k8048 *);
+void usage_kctrl(struct k8048 *, char *);
+void usage_kload(struct k8048 *, char *);
 void usage_ktest(struct k8048 *, char *);
 void usage_k12(struct k8048 *, char *);
 void usage_k14(struct k8048 *, char *);

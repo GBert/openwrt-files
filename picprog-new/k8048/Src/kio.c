@@ -193,7 +193,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Get configuration */
-	getconf(&k, execname);
+	getconf(&k);
 
 	/* Open device */
 	if (io_open(&k) < 0) {

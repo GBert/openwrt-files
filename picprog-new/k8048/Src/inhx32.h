@@ -45,22 +45,11 @@
 #define TT_EXTENDED_LINEAR_ADDRESS (4)
 #define TT_START_LINEAR_ADDRESS (5)
 
-/*
- * a program data line
- */
-#define BYTESMAX (256)
-typedef struct {
-	uint32_t address;
-	uint16_t bytes[BYTESMAX];
-	uint16_t nbytes;
-} inhx32_data;
-
 /* prototypes */
-uint8_t inhx32_gethexn(char);
-uint8_t inhx32_gethexb(char *);
-int inhx32_compare(const void *, const void *);
-void inhx32_order(const void *, VISIT, int); 
-uint32_t inhx32(struct k8048 *, const char *, uint32_t);
-void inhx32_free(struct k8048 *);
+uint32_t inhx32_array_create(struct k8048 *, pic_data ***, const char *, uint32_t *);
+void inhx32_array_free(struct k8048 *, pic_data **, uint32_t);
+#if K32
+uint32_t inhx32_memory_create(struct k8048 *, uint8_t **, const char *);
+#endif /* K32 */
 
 #endif /* !_INHX32_H */

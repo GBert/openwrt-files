@@ -36,8 +36,8 @@
 ;
 ; See:
 ;
-; RC6 overview        http://www.sbprojects.com/knowledge/ir/rc6.htm
-; Sky RC6 (RC-6-20)   http://john.fine.home.comcast.net/ir/DecodeIr.html
+; RC6 overview        http://www.sbprojects.com/knowledge/ir/rc6.php
+; Sky RC6 (RC-6-20)   https://web.archive.org/web/20061102030113/http://john.fine.home.comcast.net/ir/DecodeIr.html
 ; Sky magic eye       http://groups.google.co.uk/group/uk.tech.tv.sky/browse_thread/thread/616289ac2ef88dc4/1ad625df42dc9de0
 ; Sky key codes       http://www.dusky-control.com/sky-control-codes.shtml
 ;

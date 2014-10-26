@@ -33,11 +33,27 @@
 #ifndef _PIC_H
 #define _PIC_H
 
+/* ICSP DATA */
+#define PIC_BYTLEN (256)
+typedef struct {
+        uint32_t address;     /* Address of data */
+        uint16_t nbytes;      /* Number of bytes */
+        uint8_t bytes[PIC_BYTLEN]; /* Data bytes */
+} pic_data;
+
 /* ISCP OPERATIONS */
 struct pic_ops {
-	uint32_t arch;
+	uint32_t arch;	/* bit mask */
+	uint16_t align;	/* hex input alignment */
 	void (*selector)(void);
-	void (*read_config_memory)(struct k8048 *, int);
+	void (*program_begin)(struct k8048 *);
+	uint32_t (*program_data)(struct k8048 *, uint32_t, pic_data *);
+	void (*program_end)(struct k8048 *, int);
+	void (*verify_begin)(struct k8048 *);
+	uint32_t (*verify_data)(struct k8048 *, uint32_t, pic_data *, uint32_t *);
+	void (*verify_end)(struct k8048 *);
+	void (*view_data)(struct k8048 *, pic_data *);
+	int (*read_config_memory)(struct k8048 *);
 	uint32_t (*get_program_size)(uint32_t *);
 	uint32_t (*get_data_size)(uint32_t *);
 	uint32_t (*get_executive_size)(uint32_t *);
@@ -45,10 +61,10 @@ struct pic_ops {
 	uint32_t (*read_program_memory_block)(struct k8048 *, uint32_t *, uint32_t, uint32_t);
 	uint32_t (*read_data_memory_block)(struct k8048 *, uint16_t *, uint32_t, uint16_t);
 	void (*write_panel)(struct k8048 *, uint32_t, uint32_t, uint32_t *, uint32_t);
-	void (*program)(struct k8048 *, char *, int);
-	uint32_t (*verify)(struct k8048 *, char *);
-	void (*dryrun)(struct k8048 *, char *);
-	void (*bulk_erase)(struct k8048 *k, uint16_t, uint16_t);
+	void (*bulk_erase)(struct k8048 *k);
+	uint32_t (*write_osccal)(struct k8048 *k, uint16_t);
+	uint32_t (*write_bandgap)(struct k8048 *k, uint16_t);
+	uint32_t (*write_calib)(struct k8048 *k, uint16_t, uint16_t);
 	void (*row_erase)(struct k8048 *, uint32_t, uint32_t);
 	void (*dumpdeviceid)(struct k8048 *);
 	void (*dumpconfig)(struct k8048 *, int);
@@ -83,11 +99,13 @@ int pic_cmp(const void *, const void *);
 #define PIC_NCOLS (4)
 void pic_selector(struct k8048 *);
 
+void pic_program_begin(struct k8048 *);
+uint32_t pic_program_data(struct k8048 *, uint32_t, pic_data *);
+void pic_program_end(struct k8048 *, int);
+
 int pic_pe_lookup(struct k8048 *, char *, const char *);
 
-#define PIC_CONFIG_ONLY (0)
-#define PIC_CONFIG_ALL (1)
-void pic_read_config(struct k8048 *, int);
+int pic_read_config(struct k8048 *);
 
 uint32_t pic_get_program_size(struct k8048 *, uint32_t *);
 uint32_t pic_get_data_size(struct k8048 *, uint32_t *);
@@ -100,12 +118,11 @@ uint32_t pic_read_data_memory_block(struct k8048 *, uint16_t *, uint32_t, uint16
 #define PIC_VOID (0xFFFF)
 void pic_program(struct k8048 *, char *, int);
 uint32_t pic_verify(struct k8048 *, char *);
-void pic_dryrun(struct k8048 *, char *);
+void pic_view(struct k8048 *, char *);
 
-#define PIC_INTERNAL (0xFFFF)
-#define PIC_NOINTERNAL (0xFFFE)
 void pic_writebandgap(struct k8048 *k, uint16_t);
 void pic_writeosccal(struct k8048 *, uint16_t);
+void pic_bulk_erase(struct k8048 *);
 void pic_blank(struct k8048 *);
 
 #define PIC_ERASE_ID (UINT32_MAX)

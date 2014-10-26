@@ -39,30 +39,38 @@
  *****************************************************************************/
 
 struct pic_ops pic14_ops = {
-	.arch                      = ARCH14BIT,
-	.selector                  = pic14_selector,
-	.read_config_memory        = pic14_read_config_memory,
-	.get_program_size          = pic14_get_program_size,
-	.get_data_size             = pic14_get_data_size,
-	.get_executive_size        = NULL,
-	.get_boot_size             = NULL,
-	.read_program_memory_block = pic14_read_program_memory_block,
-	.read_data_memory_block    = pic14_read_data_memory_block,
-	.write_panel               = NULL,
-	.program                   = pic14_program,
-	.verify                    = pic14_verify,
-	.dryrun                    = pic14_dryrun,
-	.bulk_erase                = pic14_bulk_erase,
-	.row_erase                 = pic14_row_erase,
-	.dumpdeviceid              = pic14_dumpdeviceid,
-	.dumpconfig                = pic14_dumpconfig,
-	.dumposccal                = pic14_dumposccal,
-	.dumpdevice                = pic14_dumpdevice,
-	.dumpadj                   = 1,
-	.dumphexcode               = pic14_dumphexcode,
-	.dumpinhxcode              = pic14_dumpinhxcode,
-	.dumphexdata               = pic14_dumphexdata,
-	.dumpinhxdata              = pic14_dumpinhxdata,
+	.arch				= ARCH14BIT,
+	.align				= sizeof(uint16_t),
+	.selector			= pic14_selector,
+	.program_begin			= NULL,
+	.program_data			= pic14_program_data,
+	.program_end			= pic14_program_end,
+	.verify_begin			= NULL,
+	.verify_data			= pic14_verify_data,
+	.verify_end			= pic14_standby,
+	.view_data			= pic14_view_data,
+	.read_config_memory		= pic14_read_config_memory,
+	.get_program_size		= pic14_get_program_size,
+	.get_data_size			= pic14_get_data_size,
+	.get_executive_size		= NULL,
+	.get_boot_size			= NULL,
+	.read_program_memory_block	= pic14_read_program_memory_block,
+	.read_data_memory_block		= pic14_read_data_memory_block,
+	.write_panel			= NULL,
+	.bulk_erase			= pic14_bulk_erase,
+	.write_osccal			= pic14_write_osccal,
+	.write_bandgap			= pic14_write_bandgap,
+	.write_calib			= pic14_write_calib,
+	.row_erase			= pic14_row_erase,
+	.dumpdeviceid			= pic14_dumpdeviceid,
+	.dumpconfig			= pic14_dumpconfig,
+	.dumposccal			= pic14_dumposccal,
+	.dumpdevice			= pic14_dumpdevice,
+	.dumpadj			= 1,
+	.dumphexcode			= pic14_dumphexcode,
+	.dumpinhxcode			= pic14_dumpinhxcode,
+	.dumphexdata			= pic14_dumphexdata,
+	.dumpinhxdata			= pic14_dumpinhxdata,
 };
 
 uint32_t
@@ -1163,35 +1171,11 @@ pic14_read_data_memory_increment(struct k8048 *k)
 }
 
 /*
- * BULK ERASE (DISABLE PROTECTION AND ERASE DEVICE)
- *
- * 1. SAVE OSCCAL (DEPENDANT UPON DEVICE AND OPTION)
- * 2. DISABLE PROTECTION AND ERASE DEVICE
- * 3. RESTORE OSCCAL (DEPENDANT UPON DEVICE AND OPTION)
+ * ERASE DEVICE
  */
 void
-pic14_bulk_erase(struct k8048 *k, uint16_t osccal, uint16_t bandgap)
+pic14_erase_device(struct k8048 *k)
 {
-	if (pic14_map[pic14_index].datasheet != DS41191C) {
-		if (osccal != PIC_INTERNAL && osccal != PIC_NOINTERNAL) {
-			printf("%s: error: OSCCAL is not supported on this device\n",
-				__func__);
-			return;
-		}
-		if (bandgap != PIC_INTERNAL && bandgap != PIC_NOINTERNAL) {
-			printf("%s: error: BANDGAP is not supported on this device\n",
-				__func__);
-			return;
-		}
-	} else {
-		if (osccal == PIC_INTERNAL) {
-			osccal = pic14_read_osccal(k);
-		}
-		if (bandgap == PIC_INTERNAL) {
-			bandgap = pic14_conf.config[0];
-		}
-	}
-
 	pic14_program_verify(k);
 
 	switch (pic14_map[pic14_index].datasheet) {
@@ -1286,15 +1270,21 @@ pic14_bulk_erase(struct k8048 *k, uint16_t osccal, uint16_t bandgap)
 	}
 
 	pic14_standby(k);
+}
+
+/*
+ * BLANK DEVICE
+ *
+ * DISABLE PROTECTION AND BULK ERASE
+ */
+void
+pic14_bulk_erase(struct k8048 *k)
+{
+	pic14_erase_device(k);
 
 	if (pic14_map[pic14_index].datasheet == DS41191C) {
-		if (osccal != PIC_NOINTERNAL) {
-			pic14_write_osccal(k, osccal);
-		}
-		if (bandgap != PIC_NOINTERNAL) {
-			bandgap = (bandgap & PIC14_BANDGAPMASK) | PIC14_CONFIGMASK;
-			pic14_write_config(k, bandgap);
-		}
+		pic14_osccal_write(k, pic14_conf.osccal);
+		pic14_bandgap_write(k, pic14_conf.config[0]);
 	}
 }
 
@@ -1401,8 +1391,8 @@ pic14_row_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
 /*
  * READ CONFIGURATION MEMORY 2000/8000 .. 200X/800X AND STORE DEVICE MAP INDEX
  */
-void
-pic14_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
+int
+pic14_read_config_memory(struct k8048 *k)
 {
 	uint32_t dev;
 
@@ -1430,9 +1420,9 @@ pic14_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 			}
 		}
 		if (pic14_map[dev].deviceid == 0) {
-			printf("%s: fatal error: unknown device: [%s]\n", __func__, k->devicename);
+			printf("%s: information: unknown device: [%s]\n", __func__, k->devicename);
 			pic14_standby(k);
-			io_exit(k, EX_SOFTWARE); /* Panic */
+			return -1;
 		}
 	}
 	/* Device detect */
@@ -1460,14 +1450,14 @@ pic14_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 			 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 			 */
 			if (pic14_conf.deviceid == 0x0000 || pic14_conf.deviceid == 0x3FFF) {
-				printf("%s: fatal error: %s.\n",
+				printf("%s: information: %s.\n",
 					__func__, io_fault(k, pic14_conf.deviceid));
 			} else {
-				printf("%s: fatal error: device unknown: [%04X]\n",
+				printf("%s: information: device unknown: [%04X]\n",
 					__func__, pic14_conf.deviceid);
 			}
 			pic14_standby(k);
-			io_exit(k, EX_SOFTWARE); /* Panic */
+			return -1;
 		}
 	}
 
@@ -1485,6 +1475,12 @@ pic14_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	}
 
 	pic14_standby(k);
+
+	/* Read OSCCAL */
+	if (pic14_map[pic14_index].datasheet == DS41191C)
+		pic14_conf.osccal = pic14_osccal_read(k);
+
+	return 0;
 }
 
 /*
@@ -1648,25 +1644,16 @@ pic14_write_word(struct k8048 *k, uint16_t region)
 
 /*****************************************************************************
  *
- * Read/Write Oscillator Calibration 
- *
- * DS41191C
+ * Read/Write Calibration 
  *
  *****************************************************************************/
 
 /*
- * READ OSCILLATOR CALIBRATION WORD
- *
- *  RETURN OSCCAL WORD
+ * READ OSCILLATOR CALIBRATION WORD (DS41191C)
  */
 uint16_t
-pic14_read_osccal(struct k8048 *k)
+pic14_osccal_read(struct k8048 *k)
 {
-	if (pic14_map[pic14_index].datasheet != DS41191C) {
-		printf("%s: error: OSCCAL is not supported on this device\n", __func__);
-		return 0;
-	}
-
 	pic14_program_verify(k);
 	pic14_load_data_for_program_memory(k, 0);
 
@@ -1675,33 +1662,19 @@ pic14_read_osccal(struct k8048 *k)
 	uint16_t osccal = pic14_read_program_memory_increment(k);
 
 	pic14_standby(k);
-#ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s: information: OSCCAL read: word [%04X]\n", __func__, osccal);
-	}
-#endif
+
 	return osccal;
 }
 
 /*
- * WRITE OSCILLATOR CALIBRATION WORD
+ * WRITE OSCILLATOR CALIBRATION WORD (DS41191C)
  */
 uint32_t
-pic14_write_osccal(struct k8048 *k, uint16_t osccal)
+pic14_osccal_write(struct k8048 *k, uint16_t osccal)
 {
-	if (pic14_map[pic14_index].datasheet != DS41191C) {
-		printf("%s: error: OSCCAL is not supported on this device\n", __func__);
-		return 0;
-	}
-
 	pic14_program_verify(k);
 	pic14_load_data_for_program_memory(k, osccal);
 
-#ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s: information: OSCCAL write: word [%04X]\n", __func__, osccal);
-	}
-#endif
 	for (uint16_t i = 0; i < PIC14_OSCCALADDR; i++)
 		pic14_increment_address(k);
 	pic14_write_word(k, PIC_REGIONCODE);
@@ -1714,29 +1687,93 @@ pic14_write_osccal(struct k8048 *k, uint16_t osccal)
 			__func__, vdata, osccal);
 		return 0;
 	}
-	return 1; /* OSCCAL WRITTEN */
+	return 2; /* OSCCAL WRITTEN */
 }
 
 /*
- * WRITE CALIBRATION WORD AT X00X
+ * WRITE BANDGAP CONFIG WORD (DS41191C)
  */
-#if 0
+uint32_t
+pic14_bandgap_write(struct k8048 *k, uint16_t bandgap)
+{
+	bandgap |= PIC14_CONFIGMASK;
+
+	pic14_program_verify(k);
+	pic14_load_configuration(k, bandgap);
+
+	for (uint32_t i = 0; i < 7; ++i)
+		pic14_increment_address(k);
+	pic14_write_word(k, PIC_REGIONCONFIG);
+	uint16_t vdata = pic14_read_data_from_program_memory(k);
+
+	pic14_standby(k);
+
+	vdata &= PIC14_BANDGAPMASK;
+	bandgap &= PIC14_BANDGAPMASK;
+
+	if (vdata != bandgap) {
+		printf("%s: error: BANDGAP write failed: read [%04X] expected [%04X]\n",
+			__func__, vdata, bandgap);
+		return 0;
+	}
+
+	return 2; /* BANDGAP WRITTEN */
+}
+
+/*****************************************************************************
+ *
+ * Write Calibration to Blank Device
+ *
+ *****************************************************************************/
+
+/*
+ * BLANK DEVICE AND WRITE OSCILLATOR CALIBRATION WORD (DS41191C)
+ */
+uint32_t
+pic14_write_osccal(struct k8048 *k, uint16_t osccal)
+{
+	if (pic14_map[pic14_index].datasheet != DS41191C) {
+		printf("%s: error: OSCCAL is not supported on this device\n", __func__);
+		return 0;
+	}
+
+	pic14_erase_device(k);
+
+	return pic14_bandgap_write(k, pic14_conf.config[0]) +
+		pic14_osccal_write(k, osccal);
+}
+
+/*
+ * BLANK DEVICE AND WRITE BANDGAP CONFIG WORD (DS41191C)
+ */
+uint32_t
+pic14_write_bandgap(struct k8048 *k, uint16_t bandgap)
+{
+	if (pic14_map[pic14_index].datasheet != DS41191C) {
+		printf("%s: error: BANDGAP is not supported on this device\n", __func__);
+		return 0;
+	}
+
+	pic14_erase_device(k);
+
+	return pic14_osccal_write(k, pic14_conf.osccal) +
+		pic14_bandgap_write(k, bandgap);
+}
+
+/*
+ * WRITE CALIBRATION WORD
+ */
 uint32_t
 pic14_write_calib(struct k8048 *k, uint16_t calib, uint16_t ofs)
 {
 	if (pic14_map[pic14_index].datasheet != DS41204G) {
-		printf("%s: error: CALIB is not supported on this device\n", __func__);
+		printf("%s: error: CALIB not tested on this device\n", __func__);
 		return 0;
 	}
 
 	pic14_program_verify(k);
 	pic14_load_configuration(k, calib);
 
-#ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s: information: CALIB write: word [%04X]\n", __func__, calib);
-	}
-#endif
 	for (uint32_t i = 0; i < ofs; i++)
 		pic14_increment_address(k);
 	pic14_write_word(k, PIC_REGIONCONFIG);
@@ -1748,9 +1785,8 @@ pic14_write_calib(struct k8048 *k, uint16_t calib, uint16_t ofs)
 			__func__, vdata, calib);
 		return 0;
 	}
-	return 1; /* CALIB WRITTEN */
+	return 2; /* CALIB WRITTEN */
 }
-#endif
 
 /*****************************************************************************
  *
@@ -1764,23 +1800,12 @@ pic14_write_calib(struct k8048 *k, uint16_t calib, uint16_t ofs)
  *  RETURN 0 ON ERROR ELSE PROGRAM COUNT
  */
 uint32_t
-pic14_write_config(struct k8048 *k, uint16_t config1)
+pic14_write_config(struct k8048 *k)
 {
-	uint16_t cdata[PIC14_CONFIG_MAX], vdata[PIC14_CONFIG_MAX] = {0};
+	uint16_t vdata[PIC14_CONFIG_MAX];
 
-	cdata[0] = config1;
-	for (uint32_t i = 1; i < pic14_map[pic14_index].nconfig; ++i)
-		cdata[i] = pic14_conf.config[i];
-
-#ifdef DEBUG
-	if (k->debug >= 10) {
-		for (uint32_t i = 0; i < pic14_map[pic14_index].nconfig; ++i)
-			printf("%s: information: CONFIG%d [%04X]\n", __func__,
-				i + 1, cdata[i]);
-	}
-#endif
 	pic14_program_verify(k);
-	pic14_load_configuration(k, cdata[0]);
+	pic14_load_configuration(k, pic14_conf.config[0]);
 
 	for (uint32_t i = 0; i < 6; ++i)
 		pic14_increment_address(k);
@@ -1792,7 +1817,7 @@ pic14_write_config(struct k8048 *k, uint16_t config1)
 			break;
 		case DS30324B:	/* PIC16F73				      */
 		case DS41196F:	/* PIC16F6XXA LOAD DATA FOR PROGRAM MEMORY    */
-			pic14_load_data_for_program_memory(k, cdata[0]);
+			pic14_load_data_for_program_memory(k, pic14_conf.config[0]);
 		default:pic14_write_word(k, PIC_REGIONCONFIG);
 			break;
 		}
@@ -1800,25 +1825,21 @@ pic14_write_config(struct k8048 *k, uint16_t config1)
 	}
 	else for (uint32_t i = 0; i < pic14_map[pic14_index].nconfig; ++i) {
 		pic14_increment_address(k);
-		pic14_load_data_for_program_memory(k, cdata[i]);
+		pic14_load_data_for_program_memory(k, pic14_conf.config[i]);
 		pic14_write_word(k, PIC_REGIONCONFIG);
 		vdata[i] = pic14_read_data_from_program_memory(k);
 	}
 
 	pic14_standby(k);
 
-	if (pic14_map[pic14_index].datasheet == DS41191C) {
-		vdata[0] &= PIC14_CONFIGMASK;
-		cdata[0] &= PIC14_CONFIGMASK;
-	}
 	for (uint32_t i = 0; i < pic14_map[pic14_index].nconfig; ++i) {
-		if (vdata[i] != cdata[i]) {
+		if (vdata[i] != pic14_conf.config[i]) {
 			printf("%s: error: CONFIG%d write failed: read [%04X] expected [%04X]\n",
-				__func__, i + 1, vdata[i], cdata[i]);
-			return 0; /* FAILED */
+				__func__, i + 1, vdata[i], pic14_conf.config[i]);
+			return 0;
 		}
 	}
-	return pic14_map[pic14_index].nconfig;
+	return pic14_map[pic14_index].nconfig * 2; /* CONFIG WRITTEN */
 }
 
 /*****************************************************************************
@@ -1828,19 +1849,22 @@ pic14_write_config(struct k8048 *k, uint16_t config1)
  *****************************************************************************/
 
 /*
- * DETERMINE MEMORY REGION: CODE, CONFIG or DATA
+ * DETERMINE MEMORY REGION: CODE, ID, CONFIG or DATA
  *
  *  RETURN PIC_REGIONCODE:
  *	0 .. FLASH SIZE
  *
- *  RETURN PIC_REGIONCONFIG:
+ *  RETURN PIC_REGIONID:
  *	0x2000 or 0x8000
+ *
+ *  RETURN PIC_REGIONCONFIG:
+ *	0x2007 or 0x8007
  *
  *  RETURN PIC_REGIONDATA:
  *	0x2100 or 0xf000
  */
 uint16_t
-pic14_getregion(uint16_t address)
+pic14_getregion(struct k8048 *k, uint16_t address)
 {
 	/* CODE */
 	uint16_t code_high = pic14_map[pic14_index].flash - 1;
@@ -1857,15 +1881,19 @@ pic14_getregion(uint16_t address)
 			return PIC_REGIONDATA;
 		}
 	}
-	/* USERID/CONFIG */
-	uint16_t config_low = pic14_map[pic14_index].configaddr;
-	uint16_t config_high = config_low + 7 + pic14_map[pic14_index].nconfig - 1;
-
-	if (address >= config_low && address <= config_high) {
+	/* ID */
+	if (address >= pic14_map[pic14_index].configaddr &&
+		address < pic14_map[pic14_index].configaddr + 4) {
+		return PIC_REGIONID;
+	}
+	/* CONFIG */
+	uint16_t config_low = pic14_map[pic14_index].configaddr + PIC14_CONFIG_OFFSET;
+	uint16_t config_high = config_low + pic14_map[pic14_index].nconfig;
+	if (address >= config_low && address < config_high) {
 		return PIC_REGIONCONFIG;
 	}
-	printf("%s: warning: address unsupported [%04X]\n",
-		__func__, address);
+	if (k->f)
+		fprintf(k->f, "%s: warning: address unsupported [%04X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1882,21 +1910,19 @@ pic14_initregion(struct k8048 *k, uint16_t region, uint16_t *address)
 		pic14_load_data_for_program_memory(k, 0);
 		*address = 0;
 		return region;
-		break;
+	case PIC_REGIONID:
 	case PIC_REGIONCONFIG:
 		pic14_load_configuration(k, 0);
 		*address = pic14_map[pic14_index].configaddr;
 		return region;
-		break;
 	case PIC_REGIONDATA:
 		pic14_load_data_for_data_memory(k, 0);
 		*address = pic14_map[pic14_index].dataaddr;
 		return region;
-		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-		break;
 	}
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	*address = 0;
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1908,16 +1934,16 @@ pic14_loadregion(struct k8048 *k, uint16_t region, uint16_t word)
 {
 	switch (region) {
 	case PIC_REGIONCODE:
+	case PIC_REGIONID:
 	case PIC_REGIONCONFIG:
 		pic14_load_data_for_program_memory(k, word);
-		break;
+		return;
 	case PIC_REGIONDATA:
 		pic14_load_data_for_data_memory(k, word);
-		break;
-	default:printf("%s: warning: region unsupported [%d]\n",
-		__func__, region);
-		break;
+		return;
 	}
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*****************************************************************************
@@ -1927,84 +1953,51 @@ pic14_loadregion(struct k8048 *k, uint16_t region, uint16_t word)
  *****************************************************************************/
 
 /*
- * PROGRAM DATA FOR REGION (CACHE CONFIG WORDS FOR LATER)
+ * PROGRAM DATA FOR REGION (CACHE CONFIG)
  */
-void
+static inline uint16_t
 pic14_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
 { 
 	static int write_pending = 0;
 
-#ifdef DEBUG
-	if (k->debug >= 10) {
-		printf("%s(,%04X,%d,%04X)\n", __func__, address, region, data);
-	}
-#endif
-	/*
-	 * Cache config word(s)
-	 */
-	if (region == PIC_REGIONCONFIG && address >= (pic14_map[pic14_index].configaddr + 4)) {
-		uint16_t config = address - pic14_map[pic14_index].configaddr;
+	switch (region) {
+	case PIC_REGIONCONFIG:
+		{
+		if (address == PIC14_BANDGAPADDR && (pic14_map[pic14_index].datasheet == DS41191C))
+			data = (data & PIC14_CONFIGMASK) | (pic14_conf.config[0] & PIC14_BANDGAPMASK);
 
-		/* 2007 / 8007 */
-		if (config == PIC14_CONFIG_WORD1) {
-			if (pic14_map[pic14_index].datasheet == DS41191C) {
-				data = (data & PIC14_CONFIGMASK) | (pic14_conf.config[0] & PIC14_BANDGAPMASK);
-			}
-			pic14_conf.config[0] = data;
-			return;
+		uint16_t config = address - pic14_map[pic14_index].configaddr - PIC14_CONFIG_OFFSET;
+		if (config >= PIC14_CONFIG_MAX) {
+			printf("%s: fatal error: config offset invalid \n", __func__);
+                        io_exit(k, EX_SOFTWARE); /* Panic */
 		}
-		/* 2008 / 8008 */
-		if (config == PIC14_CONFIG_WORD2 && pic14_map[pic14_index].nconfig >= 2) {
-			pic14_conf.config[1] = data;
-			return;
+		pic14_conf.config[config] = data;
 		}
-		/* 2009 / 8009 */
-		if (config == PIC14_CONFIG_WORD3 && pic14_map[pic14_index].nconfig >= 3) {
-			pic14_conf.config[2] = data;
-			return;
-		}
-		printf("%s: warning: config word ignored: word [%04X] address [%04X]\n",
-			__func__, data, address);
-		return;
-	}
-	
-	/*
-	 * Write single or multi-word code
-	 */
-	if (region == PIC_REGIONCODE) {
+		return region;
+	case PIC_REGIONCODE:
+		{
 		if (data != PIC_VOID) {
-			/* Ignore OSCCAL */
-			if (pic14_map[pic14_index].datasheet == DS41191C) {
-				if (address == PIC14_OSCCALADDR) {
-					printf("%s: warning: OSCCAL word ignored: word [%04X] address [%04X]\n",
-						__func__, data, address);
-					return;
-				}
-			}
-			/* Cache */
-			pic14_loadregion(k, PIC_REGIONCODE, data);
+			if (address == PIC14_OSCCALADDR && (pic14_map[pic14_index].datasheet == DS41191C))
+				break;
 			write_pending = 1;
+			pic14_loadregion(k, PIC_REGIONCODE, data);
 		}
-		/* Flush */
 		uint16_t mask = pic14_map[pic14_index].nlatches - 1;
-		if ((address & mask) == mask) {
-			if (write_pending) {
-				pic14_write_word(k, PIC_REGIONCODE);
-				write_pending = 0;
-			}
+		if (write_pending && ((address & mask) == mask)) {
+			write_pending = 0;
+			pic14_write_word(k, PIC_REGIONCODE);
 		}
-		return;
+		}
+		return region;
+	case PIC_REGIONID:
+	case PIC_REGIONDATA:
+		pic14_loadregion(k, region, data);
+		pic14_write_word(k, region);
+		return region;
 	}
-	
-	/*
-	 * Write single word data EEPROM or USERID
-	 */
-
-	/* Store data in working register */
-	pic14_loadregion(k, region, data);
-
-	/* Program working register */
-	pic14_write_word(k, region);
+	if (k->f)
+       		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	return PIC_REGIONNOTSUP;
 }
 
 /*
@@ -2012,22 +2005,24 @@ pic14_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
  *
  *  RETURN BYTE FAILURE COUNT
  */
-uint32_t
+static inline uint16_t
 pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
 {
 	uint16_t vdata = 0;
 
 	switch (region) {
 	case PIC_REGIONCODE:
+	case PIC_REGIONID:
 	case PIC_REGIONCONFIG:
 		vdata = pic14_read_data_from_program_memory(k);
 		break;
 	case PIC_REGIONDATA:
 		vdata = pic14_read_data_from_data_memory(k);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	default:if (k->f)
+			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
+				__func__, region);
 		return 0;
-		break;
 	}
 	if (pic14_map[pic14_index].datasheet == DS41191C) {
 		if (address == PIC14_BANDGAPADDR) {
@@ -2036,8 +2031,9 @@ pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 		}
 	}
 	if (vdata != data) {
-		printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
-			__func__, vdata, data, address);
+		if (k->f)
+			fprintf(k->f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
+				__func__, vdata, data, address);
 		return 2;
 	}
 	return 0;
@@ -2045,176 +2041,99 @@ pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 
 /*****************************************************************************
  *
- * Program & verify file
+ * Program & verify
  *
  *****************************************************************************/
 
 /*
- * PROGRAM FILE
- */
-void
-pic14_program(struct k8048 *k, char *filename, int blank)
-{
-	uint16_t hex_address, PC_address = 0, wdata;
-	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t total = 0;
-
-	/* Initialise device for programming */
-	if (blank)
-		pic14_bulk_erase(k, PIC_INTERNAL, PIC_NOINTERNAL);
-	
-	/*
-	 * Program device
-	 */
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint16_t))) {
-		return;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = k->pdata[i]->address >> 1;
-		new_region = pic14_getregion(hex_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
-		if (new_region != current_region) {
-			if (current_region == PIC_REGIONCODE)
-				pic14_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
-			pic14_program_verify(k);  /* Reset P.C. */
-			if (pic14_initregion(k, new_region, &PC_address) == PIC_REGIONNOTSUP)
-				continue;
-			current_region = new_region;
-		}
-
-		/* Skip over unused P.C. locations */
-		while (hex_address > PC_address) {
-			if (current_region == PIC_REGIONCODE)
-				pic14_programregion(k, PC_address, PIC_REGIONCODE, PIC_VOID);
-			PC_address++;
-			pic14_increment_address(k);
-		}
-
-		/* For each 14-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8);
-			wdata &= PIC14_MASK;
-			pic14_programregion(k, PC_address, current_region, wdata);
-			PC_address++;
-			pic14_increment_address(k);
-			total += 2;
-		}
-	}
-	if (current_region == PIC_REGIONCODE)
-		pic14_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
-
-	pic14_standby(k);
-
-	/* Finalise device programming (write config word(s)) */
-	if (blank)
-		pic14_write_config(k, pic14_conf.config[0]);
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
-
-	if (pic14_map[pic14_index].datasheet == DS40245B) {
-		printf("%s: information: The %s must be power cycled before verification.\n",
-			__func__, pic14_map[pic14_index].devicename);
-	}
-}
-
-/*
- * VERIFY FILE
+ * PROGRAM DATA
  */
 uint32_t
-pic14_verify(struct k8048 *k, char *filename)
+pic14_program_data(struct k8048 *k, uint32_t current_region, pic_data *pdata)
 {
-	uint16_t hex_address, PC_address = 0, wdata;
-	uint16_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t fail = 0, total = 0;
+	static uint16_t PC_address = 0;
+	uint16_t address, new_region, wdata;
 
-	/*
-	 * Verify device
-	 */
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint16_t))) {
-		return 1;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		hex_address = k->pdata[i]->address >> 1;
-		new_region = pic14_getregion(hex_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
+	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
+		address = (pdata->address + i) >> 1;
+		new_region = pic14_getregion(k, address);
 		if (new_region != current_region) {
-			pic14_program_verify(k); /* Reset P.C. */
-			if (pic14_initregion(k, new_region, &PC_address) == PIC_REGIONNOTSUP)
-				continue;
-			current_region = new_region;
+			pic14_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
+			pic14_program_verify(k); /* PC RESET */
+			current_region = pic14_initregion(k, new_region, &PC_address);
 		}
-
-		/* Skip over unused P.C. locations */
-		while (hex_address > PC_address) {
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		while (address > PC_address) {
+			pic14_programregion(k, PC_address, PIC_REGIONCODE, PIC_VOID);
+			pic14_increment_address(k);
 			PC_address++;
-			pic14_increment_address(k);
 		}
-
-		/* For each 14-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8);
-			wdata &= PIC14_MASK;
-			fail += pic14_verifyregion(k, PC_address++, current_region, wdata);
-			pic14_increment_address(k);
-			total += 2;
-		}
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8);
+		wdata &= PIC14_MASK;
+		pic14_programregion(k, address, current_region, wdata);
 	}
-	pic14_standby(k);
-
-	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
-
-	inhx32_free(k);
-
-	return fail;
+	return current_region;
 }
 
 /*
- * DRY RUN
+ * END PROGRAMMING
  */
 void
-pic14_dryrun(struct k8048 *k, char *filename)
+pic14_program_end(struct k8048 *k, int config)
 {
-	uint32_t total = 0;
+	pic14_programregion(k, PIC_VOID, PIC_REGIONCODE, PIC_VOID);
+	pic14_standby(k);
+	if (config)
+		pic14_write_config(k);
+}
+
+/*
+ * VERIFY DATA
+ */
+uint32_t
+pic14_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
+{
+	static uint16_t PC_address = 0;
+	uint16_t address, new_region, wdata;
+
+	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
+		address = (pdata->address + i) >> 1;
+		new_region = pic14_getregion(k, address);
+		if (new_region != current_region) {
+			pic14_program_verify(k); /* PC RESET */
+			current_region = pic14_initregion(k, new_region, &PC_address);
+		}
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		while (address > PC_address) {
+			pic14_increment_address(k);
+			PC_address++;
+		}
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8);
+		wdata &= PIC14_MASK;
+		(*fail) += pic14_verifyregion(k, address, current_region, wdata);
+	}
+	return current_region;
+}
+
+/*
+ * VIEW DATA
+ */
+void
+pic14_view_data(struct k8048 *k, pic_data *pdata)
+{
 	uint16_t wdata;
 
-	/*
-	 * Dry run
-	 */
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint16_t))) {
-		return;
+	printf("[%04X] ", pdata->address >> 1);
+	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
+		wdata = pdata->bytes[i] | (pdata->bytes[i + 1] << 8);
+		wdata &= PIC14_MASK;
+		printf("%04X ", wdata);
 	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		printf("[%04X] ", k->pdata[i]->address >> 1);
-
-		/* For each 14-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 2) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8);
-			wdata &= PIC14_MASK;
-			printf("%04X ", wdata);
-			total += 2;
-		}
-		putchar('\n');
-	}
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
+	putchar('\n');
 }
 
 /*****************************************************************************
@@ -2238,7 +2157,7 @@ pic14_dumpdeviceid(struct k8048 *k)
 	printf("\n");
 
 	if (pic14_map[pic14_index].datasheet == DS41191C)
-		pic14_dumposccal(k);
+		printf("[%04X] [OSCCAL]   %04X\n", PIC14_OSCCALADDR, pic14_conf.osccal);
 
 	for (uint32_t i = 0; i < 4; i++) {
 		printf("[%04X] [USERID%d]  ", pic14_map[pic14_index].configaddr + i, i);
@@ -2278,7 +2197,7 @@ pic14_dumpdeviceid(struct k8048 *k)
 
 	if (pic14_map[pic14_index].ncalib) {
 		uint16_t caddr = pic14_map[pic14_index].configaddr +
-			PIC14_CONFIG_WORD1 + pic14_map[pic14_index].nconfig;
+			PIC14_CONFIG_OFFSET + pic14_map[pic14_index].nconfig;
 
 		if (pic14_map[pic14_index].ncalib == 1) {
 			printf("[%04X] [CALIB]    %04X\n", caddr, pic14_conf.calib[0]);
@@ -2305,7 +2224,7 @@ pic14_dumposccal(struct k8048 *k)
 	if (pic14_map[pic14_index].datasheet != DS41191C) {
 		printf("%s: error: OSCCAL is not supported on this device\n", __func__);
 	} else {
-		printf("[%04X] [OSCCAL]   %04X\n", PIC14_OSCCALADDR, pic14_read_osccal(k));
+		printf("[%04X] [OSCCAL]   %04X\n", PIC14_OSCCALADDR, pic14_conf.osccal);
 	}
 }
 
@@ -2317,30 +2236,28 @@ pic14_dumpconfig(struct k8048 *k, int mode)
 {
 	if (pic14_map[pic14_index].nconfig == 1) {
 		printf("[%04X] [CONFIG]   %04X\n",
-			pic14_map[pic14_index].configaddr + PIC14_CONFIG_WORD1,
+			pic14_map[pic14_index].configaddr + PIC14_CONFIG_OFFSET,
 				pic14_conf.config[0]);
 	} else for (uint32_t i = 0; i < pic14_map[pic14_index].nconfig; ++i) {
 		printf("[%04X] [CONFIG%d]  %04X\n",
-			i + pic14_map[pic14_index].configaddr + PIC14_CONFIG_WORD1, i + 1,
+			i + pic14_map[pic14_index].configaddr + PIC14_CONFIG_OFFSET, i + 1,
 				pic14_conf.config[i]);
 	}
 #ifdef VERBOSE
 	if (mode == PIC_VERBOSE) switch (pic14_map[pic14_index].datasheet) {
-	case DS30034D:	pic14_dumpconfig_16f627(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS30034D:	pic14_dumpconfig_16f627(pic14_conf.config[0]);
 			break;
-	case DS39589C:	pic14_dumpconfig_16f877a(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS39589C:	pic14_dumpconfig_16f877a(pic14_conf.config[0]);
 			break;
-	case DS41191C:	pic14_dumpconfig_12f675(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS41191C:	pic14_dumpconfig_12f675(pic14_conf.config[0]);
 			break;
-	case DS39607B:	pic14_dumpconfig_16f88(pic14_conf.index[PIC14_CONFIG_WORD1],
-				pic14_conf.index[PIC14_CONFIG_WORD2]);
+	case DS39607B:	pic14_dumpconfig_16f88(pic14_conf.config[0], pic14_conf.config[1]);
 			break;
-	case DS41196F:	pic14_dumpconfig_16f628a(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS41196F:	pic14_dumpconfig_16f628a(pic14_conf.config[0]);
 			break;
-	case DS41204G:	pic14_dumpconfig_12f683(pic14_conf.index[PIC14_CONFIG_WORD1]);
+	case DS41204G:	pic14_dumpconfig_12f683(pic14_conf.config[0]);
 			break;
-	case DS41287D:	pic14_dumpconfig_16f886(pic14_conf.index[PIC14_CONFIG_WORD1],
-				pic14_conf.index[PIC14_CONFIG_WORD2]);
+	case DS41287D:	pic14_dumpconfig_16f886(pic14_conf.config[0], pic14_conf.config[1]);
 			break;
 	}
 #endif
@@ -2998,6 +2915,6 @@ pic14_dumpdevice(struct k8048 *k)
 
 	/* CONFIG */
 	for (i = 0; i < pic14_map[pic14_index].nconfig; ++i)
-		pic_dumpword16(i + pic14_map[pic14_index].configaddr + PIC14_CONFIG_WORD1,
+		pic_dumpword16(i + pic14_map[pic14_index].configaddr + PIC14_CONFIG_OFFSET,
 			pic14_conf.config[i]);
 }

@@ -106,13 +106,10 @@ getdotfile(struct k8048 *k)
  * Configuration
  */
 void
-getconf(struct k8048 *k, char *e)
+getconf(struct k8048 *k)
 {
 	FILE *f1;
 	char line[STRLEN];
-
-	/* Clear configuration */
-	bzero(k, sizeof(struct k8048));
 
 	/* Configure defaults */
 	io_config(k);
@@ -121,114 +118,69 @@ getconf(struct k8048 *k, char *e)
 	getdotfile(k);
 
 	/* Load dot file when available */
-#ifdef DEBUG
-	printf("%s: DOTFILE=%s\n", __func__, k->dotfile);
-#endif
 	if (k->dotfile[0] && (f1 = fopen(k->dotfile, "rb")) != NULL) {
-
 		while (fgets(line, STRLEN, f1) != NULL) {
-			line[strlen(line) - 1] = '\0'; /* Remove LF */
+			/* Remove CRLF */
+			rmcrlf(line, STRLEN);
 
 			if (mystrcasestr(line, "DEVICE=") == line) {
-#ifdef DEBUG
-				printf("%s: DEVICE=%s\n", __func__, &line[7]);
-#endif
 				strncpy(k->device, &line[7], STRLEN);
 			}
-			else if (mystrcasestr(line, "SLEEP=") == line) {
-#ifdef DEBUG
-				printf("%s: SLEEP=%s\n", __func__, &line[6]);
+#ifdef TTY
+			else if (mystrcasestr(line, "BAUDRATE=") == line) {
+				k->baudrate = strtoul(&line[9], NULL, 0);
+			}
 #endif
+			else if (mystrcasestr(line, "SLEEP=") == line) {
 				k->sleep_low = strtoul(&line[6], NULL, 0);
 				k->sleep_high = k->sleep_low;
 			}
 			else if (mystrcasestr(line, "SLEEP_LOW=") == line) {
-#ifdef DEBUG
-				printf("%s: SLEEP_LOW=%s\n", __func__, &line[10]);
-#endif
 				k->sleep_low = strtoul(&line[10], NULL, 0);
 			}
 			else if (mystrcasestr(line, "SLEEP_HIGH=") == line) {
-#ifdef DEBUG
-				printf("%s: SLEEP_HIGH=%s\n", __func__, &line[11]);
-#endif
 				k->sleep_high = strtoul(&line[11], NULL, 0);
 			}
 			else if (mystrcasestr(line, "BITRULES=") == line) {
-#ifdef DEBUG
-				printf("%s: BITRULES=%s\n", __func__, &line[9]);
-#endif
 				k->bitrules = strtoul(&line[9], NULL, 0);
 			}
 			else if (mystrcasestr(line, "BUSY=") == line) {
-#ifdef DEBUG
-				printf("%s: BUSY=%s\n", __func__, &line[5]);
-#endif
 				k->busy = strtoul(&line[5], NULL, 0);
 			}
 #if defined(RPI) || defined(BITBANG)
 			else if (mystrcasestr(line, "VPP=") == line) {
-#ifdef DEBUG
-				printf("%s: VPP=%s\n", __func__, &line[4]);
-#endif
 				k->vpp = strtoul(&line[4], NULL, 0);
 			}
 			else if (mystrcasestr(line, "PGM=") == line) {
-#ifdef DEBUG
-				printf("%s: PGM=%s\n", __func__, &line[4]);
-#endif
 				k->pgm = strtoul(&line[4], NULL, 0);
 			}
 			else if (mystrcasestr(line, "PGC=") == line) {
-#ifdef DEBUG
-				printf("%s: PGC=%s\n", __func__, &line[4]);
-#endif
 				k->pgc = strtoul(&line[4], NULL, 0);
 			}
 			else if (mystrcasestr(line, "PGD=") == line) {
-#ifdef DEBUG
-				printf("%s: PGD=%s\n", __func__, &line[4]);
-#endif
 				k->pgdi = strtoul(&line[4], NULL, 0);
 				k->pgdo = k->pgdi;
 			}
 			else if (mystrcasestr(line, "PGDO=") == line) {
-#ifdef DEBUG
-				printf("%s: PGDO=%s\n", __func__, &line[5]);
-#endif
 				k->pgdo = strtoul(&line[5], NULL, 0);
 			}
 			else if (mystrcasestr(line, "PGDI=") == line) {
-#ifdef DEBUG
-				printf("%s: PGDI=%s\n", __func__, &line[5]);
-#endif
 				k->pgdi = strtoul(&line[5], NULL, 0);
 			}
 #endif /* RPI || BITBANG */
+
 #ifdef MCP23017
 			else if (mystrcasestr(line, "MCP=") == line) {
-#ifdef DEBUG
-				printf("%s: MCP=%s\n", __func__, &line[4]);
-#endif
 				k->mcp = strtoul(&line[4], NULL, 0);
 			}
 #endif /* MCP23017 */
 			else if (mystrcasestr(line, "FWSLEEP=") == line) {
-#ifdef DEBUG
-				printf("%s: FWSLEEP=%s\n", __func__, &line[8]);
-#endif
 				k->fwsleep = strtoul(&line[8], NULL, 0);
 			}
 			else if (mystrcasestr(line, "DEBUG=") == line) {
-#ifdef DEBUG
-				printf("%s: DEBUG=%s\n", __func__, &line[6]);
-#endif
 				k->debug = strtoul(&line[6], NULL, 0);
 			}
 			else if (mystrcasestr(line, "ETC=") == line) {
-#ifdef DEBUG
-				printf("%s: ETC=%s\n", __func__, &line[4]);
-#endif
 				strncpy(k->etc, &line[4], STRLEN);
 			}
 		}

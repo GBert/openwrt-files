@@ -116,7 +116,7 @@ uint8_t icspio_common(void);
 #define ERRINVALID  (5)
 
 /* Clock Input Time-out Reload */
-#define ICSPIO_TOLOAD (FCY / 64)
+#define ICSPIO_TOLOAD (FCY / 32)
 
 /* I/O Check-Sum */
 uint8_t icspio_checksum;
@@ -154,8 +154,10 @@ icspio_waithigh(void)
 	uint32_t timeout = ICSPIO_TOLOAD;
 
 	do {
-		if (ICSPIO_PORTCLK == 1)
+		if (ICSPIO_PORTCLK)
 			return 0;
+
+		asm volatile ("NOP");
 	}
 	while (--timeout);
 
@@ -173,8 +175,10 @@ icspio_waitlow(void)
 	uint32_t timeout = ICSPIO_TOLOAD;
 
 	do {
-		if (ICSPIO_PORTCLK == 0)
+		if (!ICSPIO_PORTCLK)
 			return 0;
+
+		asm volatile ("NOP");
 	}
 	while (--timeout);
 
@@ -236,8 +240,8 @@ icspio_getbyte(uint8_t *buffer)
 		return ERRTIMEOUT;
 	}
 
-	/* Start bit low? */
-	if (ICSPIO_PORTDAT != 0) {
+	/* Start bit should be low */
+	if (ICSPIO_PORTDAT) {
 		return ERRPROTOCOL;
 	}
 
@@ -247,7 +251,7 @@ icspio_getbyte(uint8_t *buffer)
 			return ERRTIMEOUT;
 		}
 
-		/* Data bit high? */
+		/* Data bit */
 		if (ICSPIO_PORTDAT) {
 			*buffer |= mask;
 			parity ^= 1;
@@ -271,8 +275,8 @@ icspio_getbyte(uint8_t *buffer)
 		return ERRTIMEOUT;
 	}
 
-	/* Stop bit high? */
-	if (ICSPIO_PORTDAT != 1) {
+	/* Stop bit should be high */
+	if (!ICSPIO_PORTDAT) {
 		return ERRPROTOCOL;
 	}
 

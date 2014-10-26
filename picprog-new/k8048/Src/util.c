@@ -37,7 +37,7 @@
  *****************************************************************************/
 
 /*
- * Are you sure?
+ * are you sure?
  */
 int
 areyousure(const char *s)
@@ -72,4 +72,48 @@ mystrcasestr(const char *haystack, const char *needle)
 		}
 	}
 	return NULL;
+}
+
+/*
+ * return the value of a hex nibble
+ */
+uint8_t
+hex2nibble(const char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return 0;
+}
+
+/*
+ * return the value of a hex byte
+ */
+uint8_t
+hex2byte(const char *s)
+{
+	if (s[0] && s[1])
+		return hex2nibble(s[0]) << 4 | hex2nibble(s[1]);
+	return 0;
+}
+
+/*
+ * return string with CRLF removed from end
+ */
+char *
+rmcrlf(char *s, int slen)
+{
+	int l;
+
+	s[slen - 1] = '\0';
+
+	l = strlen(s) - 1;
+
+	while (l >= 0 && (s[l]=='\r' || s[l]=='\n'))
+		s[l--]= '\0';
+
+	return s;
 }

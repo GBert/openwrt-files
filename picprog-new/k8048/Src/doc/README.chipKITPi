@@ -72,8 +72,8 @@ PIC32MX250F128B		RASPBERRY Pi
 ===============		============
 
 1	!MCLR  --330R--	GPIO4
-4	PGD1   --------	GPIO15
-5	PGC1   --------	GPIO14
+4	PGD1   --------	GPIO15 Rx
+5	PGC1   --------	GPIO14 Tx
 
 ICSP is wired internally to the chipKITPi and no other wiring is necessary.
 
@@ -88,6 +88,20 @@ PGC=14
 PGD=15
 PGM=255
 
-Firmware update
+The BITRULES above release the R-Pi GPIOs after programming and return GPIO14/15
+to the UART mode of operation for uploading objects to the bootloader.
+
+Program firmware
 ================
-k32 program chipKIT_Pi.hex
+% k32 program chipKIT_Pi.hex
+Total: 2564
+
+Verify firmware
+===============
+% k32 verify chipKIT_Pi.hex
+Total: 2564 Fail: 0
+
+Upload object
+=============
+% kload /dev/ttyAMA0 led.hex avr
+Total: 1696

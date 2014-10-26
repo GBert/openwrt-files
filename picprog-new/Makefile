@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=picprog-new
-PKG_RELEASE:=3.04
+PKG_RELEASE:=3.05
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1

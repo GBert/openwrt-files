@@ -67,10 +67,16 @@ io_signal_off()
 void
 io_config(struct k8048 *k)
 {
+	/* Reset */
+	bzero(k, sizeof(struct k8048));
+
+	k->f = stderr;			/* Messages go here */
+
 	k->iot = IONONE;
 #ifdef TTY
-	/* tty */
+	/* K8048/K8076 tty */
 	strncpy(k->device, SERIAL_DEVICE, STRLEN);
+	k->baudrate = 115200;		/* not speed_t      */
 #endif
 #if defined(RPI) || defined(BITBANG)
 	/* rpi */
@@ -106,9 +112,10 @@ io_open(struct k8048 *k)
 		io_exit(k, EX_SOFTWARE); /* Panic */
 	}
 #ifdef TTY
-	if ((strstr(k->device, "/dev/cu") == k->device) || (strstr(k->device, "/dev/tty") == k->device)) {
+	if (strstr(k->device, "/dev/tty") == k->device) {
 		/* tty */
-		if (serial_open(k->device) < 0)
+		k->serial_port = serial_open(k->device, B0);
+		if (k->serial_port < 0)
 			return -1;
 		k->iot = IOTTY;
 		io_signal_on();
@@ -219,7 +226,7 @@ io_close(struct k8048 *k, int run)
 #ifdef TTY
 	case IOTTY:
 		/* tty */
-		serial_close();
+		serial_close(k->serial_port);
 		break;
 #endif
 #ifdef RPI
@@ -312,7 +319,7 @@ io_usleep(struct k8048 *k, uint32_t n)
 	if (k->iot == IOTTY && n < 10) {
 		for (uint32_t i = 0; i < n; ++i) {
 			/* 1us ttyS, 3ms ttyUSB */
-			get_cts();
+			get_cts(k->serial_port);
 		}
 		return;
 	}
@@ -401,7 +408,7 @@ io_set_vpp(struct k8048 *k, uint8_t vpp)
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty (pgm not supported) */
-		set_tx(vpp);
+		set_tx(k->serial_port, vpp);
 		break;
 #endif
 #ifdef RPI
@@ -442,7 +449,7 @@ io_set_pgd(struct k8048 *k, uint8_t pgd)
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		set_dtr(pgd);
+		set_dtr(k->serial_port, pgd);
 		break;
 #endif
 #ifdef RPI
@@ -483,7 +490,7 @@ io_set_pgc(struct k8048 *k, uint8_t pgc)
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		set_rts(pgc);
+		set_rts(k->serial_port, pgc);
 		break;
 #endif
 #ifdef RPI
@@ -522,7 +529,7 @@ io_get_pgd(struct k8048 *k)
 	switch (k->iot) {
 #ifdef TTY
 	case IOTTY:	/* tty */
-		pgd = get_cts();
+		pgd = get_cts(k->serial_port);
 		break;
 #endif
 #ifdef RPI

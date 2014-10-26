@@ -39,30 +39,38 @@
  *****************************************************************************/
 
 struct pic_ops pic16_ops = {
-	.arch                      = ARCH16BIT,
-	.selector                  = pic16_selector,
-	.read_config_memory        = pic16_read_config_memory,
-	.get_program_size          = pic16_get_program_size,
-	.get_data_size             = pic16_get_data_size,
-	.get_executive_size        = NULL,
-	.get_boot_size             = NULL,
-	.read_program_memory_block = pic16_read_program_memory_block,
-	.read_data_memory_block    = pic16_read_data_memory_block,
-	.write_panel               = pic16_write_panel,
-	.program                   = pic16_program,
-	.verify                    = pic16_verify,
-	.dryrun                    = pic16_dryrun,
-	.bulk_erase                = pic16_bulk_erase,
-	.row_erase                 = pic16_row_erase,
-	.dumpdeviceid              = pic16_dumpdeviceid,
-	.dumpconfig                = pic16_dumpconfig,
-	.dumposccal                = NULL,
-	.dumpdevice                = pic16_dumpdevice,
-	.dumpadj                   = 2,
-	.dumphexcode               = pic16_dumphexcode,
-	.dumpinhxcode              = pic16_dumpinhxcode,
-	.dumphexdata               = pic16_dumphexdata,
-	.dumpinhxdata              = pic16_dumpinhxdata,
+	.arch				= ARCH16BIT,
+	.align				= sizeof(uint8_t),
+	.selector			= pic16_selector,
+	.program_begin			= pic16_program_begin,
+	.program_data			= pic16_program_data,
+	.program_end			= pic16_program_end,
+	.verify_begin			= pic16_program_verify,
+	.verify_data			= pic16_verify_data,
+	.verify_end			= pic16_standby,
+	.view_data			= pic16_view_data,
+	.read_config_memory		= pic16_read_config_memory,
+	.get_program_size		= pic16_get_program_size,
+	.get_data_size			= pic16_get_data_size,
+	.get_executive_size		= NULL,
+	.get_boot_size			= NULL,
+	.read_program_memory_block	= pic16_read_program_memory_block,
+	.read_data_memory_block		= pic16_read_data_memory_block,
+	.write_panel			= pic16_write_panel,
+	.bulk_erase			= pic16_bulk_erase,
+	.write_osccal			= NULL,
+	.write_bandgap			= NULL,
+	.write_calib			= NULL,
+	.row_erase			= pic16_row_erase,
+	.dumpdeviceid			= pic16_dumpdeviceid,
+	.dumpconfig			= pic16_dumpconfig,
+	.dumposccal			= NULL,
+	.dumpdevice			= pic16_dumpdevice,
+	.dumpadj			= 2,
+	.dumphexcode			= pic16_dumphexcode,
+	.dumpinhxcode			= pic16_dumpinhxcode,
+	.dumphexdata			= pic16_dumphexdata,
+	.dumpinhxdata			= pic16_dumpinhxdata,
 };
 
 uint32_t
@@ -797,7 +805,7 @@ pic16_erase_row(struct k8048 *k, uint32_t address, uint32_t nrows)
  * DISABLE PROTECTION AND BULK ERASE
  */
 void
-pic16_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint16_t bandgap __attribute__((unused)))
+pic16_bulk_erase(struct k8048 *k)
 {	
 	pic16_program_verify(k);
 
@@ -977,8 +985,8 @@ pic16_row_erase(struct k8048 *k, uint32_t row, uint32_t nrows)
  * CONFIG   300000 ... 30000d or XXXXXX ... XXXXXX + 0xd
  * DEVICEID 3ffffe ... 3fffff
  */
-void
-pic16_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
+int
+pic16_read_config_memory(struct k8048 *k)
 {
 	uint32_t dev;
 
@@ -999,9 +1007,9 @@ pic16_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 			}
 		}
 		if (pic16_map[dev].deviceid == 0) {
-			printf("%s: fatal error: unknown device: [%s]\n", __func__, k->devicename);
+			printf("%s: information: unknown device: [%s]\n", __func__, k->devicename);
 			pic16_standby(k);
-			io_exit(k, EX_SOFTWARE); /* Panic */
+			return -1;
 		}
 	}
 	/* Device detect */
@@ -1029,14 +1037,14 @@ pic16_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 			 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 			 */
 			if (pic16_conf.deviceid == 0x0000 || pic16_conf.deviceid == 0xFFFF) {
-				printf("%s: fatal error: %s.\n",
+				printf("%s: information: %s.\n",
 					__func__, io_fault(k, pic16_conf.deviceid));
 			} else {
-				printf("%s: fatal error: device unknown: [%04X]\n",
+				printf("%s: information: device unknown: [%04X]\n",
 					__func__, pic16_conf.deviceid);
 			}
 			pic16_standby(k);
-			io_exit(k, EX_SOFTWARE); /* Panic */
+			return -1;
 		}
 	}
 
@@ -1056,6 +1064,8 @@ pic16_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		pic16_conf.config[i] = pic16_table_read_post_increment(k);
 
 	pic16_standby(k);
+
+	return 0;
 }
 
 /*
@@ -1381,7 +1391,7 @@ pic16_write_config(struct k8048 *k)
  *	f00000 .. ffffff
  */
 uint32_t
-pic16_getregion(uint32_t address)
+pic16_getregion(struct k8048 *k, uint32_t address)
 {
 	/* CODE */
 	uint32_t code_high = (pic16_map[pic16_index].flash << 1) - 1;
@@ -1399,15 +1409,17 @@ pic16_getregion(uint32_t address)
 	}
 	/* IDLOC/CONFIG */
 	if (pic16_map[pic16_index].datasheet != DS39687E) { /* !PIC18J */
-
+		/* IDLOC */
 		if (address >= PIC16_ID_LOW && address <= PIC16_ID_HIGH) {
 			return PIC_REGIONID;
 		}
+		/* CONFIG */
 		if (address >= PIC16_CONFIG_LOW && address <= PIC16_CONFIG_HIGH) {
 			return PIC_REGIONCONFIG;
 		}
 	}
-	printf("%s: warning: address unsupported [%06X]\n", __func__, address);
+	if (k->f)
+	        fprintf(k->f, "%s: warning: address unsupported [%06X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1416,51 +1428,48 @@ pic16_getregion(uint32_t address)
  *
  *  RETURN REGION IF WRITING SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic16_init_writeregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
 	case PIC_REGIONCODE:
 		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONCODE, pic16_map[pic16_index].panelsize);
 		return region;
-		break;
 	case PIC_REGIONID:
 		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONID, PIC16_ID_PANEL_SIZE);
 		return region;
-		break;
 	case PIC_REGIONCONFIG:
 		return region;
-		break;
 	case PIC_REGIONDATA:
 		pic16_init_data_memory_access(k);
 		return region;
-		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
- * WRITE REGION (CACHE CONFIG WORDS)
+ * WRITE REGION (CACHE CONFIG)
  */
-void
+static inline void
 pic16_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint8_t data)
 {
 	switch (region) {
 	case PIC_REGIONCODE:
 	case PIC_REGIONID:
 		pic_write_panel(k, PIC_PANEL_UPDATE, address, data);
-		break;
+		return;
 	case PIC_REGIONCONFIG:
 		pic16_conf.config[address & PIC16_CONFIG_MASK] = data;
-		break;
+		return;
 	case PIC_REGIONDATA:
 		pic16_set_data_pointer(k, address & PIC16_DATA_MASK);
 		pic16_write_data_memory(k, data);
-		break;
-	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		break;
+		return;
 	}
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*
@@ -1468,7 +1477,7 @@ pic16_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint8_t da
  *
  *  RETURN REGION IF VERIFY SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic16_init_verifyregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
@@ -1477,13 +1486,12 @@ pic16_init_verifyregion(struct k8048 *k, uint32_t region)
 	case PIC_REGIONCONFIG:
 		pic16_init_code_memory_access(k);
 		return region;
-		break;
 	case PIC_REGIONDATA:
 		pic16_init_data_memory_access(k);
 		return region;
-		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1492,7 +1500,7 @@ pic16_init_verifyregion(struct k8048 *k, uint32_t region)
  *
  *  RETURN BYTE FAILURE COUNT
  */
-uint32_t
+static inline uint32_t
 pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint8_t data)
 {
 	uint8_t vdata = 0;
@@ -1505,165 +1513,108 @@ pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		vdata = pic16_table_read_post_increment(k);
 		break;
 	case PIC_REGIONCONFIG:
-		/* Can't verify the config area (assume okay) */
+		/* Can't verify config */
 		return 0;
-		break;
 	case PIC_REGIONDATA:
 		pic16_set_data_pointer(k, address & PIC16_DATA_MASK);
 		vdata = pic16_read_data_memory(k);
 		break;
-	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	default:if (k->f)
+			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
+				__func__, region);
 		return 0;
-		break;
 	}
 	if (vdata != data) {
-		printf("%s: error: read [%02X] expected [%02X] at [%05X]\n",
-			__func__, vdata, data, address);
+		if (k->f)
+			fprintf(k->f, "%s: error: read [%02X] expected [%02X] at [%06X]\n",
+				__func__, vdata, data, address);
 		return 1;
 	}
 	return 0;
 }
 
+/*****************************************************************************
+ *
+ * Program & verify
+ *
+ *****************************************************************************/
+
 /*
- * PROGRAM FILE
+ * BEGIN PROGRAMMING
  */
 void
-pic16_program(struct k8048 *k, char *filename, int blank)
+pic16_program_begin(struct k8048 *k)
 {
-	uint32_t PC_address;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t total = 0;
-
-	/* Initialise device for programming */
-	if (blank)
-		pic16_bulk_erase(k, PIC_VOID, PIC_VOID);
-	
-	/*
-	 * Program device
-	 */
-
 	pic16_program_verify(k);
 	pic16_write_panel_init(k);
+}
 
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint8_t))) {
-		pic16_standby(k);
-		return;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = k->pdata[i]->address;
-		new_region = pic16_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
+/*
+ * PROGRAM DATA
+ */
+uint32_t
+pic16_program_data(struct k8048 *k, uint32_t current_region, pic_data *pdata)
+{
+	uint32_t address, new_region;
+
+	for (uint32_t i = 0; i < pdata->nbytes; ++i) {
+		address = pdata->address + i;
+		new_region = pic16_getregion(k, address);
 		if (new_region != current_region) {
 			pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 			current_region = pic16_init_writeregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
 		}
-
-		/* For each byte in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j++) {
-			pic16_writeregion(k, PC_address++, current_region, k->pdata[i]->bytes[j]);
-			total++;
-		}
-	}
-	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
-
-	pic16_standby(k);
-
-	/* Finalise device programming (write config words) */
-	if (blank)
-		pic16_write_config(k);
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
-}
-
-/*
- * VERIFY FILE
- */
-uint32_t
-pic16_verify(struct k8048 *k, char *filename)
-{
-	uint32_t PC_address;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t fail = 0, total = 0;
-
-	/*
-	 * Verify device
-	 */
-
-	pic16_program_verify(k);
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint8_t))) {
-		pic16_standby(k);
-		return 1;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = k->pdata[i]->address;
-		new_region = pic16_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
+		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		if (new_region != current_region) {
-			current_region = pic16_init_verifyregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
-		}
-
-		/* For each byte in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 1) {
-			fail += pic16_verifyregion(k, PC_address++, current_region, j, k->pdata[i]->bytes[j]);
-			total++;
-		}
+		pic16_writeregion(k, address, current_region, pdata->bytes[i]);
 	}
-	pic16_standby(k);
-
-	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
-
-	inhx32_free(k);
-
-	return fail;
+	return current_region;
 }
- 
+
 /*
- * DRY RUN
+ * END PROGRAMMING
  */
 void
-pic16_dryrun(struct k8048 *k, char *filename)
+pic16_program_end(struct k8048 *k, int config)
 {
-	uint32_t total = 0;
-
-	/*
-	 * Dry run
-	 */
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint8_t))) {
-		pic16_standby(k);
-		return;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		printf("[%04X] ", k->pdata[i]->address);
-
-		/* For each byte in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 1) {
-			printf("%02X ", k->pdata[i]->bytes[j]);
-			total++;
-		}
-		putchar('\n');
-	}
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
+	pic16_standby(k);
+        if (config)
+                pic16_write_config(k);
 }
- 
+
+/*
+ * VERIFY DATA
+ */
+uint32_t
+pic16_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
+{
+	uint32_t address, new_region;
+
+	for (uint32_t i = 0; i < pdata->nbytes; ++i) {
+		address = pdata->address + i;
+		new_region = pic16_getregion(k, address);
+		if (new_region != current_region)
+			current_region = pic16_init_verifyregion(k, new_region);
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		(*fail) += pic16_verifyregion(k, address, current_region, i, pdata->bytes[i]);
+	}
+	return current_region;
+}
+
+/*
+ * VIEW DATA
+ */
+void
+pic16_view_data(struct k8048 *k, pic_data *pdata)
+{
+	printf("[%06X] ", pdata->address);
+	for (uint32_t i = 0; i < pdata->nbytes; ++i)
+		printf("%02X ", pdata->bytes[i]);
+	putchar('\n');
+}
+
 /*****************************************************************************
  *
  * Diagnostic functions

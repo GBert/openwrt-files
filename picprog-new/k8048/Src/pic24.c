@@ -39,30 +39,38 @@
  *****************************************************************************/
 
 struct pic_ops pic24_ops = {
-	.arch                      = ARCH24BIT,
-	.selector                  = pic24_selector,
-	.read_config_memory        = pic24_read_config_memory,
-	.get_program_size          = pic24_get_program_size,
-	.get_data_size             = pic24_get_data_size,
-	.get_executive_size        = pic24_get_executive_size,
-	.get_boot_size             = NULL,
-	.read_program_memory_block = pic24_read_program_memory_block,
-	.read_data_memory_block    = pic24_read_data_memory_block,
-	.write_panel               = pic24_write_panel,
-	.program                   = pic24_program,
-	.verify                    = pic24_verify,
-	.dryrun                    = pic24_dryrun,
-	.bulk_erase                = pic24_bulk_erase,
-	.row_erase                 = NULL,
-	.dumpdeviceid              = pic24_dumpdeviceid,
-	.dumpconfig                = pic24_dumpconfig,
-	.dumposccal                = NULL,
-	.dumpdevice                = pic24_dumpdevice,
-	.dumpadj                   = 2,
-	.dumphexcode               = pic24_dumphexcode,
-	.dumpinhxcode              = pic24_dumpinhxcode,
-	.dumphexdata               = pic24_dumphexdata,
-	.dumpinhxdata              = pic24_dumpinhxdata,
+	.arch				= ARCH24BIT,
+	.align				= sizeof(uint32_t),
+	.selector			= pic24_selector,
+	.program_begin			= pic24_program_begin,
+	.program_data			= pic24_program_data,
+	.program_end			= pic24_program_end,
+	.verify_begin			= pic24_program_verify,
+	.verify_data			= pic24_verify_data,
+	.verify_end			= pic24_standby,
+	.view_data			= pic24_view_data,
+	.read_config_memory		= pic24_read_config_memory,
+	.get_program_size		= pic24_get_program_size,
+	.get_data_size			= pic24_get_data_size,
+	.get_executive_size		= pic24_get_executive_size,
+	.get_boot_size			= NULL,
+	.read_program_memory_block	= pic24_read_program_memory_block,
+	.read_data_memory_block		= pic24_read_data_memory_block,
+	.write_panel			= pic24_write_panel,
+	.bulk_erase			= pic24_bulk_erase,
+	.write_osccal			= NULL,
+	.write_bandgap			= NULL,
+	.write_calib			= NULL,
+	.row_erase			= NULL,
+	.dumpdeviceid			= pic24_dumpdeviceid,
+	.dumpconfig			= pic24_dumpconfig,
+	.dumposccal			= NULL,
+	.dumpdevice			= pic24_dumpdevice,
+	.dumpadj			= 2,
+	.dumphexcode			= pic24_dumphexcode,
+	.dumpinhxcode			= pic24_dumpinhxcode,
+	.dumphexdata			= pic24_dumphexdata,
+	.dumpinhxdata			= pic24_dumpinhxdata,
 };
 
 uint32_t
@@ -1145,7 +1153,7 @@ pic24_dsPIC33E_PIC24E_erase(struct k8048 *k)
  * DISABLE PROTECTION AND BULK ERASE
  */
 void
-pic24_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint16_t bandgap __attribute__((unused)))
+pic24_bulk_erase(struct k8048 *k)
 {
 	/* RESET CONFIG & FUID FOR ERASURE */
 	memset(pic24_conf.fuid, -1, sizeof(uint32_t) * PIC24_FUID_MAX);
@@ -1211,8 +1219,8 @@ pic24_get_dev(struct k8048 *k)
 /*
  * GET CONFIGURATION
  */
-void
-pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
+int
+pic24_read_config_memory(struct k8048 *k)
 {
 	uint32_t dev;
 
@@ -1232,8 +1240,8 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 			}
 		}
 		if (pic24_map[dev].deviceid == 0) {
-			printf("%s: fatal error: unknown device: [%s]\n", __func__, k->devicename);
-			io_exit(k, EX_SOFTWARE); /* Panic */
+			printf("%s: information: unknown device: [%s]\n", __func__, k->devicename);
+			return -1;
 		}
 	}
 
@@ -1277,14 +1285,14 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	}
 	if (!pic24_map[pic24_index].deviceid) {
 		if (pic24_conf.deviceid == 0x0000 || pic24_conf.deviceid == 0xFFFF) {
-			printf("%s: fatal error: %s.\n",
+			printf("%s: information: %s.\n",
 				__func__, io_fault(k, pic24_conf.deviceid));
 		} else {
-			printf("%s: fatal error: device unknown: [%06X] [%06X]\n",
+			printf("%s: information: device unknown: [%06X] [%06X]\n",
 				__func__, pic24_conf.deviceid, pic24_conf.revision);
 		}
 		pic24_standby(k);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+		return -1;
 	}
 
 	/* Device family */
@@ -1327,6 +1335,8 @@ pic24_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	}
 
 	pic24_standby(k);
+
+	return 0;
 }
 
 /*
@@ -1899,7 +1909,7 @@ pic24_write_config(struct k8048 *k)
  *	8005C0 .. 8005FE
  */
 uint32_t
-pic24_getregion(uint32_t address)
+pic24_getregion(struct k8048 *k, uint32_t address)
 {
 	/* CODE */
 	uint32_t code_high = (pic24_map[pic24_index].flash << 1) - 2;
@@ -1945,7 +1955,8 @@ pic24_getregion(uint32_t address)
 			return PIC_REGIONCONFIG;
 		}
 	}
-	printf("%s: warning: address unsupported [%06X]\n", __func__, address);
+	if (k->f)
+		fprintf(k->f, "%s: warning: address unsupported [%06X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1954,7 +1965,7 @@ pic24_getregion(uint32_t address)
  *
  *  RETURN REGION IF WRITING SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic24_init_writeregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
@@ -1967,7 +1978,6 @@ pic24_init_writeregion(struct k8048 *k, uint32_t region)
 		}
 		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONCODE, pic24_map[pic24_index].codepanelsize);
 		return region;
-		break;
 	case PIC_REGIONDATA:
 		if (pic24_map[pic24_index].datapanelsize == 1) { /* PIC24F KM/KL WORD WRITING */
 			/* TBLPAG = 0x7F */
@@ -1975,21 +1985,19 @@ pic24_init_writeregion(struct k8048 *k, uint32_t region)
 			pic24_six(k, 0x880191, 0); /* MOV W1, TBLPAG */
 		}
 		pic_write_panel(k, PIC_PANEL_BEGIN, PIC_REGIONDATA, pic24_map[pic24_index].datapanelsize);
-		return region;
-		break;
 	case PIC_REGIONCONFIG:
 	case PIC_REGIONID:
 		return region;
-		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
  * WRITE REGION (CACHE CONFIG & FUID WORDS)
  */
-void
+static inline void
 pic24_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t data)
 {
 	switch (region) {
@@ -1997,22 +2005,22 @@ pic24_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t d
 	case PIC_REGIONDATA:
 	case PIC_REGIONEXEC:
 		pic_write_panel(k, PIC_PANEL_UPDATE, address >> 1, data);
-		break;
+		return;
 	case PIC_REGIONCONFIG:
 		{
 		uint32_t i = (address - pic24_map[pic24_index].configaddr) >> 1;
 		pic24_conf.config[i] = (data & PIC24_CONFIG_MASK) | PIC24_CONFIG_PENDING;
 		}
-		break;
+		return;
 	case PIC_REGIONID:
 		{
 		uint32_t i = (address - pic24_map[pic24_index].fuidaddr) >> 1;
 		pic24_conf.fuid[i] = (data & PIC24_CONFIG_MASK) | PIC24_CONFIG_PENDING;
 		}
-		break;
-	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		break;
+		return;
 	}
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*
@@ -2020,13 +2028,14 @@ pic24_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t d
  *
  *  RETURN REGION IF VERIFY SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic24_init_verifyregion(struct k8048 *k, uint32_t region)
 {
 	if (region != PIC_REGIONNOTSUP) {
 		return region;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		printf("%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2035,16 +2044,18 @@ pic24_init_verifyregion(struct k8048 *k, uint32_t region)
  *
  *  RETURN BYTE FAILURE COUNT
  */
-uint32_t
+static inline uint32_t
 pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint32_t data)
 {
 	uint32_t vdata = 0;
 
 	if (region == PIC_REGIONNOTSUP) {
-		printf("%s: warning: region unsupported [%d]\n", __func__, region);
+		if (k->f)
+			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
+				__func__, region);
 		return 0;
 	} else if (region == PIC_REGIONCONFIG) {
-		/* Can't verify the config area (assume okay) */
+		/* Can't verify config */
 		return 0;
 	}
 	if (index == 0) {
@@ -2053,161 +2064,106 @@ pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 	}
 	vdata = pic24_table_read24_post_increment(k);
 	if (vdata != data) {
-		printf("%s: error: read [%06X] expected [%06X] at [%06X]\n",
-			__func__, vdata, data, address);
+		if (k->f)
+			fprintf(k->f, "%s: error: read [%06X] expected [%06X] at [%06X]\n",
+				__func__, vdata, data, address);
 		return 4;
 	}
 	return 0;
 }
 
+/*****************************************************************************
+ *
+ * Program & verify
+ *
+ *****************************************************************************/
+
 /*
- * PROGRAM FILE
+ * BEGIN PROGRAMMING
  */
 void
-pic24_program(struct k8048 *k, char *filename, int blank)
+pic24_program_begin(struct k8048 *k)
 {
-	uint32_t PC_address, wdata;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t total = 0;
-
-	/* Initialise device for programming */
-	if (blank)
-		pic24_bulk_erase(k, PIC_VOID, PIC_VOID);
-
-	/*
-	 * Program device
-	 */
-
 	pic24_program_verify(k);
 	pic24_write_program_init(k);
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		pic24_standby(k);
-		return;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = k->pdata[i]->address >> 1;
-		new_region = pic24_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
-		if (new_region != current_region) {
-			pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
-			current_region = pic24_init_writeregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
-		}
-
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16);
-			pic24_writeregion(k, PC_address, current_region, wdata);
-			PC_address += 2;
-			total += 4;
-		}
-	}
-	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
-
-	pic24_standby(k);
-
-	/* Finalise device programming (write config & fuid words) */
-	if (blank)
-		pic24_write_config(k);
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
 }
 
 /*
- * VERIFY FILE
+ * PROGRAM DATA
  */
 uint32_t
-pic24_verify(struct k8048 *k, char *filename)
+pic24_program_data(struct k8048 *k, uint32_t current_region, pic_data *pdata)
 {
-	uint32_t PC_address, fail = 0, total = 0, wdata;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
+	uint32_t address, new_region, wdata;
 
-	/*
-	 * Verify device
-	 */
-
-	pic24_program_verify(k);
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		pic24_standby(k);
-		return 1;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		PC_address = k->pdata[i]->address >> 1;
-		new_region = pic24_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
+	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
+		address = (pdata->address + i) >> 1;
+		new_region = pic24_getregion(k, address);
 		if (new_region != current_region) {
-			current_region = pic24_init_verifyregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
+		        pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
+		        current_region = pic24_init_writeregion(k, new_region);
 		}
-
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16);
-			fail += pic24_verifyregion(k, PC_address, current_region, j, wdata);
-			PC_address += 2;
-			total += 4;
-		}
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8) |
+			(pdata->bytes[i + 2] << 16);
+		pic24_writeregion(k, address, current_region, wdata);
 	}
-	pic24_standby(k);
-
-	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
-
-	inhx32_free(k);
-
-	return fail;
+	return current_region;
 }
 
 /*
- * DRY RUN
+ * END PROGRAMMING
  */
 void
-pic24_dryrun(struct k8048 *k, char *filename)
+pic24_program_end(struct k8048 *k, int config)
 {
-	uint32_t total = 0, wdata;
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
+	pic24_standby(k);
+	if (config)
+		pic24_write_config(k);
+}
 
-	/*
-	 * Dry run
-	 */
+/*
+ * VERIFY DATA
+ */
+uint32_t
+pic24_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
+{
+	uint32_t address, new_region, wdata;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		pic24_standby(k);
-		return;
+	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
+		address = (pdata->address + i) >> 1;
+		new_region = pic24_getregion(k, address);
+		if (new_region != current_region)
+			current_region = pic24_init_verifyregion(k, new_region);
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8) |
+			(pdata->bytes[i + 2] << 16);
+		(*fail) += pic24_verifyregion(k, address, current_region, i, wdata);
 	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; i++) {
-		printf("[%06X] ", k->pdata[i]->address >> 1);
+	return current_region;
+}
 
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16);
-			printf("%06X ", wdata);
-			total += 4;
-		}
-		putchar('\n');
+/*
+ * VIEW DATA
+ */
+void
+pic24_view_data(struct k8048 *k, pic_data *pdata)
+{
+	uint32_t wdata;
+
+	printf("[%06X] ", pdata->address >> 1);
+	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8) |
+			(pdata->bytes[i + 2] << 16);
+		printf("%06X ", wdata);
 	}
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
+	putchar('\n');
 }
 
 /*****************************************************************************

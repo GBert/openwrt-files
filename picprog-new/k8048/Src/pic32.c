@@ -39,30 +39,38 @@
  *****************************************************************************/
 
 struct pic_ops pic32_ops = {
-	.arch			   = ARCH32BIT,
-	.selector		   = pic32_selector,
-	.read_config_memory	   = pic32_read_config_memory,
-	.get_program_size	   = pic32_get_program_size,
-	.get_data_size		   = NULL,
-	.get_executive_size	   = NULL,
-	.get_boot_size		   = pic32_get_boot_size,
-	.read_program_memory_block = pic32_read_program_memory_block,
-	.read_data_memory_block    = NULL,
-	.write_panel		   = pic32_write_panel,
-	.program		   = pic32_program,
-	.verify			   = pic32_verify,
-	.dryrun			   = pic32_dryrun,
-	.bulk_erase		   = pic32_bulk_erase,
-	.row_erase		   = NULL,
-	.dumpdeviceid		   = pic32_dumpdeviceid,
-	.dumpconfig		   = pic32_dumpconfig,
-	.dumposccal		   = NULL,
-	.dumpdevice		   = NULL,
-	.dumpadj		   = 4,
-	.dumphexcode		   = pic32_dumphexcode,
-	.dumpinhxcode		   = pic32_dumpinhxcode,
-	.dumphexdata		   = NULL,
-	.dumpinhxdata		   = NULL,
+	.arch				= ARCH32BIT,
+	.align				= sizeof(uint32_t),
+	.selector			= pic32_selector,
+	.program_begin			= pic32_program_begin,
+	.program_data			= pic32_program_data,
+	.program_end			= pic32_program_end,
+	.verify_begin			= pic32_program_begin,
+	.verify_data			= pic32_verify_data,
+	.verify_end			= pic32_standby,
+	.view_data			= pic32_view_data,
+	.read_config_memory		= pic32_read_config_memory,
+	.get_program_size		= pic32_get_program_size,
+	.get_data_size			= NULL,
+	.get_executive_size		= NULL,
+	.get_boot_size			= pic32_get_boot_size,
+	.read_program_memory_block	= pic32_read_program_memory_block,
+	.read_data_memory_block 	= NULL,
+	.write_panel			= pic32_write_panel,
+	.bulk_erase			= pic32_bulk_erase,
+	.write_osccal			= NULL,
+	.write_bandgap			= NULL,
+	.write_calib			= NULL,
+	.row_erase			= NULL,
+	.dumpdeviceid			= pic32_dumpdeviceid,
+	.dumpconfig			= pic32_dumpconfig,
+	.dumposccal			= NULL,
+	.dumpdevice			= NULL,
+	.dumpadj			= 4,
+	.dumphexcode			= pic32_dumphexcode,
+	.dumpinhxcode			= pic32_dumpinhxcode,
+	.dumphexdata			= NULL,
+	.dumpinhxdata			= NULL,
 };
 
 uint32_t
@@ -500,7 +508,6 @@ pic32_xferdata(struct k8048 *k, uint8_t nbits, uint32_t tdi)
 uint32_t
 pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 {
-	struct timeval tv1, tv2, tv3;
 	uint8_t pracc;
 	uint32_t tdo;
 
@@ -513,16 +520,7 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 	io_clock_bit_4phase(k, 1, 0);		/* SELECT-DR 		*/
 	io_clock_bit_4phase(k, 0, 0);		/* CAPTURE-DR		*/
 
-	gettimeofday(&tv1, NULL);
-	do {
-		pracc =
-		io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR		*/
-
-		gettimeofday(&tv2, NULL);
-		timersub(&tv2, &tv1, &tv3);
-	}
-	while (!pracc && (tv3.tv_sec < PIC_TIMEOUT));
-
+	pracc = io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR		*/
 	if (!pracc) {
 		printf("%s: fatal error: processor access invalid\n", __func__);
 		pic32_standby(k);
@@ -655,7 +653,7 @@ pic32_check_device_status(struct k8048 *k)
  *
  * DS60001145M-page 21
  */
-void
+static inline void
 pic32_erase_device(struct k8048 *k)
 {
 	uint32_t statusVal;
@@ -756,7 +754,7 @@ pic32_enter_serial_execution_mode(struct k8048 *k)
  * DS60001145N-page 23
  */
 void
-pic32_download_pe(struct k8048 *k, uint32_t addr, uint32_t *words, uint32_t nwords)
+pic32_download_pe(struct k8048 *k, uint32_t *words, uint32_t nwords)
 {
 	/* PE LOADER OP CODES */
 	static uint32_t peloader[] = {
@@ -876,7 +874,7 @@ pic32_download_pe(struct k8048 *k, uint32_t addr, uint32_t *words, uint32_t nwor
 	 */
 
 	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
-	pic32_xferfastdata(k, pic32_kseg1(addr));
+	pic32_xferfastdata(k, pic32_kseg1(0x0900));
 	pic32_xferfastdata(k, nwords);
 	for (uint32_t i = 0; i < nwords; ++i)
 		pic32_xferfastdata(k, words[i]);
@@ -1248,51 +1246,25 @@ pic32_pe_read(struct k8048 *k, uint32_t addr, uint16_t nwords, uint32_t *data)
 void
 pic32_pe_load(struct k8048 *k)
 {
+	uint32_t nbytes, *words;
+
 	/* Validate PE */
 	if (pic32_conf.pepath[0] == '\0') {
 		return;
 	}
 
 	/* Get PE */
-	if (!inhx32(k, pic32_conf.pepath, sizeof(uint32_t))) {
+	nbytes = inhx32_memory_create(k, (uint8_t **)&words, pic32_conf.pepath);
+	if (nbytes == 0) {
 		bzero(pic32_conf.pepath, STRLEN);
 		return;
 	}
 
-	/* Allocate PE array */
-	uint32_t nwords = k->nbytes >> 2;
-	uint32_t *words = (uint32_t *)malloc(sizeof(uint32_t) * nwords);
- 	if (words == NULL) {
-		printf("%s: fatal error: malloc failed\n", __func__);
-		pic32_standby(k);
-		io_exit(k, EX_OSERR); /* Panic */
-	}
-
-	/*
-	 * Populate PE array
-	 */
-
-	uint32_t word = 0;
-
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; ++i) {
-
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			uint32_t wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16) |
-				(k->pdata[i]->bytes[j + 3] << 24);
-			words[word++] = wdata;
-		}
-	}
-
 	/* Download PE (upload to chip) */
-	pic32_download_pe(k, k->pdata[0]->address, words, nwords);
+	pic32_download_pe(k, words, nbytes >> 2);
 
-	/* Tidy up */
+	/* Free PE */
 	free(words);
-	inhx32_free(k);
 }
 
 /*
@@ -1325,7 +1297,7 @@ pic32_pe_readword(struct k8048 *k, uint32_t address)
  * DISABLE PROTECTION AND BULK ERASE
  */
 void
-pic32_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint16_t bandgap __attribute__((unused)))
+pic32_bulk_erase(struct k8048 *k)
 {
 	pic32_program_verify(k);
 
@@ -1343,8 +1315,8 @@ pic32_bulk_erase(struct k8048 *k, uint16_t osccal __attribute__((unused)), uint1
 /*
  * GET CONFIGURATION
  */
-void
-pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
+int
+pic32_read_config_memory(struct k8048 *k)
 {
 	/* NULL device */
 	pic32_index = PIC32_SIZE;
@@ -1365,14 +1337,14 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	}
 	if (!pic32_map[dev].deviceid) {
 		if (pic32_conf.deviceid == 0x00000000 || pic32_conf.deviceid == 0xFFFFFFFF) {
-			printf("%s: fatal error: %s.\n",
+			printf("%s: information: %s.\n",
 				__func__, io_fault(k, pic32_conf.deviceid));
 		} else {
-			printf("%s: fatal error: device unknown: [%08X]\n",
+			printf("%s: information: device unknown: [%08X]\n",
 				__func__, pic32_conf.deviceid);
 		}
 		pic32_standby(k);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+		return -1;
 	}
 
 	/* Device recognised */
@@ -1382,10 +1354,9 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 	pic32_conf.status = pic32_check_device_status(k);
 	if (PIC32_MCHP_STATUS_CFGRDY !=
 		(pic32_conf.status & (PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FCBUSY))) {
-		printf("%s: fatal error: status invalid [0x%02X]\n",
-			__func__, pic32_conf.status);
+		printf("%s: information: status invalid [0x%02X]\n", __func__, pic32_conf.status);
 		pic32_standby(k);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+		return -1;
 	}
 
 	/* Device id/rev validation */
@@ -1393,10 +1364,10 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 
 	uint32_t deviceid = pic32_readmemorylocation(k, PIC32_DEVID);
 	if (deviceid != pic32_conf.deviceid) {
-		printf("%s: fatal error: device id invalid [0x%08X] != [0x%08X]\n",
+		printf("%s: information: device id invalid [0x%08X] != [0x%08X]\n",
 			__func__, deviceid, pic32_conf.deviceid);
 		pic32_standby(k);
-		io_exit(k, EX_SOFTWARE); /* Panic */
+		return -1;
 	}
 
 	/* Device family */
@@ -1415,6 +1386,8 @@ pic32_read_config_memory(struct k8048 *k, int flag __attribute__((unused)))
 		pic32_conf.config[3 - i] = pic32_readmemorylocation(k, pic32_conf.configaddr + 4 * i);
 
 	pic32_standby(k);
+
+	return 0;
 }
 
 /*
@@ -1521,7 +1494,7 @@ pic32_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *
  * DS60001145N-page 10
  */
 uint32_t
-pic32_getregion(uint32_t address)
+pic32_getregion(struct k8048 *k, uint32_t address)
 {
 	uint32_t vaddr = pic32_kseg1(address);
 
@@ -1531,7 +1504,8 @@ pic32_getregion(uint32_t address)
 	if (vaddr >= PIC32_BOOT && vaddr < (PIC32_BOOT + (pic32_map[pic32_index].boot << 2))) {
 		return PIC_REGIONBOOT;
 	}
-	printf("%s: warning: address unsupported [%08X]\n", __func__, address);
+	if (k->f)
+		fprintf(k->f, "%s: warning: address unsupported [%08X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1540,7 +1514,7 @@ pic32_getregion(uint32_t address)
  *
  *  RETURN REGION IF WRITING SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic32_init_writeregion(struct k8048 *k, uint32_t region)
 {
 	switch (region) {
@@ -1548,26 +1522,26 @@ pic32_init_writeregion(struct k8048 *k, uint32_t region)
 	case PIC_REGIONBOOT:
 		pic_write_panel(k, PIC_PANEL_BEGIN, region, pic32_map[pic32_index].row << 2);
 		return region;
-		break;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
  * WRITE REGION
  */
-void
+static inline void
 pic32_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t data)
 {
 	switch (region) {
 	case PIC_REGIONCODE:
 	case PIC_REGIONBOOT:
 		pic_write_panel(k, PIC_PANEL_UPDATE, address, data);
-		break;
-	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
-		break;
+		return;
 	}
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*
@@ -1575,13 +1549,14 @@ pic32_writeregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t d
  *
  *  RETURN REGION IF VERIFY SUPPORTED
  */
-uint32_t
+static inline uint32_t
 pic32_init_verifyregion(struct k8048 *k, uint32_t region)
 {
 	if (region != PIC_REGIONNOTSUP) {
 		return region;
 	}
-	printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (k->f)
+		fprintf(k->f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1590,13 +1565,15 @@ pic32_init_verifyregion(struct k8048 *k, uint32_t region)
  *
  *  RETURN BYTE FAILURE COUNT
  */
-uint32_t
-pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint32_t data)
+static inline uint32_t
+pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t data)
 {
 	uint32_t vdata = 0;
 
 	if (region == PIC_REGIONNOTSUP) {
-		printf("%s: warning: region unsupported [%d]\n", __func__, region);
+		if (k->f)
+			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
+				__func__, region);
 		return 0;
 	}
 	if (pic32_conf.pepath[0]) {
@@ -1607,158 +1584,104 @@ pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		vdata = pic32_readmemorylocation(k, pic32_kseg1(address));
 	}
 	if (vdata != data) {
-		printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
-			__func__, vdata, data, pic32_phy(address));
+		if (k->f)
+			printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
+				__func__, vdata, data, pic32_phy(address));
 		return 4;
 	}
 	return 0;
 }
 
+/*****************************************************************************
+ *
+ * Program & verify
+ *
+ *****************************************************************************/
+
 /*
- * PROGRAM FILE
+ * BEGIN PROGRAMMING
  */
 void
-pic32_program(struct k8048 *k, char *filename, int blank)
+pic32_program_begin(struct k8048 *k)
 {
-	uint32_t PC_address;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
-	uint32_t total = 0;
-
-	/* Initialise device for programming */
-	if (blank)
-		pic32_bulk_erase(k, PIC_VOID, PIC_VOID);
-
-	/*
-	 * Program device
-	 */
-
 	pic32_program_verify(k);
 	pic32_enter_serial_execution_mode(k);
 	pic32_pe_load(k);
+}
 
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		pic32_standby(k);
-		return;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; ++i) {
-		PC_address = k->pdata[i]->address;
-		new_region = pic32_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
-			continue;
+/*
+ * PROGRAM DATA
+ */
+uint32_t        
+pic32_program_data(struct k8048 *k, uint32_t current_region, pic_data *pdata)
+{       
+	uint32_t address, new_region;
+
+	for (uint32_t i = 0; i < pdata->nbytes; ++i) {
+		address = pdata->address + i;
+		new_region = pic32_getregion(k, address);
 		if (new_region != current_region) {
 			pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
 			current_region = pic32_init_writeregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
 		}
-
-		/* For each byte in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; ++j) {
-			pic32_writeregion(k, PC_address++, current_region, k->pdata[i]->bytes[j]);
-			total++;
-		}
-	}
-	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
-
-	pic32_standby(k);
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
-}
-
-/*
- * VERIFY FILE
- */
-uint32_t
-pic32_verify(struct k8048 *k, char *filename)
-{
-	uint32_t PC_address, fail = 0, total = 0, wdata = 0;
-	uint32_t new_region, current_region = PIC_REGIONNOTSUP;
-
-	/*
-	 * Verify device
-	 */
-
-	pic32_program_verify(k);
-	pic32_enter_serial_execution_mode(k);
-	pic32_pe_load(k);
-
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		pic32_standby(k);
-		return 1;
-	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; ++i) {
-		PC_address = k->pdata[i]->address;
-		new_region = pic32_getregion(PC_address);
-		if (new_region == PIC_REGIONNOTSUP)
+		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		if (new_region != current_region) {
-			current_region = pic32_init_verifyregion(k, new_region);
-			if (current_region == PIC_REGIONNOTSUP)
-				continue;
-		}
-
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16) |
-				(k->pdata[i]->bytes[j + 3] << 24);
-			fail += pic32_verifyregion(k, PC_address, current_region, j, wdata);
-			PC_address += 4;
-			total += 4;
-		}
+		pic32_writeregion(k, address, current_region, pdata->bytes[i]);
 	}
-
-	pic32_standby(k);
-
-	printf("Total: %u Pass: %u Fail: %u\n", total, total - fail, fail);
-
-	inhx32_free(k);
-
-	return fail;
+	return current_region;
 }
 
 /*
- * DRY RUN
+ * END PROGRAMMING
  */
 void
-pic32_dryrun(struct k8048 *k, char *filename)
+pic32_program_end(struct k8048 *k, __attribute__((unused)) int config)
 {
-	uint32_t total = 0, wdata;
+	pic_write_panel(k, PIC_PANEL_END, PIC_VOID, PIC_VOID);
+	pic32_standby(k);
+} 
 
-	/*
-	 * Dry run
-	 */
+/*
+ * VERIFY DATA
+ */
+uint32_t        
+pic32_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
+{       
+	uint32_t address, new_region, wdata;
 
-	/* Get HEX */
-	if (!inhx32(k, filename, sizeof(uint32_t))) {
-		return;
+	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
+		address = pdata->address + i;
+		new_region = pic32_getregion(k, address);
+		if (new_region != current_region)
+			current_region = pic32_init_verifyregion(k, new_region);
+		if (current_region == PIC_REGIONNOTSUP)
+			continue;
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8) |
+			(pdata->bytes[i + 2] << 16) |
+			(pdata->bytes[i + 3] << 24);
+		(*fail) += pic32_verifyregion(k, address, current_region, wdata);
 	}
-	/* For each line */
-	for (uint32_t i = 0; i < k->count; ++i) {
-		printf("[%08X] ", k->pdata[i]->address);
+	return current_region;
+}
 
-		/* For each 32-bit word in line */
-		for (uint32_t j = 0; j < k->pdata[i]->nbytes; j += 4) {
-			wdata = k->pdata[i]->bytes[j] |
-				(k->pdata[i]->bytes[j + 1] << 8) |
-				(k->pdata[i]->bytes[j + 2] << 16) |
-				(k->pdata[i]->bytes[j + 3] << 24);
-			printf("%08X ", wdata);
-			total += 4;
-		}
-		putchar('\n');
+/*
+ * VIEW DATA
+ */
+void
+pic32_view_data(struct k8048 *k, pic_data *pdata)
+{
+	uint32_t wdata;
+
+	printf("[%08X] ", pdata->address);
+	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
+		wdata = pdata->bytes[i] |
+			(pdata->bytes[i + 1] << 8) |
+			(pdata->bytes[i + 2] << 16) |
+			(pdata->bytes[i + 3] << 24);
+		printf("%08X ", wdata);
 	}
-
-	printf("Total: %u\n", total);
-
-	inhx32_free(k);
+	putchar('\n');
 }
 
 /*****************************************************************************

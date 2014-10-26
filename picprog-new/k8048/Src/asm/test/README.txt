@@ -1,4 +1,4 @@
-DEVICES SUPPORTED AND TESTED (ALL THE MICROCHIP DEVICES AVAILABLE TO TEST)
+MICROCONTROLER DEVICES TESTED AND SUPPORTED
 ----------------------------------------------------------------------------------------------------------------------------------------
 TEST	DEVICE		ARCH	SOCKET	DATASHEETS
 ----	------		----	------	------------------------------------------------------------------------------------------------
@@ -282,41 +282,42 @@ Y	24FJ128GA202	24	N/A	30010038B	PIC24FJ128GA204 Family Data Sheet
 					30000510E	PIC24FJXXXGA2/GB2 Family Flash Programming Specification
 					80000615A	PIC24FJ128GA204 Family Silicon Errata and Data Sheet Clarification
 
-N	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+Y	32MX150F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
-N	32MX250F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+Y	32MX250F128B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
-N	32MX795F512H	32	N/A	61156H		PIC32MX5XX/6XX/7XX Family Data Sheet
+Y	32MX795F512H	32	N/A	61156H		PIC32MX5XX/6XX/7XX Family Data Sheet
 					80000480N	PIC32MX575/675/695/775/795 Family Errata and Datasheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
-N/A = HARDWARE SUPPORT NOT AVAILABLE ON THE VELLEMAN K8048
+N	32MX170F256B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
+					60001145M	PIC32 Flash Programming Specification
 
-UNSUPPORTED
+N	32MX270F256B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
+					60001145M	PIC32 Flash Programming Specification
+
+				N/A	NOT SUPPORTED ON THE VELLEMAN K8048
+
+OTHER DEVICES
 ----------------------------------------------------------------------------------------------------------------------------------------
-TEST	DEVICE		ARCH	SOCKET	DATASHEETS
-----	------		----	------	------------------------------------------------------------------------------------------------
-
-N/A
-
-OTHER
-----------------------------------------------------------------------------------------------------------------------------------------
-INDEX	DEVICE		DATASHEETS
------	------		----------------------------------------------------------------------------------------------------------------
-N/A	ENC28J60	39662a	ENC28J60 Stand-alone Ethernet Controller with SPI
-N/A	24LC512		21754e	24AA512/24LC512/24FC512 512K I2C CMOS Serial EEPROM
-N/A	24LC128		21191m	24AA128/24LC128/24FC128 128K I2C CMOS Serial EEPROM
-N/A	25LC640		21223f	25AA640/25LC640 64K SPI Bus Serial EEPROM
-N/A	MCP23016	20090c	MCP23016 16-Bit I2C I/O Expander (400Khz)
-N/A	MCP23017	21952b	MCP23017 16-Bit I2C I/O Expander (1.7Mhz)
-N/A	MCP3008		21295d	MCP3004/3008 4-Channel/8-Channel 10-Bit A/D Converters with SPI Serial Interface
-N/A	MCP1700		21826b	Low Quiescent Current LDO
-N/A	MCP2562		25167B	MCP2561/2 High-Speed CAN Transceiver
-N/A	MCP6023		21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps
-N/A	TC4627		21426C	Power CMOS Drivers With Voltage Tripler
-N/A	TC74		21462C	Tiny Serial Digital Thermal Sensor
-N/A	MCP6022		21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps
+	DEVICE				DATASHEETS
+	------				------------------------------------------------------------------------------------------------
+	ENC28J60			39662a	ENC28J60 Stand-alone Ethernet Controller with SPI
+	24LC512				21754e	24AA512/24LC512/24FC512 512K I2C CMOS Serial EEPROM
+	24LC128				21191m	24AA128/24LC128/24FC128 128K I2C CMOS Serial EEPROM
+	25LC640				21223f	25AA640/25LC640 64K SPI Bus Serial EEPROM
+	MCP23016			20090c	MCP23016 16-Bit I2C I/O Expander (400Khz)
+	MCP23017			21952b	MCP23017 16-Bit I2C I/O Expander (1.7Mhz)
+	MCP3008				21295d	MCP3004/3008 4-Channel/8-Channel 10-Bit A/D Converters with SPI Serial Interface
+	MCP1700				21826b	Low Quiescent Current LDO
+	MCP2562				25167B	MCP2561/2 High-Speed CAN Transceiver
+	MCP6023				21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps
+	TC4627				21426C	Power CMOS Drivers With Voltage Tripler
+	TC74				21462C	Tiny Serial Digital Thermal Sensor
+	MCP6022				21685d	MCP6021/2/3/4 Rail-to-Rail Input/Output, 10 MHz Op Amps

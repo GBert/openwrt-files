@@ -33,67 +33,78 @@
 #include "k8048.h"
 
 /*
- * File descriptor
- */
-static int serial_port = -1;
-
-/*
- * 'open_serial_port()' - Open serial serial_port 1.
+ * Open serial port
  *
- * Returns the file descriptor on success or -1 on error.
+ * For bit-bang I/O use speed B0.
+ *
+ *  return file descriptor on success or -1 on error
  */
 int
-serial_open(const char *device)
+serial_open(const char *device, speed_t speed)
 {
+	int serial_port;
 	struct termios options;
 
-	serial_port = open(device, O_RDWR | O_NOCTTY | O_NDELAY);
-	if (serial_port < 0) {
-		serial_port = -1;
+	serial_port = open(device, O_RDWR | O_NOCTTY | O_NONBLOCK);
+	if (serial_port < 0)
 		return -1;
-	}
 
 	fcntl(serial_port, F_SETFL, O_NONBLOCK);
 
-	/*
-	 * Get the current options for the serial_port...
-	 */
+	/* Get options */
 	tcgetattr(serial_port, &options);
 
 	/*
-	 * Enable the receiver 
+	 * Raw mode
+	 *
+	 *  Linux TERMIOS(3)
 	 */
-	options.c_cflag = IGNBRK | IGNPAR | CS8 | CREAD | CLOCAL;
 
-	/*
-	 * Reset other options
-	 */
-	options.c_oflag = 0;
-	options.c_lflag = 0;
-	
-	/*
-	 * Set the new options for the serial_port...
-	 */
+	/* Input options */
+	options.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP |
+		INLCR | IGNCR | ICRNL | IXON);
+
+	/* Output options */
+	options.c_oflag &= ~(OPOST);
+
+	/* Control options */
+	options.c_cflag &= ~(CSIZE | PARENB);
+	options.c_cflag |= (CS8);
+
+	/* Local options */
+	options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+
+	/* Control characters */
+	options.c_cc[VMIN] = 0;
+	options.c_cc[VTIME] = 0;
+
+	/* Baud rate */
+	cfsetispeed(&options, speed);
+	cfsetospeed(&options, speed);
+
+	/* Set options */
 	tcsetattr(serial_port, TCSANOW, &options);
+
+	/* Discard */
+	tcflush(serial_port, TCIOFLUSH);
 
 	return serial_port;
 }
 
 /*
- * Close serial serial_port
+ * Close serial port
  */
 void
-serial_close(void)
+serial_close(int serial_port)
 {
 	close(serial_port);
-	serial_port = -1;
 }
 
 /*
  * Get CTS (input set when +ve) (DATA_IN)
  */
 int
-get_cts(void)
+get_cts(int serial_port)
 {
 	int status;
 
@@ -106,7 +117,7 @@ get_cts(void)
  * Set DTR (output +ve on set) (DATA_OUT)
  */
 void
-set_dtr(int dtr)
+set_dtr(int serial_port, int dtr)
 {
 	int status;
 
@@ -124,7 +135,7 @@ set_dtr(int dtr)
  * Set RTS (output +ve on set) (CLOCK)
  */
 void
-set_rts(int rts)
+set_rts(int serial_port, int rts)
 {
 	int status;
 
@@ -142,10 +153,153 @@ set_rts(int rts)
  * Set Tx (output +ve on set) (VPP)
  */
 void
-set_tx(int tx)
+set_tx(int serial_port, int tx)
 {
 	if (tx)
 		ioctl(serial_port, TIOCSBRK, 0); /* +ve */
 	else
 		ioctl(serial_port, TIOCCBRK, 0); /* -ve */
+}
+
+/*
+ * Read at most buflen characters into buffer
+ *
+ *  The number of characters read is not guaranteed to be greater than one
+ *  regardless of the number requested.
+ *
+ *  return number of bytes or error
+ */
+int
+serial_get(int serial_port, char *buffer, int buflen, int timeout)
+{
+	struct timeval timeval;
+	fd_set fdset;
+	int rc = 0;
+
+	while (1) {
+		timeval.tv_sec = timeout;
+		timeval.tv_usec = 0;
+
+		FD_ZERO(&fdset);
+		FD_SET(serial_port, &fdset);
+
+		rc = select(serial_port + 1, &fdset, NULL, NULL, &timeval);
+		if (rc < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -EIO;
+		}
+		if (rc != 1) {
+			return -ETIMEDOUT;
+		}
+		if (!FD_ISSET(serial_port, &fdset)) {
+			return -ETIMEDOUT;
+		}
+		rc = read(serial_port, buffer, buflen);
+		if (rc < 0) {
+			if (errno == EINTR || errno == EAGAIN) {
+				continue;
+			}
+			return -EIO;
+		}
+		if (rc == 0)
+			return -EIO; /* Connection reset */
+
+		return rc;
+	}
+	/* Not reached */
+}
+
+/*
+ * Read buflen characters into buffer
+ *
+ *  return number of bytes or error
+ */
+int
+serial_read(int serial_port, char *buffer, int buflen, int timeout)
+{
+	int rc, nb = 0;
+
+	do {
+		rc = serial_get(serial_port, &buffer[nb], buflen - nb, timeout);
+		if (rc < 0)
+			return rc;
+		nb += rc;
+	}
+	while (nb < buflen);
+	if (nb > buflen) {
+		return -EIO;
+	}
+
+	return nb;
+}
+
+/*
+ * Write buflen characters from buffer
+ *
+ *  return number of bytes or error
+ */
+int
+serial_write(int serial_port, char *buffer, int buflen, int timeout)
+{
+	fd_set fdset;
+	struct timeval timeval;
+	int rc = 0, nb = 0;
+
+	while (nb < buflen) {
+		timeval.tv_sec = timeout;
+		timeval.tv_usec = 0;
+
+		FD_ZERO(&fdset);
+		FD_SET(serial_port, &fdset);
+
+		rc = select(serial_port + 1, NULL, &fdset, NULL, &timeval);
+		if (rc < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return -EIO;
+		}
+		if (rc != 1) {
+			return -ETIMEDOUT;
+		}
+		if (!FD_ISSET(serial_port, &fdset)) {
+			return -ETIMEDOUT;
+		}
+		rc = write(serial_port, &buffer[nb], buflen - nb);
+		if (rc < 0) {
+			if (errno == EINTR || errno == EAGAIN) {
+				continue;
+			}
+			return -EIO;
+		}
+		if (rc == 0)
+			return -EIO; /* Connection reset */
+
+		nb += rc;
+	}
+	tcdrain(serial_port);
+
+	return nb;
+}
+
+/*
+ * return speed_t for given baud rate
+ */
+speed_t
+serial_speed(uint32_t baudrate)
+{
+	static uint32_t rates[] = {
+		0, 75, 110, 300, 1200, 2400, 4800, 9600,
+		19200, 38400, 57600, 115200, UINT32_MAX
+	};
+	static speed_t speeds[] = {
+		B0, B75, B110, B300, B1200, B2400, B4800, B9600,
+		B19200, B38400, B57600, B115200, B115200
+	};
+	int i = 0;
+	while (baudrate > rates[i++])
+		;
+	return speeds[--i];
 }

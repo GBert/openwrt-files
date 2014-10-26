@@ -35,5 +35,11 @@
 
 int areyousure(const char *s);
 const char *mystrcasestr(const char *, const char *);
+off_t filesize(const char *);
+off_t myfopen(FILE **, const char *, char *);
+void myfclose(FILE **, char *);
+uint8_t hex2nibble(const char);
+uint8_t hex2byte(const char *);
+char *rmcrlf(char *, int);
 
 #endif /* !_UTIL_H */

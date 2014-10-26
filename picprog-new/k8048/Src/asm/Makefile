@@ -31,6 +31,7 @@
 #
 
 build:
+	cd chipKITPi		&& $(MAKE)
 	cd debug		&& $(MAKE)
 	cd dsPIC33FJ128GP802	&& $(MAKE)
 	cd include		&& $(MAKE)
@@ -43,13 +44,13 @@ build:
 	cd pic18f25k22		&& $(MAKE)
 	cd PIC24FJ64GA002	&& $(MAKE)
 	cd PIC32MX150F128B	&& $(MAKE)
-	cd PIC32MX250F128B	&& $(MAKE)
 	cd rkp28sb		&& $(MAKE)
 	cd test			&& $(MAKE)
 	cd util			&& $(MAKE)
 	cd velleman		&& $(MAKE)
 
 install:
+	cd chipKITPi		&& $(MAKE) install
 	cd debug		&& $(MAKE) install
 	cd dsPIC33FJ128GP802	&& $(MAKE) install
 	cd include		&& $(MAKE) install
@@ -62,13 +63,13 @@ install:
 	cd pic18f25k22		&& $(MAKE) install
 	cd PIC24FJ64GA002	&& $(MAKE) install
 	cd PIC32MX150F128B	&& $(MAKE) install
-	cd PIC32MX250F128B	&& $(MAKE) install
 	cd rkp28sb		&& $(MAKE) install
 	cd test			&& $(MAKE) install
 	cd util			&& $(MAKE) install
 	cd velleman		&& $(MAKE) install
 
 uninstall:
+	cd chipKITPi		&& $(MAKE) uninstall
 	cd debug		&& $(MAKE) uninstall
 	cd dsPIC33FJ128GP802	&& $(MAKE) uninstall
 	cd include		&& $(MAKE) uninstall
@@ -81,13 +82,13 @@ uninstall:
 	cd pic18f25k22		&& $(MAKE) uninstall
 	cd PIC24FJ64GA002	&& $(MAKE) uninstall
 	cd PIC32MX150F128B	&& $(MAKE) uninstall
-	cd PIC32MX250F128B	&& $(MAKE) uninstall
 	cd rkp28sb		&& $(MAKE) uninstall
 	cd test			&& $(MAKE) uninstall
 	cd util			&& $(MAKE) uninstall
 	cd velleman		&& $(MAKE) uninstall
 
 clean:
+	cd chipKITPi		&& $(MAKE) clean
 	cd debug		&& $(MAKE) clean
 	cd dsPIC33FJ128GP802	&& $(MAKE) clean
 	cd include		&& $(MAKE) clean
@@ -100,7 +101,6 @@ clean:
 	cd pic18f25k22		&& $(MAKE) clean
 	cd PIC24FJ64GA002	&& $(MAKE) clean
 	cd PIC32MX150F128B	&& $(MAKE) clean
-	cd PIC32MX250F128B	&& $(MAKE) clean
 	cd rkp28sb		&& $(MAKE) clean
 	cd test			&& $(MAKE) clean
 	cd util			&& $(MAKE) clean
