@@ -25,12 +25,16 @@ On the OpenWrt Router install the module:
 Please apply your GPIO settings in /root/.k8048/config .
 ### Test
 <pre><code>root@OpenWrt:~# ls -l /usr/bin/k\*
-lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k14 -> /usr/bin/k8048
-lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/k16 -> /usr/bin/k8048
--rwxr-xr-x    1 root     root        462152 Mar 30 13:18 /usr/bin/k8048
-lrwxrwxrwx    1 root     root            17 Mar 30 13:24 /usr/bin/killall -> ../../bin/busybox
--rwxr-xr-x    1 root     root         19624 Mar 30 13:18 /usr/bin/kio
-lrwxrwxrwx    1 root     root            14 Mar 30 13:24 /usr/bin/ktest -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/k12 -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/k14 -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/k16 -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/k24 -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/k32 -> /usr/bin/k8048
+-rwxr-xr-x    1 root     root        572504 Oct 26 17:04 /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/kctrl -> /usr/bin/k8048
+-rwxr-xr-x    1 root     root         21784 Oct 26 17:04 /usr/bin/kio
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/kload -> /usr/bin/k8048
+lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/ktest -> /usr/bin/k8048
 root@OpenWrt:~# k16 lvp info
 [000000] [PROGRAM]     8000 WORDS (0400 ROWS OF 0020 WORDS)
 [200000] [IDLOCATION1] FF .
