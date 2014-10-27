@@ -508,8 +508,10 @@ pic32_xferdata(struct k8048 *k, uint8_t nbits, uint32_t tdi)
 uint32_t
 pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 {
+	struct timeval tv1, tv2, tv3;
 	uint8_t pracc;
 	uint32_t tdo;
+	uint32_t lc;
 
 	/*
 	 * 1. The TMS Header is clocked into the device to select the
@@ -520,7 +522,20 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 	io_clock_bit_4phase(k, 1, 0);		/* SELECT-DR 		*/
 	io_clock_bit_4phase(k, 0, 0);		/* CAPTURE-DR		*/
 
-	pracc = io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR		*/
+	gettimeofday(&tv1, NULL);
+	lc = 0;
+	do {
+		pracc =
+		io_clock_bit_4phase(k, 0, 0);   /* SHIFT-DR             */
+		lc++;
+
+		gettimeofday(&tv2, NULL);
+		timersub(&tv2, &tv1, &tv3);
+	}
+	while (!pracc && (tv3.tv_sec < PIC_TIMEOUT));
+
+	printf("%s: loop counter %04d pracc 0x%02x\n", __func__, lc, pracc);
+
 	if (!pracc) {
 		printf("%s: fatal error: processor access invalid\n", __func__);
 		pic32_standby(k);
@@ -885,6 +900,7 @@ pic32_download_pe(struct k8048 *k, uint32_t *words, uint32_t nwords)
 
 	pic32_xferfastdata(k, 0x00000000);
 	pic32_xferfastdata(k, 0xDEAD0000);
+	io_usleep(k, 1000); /* 1ms */
 }
 
 /*
