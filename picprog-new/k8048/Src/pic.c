@@ -118,10 +118,10 @@ void pic_program_end(struct k8048 *k, int config)
 }
 
 /*
- * LOOK UP PE FILE
+ * LOOK UP PE FILE NAME
  */
 int
-pic_pe_lookup(struct k8048 *k, char *pathname, const char *filename)
+pic_pe_lookup_file(struct k8048 *k, char *pathname, const char *filename)
 {
 	if (k->etc[0]) {
 		snprintf(pathname, STRLEN, "%s/%s", k->etc, filename);
@@ -143,6 +143,24 @@ pic_pe_lookup(struct k8048 *k, char *pathname, const char *filename)
 
 	bzero(pathname, STRLEN);
 	return -1;
+}
+
+/*
+ * LOOK UP PE FILE .BIN OR .HEX
+ *
+ *  FILE IS PE FILENAME WITHOUT FILE NAME EXTENSION
+ */
+int
+pic_pe_lookup(struct k8048 *k, char *pathname, const char *file)
+{
+	char filename[STRLEN];
+
+	snprintf(filename, STRLEN, "%s.bin", file);
+	if (pic_pe_lookup_file(k, pathname, filename) == 0)
+		return 0;
+
+	snprintf(filename, STRLEN, "%s.hex", file);
+	return pic_pe_lookup_file(k, pathname, filename);
 }
 
 /*

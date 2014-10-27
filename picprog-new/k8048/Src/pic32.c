@@ -292,15 +292,15 @@ pic32_selector(void)
 struct pic32_dstab pic32_tab[] =
 {
 	/* PIC32MX1XX/2XX DS60001168F		      */
-	{DS60001168F,	"RIPE_11_000301.hex"},
+	{DS60001168F,	"RIPE_11_000301"},
 	/* PIC32MX330/350/370/430/450/470 DS60001185C */
-	{DS60001185C,	"RIPE_06_000201.hex"},
+	{DS60001185C,	"RIPE_06_000201"},
 	/* PIC32MX3XX/4XX DS61143H		      */
-	{DS61143H,	"RIPE_06_000201.hex"},
+	{DS61143H,	"RIPE_06_000201"},
 	/* PIC32MX5XX/6XX/7XX DS61156H		      */
-	{DS61156H,	"RIPE_06_000201.hex"},
+	{DS61156H,	"RIPE_06_000201"},
 	/* PIC32MZ EC DS60001191C		      */
-	{DS60001191C,	"RIPE_15_000400.hex"},
+	{DS60001191C,	"RIPE_15_000400"},
 	/* EOF					      */
 	{0,		"(null)"},
 };
@@ -508,10 +508,8 @@ pic32_xferdata(struct k8048 *k, uint8_t nbits, uint32_t tdi)
 uint32_t
 pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 {
-	struct timeval tv1, tv2, tv3;
 	uint8_t pracc;
 	uint32_t tdo;
-	uint32_t lc;
 
 	/*
 	 * 1. The TMS Header is clocked into the device to select the
@@ -522,20 +520,7 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
 	io_clock_bit_4phase(k, 1, 0);		/* SELECT-DR 		*/
 	io_clock_bit_4phase(k, 0, 0);		/* CAPTURE-DR		*/
 
-	gettimeofday(&tv1, NULL);
-	lc = 0;
-	do {
-		pracc =
-		io_clock_bit_4phase(k, 0, 0);   /* SHIFT-DR             */
-		lc++;
-
-		gettimeofday(&tv2, NULL);
-		timersub(&tv2, &tv1, &tv3);
-	}
-	while (!pracc && (tv3.tv_sec < PIC_TIMEOUT));
-
-	printf("%s: loop counter %04d pracc 0x%02x\n", __func__, lc, pracc);
-
+	pracc = io_clock_bit_4phase(k, 0, 0);	/* SHIFT-DR             */
 	if (!pracc) {
 		printf("%s: fatal error: processor access invalid\n", __func__);
 		pic32_standby(k);
@@ -769,7 +754,7 @@ pic32_enter_serial_execution_mode(struct k8048 *k)
  * DS60001145N-page 23
  */
 void
-pic32_download_pe(struct k8048 *k, uint32_t *words, uint32_t nwords)
+pic32_download_pe(struct k8048 *k, uint8_t *pe, uint32_t nbytes)
 {
 	/* PE LOADER OP CODES */
 	static uint32_t peloader[] = {
@@ -890,9 +875,12 @@ pic32_download_pe(struct k8048 *k, uint32_t *words, uint32_t nwords)
 
 	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
 	pic32_xferfastdata(k, pic32_kseg1(0x0900));
-	pic32_xferfastdata(k, nwords);
-	for (uint32_t i = 0; i < nwords; ++i)
-		pic32_xferfastdata(k, words[i]);
+	pic32_xferfastdata(k, nbytes >> 2);
+	for (uint32_t i = 0; i < nbytes; i += 4) {
+		uint32_t wdata;
+		wdata = pe[i] | pe[i + 1] << 8 | pe[i + 2] << 16 | pe[i + 3] << 24;
+		pic32_xferfastdata(k, wdata);
+	}
 
 	/*
 	 * 8. Jump to the PE.
@@ -1262,7 +1250,11 @@ pic32_pe_read(struct k8048 *k, uint32_t addr, uint16_t nwords, uint32_t *data)
 void
 pic32_pe_load(struct k8048 *k)
 {
-	uint32_t nbytes, *words;
+	FILE *fp;
+	struct stat st;
+	int rc, nbytes;
+	char *s;
+	uint8_t *pe;
 
 	/* Validate PE */
 	if (pic32_conf.pepath[0] == '\0') {
@@ -1270,17 +1262,56 @@ pic32_pe_load(struct k8048 *k)
 	}
 
 	/* Get PE */
-	nbytes = inhx32_memory_create(k, (uint8_t **)&words, pic32_conf.pepath);
-	if (nbytes == 0) {
-		bzero(pic32_conf.pepath, STRLEN);
-		return;
+	if (strstr(pic32_conf.pepath, ".bin")) {
+		rc = stat(pic32_conf.pepath, &st);
+		if (rc < 0) {
+			printf("%s: error: stat failed [%s]\n", __func__, pic32_conf.pepath);
+			bzero(pic32_conf.pepath, STRLEN);
+			return;
+		}
+		nbytes = st.st_size;
+		pe = (uint8_t *)calloc(nbytes, sizeof(uint8_t));
+		if (pe == NULL) {
+			printf("%s: fatal error: calloc failed\n", __func__);
+			io_exit(k, EX_OSERR); /* Panic */
+		}
+		fp = fopen(pic32_conf.pepath, "rb");
+		if (fp == NULL) {
+			printf("%s: error: fopen failed [%s]\n", __func__, pic32_conf.pepath);
+			bzero(pic32_conf.pepath, STRLEN);
+			return;
+		}
+		rc = fread((void *)pe, 1, nbytes, fp);
+		if (rc != nbytes) {
+			printf("%s: error: fread failed [%s]\n", __func__, pic32_conf.pepath);
+			bzero(pic32_conf.pepath, STRLEN);
+			return;
+		}
+		fclose(fp);
+	} else { /* .hex */
+		s = strstr(pic32_conf.pepath, ".hex");
+		if (s == NULL) {
+			bzero(pic32_conf.pepath, STRLEN);
+			return;
+		}
+		nbytes = inhx32_memory_create(k, &pe, pic32_conf.pepath);
+		if (nbytes == 0) {
+			bzero(pic32_conf.pepath, STRLEN);
+			return;
+		}
+		strcpy(s, ".bin");
+		fp = fopen(pic32_conf.pepath, "wb");
+		if (fp != NULL) {
+			fwrite((void *)pe, 1, nbytes, fp);
+			fclose(fp);
+		}
 	}
 
 	/* Download PE (upload to chip) */
-	pic32_download_pe(k, words, nbytes >> 2);
+	pic32_download_pe(k, pe, nbytes);
 
 	/* Free PE */
-	free(words);
+	free(pe);
 }
 
 /*

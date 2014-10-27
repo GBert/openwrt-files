@@ -53,4 +53,4 @@ GDB=0
 VERBOSE=0
 
 # use QSORT (quick sort) else TSEARCH (tree sort) (qsort:1 tsearch:0)
-QSORT=0
+QSORT=1
