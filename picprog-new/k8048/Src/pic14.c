@@ -298,9 +298,9 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16F1454",	PIC16F1454,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
 {"PIC16F1455",	PIC16F1455,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
 {"PIC16F1459",	PIC16F1459,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
-{"PIC16F1454",	PIC16F1454,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
-{"PIC16F1455",	PIC16F1455,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
-{"PIC16F1459",	PIC16F1459,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
+{"PIC16LF1454",	PIC16LF1454,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
+{"PIC16LF1455",	PIC16LF1455,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
+{"PIC16LF1459",	PIC16LF1459,	8192,	0,	DS41620C,  0x8000, 0xF000, 2,      2,     32,      32},
 
 /* These devices have two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
 {"PIC16F1527",	PIC16F1527,	16384,	0,	DS41442B,  0x8000, 0xF000, 2,      2,     32,      32},
@@ -351,7 +351,7 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16LF1708",	PIC16LF1708,	4096,	0,   DS40001683B,  0x8000, 0xF000, 2,      8,     32,      32},
 {"PIC16LF1709",	PIC16LF1709,	8192,	0,   DS40001683B,  0x8000, 0xF000, 2,      8,     32,      32},
 
-/* These devices have three config words at 8007/8/9 and three calibration words at 200A/B/C */
+/* These devices have three config words at 8007/8/9 and three calibration words at 800A/B/C */
 {"PIC12F1612",	PIC12F1612,	2048,	0,   DS40001720A,  0x8000, 0xF000, 3,      3,     16,      16},
 {"PIC12LF1612",	PIC12LF1612,	2048,	0,   DS40001720A,  0x8000, 0xF000, 3,      3,     16,      16},
 {"PIC16F1613",	PIC16F1613,	2048,	0,   DS40001720A,  0x8000, 0xF000, 3,      3,     16,      16},
@@ -377,7 +377,7 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16LF1718",	PIC16LF1718,	16384,	0,   DS40001714C,  0x8000, 0xF000, 2,      8,     32,      32},
 {"PIC16LF1719",	PIC16LF1719,	16384,	0,   DS40001714C,  0x8000, 0xF000, 2,      8,     32,      32},
 
-/* These devices have two config words at 8007/8 and three calibration words at 2009/A/B */
+/* These devices have two config words at 8007/8 and three calibration words at 8009/A/B */
 {"PIC12F1571",	PIC12F1571,	1024,	0,   DS40001713A,  0x8000, 0xF000, 2,      3,     16,      16},
 {"PIC12LF1571",	PIC12LF1571,	1024,	0,   DS40001713A,  0x8000, 0xF000, 2,      3,     16,      16},
 {"PIC12F1572",	PIC12F1572,	2048,	0,   DS40001713A,  0x8000, 0xF000, 2,      3,     16,      16},
@@ -393,7 +393,7 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16LF1765",	PIC16LF1765,	8192,	0,   DS40001754A,  0x8000, 0xF000, 2,      9,     32,      32},
 {"PIC16LF1769",	PIC16LF1769,	8192,	0,   DS40001754A,  0x8000, 0xF000, 2,      12,    32,      32},
 
-/* These devices have two config words at 8007/8 and three calibration words at 2009/A/B */
+/* These devices have two config words at 8007/8 and three calibration words at 8009/A/B */
 {"PIC16F1574",	PIC16F1574,	4096,	0,   DS40001766A,  0x8000, 0xF000, 2,      3,     32,      32},
 {"PIC16LF1574",	PIC16LF1574,	4096,	0,   DS40001766A,  0x8000, 0xF000, 2,      3,     32,      32},
 {"PIC16F1575",	PIC16F1575,	8192,	0,   DS40001766A,  0x8000, 0xF000, 2,      3,     32,      32},
