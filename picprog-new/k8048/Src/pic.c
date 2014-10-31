@@ -118,6 +118,97 @@ void pic_program_end(struct k8048 *k, int config)
 }
 
 /*
+ * BEGIN VERIFY
+ */
+void
+pic_verify_begin(struct k8048 *k)
+{
+	if (k->pic->verify_begin)
+		k->pic->verify_begin(k);
+}
+
+/*
+ * VERIFY DATA
+ */
+uint32_t
+pic_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
+{
+	if (k->pic->verify_data)
+		return k->pic->verify_data(k, current_region, pdata, fail);
+
+	return PIC_REGIONNOTSUP;
+}
+
+/*
+ * END VERIFY
+ */
+void pic_verify_end(struct k8048 *k)
+{
+	if (k->pic->verify_end)
+		k->pic->verify_end(k);
+}
+
+/*
+ * READ PE FILE
+ *
+ *  RETURNS BYTE POINTER OR NULL ON ERROR.
+ *
+ *  WILL ADJUST FILE NAME WHEN ATTEMPTING TO CREATE CACHED HEX FILE (BIN)
+ */
+uint8_t *
+pic_pe_read_file(struct k8048 *k, char *filename, uint32_t *nbytes)
+{
+	int rc;
+	struct stat st;
+	uint8_t *pe;
+	FILE *fp;
+	char *s;
+
+	if (strstr(filename, ".bin")) {
+		rc = stat(filename, &st);
+		if (rc < 0) {
+			printf("%s: error: stat failed [%s]\n", __func__, filename);
+			return NULL;
+		}
+		*nbytes = st.st_size;
+		pe = (uint8_t *)calloc(*nbytes, sizeof(uint8_t));
+		if (pe == NULL) {
+			printf("%s: fatal error: calloc failed\n", __func__);
+			io_exit(k, EX_OSERR); /* Panic */
+		}
+		fp = fopen(filename, "rb");
+		if (fp == NULL) {
+			printf("%s: error: fopen failed [%s]\n", __func__, filename);
+			return NULL;
+		}
+		rc = fread((void *)pe, 1, *nbytes, fp);
+		if (rc != *nbytes) {
+			printf("%s: error: fread failed [%s]\n", __func__, filename);
+			return NULL;
+		}
+		fclose(fp);
+	} else { /* .hex */
+		s = strstr(filename, ".hex");
+		if (s == NULL) {
+			return NULL;
+		}
+		*nbytes = inhx32_memory_create(k, &pe, filename);
+		if (*nbytes == 0) {
+			return NULL;
+		}
+		strcpy(s, ".bin");
+		fp = fopen(filename, "wb");
+		if (fp != NULL) {
+			rc = fwrite((void *)pe, 1, *nbytes, fp);
+			fclose(fp);
+			if (rc != *nbytes)
+				unlink(filename);
+		}
+	}
+	return pe;
+}
+
+/*
  * LOOK UP PE FILE NAME
  */
 int

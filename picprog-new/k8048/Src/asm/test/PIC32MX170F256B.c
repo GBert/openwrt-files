@@ -32,7 +32,7 @@
 
 /*******************************************************************************
  *
- * R-PI 3V3 PIC32MX150F128B
+ * R-PI 3V3 PIC32MX170F256B
  *
  * R-PI ICSPIO Demo Test (Receive commands, send data).
  *
@@ -109,7 +109,13 @@
 
 #include <plib.h>
 
+#define MEGAHERTZ 48 // 40 or 48
+
+#if MEGAHERTZ == 40
 #define FCY (40000000UL)
+#elif MEGAHERTZ == 48
+#define FCY (48000000UL)
+#endif
 
 /* ICSP I/O Data I/O */
 #define ICSPIO_LATDAT  (LATBbits.LATB0)
@@ -128,25 +134,50 @@
 /*
  * Device config:
  *
- * include/proc/p32mx150f128b.h = lib/proc/32MX150F128B/configuration.data
+ * include/proc/p32mx170f256b.h = lib/proc/32MX170F256B/configuration.data
  */
 
 /* DEVCFG3 */
 #if 0
-#pragma config USERID = 0x1234
+#pragma config FVBUSONIO = ON
+#pragma config FUSBIDIO = ON
+#pragma config IOL1WAY = ON
+#pragma config PMDL1WAY = ON
+#pragma config USERID = 0xFFFF
 #endif
 
 /* DEVCFG2 */
+#if MEGAHERTZ == 40
 #pragma config FPLLIDIV = DIV_2 /*  8 /  2 */
 #pragma config FPLLMUL = MUL_20 /*  4 * 20 */
 #pragma config FPLLODIV = DIV_2 /* 80 /  2 */
+#elif MEGAHERTZ == 48
+#pragma config FPLLIDIV = DIV_2 /*  8    /  2 */
+#pragma config FPLLMUL = MUL_24 /*  4    * 24 */
+#pragma config FPLLODIV = DIV_2 /* 96    /  2 */
+#endif
 
 /* DEVCFG1 */
-#pragma config FWDTEN = ON
-#pragma config WDTPS = PS16384
+#pragma config FWDTWINSZ = WISZ_25
+#pragma config FWDTEN = OFF
+#pragma config WINDIS = OFF
+#pragma config WDTPS = PS1024
+#pragma config FCKSM = CSDCMD
+#pragma config FPBDIV = DIV_1
+#pragma config OSCIOFNC = OFF
+#pragma config POSCMOD = OFF
+#pragma config IESO = ON
+#pragma config FSOSCEN = OFF
 #pragma config FNOSC = FRCPLL
 
 /* DEVCFG0 */
+#if 0
+#pragma config CP = OFF
+#pragma config BWP = OFF
+#pragma config PWP = OFF
+#pragma config ICESEL = ICS_PGx1
+#pragma config DEBUG = OFF // DON'T TOUCH THIS
+#endif
 #pragma config JTAGEN = OFF
 
 /*
@@ -216,7 +247,6 @@ main()
 			if (icspio_err)
 				continue;
 			LATA = arg;
-			WDTCONSET = 1; /* RESET Watchdog */
 			break; 
 		case CMD_SWITCH:
 			icspio_err = icspio_sendbyte(ACK);

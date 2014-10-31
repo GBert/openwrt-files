@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sysexits.h>
 #include <ctype.h>
 #include <time.h>
@@ -92,7 +93,9 @@ struct k8048;
 
 /* OUTPUT BACKENDS */
 #ifdef TTY
+#include "rw.h"
 #include "serial_posix.h"
+#include "ip.h"
 #endif
 #ifdef RPI
 #include "raspi.h"
@@ -118,6 +121,8 @@ struct k8048;
 #include "inhx32.h"
 #ifdef TTY
 #include "stk500v2.h"
+#include "stk500v2_listen.h"
+#include "stk500v2_load.h"
 #endif
 
 struct k8048 {

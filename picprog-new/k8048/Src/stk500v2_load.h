@@ -30,16 +30,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LED_H
-#define _LED_H
+#ifndef _STK500V2_LOAD_H
+#define _STK500V2_LOAD_H
 
-#include <stdio.h>
-#include <stdlib.h>	/* rand() */
-#include <stdbool.h>	/* true || false */
-#include <stdint.h>
-#include <plib.h>
+int stk500v2_load(struct k8048 *, int, char *, char *, int);
 
-#define FCY (48000000UL)/* CHIPKIT_PI_MX270_48 */
-#include <delay.h>	/* delay_ms() */
-
-#endif
+#endif /* !_STK500V2_LOAD_H */

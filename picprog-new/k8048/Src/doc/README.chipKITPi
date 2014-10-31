@@ -103,5 +103,5 @@ Total: 2564 Fail: 0
 
 Upload object
 =============
-% kload /dev/ttyAMA0 led.hex avr
+% kload program /dev/ttyAMA0 led.hex avr
 Total: 1696

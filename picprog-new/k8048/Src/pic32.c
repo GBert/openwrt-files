@@ -291,6 +291,8 @@ pic32_selector(void)
 
 struct pic32_dstab pic32_tab[] =
 {
+	/* Extract PE: unzip PICKIT3.jar              */
+
 	/* PIC32MX1XX/2XX DS60001168F		      */
 	{DS60001168F,	"RIPE_11_000301"},
 	/* PIC32MX330/350/370/430/450/470 DS60001185C */
@@ -300,9 +302,13 @@ struct pic32_dstab pic32_tab[] =
 	/* PIC32MX5XX/6XX/7XX DS61156H		      */
 	{DS61156H,	"RIPE_06_000201"},
 	/* PIC32MZ EC DS60001191C		      */
-	{DS60001191C,	"RIPE_15_000400"},
+	{DS60001191C,	"RIPE_15_000502"},
 	/* EOF					      */
 	{0,		"(null)"},
+
+	/* DS60001145P-page 9                         */
+	/* PIC32MM0016/0032/0064      RIPE_20_aabbcc  */
+	/* PIC32MK0128/0256/0512/1024 RIPE_15_aabbcc  */
 };
 
 /*****************************************************************************
@@ -323,45 +329,38 @@ pic32_program_verify(struct k8048 *k)
 	io_set_vpp(k, LOW);
 	/* DS60001145M P6(100ns) */
 	io_usleep(k, 1000);
+
 	/* PGD + PGC + PGM(N/A) LOW */
 	io_set_pgd(k, LOW);
 	io_set_pgc(k, LOW);
 	io_set_pgm(k, LOW);
 	io_usleep(k, 1000);
 
-	/* LVP(KEY) */
-	if (k->key == LVPKEY) {
-		/* INIT GPIO-BB SHIFT OUT */
-		io_configure(k, TRUE);
+	/* CONFIGURE GPIO-BB */
+	io_configure(k, TRUE);
 
-		/* VPP HIGH */
-		io_set_vpp(k, HIGH);
-		/* DS60001145M P20(500us) */
-		io_usleep(k, 500);
+	/* VPP HIGH */
+	io_set_vpp(k, HIGH);
+	/* DS60001145M P20(500us) */
+	io_usleep(k, 500);
 
-		/* VPP LOW */
-		io_set_vpp(k, LOW);
-		/* DS60001145M P18(40ns) */
-		io_usleep(k, 500);
+	/* VPP LOW */
+	io_set_vpp(k, LOW);
+	/* DS60001145M P18(40ns) */
+	io_usleep(k, 500);
 
-		/* PROGRAM/VERIFY ENTRY CODE */
-		io_program_out(k, PHCMKEY, 32);
-		/* DS60001145M P19(40ns) */
-		io_usleep(k, 500);
+	/* PROGRAM/VERIFY ENTRY CODE */
+	io_program_out(k, PHCMKEY, 32);
+	/* DS60001145M P19(40ns) */
+	io_usleep(k, 500);
 
-		/* VPP HIGH */
-		io_set_vpp(k, HIGH);
-		/* DS60001145M P7(500ns) */
-		io_usleep(k, 500);
+	/* VPP HIGH */
+	io_set_vpp(k, HIGH);
+	/* DS60001145M P7(500ns) */
+	io_usleep(k, 500);
 
-		/* ENTER RUN-TEST/IDLE STATE */
-		pic32_setmode(k, PIC32_IDLE6);
-	}
-	/* UNSUPPORTED */
-	else {
-		printf("%s: fatal error: unsupported programming mode\n", __func__);
-		io_exit(k, EX_SOFTWARE); /* Panic */
-	}
+	/* ENTER RUN-TEST/IDLE STATE */
+	pic32_setmode(k, PIC32_IDLE6);
 }
 
 /*
@@ -375,6 +374,7 @@ pic32_standby(struct k8048 *k)
 	/* ENTER TEST-LOGIC-RESET STATE */
 	pic32_setmode(k, PIC32_RESET);
 	/* DS60001145M P16(0s) */
+	io_usleep(k, 500);
 
 	/* PGD + PGC + VPP + PGM(N/A) LOW */
 	io_set_pgd(k, LOW);
@@ -555,8 +555,6 @@ pic32_xferfastdata(struct k8048 *k, uint32_t tdi)
  *
  *  To send 32 bits of data for the device to execute
  *
- * 2-WIRE 4-PHASE
- *
  * DS60001145M-page 18
  */
 uint32_t
@@ -599,6 +597,78 @@ pic32_xferinstruction(struct k8048 *k, uint32_t instruction)
 
 	return response;
 }
+
+/*
+ * ReadFromAddress Pseudo Operation for PIC32MX, PIC32MZ & PIC32MK devices
+ *
+ *  To read 32 bits of data from the device memory
+ *
+ * DS60001145P-page 18
+ */
+uint32_t
+pic32_readfromaddress_m4k(struct k8048 *k, uint32_t addr)
+{
+	uint32_t data;
+
+	/*
+	 * 1. Load Fast Data register address to s3
+	 */
+
+	/* LUI S3, 0xFF20 	LOAD UPPER IMMEDIATE, CLEAR LOWER */
+	pic32_xferinstruction(k, 0x3C13FF20);
+
+	/*
+	 * 2. Load memory address to be read into t0
+	 */
+
+	/* LUI T0, <Addr31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
+	pic32_xferinstruction(k, 0x3C080000 | (addr >> 16));
+	/* ORI T0, <Addr15:0>	OR LOWER IMMEDIATE */
+	pic32_xferinstruction(k, 0x35080000 | (addr & 0xFFFF));
+
+	/*
+	 * 3. Read data
+	 */
+
+	/* LW T1, 0(T0)		LOAD WORD    */
+	pic32_xferinstruction(k, 0x8D090000);
+
+	/*
+	 * 4. Store data into Fast Data register
+	 */
+
+	/* SW T1, 0(S3)		STORE WORD   */
+	pic32_xferinstruction(k, 0xAE690000);
+	/* NOP			NO OPERATION */
+	pic32_xferinstruction(k, 0x00000000);
+
+	/*
+	 * 5. Shift out the data
+	 */
+
+	/* Select the Fastdata Register */
+	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
+
+	/* Send/Receive 32-bit Data */
+	data = pic32_xferfastdata(k, 0);
+
+	return data;
+}
+
+#if 0
+/*
+ * ReadFromAddress Pseudo Operation for PIC32MM devices
+ *
+ *  To read 32 bits of data from the device memory
+ *
+ * DS60001145P-page 19
+ */
+uint32_t
+pic32_readfromaddress_mm(struct k8048 *k, uint32_t addr)
+{
+	return 0;
+}
+#endif
 
 /*****************************************************************************
  *
@@ -749,12 +819,12 @@ pic32_enter_serial_execution_mode(struct k8048 *k)
 }
 
 /*
- * Download the PE
+ * Download the PE for PIC32MX, PIC32MZ & PIC32MK devices
  *
  * DS60001145N-page 23
  */
 void
-pic32_download_pe(struct k8048 *k, uint8_t *pe, uint32_t nbytes)
+pic32_download_pe_m4k(struct k8048 *k, uint8_t *pe, uint32_t nbytes)
 {
 	/* PE LOADER OP CODES */
 	static uint32_t peloader[] = {
@@ -888,16 +958,28 @@ pic32_download_pe(struct k8048 *k, uint8_t *pe, uint32_t nbytes)
 
 	pic32_xferfastdata(k, 0x00000000);
 	pic32_xferfastdata(k, 0xDEAD0000);
-	io_usleep(k, 1000); /* 1ms */
+	io_usleep(k, 10000); /* 10ms */
 }
 
+#if 0
 /*
- * Download Data Block
+ * Download the PE for PIC32MM devices
+ *
+ * DS60001145P-page 25
+ */
+void
+pic32_download_pe_mm(struct k8048 *k, uint8_t *pe, uint32_t nbytes)
+{
+}
+#endif
+
+/*
+ * Download Data Block for PIC32MX, PIC32MZ & PIC32MK devices
  *
  * DS60001145M-page 25
  */
 void
-pic32_download_data_block(struct k8048 *k, uint32_t *panel, uint32_t panel_size)
+pic32_download_data_block_m4k(struct k8048 *k, uint32_t *panel, uint32_t panel_size)
 {
 	/*
 	 * 1. Initialize SRAM Base Address to 0xA0000000.
@@ -934,13 +1016,26 @@ pic32_download_data_block(struct k8048 *k, uint32_t *panel, uint32_t panel_size)
 	while (offset < panel_size);
 }
 
+#if 0
 /*
- * Flash Row Write
+ * Download Data Block for PIC32MM devices
+ *
+ * DS60001145P-page 27
+ */
+void
+pic32_download_data_block_mm(struct k8048 *k, uint32_t *panel, uint32_t panel_size)
+{
+}
+#endif
+
+/*
+ * Flash Row Write for PIC32MX, PIC32MZ & PIC32MK devices
  *
  * DS60001145M-page 26
  */
+#define RAMADDR (0x0000)
 void
-pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
+pic32_flash_row_write_m4k(struct k8048 *k, uint32_t address)
 {
 	/*
 	 * 1. All PIC32 devices: Initialize constants.
@@ -1014,7 +1109,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 */
 
 	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
-		pic32_xferinstruction(k, 0x36100000 + ramaddr); /* ori s0,s0,<RAM_ADDR(15:0)> */
+		pic32_xferinstruction(k, 0x36100000 + RAMADDR); /* ori s0,s0,<RAM_ADDR(15:0)> */
 		pic32_xferinstruction(k, 0xac900040);           /* sw s0,64(a0)               */
 	}
 
@@ -1024,7 +1119,7 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 	 */
 
 	else {
-		pic32_xferinstruction(k, 0x36100000 + ramaddr); /* ori s0,s0,<RAM_ADDR(15:0)> */
+		pic32_xferinstruction(k, 0x36100000 + RAMADDR); /* ori s0,s0,<RAM_ADDR(15:0)> */
 		pic32_xferinstruction(k, 0xac900070);           /* sw s0,112(a0)              */
 	}
 
@@ -1097,54 +1192,28 @@ pic32_flash_row_write(struct k8048 *k, uint32_t address, uint16_t ramaddr)
 #endif
 }
 
+#if 0
+/*
+ * Flash Row Write for PIC32MM devices
+ *
+ * DS60001145P-page 29
+ */
+void
+pic32_flash_row_write_mm(struct k8048 *k, uint32_t address)
+{
+}
+#endif
+#undef RAMADDR
+
 /*
  * Read Memory Location
  *
  * DS60001145M-page 28
  */
-uint32_t
+static inline uint32_t
 pic32_readmemorylocation(struct k8048 *k, uint32_t addr)
 {
-	uint32_t data;
-
-	/*
-	 * 1. Initialize some constants
-	 */
-
-	/* LUI S3, 0xFF20 	LOAD UPPER IMMEDIATE, CLEAR LOWER */
-	pic32_xferinstruction(k, 0x3C13FF20);
-
-	/*
-	 * 2. Read memory location
-	 */
-
-	/* LUI T0, <Addr31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
-	pic32_xferinstruction(k, 0x3C080000 | (addr >> 16));
-	/* ORI T0, <Addr15:0>	OR LOWER IMMEDIATE */
-	pic32_xferinstruction(k, 0x35080000 | (addr & 0xFFFF));
-
-	/*
-	 * 3. Write to Fastdata location
-	 */
-
-	/* LW T1, 0(T0)		LOAD WORD    */
-	pic32_xferinstruction(k, 0x8D090000);
-	/* SW T1, 0(S3)		STORE WORD   */
-	pic32_xferinstruction(k, 0xAE690000);
-	/* NOP			NO OPERATION */
-	pic32_xferinstruction(k, 0x00000000);
-
-	/*
-	 * 4. Read data from Fastdata register 0xFF200000
-	 */
-
-	/* Select the Fastdata Register */
-	pic32_sendcommand(k, PIC32_ETAP_FASTDATA);
-
-	/* Send/Receive 32-bit Data */
-	data = pic32_xferfastdata(k, 0);
-
-	return data;
+	return pic32_readfromaddress_m4k(k, addr);
 }
 
 /*
@@ -1250,11 +1319,8 @@ pic32_pe_read(struct k8048 *k, uint32_t addr, uint16_t nwords, uint32_t *data)
 void
 pic32_pe_load(struct k8048 *k)
 {
-	FILE *fp;
-	struct stat st;
-	int rc, nbytes;
-	char *s;
 	uint8_t *pe;
+	uint32_t nbytes;
 
 	/* Validate PE */
 	if (pic32_conf.pepath[0] == '\0') {
@@ -1262,53 +1328,14 @@ pic32_pe_load(struct k8048 *k)
 	}
 
 	/* Get PE */
-	if (strstr(pic32_conf.pepath, ".bin")) {
-		rc = stat(pic32_conf.pepath, &st);
-		if (rc < 0) {
-			printf("%s: error: stat failed [%s]\n", __func__, pic32_conf.pepath);
-			bzero(pic32_conf.pepath, STRLEN);
-			return;
-		}
-		nbytes = st.st_size;
-		pe = (uint8_t *)calloc(nbytes, sizeof(uint8_t));
-		if (pe == NULL) {
-			printf("%s: fatal error: calloc failed\n", __func__);
-			io_exit(k, EX_OSERR); /* Panic */
-		}
-		fp = fopen(pic32_conf.pepath, "rb");
-		if (fp == NULL) {
-			printf("%s: error: fopen failed [%s]\n", __func__, pic32_conf.pepath);
-			bzero(pic32_conf.pepath, STRLEN);
-			return;
-		}
-		rc = fread((void *)pe, 1, nbytes, fp);
-		if (rc != nbytes) {
-			printf("%s: error: fread failed [%s]\n", __func__, pic32_conf.pepath);
-			bzero(pic32_conf.pepath, STRLEN);
-			return;
-		}
-		fclose(fp);
-	} else { /* .hex */
-		s = strstr(pic32_conf.pepath, ".hex");
-		if (s == NULL) {
-			bzero(pic32_conf.pepath, STRLEN);
-			return;
-		}
-		nbytes = inhx32_memory_create(k, &pe, pic32_conf.pepath);
-		if (nbytes == 0) {
-			bzero(pic32_conf.pepath, STRLEN);
-			return;
-		}
-		strcpy(s, ".bin");
-		fp = fopen(pic32_conf.pepath, "wb");
-		if (fp != NULL) {
-			fwrite((void *)pe, 1, nbytes, fp);
-			fclose(fp);
-		}
+	pe = pic_pe_read_file(k, pic32_conf.pepath, &nbytes);
+	if (pe == NULL) {
+		bzero(pic32_conf.pepath, STRLEN);
+		return;
 	}
 
 	/* Download PE (upload to chip) */
-	pic32_download_pe(k, pe, nbytes);
+	pic32_download_pe_m4k(k, pe, nbytes);
 
 	/* Free PE */
 	free(pe);
@@ -1514,8 +1541,8 @@ pic32_write_panel(struct k8048 *k, uint32_t region, uint32_t address, uint32_t *
 			pic32_pe_row_program(k, address, panel, panel_size);
 		} else {
 			/* !PE */
-			pic32_download_data_block(k, panel, panel_size);
-			pic32_flash_row_write(k, address, 0x0000);
+			pic32_download_data_block_m4k(k, panel, panel_size);
+			pic32_flash_row_write_m4k(k, address);
 		}
 		break;
 	default:printf("%s: warning: region unsupported [%d]\n", __func__, region);
@@ -1613,7 +1640,7 @@ pic32_init_verifyregion(struct k8048 *k, uint32_t region)
  *  RETURN BYTE FAILURE COUNT
  */
 static inline uint32_t
-pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t data)
+pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t wdata)
 {
 	uint32_t vdata = 0;
 
@@ -1621,7 +1648,7 @@ pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t 
 		if (k->f)
 			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
 				__func__, region);
-		return 0;
+		return wdata;
 	}
 	if (pic32_conf.pepath[0]) {
 		/* PE */
@@ -1630,13 +1657,11 @@ pic32_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint32_t 
 		/* !PE */
 		vdata = pic32_readmemorylocation(k, pic32_kseg1(address));
 	}
-	if (vdata != data) {
-		if (k->f)
-			printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
-				__func__, vdata, data, pic32_phy(address));
-		return 4;
+	if (vdata != wdata && k->f) {
+		printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
+			__func__, vdata, wdata, pic32_phy(address));
 	}
-	return 0;
+	return vdata;
 }
 
 /*****************************************************************************
@@ -1694,7 +1719,7 @@ pic32_program_end(struct k8048 *k, __attribute__((unused)) int config)
 uint32_t        
 pic32_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {       
-	uint32_t address, new_region, wdata;
+	uint32_t address, new_region, wdata, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
 		address = pdata->address + i;
@@ -1707,7 +1732,14 @@ pic32_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uin
 			(pdata->bytes[i + 1] << 8) |
 			(pdata->bytes[i + 2] << 16) |
 			(pdata->bytes[i + 3] << 24);
-		(*fail) += pic32_verifyregion(k, address, current_region, wdata);
+		vdata = pic32_verifyregion(k, address, current_region, wdata);
+		if (vdata != wdata) {
+			pdata->bytes[i] = vdata;
+			pdata->bytes[i + 1] = vdata >> 8;
+			pdata->bytes[i + 2] = vdata >> 16;
+			pdata->bytes[i + 3] = vdata >> 24;
+			(*fail) += 4;
+		}
 	}
 	return current_region;
 }

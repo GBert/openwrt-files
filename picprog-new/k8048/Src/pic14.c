@@ -448,19 +448,20 @@ pic14_selector(void)
 void
 pic14_program_verify(struct k8048 *k)
 {
-	/* INPUT DATA ON CLOCK RISING EDGE */
-	io_configure(k, FALSE);
-
 	/* RESET & ACQUIRE GPIO */
 	io_set_vpp(k, LOW);
 	/* DS41204H PIC16F688  THLD0(2us) */
 	/* DS41620C PIC16F1455 TENTS(100ns) */
 	io_usleep(k, 1000);
+
 	/* PGD + PGC + PGM LOW */
 	io_set_pgd(k, LOW);
 	io_set_pgc(k, LOW);
 	io_set_pgm(k, LOW);
 	io_usleep(k, 1000);
+
+	/* INPUT DATA ON CLOCK RISING EDGE */
+	io_configure(k, FALSE);
 
 	/* LVP(KEY) */
 	if (k->key == LVPKEY) {
@@ -2006,7 +2007,7 @@ pic14_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
  *  RETURN BYTE FAILURE COUNT
  */
 static inline uint16_t
-pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
+pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t wdata)
 {
 	uint16_t vdata = 0;
 
@@ -2022,21 +2023,19 @@ pic14_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 	default:if (k->f)
 			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
 				__func__, region);
-		return 0;
+		return wdata;
 	}
 	if (pic14_map[pic14_index].datasheet == DS41191C) {
 		if (address == PIC14_BANDGAPADDR) {
 			vdata &= PIC14_CONFIGMASK;
-			data &= PIC14_CONFIGMASK;
+			wdata &= PIC14_CONFIGMASK;
 		}
 	}
-	if (vdata != data) {
-		if (k->f)
-			fprintf(k->f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
-				__func__, vdata, data, address);
-		return 2;
+	if (vdata != wdata && k->f) {
+		fprintf(k->f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
+			__func__, vdata, wdata, address);
 	}
-	return 0;
+	return vdata;
 }
 
 /*****************************************************************************
@@ -2096,7 +2095,7 @@ uint32_t
 pic14_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {
 	static uint16_t PC_address = 0;
-	uint16_t address, new_region, wdata;
+	uint16_t address, new_region, wdata, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
 		address = (pdata->address + i) >> 1;
@@ -2114,7 +2113,12 @@ pic14_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uin
 		wdata = pdata->bytes[i] |
 			(pdata->bytes[i + 1] << 8);
 		wdata &= PIC14_MASK;
-		(*fail) += pic14_verifyregion(k, address, current_region, wdata);
+		vdata = pic14_verifyregion(k, address, current_region, wdata);
+		if (vdata != wdata) {
+			pdata->bytes[i] = vdata;
+			pdata->bytes[i + 1] = vdata >> 8;
+			(*fail) += 2;
+		}
 	}
 	return current_region;
 }

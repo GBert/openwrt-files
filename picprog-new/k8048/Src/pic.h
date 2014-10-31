@@ -103,6 +103,11 @@ void pic_program_begin(struct k8048 *);
 uint32_t pic_program_data(struct k8048 *, uint32_t, pic_data *);
 void pic_program_end(struct k8048 *, int);
 
+void pic_verify_begin(struct k8048 *);
+uint32_t pic_verify_data(struct k8048 *, uint32_t, pic_data *, uint32_t *);
+void pic_verify_end(struct k8048 *);
+
+uint8_t *pic_pe_read_file(struct k8048 *, char *, uint32_t *);
 int pic_pe_lookup(struct k8048 *, char *, const char *);
 
 int pic_read_config(struct k8048 *);

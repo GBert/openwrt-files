@@ -553,6 +553,7 @@ pic24_program_verify(struct k8048 *k)
 	/* DS70663D    dsPIC33EP128GP502 P6(100ns) */
 	/* DS30000510E PIC24FJXXXGA2/GB2 P6(100ns) */
 	io_usleep(k, 1000);
+
 	/* PGD + PGC + PGM(N/A) LOW */
 	io_set_pgd(k, LOW);
 	io_set_pgc(k, LOW);
@@ -1294,7 +1295,7 @@ pic24_read_config_memory(struct k8048 *k)
 		pic24_standby(k);
 		return -1;
 	}
-
+#if 0
 	/* Device family */
 	dev = 0;
 	while (pic24_tab[dev].datasheet) {
@@ -1304,7 +1305,7 @@ pic24_read_config_memory(struct k8048 *k)
 		}
 		++dev;
 	}
-
+#endif
 	/* App-id */
 	if ((pic24_map[pic24_index].datasheet == DS70102H) ||	/* dsPIC30F      */
 		(pic24_map[pic24_index].datasheet == DS70284B))	/* dsPIC30F SMPS */
@@ -2045,7 +2046,7 @@ pic24_init_verifyregion(struct k8048 *k, uint32_t region)
  *  RETURN BYTE FAILURE COUNT
  */
 static inline uint32_t
-pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint32_t data)
+pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint32_t wdata)
 {
 	uint32_t vdata = 0;
 
@@ -2053,23 +2054,21 @@ pic24_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		if (k->f)
 			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
 				__func__, region);
-		return 0;
+		return wdata;
 	} else if (region == PIC_REGIONCONFIG) {
 		/* Can't verify config */
-		return 0;
+		return wdata;
 	}
 	if (index == 0) {
 		pic24_set_read_pointer(k, address);
 		pic24_goto200(k);
 	}
 	vdata = pic24_table_read24_post_increment(k);
-	if (vdata != data) {
-		if (k->f)
-			fprintf(k->f, "%s: error: read [%06X] expected [%06X] at [%06X]\n",
-				__func__, vdata, data, address);
-		return 4;
+	if (vdata != wdata && k->f) {
+		fprintf(k->f, "%s: error: read [%06X] expected [%06X] at [%06X]\n",
+			__func__, vdata, wdata, address);
 	}
-	return 0;
+	return vdata;
 }
 
 /*****************************************************************************
@@ -2131,7 +2130,7 @@ pic24_program_end(struct k8048 *k, int config)
 uint32_t
 pic24_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {
-	uint32_t address, new_region, wdata;
+	uint32_t address, new_region, wdata, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {
 		address = (pdata->address + i) >> 1;
@@ -2143,7 +2142,13 @@ pic24_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uin
 		wdata = pdata->bytes[i] |
 			(pdata->bytes[i + 1] << 8) |
 			(pdata->bytes[i + 2] << 16);
-		(*fail) += pic24_verifyregion(k, address, current_region, i, wdata);
+		vdata = pic24_verifyregion(k, address, current_region, i, wdata);
+		if (vdata != wdata) {
+			pdata->bytes[i] = vdata;
+			pdata->bytes[i + 1] = vdata >> 8;
+			pdata->bytes[i + 2] = vdata >> 16;
+			(*fail) += 4;
+		}
 	}
 	return current_region;
 }

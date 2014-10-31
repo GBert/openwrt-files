@@ -49,12 +49,14 @@ io_signal_on()
 {
 	io_stop = 0;
 	signal(SIGINT, io_signal);
+	signal(SIGPIPE, SIG_IGN);
 }
 
 void
 io_signal_off()
 {
 	signal(SIGINT, SIG_DFL);
+	signal(SIGPIPE, SIG_DFL);
 }
 
 /******************************************************************************

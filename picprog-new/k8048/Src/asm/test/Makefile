@@ -49,6 +49,7 @@ build:
 	$(MAKE) -f PIC24FV32KA302.mk build
 	$(MAKE) -f PIC24HJ128GP502.mk build
 	$(MAKE) -f PIC32MX150F128B.mk build
+	$(MAKE) -f PIC32MX170F256B.mk build
 	$(MAKE) -f PIC32MX250F128B.mk build
 	$(MAKE) -f PIC32MX795F512H.mk build
 
@@ -71,6 +72,7 @@ install:build
 	$(MAKE) -f PIC24FV32KA302.mk install
 	$(MAKE) -f PIC24HJ128GP502.mk install
 	$(MAKE) -f PIC32MX150F128B.mk install
+	$(MAKE) -f PIC32MX170F256B.mk install
 	$(MAKE) -f PIC32MX250F128B.mk install
 	$(MAKE) -f PIC32MX795F512H.mk install
 
@@ -93,6 +95,7 @@ uninstall:
 	$(MAKE) -f PIC24FV32KA302.mk uinstall
 	$(MAKE) -f PIC24HJ128GP502.mk uinstall
 	$(MAKE) -f PIC32MX150F128B.mk uninstall
+	$(MAKE) -f PIC32MX170F256B.mk uninstall
 	$(MAKE) -f PIC32MX250F128B.mk uninstall
 	$(MAKE) -f PIC32MX795F512H.mk uninstall
 
@@ -115,5 +118,6 @@ clean:
 	$(MAKE) -f PIC24FV32KA302.mk clean
 	$(MAKE) -f PIC24HJ128GP502.mk clean
 	$(MAKE) -f PIC32MX150F128B.mk clean
+	$(MAKE) -f PIC32MX170F256B.mk clean
 	$(MAKE) -f PIC32MX250F128B.mk clean
 	$(MAKE) -f PIC32MX795F512H.mk clean

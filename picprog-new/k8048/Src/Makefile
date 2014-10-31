@@ -67,7 +67,7 @@ BINDIR=/usr/local/bin
 
 CLIB1=$(CLIB)
 TARGET1=k8048
-SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c util.c stk500v2.c
+SOURCE1=k8048.c dotconf.c inhx32.c io.c pic.c util.c
 
 CLIB2=$(CLIB)
 TARGET2=kio
@@ -112,7 +112,7 @@ endif
 
 ifeq "$(TTY)" "1"
 CFLAGS+=-DTTY
-SOURCE1+=serial_posix.c
+SOURCE1+=serial_posix.c stk500v2.c stk500v2_load.c stk500v2_listen.c ip.c rw.c
 SOURCE2+=serial_posix.c
 endif
 

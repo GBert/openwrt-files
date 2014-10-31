@@ -30,49 +30,57 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STK500_H
-#define _STK500_H
+#ifndef _STK500V2_H
+#define _STK500V2_H
 
 /* stk500v2 max message size */
-#define STKLEN (275)
+#define STK_LEN (275)
 
-#define MESSAGE_START (0x1B)
-#define TOKEN	      (0x0E)
+#define STK_MESSAGE_START (0x1B)
+#define STK_TOKEN	  (0x0E)
 
-#define CMD_SIGN_ON	       (0x01)
-#define CMD_SET_PARAMETER      (0x02)
-#define CMD_GET_PARAMETER      (0x03)
-#define CMD_LOAD_ADDRESS       (0x06)
-#define CMD_ENTER_PROGMODE_ISP (0x10)
-#define CMD_LEAVE_PROGMODE_ISP (0x11)
-#define CMD_CHIP_ERASE_ISP     (0x12)
-#define CMD_PROGRAM_FLASH_ISP  (0x13)
-#define CMD_READ_FLASH_ISP     (0x14)
-#define CMD_SPI_MULTI	       (0x1D)
+#define STK_CMD_SIGN_ON	       	   (0x01)
+#define STK_CMD_SET_PARAMETER      (0x02)
+#define STK_CMD_GET_PARAMETER      (0x03)
+#define STK_CMD_LOAD_ADDRESS       (0x06)
+#define STK_CMD_ENTER_PROGMODE_ISP (0x10)
+#define STK_CMD_LEAVE_PROGMODE_ISP (0x11)
+#define STK_CMD_CHIP_ERASE_ISP     (0x12)
+#define STK_CMD_PROGRAM_FLASH_ISP  (0x13)
+#define STK_CMD_READ_FLASH_ISP     (0x14)
+#define STK_CMD_SPI_MULTI	   (0x1D)
 
-#define STATUS_CMD_OK		 (0x00)
-#define STATUS_CMD_TOUT		 (0x80)
-#define STATUS_RDY_BSY_TOUT	 (0x81)
-#define STATUS_SET_PARAM_MISSING (0x82)
-#define STATUS_CMD_FAILED	 (0xC0)
-#define STATUS_CKSUM_ERROR	 (0xC1)
+#define STK_STATUS_CMD_OK	     (0x00)
+#define STK_STATUS_CMD_TOUT	     (0x80)
+#define STK_STATUS_RDY_BSY_TOUT	     (0x81)
+#define STK_STATUS_SET_PARAM_MISSING (0x82)
+#define STK_STATUS_CMD_FAILED        (0xC0)
+#define STK_STATUS_CKSUM_ERROR	     (0xC1)
 
-/* our skt500v2 protocol error code */
-#define STK500_PROTOCOL_ERROR (-200)
+/* Our protocol error code */
+#define STK_PROTOCOL_ERROR (-200)
 
 /* Receiver echos sequence number received */
-#define SEQECHO (0)
+#define STK_SEQECHO (0)
 /* Sender validates sequence number received */
-#define SEQTEST (1)
+#define STK_SEQTEST (1)
 
-#define TIMEOUT (10)
-#define RETRY (10)
+#define STK_TIMEOUT (5)
+#define STK_RETRY   (10)
 
 /* our stk500v2 get/set params */
-#define STK500_PARAM_ARCH    (0xF0) /* TODO set ARCH     */
-#define STK500_PARAM_ROWSIZE (0xF1) /* TODO get row size */
+#define STK_PARAM_ARCH    (0xF0) /* TODO set ARCH     */
+#define STK_PARAM_ROWSIZE (0xF1) /* TODO get row size */
 
-int stk500v2_recvfile(struct k8048 *, char *);
-int stk500v2_sendfile(struct k8048 *, char *, char *, int);
+#define STK_PROGMODE_NONE  (0) /* current programming mode */
+#define STK_PROGMODE_WRITE (1) /* program */
+#define STK_PROGMODE_READ  (2) /* verify  */
 
-#endif /* !_STK500_H */
+#define STK_LISTEN (1) 
+#define STK_CONNECT (2) 
+int16_t stk500v2_open(struct k8048 *, const char *, int, int);
+void stk500v2_close(struct k8048 *, const char *);
+int16_t stk500v2_recv(struct k8048 *, int);
+int16_t stk500v2_send(struct k8048 *, uint16_t);
+
+#endif /* !_STK500V2_H */

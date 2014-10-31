@@ -68,7 +68,14 @@ activate this mode of operation (also see footnote).
 A file named RIPE_11_000301.hex will now exist in the .k8048 directory. When
 we use k32, and it finds this file, it will automatically load it into the chip.
 
-To test that it has been registered correctly, we can issue the id command,
+The following PE files are all that's required for the PIC32MX range of micros.
+
+md5sum:
+2662befb94584d40b905a9040a9ed2f4 RIPE_06_000201.hex
+4cb8f6492b1234a45c92979a36d91587 RIPE_11_000301.hex
+aea1a950b72471e54b82852b93105d6a RIPE_15_000502.hex
+
+To test that the PE has been registered correctly, we can issue the id command,
 and if the PE is found the filename is shown. If the filename is not
 shown then something is wrong.
 

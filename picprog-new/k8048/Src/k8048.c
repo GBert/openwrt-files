@@ -107,8 +107,8 @@ usage_k8048(struct k8048 *k)
 		"\t\tControl master clear.\n"
 #endif
 #ifdef TTY
-		" kload TTY FILE [AVR]\n"
-		"\t\tUpload file using TTY.\n"
+		" kload PROGRAM|VERIFY TTY|IP FILE [AVR]\n"
+		"\t\tProgram or verify file on TTY or network.\n"
 #endif
 #ifdef KTEST
 		" ktest TEST [ARG]\n"
@@ -167,8 +167,8 @@ usage_kctrl(struct k8048 *k, char *msg)
 void
 usage_kload(struct k8048 *k, char *msg)
 {
-	printf("USAGE: kload TTY FILE [AVR]\n");
-	printf("Upload file using TTY.\n\n");
+	printf("USAGE: kload PROGRAM|VERIFY TTY|IP FILE [AVR]\n");
+	printf("Program or verify file on TTY or network.\n\n");
 
 	if (msg)
 		printf("Error: %s.\n\n", msg);
@@ -182,14 +182,16 @@ usage_kload(struct k8048 *k, char *msg)
 		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n"
-		" kload /dev/ttyS0 file.hex\n"
-		"\t\tUpload file.hex (INHX32 format) using /dev/ttyS0.\n"
-		" kload /dev/ttyS0 < led.hex\n"
-		"\t\tUpload stdin (INHX32 format) using /dev/ttyS0.\n"
-		" kload /dev/ttyS0 - avr\n"
-		"\t\tUpload stdin (INHX32 format) using /dev/ttyS0 to PIC32 AVR bootloader.\n"
-		" kload /dev/ttyUSB0 unix.hex avr\n"
-		"\t\tUpload unix.hex (INHX32 format) using /dev/ttyUSB0 to PIC32 AVR bootloader.\n"
+		" kload program /dev/ttyS0 file.hex\n"
+		"\t\tProgram file.hex (INHX32 format) on /dev/ttyS0.\n"
+		" kload verify /dev/ttyS0 file.hex\n"
+		"\t\tVerify file.hex (INHX32 format) on /dev/ttyS0.\n"
+		" kload program 192.168.1.100 < led.hex\n"
+		"\t\tProgram stdin (INHX32 format) on 192.168.1.100 port 8048.\n"
+		" kload program /dev/ttyS0 - avr\n"
+		"\t\tProgram stdin (INHX32 format) on /dev/ttyS0 (AVR bootloader).\n"
+		" kload program /dev/ttyUSB0 unix.hex avr\n"
+		"\t\tProgram unix.hex (INHX32 format) on /dev/ttyUSB0 (AVR bootloader).\n"
 
 		"\n");
 
@@ -301,8 +303,8 @@ usage_k12(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" k12 %ss%select PIC1XFXXX %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-	printf(" k12 %ss%select PIC1XFXXX /dev/ttyUSB0\n"
-		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n", UL_ON, UL_OFF);
+	printf(" k12 %ss%select PIC1XFXXX /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 
 	printf("\n");
 
@@ -368,8 +370,8 @@ usage_k14(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k14 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k14 /dev/ttyUSB0\n"
-		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
+	printf(" k14 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
 
 	printf("\n");
 
@@ -431,8 +433,8 @@ usage_k16(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k16 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k16 /dev/ttyUSB0\n"
-		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
+	printf(" k16 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -496,8 +498,8 @@ usage_k24(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k24 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k24 /dev/ttyUSB0\n"
-		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
+	printf(" k24 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -551,8 +553,8 @@ usage_k32(struct k8048 *k, char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" k32 %svi%sew [file.hex]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" k32 /dev/ttyUSB0\n"
-		"\t\tListen on /dev/ttyUSB0 for remote file upload.\n");
+	printf(" k32 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
 
 	printf("\n");
 	
@@ -643,20 +645,32 @@ main(int argc, char **argv)
 	/* Command: kload */
 	if (strcmp(execname, "kload") == 0) {
 		resetuid(&k);
-		if (argc < 2)
-			usage_kload(&k, "Missing arg");
-		if (argc > 4)
-			usage_kload(&k, "Too many args");
-		if (strstr(argv[1], "/dev/tty") != argv[1])
-			usage_kload(&k, "Not a tty");
 		if (argc < 3)
-			stk500v2_sendfile(&k, argv[1], "-", /* Native */ 0);
-		else if (argc < 4)
-			stk500v2_sendfile(&k, argv[1], argv[2], /* Native */ 0);
-		else if (argv[3][0] == 'a' || argv[3][0] == 'A')
-			stk500v2_sendfile(&k, argv[1], argv[2], /* AVR */ 1);
-		else
+			usage_kload(&k, "Missing arg");
+		if (argc > 5)
+			usage_kload(&k, "Too many args");
+
+		int prog_mode = tolower((int)argv[1][0]);
+		if (prog_mode != 'p' && prog_mode != 'v')
 			usage_kload(&k, "Invalid mode");
+
+		if (argv[2][0] == '/' && strstr(argv[2], "/dev/tty") != argv[2])
+			usage_kload(&k, "Invalid tty");
+
+		char file[STRLEN];
+		strcpy(file, "-");
+		if (argc >= 4)
+			strncpy(file, argv[3], STRMAX);
+
+		int target = 'n';
+		if (argc == 5) {
+			target = tolower((int)argv[4][0]);
+			if (target != 'a')
+				usage_kload(&k, "Invalid target");
+		}
+
+		io_signal_on(k); // !SIGPIPE
+		stk500v2_load(&k, prog_mode, argv[2], file, target);
 		io_exit(&k, EX_OK);
 	}
 #endif
@@ -991,7 +1005,10 @@ main(int argc, char **argv)
 			if (strstr(argv[1], k.device) != NULL) {
 				usage(&k, execname, "Device in use [TTY]");
 			}
-			stk500v2_recvfile(&k, argv[1]);
+			stk500v2_listen(&k, argv[1], 0);
+			break;
+
+	case '8':	stk500v2_listen(&k, "0.0.0.0", 8048);
 			break;
 #endif
 	default:	usage(&k, execname, "Unknown operation");

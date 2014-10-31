@@ -330,18 +330,19 @@ pic16_selector(void)
 void
 pic16_program_verify(struct k8048 *k)
 {
-	/* INPUT DATA ON CLOCK RISING EDGE */
-	io_configure(k, FALSE);
-
 	/* RESET & ACQUIRE GPIO */
 	io_set_vpp(k, LOW);
 	/* UNKNOWN */
 	io_usleep(k, 1000);
+
 	/* PGD + PGC + PGM LOW */
 	io_set_pgd(k, LOW);
 	io_set_pgc(k, LOW);
 	io_set_pgm(k, LOW);
 	io_usleep(k, 1000);
+
+	/* INPUT DATA ON CLOCK RISING EDGE */
+	io_configure(k, FALSE);
 
 	/* LVP(KEY) */
 	if (k->key == LVPKEY) {
@@ -1501,7 +1502,7 @@ pic16_init_verifyregion(struct k8048 *k, uint32_t region)
  *  RETURN BYTE FAILURE COUNT
  */
 static inline uint32_t
-pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint8_t data)
+pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t index, uint8_t wdata)
 {
 	uint8_t vdata = 0;
 
@@ -1514,7 +1515,7 @@ pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 		break;
 	case PIC_REGIONCONFIG:
 		/* Can't verify config */
-		return 0;
+		return wdata;
 	case PIC_REGIONDATA:
 		pic16_set_data_pointer(k, address & PIC16_DATA_MASK);
 		vdata = pic16_read_data_memory(k);
@@ -1522,15 +1523,13 @@ pic16_verifyregion(struct k8048 *k, uint32_t address, uint32_t region, uint16_t 
 	default:if (k->f)
 			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
 				__func__, region);
-		return 0;
+		return wdata;
 	}
-	if (vdata != data) {
-		if (k->f)
-			fprintf(k->f, "%s: error: read [%02X] expected [%02X] at [%06X]\n",
-				__func__, vdata, data, address);
-		return 1;
+	if (vdata != wdata && k->f) {
+		fprintf(k->f, "%s: error: read [%02X] expected [%02X] at [%06X]\n",
+			__func__, vdata, wdata, address);
 	}
-	return 0;
+	return vdata;
 }
 
 /*****************************************************************************
@@ -1589,7 +1588,7 @@ pic16_program_end(struct k8048 *k, int config)
 uint32_t
 pic16_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {
-	uint32_t address, new_region;
+	uint32_t address, new_region, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; ++i) {
 		address = pdata->address + i;
@@ -1598,7 +1597,11 @@ pic16_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uin
 			current_region = pic16_init_verifyregion(k, new_region);
 		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		(*fail) += pic16_verifyregion(k, address, current_region, i, pdata->bytes[i]);
+		vdata = pic16_verifyregion(k, address, current_region, i, pdata->bytes[i]);
+		if (vdata != pdata->bytes[i]) {
+			pdata->bytes[i] = vdata;
+			(*fail)++;
+		}
 	}
 	return current_region;
 }

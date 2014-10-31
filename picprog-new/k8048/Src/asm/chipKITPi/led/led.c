@@ -36,7 +36,7 @@
  *
  * LED blinker based on the PIC32 starter kits users guide example 3-1.
  *
- * This demo requires the chipKIT Pi boot loader.
+ * This demo requires the chipKIT Pi MX270 boot loader at 48 MHz
  *
  *******************************************************************************
  *
@@ -64,45 +64,48 @@
  *
  * Program
  * --------
- * kload /dev/ttyAMA0 led.hex avr
+ * kload program /dev/ttyAMA0 led.hex avr
  *
  ******************************************************************************/
 
 #include "led.h"
 
-void
-delay_ms(uint32_t ms)
+/*
+ * Init I/O
+ */
+static inline void
+init_io(void)
 {
-	uint32_t startTime, waitTime;
+	/* ADC Digital Mode */
+	ANSELA = 0;
+	ANSELB = 0;
 
-	startTime = ReadCoreTimer();
-	waitTime = (FCY / 2000) * ms;
+	/* Set/Reset O/P */
+	LATA = 0x0000;
+	LATB = 0xFFFF;
 
-	while ((ReadCoreTimer() - startTime) < waitTime)
-		;
+	/* LED1 RA0 O/P */
+	TRISAbits.TRISA0 = 0;
+
+	/* LED2 RB15 O/P */
+	TRISBbits.TRISB15 = 0;
 }
 
 int
 main() 
 {
-	/* RA0 = 0 */
-	mPORTAClearBits(BIT_0);
-	/* RB15 = 1 */
-	mPORTBSetBits(BIT_15);
-
-	/* RA0 O/P */
-	mPORTASetPinsDigitalOut(BIT_0);
-	/* RB15 O/P */
-	mPORTBSetPinsDigitalOut(BIT_15);
+	/* Init I/O */
+	init_io();
 
 	while(1) {
 		/*  F = 1 Hz */
 		delay_ms(500);
 
 		/* RA0 = ! RA0 */
-		mPORTAToggleBits(BIT_0);
+		LATAbits.LATA0 = ~LATAbits.LATA0;
+
 		/* RB15 = ! RB15 */
-		mPORTBToggleBits(BIT_15);
+		LATBbits.LATB15 = ~LATBbits.LATB15;
 	}
 	return 0;
 }

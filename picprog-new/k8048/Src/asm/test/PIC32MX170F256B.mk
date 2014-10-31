@@ -30,7 +30,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-CPU     = 32MX270F256B
+CPU     = 32MX170F256B
 
 HEAP    =
 STACK   =
@@ -54,19 +54,21 @@ OBJDUMP = $(COMPILE)objdump
 
 RM      = /bin/rm
 
-TARGET  = led.hex
+TARGET  = PIC32MX170F256B.hex
 
-CSOURCE = led.c
+CSOURCE = PIC32MX170F256B.c
 COBJECT = $(CSOURCE:.c=.o)
-CHEADER = $(CSOURCE:.c=.h)
+CHEADER = ../include/icspio.h
 CTEMPS  = $(CSOURCE:.c=.s)
 
 ELF     = $(TARGET:.hex=.elf)
 MAP     = $(TARGET:.hex=.map)
 
-CFLAGS  = -Os -mprocessor=$(CPU) -std=gnu99 -pedantic-errors -Wall -g -fno-short-double -fverbose-asm -save-temps
-CFLAGS += -mno-smart-io -ffunction-sections -fdata-sections -mdebugger -Wcast-align -fframe-base-loclist -I../../include
-CLINK   = -Wl,-TchipKIT-application-32MX270F256.ld,-TchipKIT-application-COMMON.ld,-Map=$(MAP),--gc-sections -mno-peripheral-libs
+CFLAGS  = -Os -mprocessor=$(CPU) -std=gnu99 -pedantic-errors -Wall -g -fno-short-double -fverbose-asm -save-temps -I../include
+CFLAGS += -mno-smart-io -ffunction-sections -fdata-sections -mdebugger -Wcast-align -fframe-base-loclist
+CLINK   = -Wl,-T../lib/p$(CPU).ld,-Map=$(MAP),--gc-sections -mno-peripheral-libs -lm
+
+PIHOST  = pi3
 
 build:$(TARGET)
 
@@ -78,10 +80,19 @@ $(ELF):$(COBJECT)
 	@echo -n "[LINK] "
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(AOBJECT) $(COBJECT) -o $(ELF) $(CLINK)
 
-$(COBJECT):$(CHEADER) Makefile chipKIT-application-32MX270F256.ld chipKIT-application-COMMON.ld
+$(COBJECT):$(CHEADER) PIC32MX170F256B.mk ../lib/p$(CPU).ld
 
 program:build
-	kload program /dev/ttyAMA0 ${TARGET} avr
+	k32 program $(TARGET)
+
+verify:build
+	k32 verify $(TARGET)
+
+program-pi:build
+	ssh ${PIHOST} k32 program < $(TARGET)
+
+verify-pi:build
+	ssh ${PIHOST} k32 verify < $(TARGET)
 
 %.o:%.c
 	@echo -n "[CC] "

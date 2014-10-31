@@ -1,14 +1,16 @@
 #
 # BoardConfig.h		Copyright (c) 2013-2014, Digilent <www.digilentinc.com>
 #
+# CHIPKIT_PI.mk		Copyright (c) 2014 Darron Broad
+# CHIPKIT_PI_MX270_48.mk
+# CHIPKIT_PI_MX270.mk
+#
 # crt0.S		Copyright Microchip Technology Inc.
 #
 # main.c		Copyright 2014 Rich Testardi
 #			Copyright (c) 2013-2014, Digilent <www.digilentinc.com>
 # 
 # Makefile		Copyright (c) 2014 Darron Broad
-# CHIPKIT_PI.mk
-# CHIPKIT_PI_MX270.mk
 #
 # serial.h		Copyright (c) 2013-2014, Digilent <www.digilentinc.com>
 #

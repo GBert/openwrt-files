@@ -97,6 +97,7 @@ serial_open(const char *device, speed_t speed)
 void
 serial_close(int serial_port)
 {
+	tcdrain(serial_port);
 	close(serial_port);
 }
 
@@ -159,129 +160,6 @@ set_tx(int serial_port, int tx)
 		ioctl(serial_port, TIOCSBRK, 0); /* +ve */
 	else
 		ioctl(serial_port, TIOCCBRK, 0); /* -ve */
-}
-
-/*
- * Read at most buflen characters into buffer
- *
- *  The number of characters read is not guaranteed to be greater than one
- *  regardless of the number requested.
- *
- *  return number of bytes or error
- */
-int
-serial_get(int serial_port, char *buffer, int buflen, int timeout)
-{
-	struct timeval timeval;
-	fd_set fdset;
-	int rc = 0;
-
-	while (1) {
-		timeval.tv_sec = timeout;
-		timeval.tv_usec = 0;
-
-		FD_ZERO(&fdset);
-		FD_SET(serial_port, &fdset);
-
-		rc = select(serial_port + 1, &fdset, NULL, NULL, &timeval);
-		if (rc < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			return -EIO;
-		}
-		if (rc != 1) {
-			return -ETIMEDOUT;
-		}
-		if (!FD_ISSET(serial_port, &fdset)) {
-			return -ETIMEDOUT;
-		}
-		rc = read(serial_port, buffer, buflen);
-		if (rc < 0) {
-			if (errno == EINTR || errno == EAGAIN) {
-				continue;
-			}
-			return -EIO;
-		}
-		if (rc == 0)
-			return -EIO; /* Connection reset */
-
-		return rc;
-	}
-	/* Not reached */
-}
-
-/*
- * Read buflen characters into buffer
- *
- *  return number of bytes or error
- */
-int
-serial_read(int serial_port, char *buffer, int buflen, int timeout)
-{
-	int rc, nb = 0;
-
-	do {
-		rc = serial_get(serial_port, &buffer[nb], buflen - nb, timeout);
-		if (rc < 0)
-			return rc;
-		nb += rc;
-	}
-	while (nb < buflen);
-	if (nb > buflen) {
-		return -EIO;
-	}
-
-	return nb;
-}
-
-/*
- * Write buflen characters from buffer
- *
- *  return number of bytes or error
- */
-int
-serial_write(int serial_port, char *buffer, int buflen, int timeout)
-{
-	fd_set fdset;
-	struct timeval timeval;
-	int rc = 0, nb = 0;
-
-	while (nb < buflen) {
-		timeval.tv_sec = timeout;
-		timeval.tv_usec = 0;
-
-		FD_ZERO(&fdset);
-		FD_SET(serial_port, &fdset);
-
-		rc = select(serial_port + 1, NULL, &fdset, NULL, &timeval);
-		if (rc < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			return -EIO;
-		}
-		if (rc != 1) {
-			return -ETIMEDOUT;
-		}
-		if (!FD_ISSET(serial_port, &fdset)) {
-			return -ETIMEDOUT;
-		}
-		rc = write(serial_port, &buffer[nb], buflen - nb);
-		if (rc < 0) {
-			if (errno == EINTR || errno == EAGAIN) {
-				continue;
-			}
-			return -EIO;
-		}
-		if (rc == 0)
-			return -EIO; /* Connection reset */
-
-		nb += rc;
-	}
-	tcdrain(serial_port);
-
-	return nb;
 }
 
 /*

@@ -30,16 +30,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LED_H
-#define _LED_H
+#ifndef _RW_H
+#define _RW_H
 
-#include <stdio.h>
-#include <stdlib.h>	/* rand() */
-#include <stdbool.h>	/* true || false */
-#include <stdint.h>
-#include <plib.h>
+int rw_get(int, char *, int, int);
 
-#define FCY (48000000UL)/* CHIPKIT_PI_MX270_48 */
-#include <delay.h>	/* delay_ms() */
+int rw_read(int, char *, int, int);
+int rw_write(int, char *, int, int);
 
 #endif

@@ -177,9 +177,6 @@ pic12_selector(void)
 void
 pic12_program_verify(struct k8048 *k)
 {
-	/* INPUT DATA ON CLOCK RISING EDGE */
-	io_configure(k, FALSE);
-
 	/* RESET & ACQUIRE GPIO */
 	io_set_vpp(k, LOW);
 	/* DS41226G PIC16F505 TPPDP(5us) */
@@ -187,11 +184,15 @@ pic12_program_verify(struct k8048 *k)
 	/* DS41207D PIC16F54  TPPDP(5us) */
 	/* DS41670A PIC16F570 TPPDP(5us) */
 	io_usleep(k, 1000);
+
 	/* PGD + PGC + PGM(N/A) LOW */
 	io_set_pgd(k, LOW);
 	io_set_pgc(k, LOW);
 	io_set_pgm(k, LOW);
 	io_usleep(k, 1000);
+
+	/* INPUT DATA ON CLOCK RISING EDGE */
+	io_configure(k, FALSE);
 
 	/* VPP HIGH */
 	io_set_vpp(k, HIGH);
@@ -835,7 +836,7 @@ pic12_programregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t
  *  RETURN BYTE FAILURE COUNT
  */
 static inline uint16_t
-pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t data)
+pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t wdata)
 {
 	uint16_t vdata = 0;
 
@@ -847,15 +848,13 @@ pic12_verifyregion(struct k8048 *k, uint16_t address, uint16_t region, uint16_t 
 	default:if (k->f)
 			fprintf(k->f, "%s: warning: region unsupported [%d]\n",
 				__func__, region);
-		return 0;
+		return wdata;
 	}
-	if (vdata != data) {
-		if (k->f)
-			fprintf(k->f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
-				__func__, vdata, data, address);
-		return 2;
+	if (vdata != wdata && k->f) {
+		fprintf(k->f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
+			__func__, vdata, wdata, address);
 	}
-	return 0;
+	return vdata;
 }
 
 /*****************************************************************************
@@ -915,7 +914,7 @@ uint32_t
 pic12_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {
 	static uint16_t PC_address = 0;
-	uint16_t address, new_region, wdata;
+	uint16_t address, new_region, wdata, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
 		address = (pdata->address + i) >> 1;
@@ -933,7 +932,12 @@ pic12_verify_data(struct k8048 *k, uint32_t current_region, pic_data *pdata, uin
 		wdata = pdata->bytes[i] |
 			(pdata->bytes[i + 1] << 8);
 		wdata &= PIC12_MASK;
-		(*fail) += pic12_verifyregion(k, address, current_region, wdata);
+		vdata = pic12_verifyregion(k, address, current_region, wdata);
+		if (vdata != wdata) {
+			pdata->bytes[i] = vdata;
+			pdata->bytes[i + 1] = vdata >> 8;
+			(*fail) += 2;
+		}
 	}
 	return current_region;
 }

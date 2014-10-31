@@ -302,6 +302,25 @@ $ wget https://chipkit.s3.amazonaws.com/builds/mpide-0023-raspberrypi-20140821.t
 $ tar zxvf mpide-0023-raspberrypi-20140821.tgz
 $ ln -s mpide-0023-raspberrypi-20140821/hardware/pic32/compiler/pic32-tools
 
+PIC32 for Windows CYGWIN using CHIPKIT
+======================================
+
+See: http://chipkit.net/started/install-chipkit-software/
+
+Download https://chipkit.s3.amazonaws.com/builds/mpide-0023-windows-20140821.zip
+
+Extract mpide-0023-windows-20140821.zip to c:\mpide-0023-windows-20140821
+
+Run CYGWIN terminal
+
+$ mkdir -p /opt
+$ ln -sf /cygdrive/c/mpide-0023-windows-20140821/hardware/pic32/compiler/pic32-tools /opt/pic32-tools
+
+Eg. Build ChipKIT Pi firmware
+
+$ cd ~/k8048/Src/asm/chipKITPi/firmware
+$ make
+
 NFS
 ===
 

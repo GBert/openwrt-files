@@ -31,6 +31,7 @@
 #
 
 CPU     = 32MX270F256B
+BOARD   = CHIPKIT_PI_MX270_48
 
 HEAP    =
 STACK   =
@@ -54,46 +55,51 @@ OBJDUMP = $(COMPILE)objdump
 
 RM      = /bin/rm
 
-TARGET  = led.hex
+TARGET  = $(BOARD).hex
 
-CSOURCE = led.c
-COBJECT = $(CSOURCE:.c=.o)
-CHEADER = $(CSOURCE:.c=.h)
-CTEMPS  = $(CSOURCE:.c=.s)
+CSOURCE = main.c
+CHEADER = main.h BoardConfig.h serial.h util.h
+COBJECT = $(BOARD)/main.o
+
+ASOURCE = crt0.S
+AOBJECT = $(BOARD)/crt0.o
 
 ELF     = $(TARGET:.hex=.elf)
 MAP     = $(TARGET:.hex=.map)
 
-CFLAGS  = -Os -mprocessor=$(CPU) -std=gnu99 -pedantic-errors -Wall -g -fno-short-double -fverbose-asm -save-temps
-CFLAGS += -mno-smart-io -ffunction-sections -fdata-sections -mdebugger -Wcast-align -fframe-base-loclist -I../../include
-CLINK   = -Wl,-TchipKIT-application-32MX270F256.ld,-TchipKIT-application-COMMON.ld,-Map=$(MAP),--gc-sections -mno-peripheral-libs
+CFLAGS  = -Os -mips16 -mprocessor=$(CPU) -std=gnu99 -pedantic-errors -Wall -fverbose-asm -save-temps=obj
+CFLAGS += -mno-smart-io -w -ffunction-sections -fdata-sections -g3 -mdebugger -Wcast-align -fno-short-double -fframe-base-loclist
+CFLAGS += -D_BOARD_$(BOARD)_
+CLINK   = -mno-peripheral-libs -nostartfiles -nostdlib -Wl,-TMX1-2-boot-linkerscript.ld,-Map=$(MAP),--gc-sections
 
-build:$(TARGET)
+build:init $(TARGET)
+
+init:
+	@mkdir -p $(BOARD)
 
 $(TARGET):$(ELF)
 	@echo -n "[HX] "
 	$(HX) $(ELF)
 
-$(ELF):$(COBJECT)
+$(ELF):$(AOBJECT) $(COBJECT)
 	@echo -n "[LINK] "
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(AOBJECT) $(COBJECT) -o $(ELF) $(CLINK)
 
-$(COBJECT):$(CHEADER) Makefile chipKIT-application-32MX270F256.ld chipKIT-application-COMMON.ld
+$(COBJECT):$(CHEADER) Makefile MX1-2-boot-linkerscript.ld
 
 program:build
-	kload program /dev/ttyAMA0 ${TARGET} avr
+	k32 program $(TARGET)
 
-%.o:%.c
+verify:
+	k32 verify $(TARGET)
+
+$(BOARD)/%.o:%.c
 	@echo -n "[CC] "
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
-%.o:%.S
+$(BOARD)/%.o:%.S
 	@echo -n "[CC] "
 	$(CC) $(CFLAGS) $(AFLAGS) $(CPPFLAGS) -c $< -o $@
-
-%.o:%.s
-	@echo -n "[AS] "
-	$(AS) $(AFLAGS) $< -a=$(<:.s=.lst) -o $@
 
 install:build
 
@@ -101,4 +107,6 @@ uninstall:clean
 
 clean:
 	@echo -n "[RM] "
-	$(RM) -f $(CTEMPS) *.o *.i *.elf *.map *.hex *~
+	$(RM) -Rf $(BOARD)
+	@echo -n "[RM] "
+	$(RM) -f *.elf *.map *.hex *~

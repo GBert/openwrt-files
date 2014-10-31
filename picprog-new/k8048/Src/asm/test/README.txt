@@ -294,7 +294,7 @@ Y	32MX795F512H	32	N/A	61156H		PIC32MX5XX/6XX/7XX Family Data Sheet
 					80000480N	PIC32MX575/675/695/775/795 Family Errata and Datasheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 
-N	32MX170F256B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
+Y	32MX170F256B	32	N/A	61168E		PIC32MX1XX/2XX Family Data Sheet
 					80000531E	PIC32MX1XX/2XX Family Silicon Errata and Data Sheet Clarification
 					60001145M	PIC32 Flash Programming Specification
 

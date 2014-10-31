@@ -33,15 +33,19 @@
 build:
 	$(MAKE) -f CHIPKIT_PI.mk build
 	$(MAKE) -f CHIPKIT_PI_MX270.mk build
+	$(MAKE) -f CHIPKIT_PI_MX270_48.mk build
 
 install:build
 	$(MAKE) -f CHIPKIT_PI.mk install
 	$(MAKE) -f CHIPKIT_PI_MX270.mk install
+	$(MAKE) -f CHIPKIT_PI_MX270_48.mk install
 
 uninstall:
 	$(MAKE) -f CHIPKIT_PI.mk uninstall
 	$(MAKE) -f CHIPKIT_PI_MX270.mk uninstall
+	$(MAKE) -f CHIPKIT_PI_MX270_48.mk uninstall
 
 clean:
 	$(MAKE) -f CHIPKIT_PI.mk clean
 	$(MAKE) -f CHIPKIT_PI_MX270.mk clean
+	$(MAKE) -f CHIPKIT_PI_MX270_48.mk clean

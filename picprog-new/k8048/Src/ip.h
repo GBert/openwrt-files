@@ -30,16 +30,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _LED_H
-#define _LED_H
+#ifndef _IP_H
+#define _IP_H
 
-#include <stdio.h>
-#include <stdlib.h>	/* rand() */
-#include <stdbool.h>	/* true || false */
-#include <stdint.h>
-#include <plib.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <netdb.h>
 
-#define FCY (48000000UL)/* CHIPKIT_PI_MX270_48 */
-#include <delay.h>	/* delay_ms() */
+int ip_connect(const char *, int);
+int ip_listen(const char *, int);
 
 #endif
