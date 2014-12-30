@@ -33,7 +33,7 @@
 #ifndef _K8048_H
 #define _K8048_H
 
-#undef DEBUG
+#define DEBUG 1
 
 #include <stdio.h>
 #include <stdlib.h>
