@@ -19,6 +19,8 @@ io -4 0x18040000
 echo "set GPIO0 as UART1_TD"
 io -4 -o 0x1804002c 0x0000004f
 
+echo "GPIO 2 on"
+io -4 -o 0x18040008 0x00000004
 
 # slcand -S 500000 ttyATH0 can0
 # ifconfig can0 up

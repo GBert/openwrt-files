@@ -1,7 +1,7 @@
 #
 # Velleman K8048 Programmer for FreeBSD and others.
 #
-# Copyright (c) 2005-2014 Darron Broad
+# Copyright (c) 2005-2015 Darron Broad
 # All rights reserved.
 #
 # Licensed under the terms of the BSD license, see file LICENSE for details.
@@ -13,6 +13,11 @@
 
 # I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or BIT-BANG GPIO
 #
+#DEVICE=/dev/cuad0
+#DEVICE=/dev/ttyS0
+#DEVICE=/dev/ttyUSB0
+#DEVICE=RPI
+#DEVICE=/dev/i2c-1
 DEVICE=/dev/gpio-bb
 
 # For ttyS 1us is fine
@@ -91,18 +96,6 @@ PGD=0
 # PGC=13
 # PGD DATA_I/O	- GPIO11 J5 DTR PIN12
 # PGD=11
-
-# Elink M-Mini  BIT-BANG GPIO (single PGD DATA I/O)
-#
-#  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
-# !MCLR/VPP        - PI/O 
-# VPP=20
-# PGM              - PI/O 
-# PGM=255
-# PGC CLOCK        - PI/O 
-# PGC=19
-# PGD DATA_I/O     - PI/O
-# PGD=18
 
 # modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
 
