@@ -1,0 +1,110 @@
+#
+# Velleman K8048 Programmer for FreeBSD and others.
+#
+# Copyright (c) 2005-2015 Darron Broad
+# All rights reserved.
+#
+# Licensed under the terms of the BSD license, see file LICENSE for details.
+#
+
+#
+# Copy this file to ~/.k8048
+#
+
+# I/O device: cua, tty, ttyUSB, RPI, I2C (MCP23017) or BIT-BANG GPIO
+#
+#DEVICE=/dev/cuad0
+#DEVICE=/dev/ttyS0
+#DEVICE=/dev/ttyUSB0
+#DEVICE=RPI
+#DEVICE=/dev/i2c-1
+DEVICE=/dev/gpio-bb
+
+# For ttyS 1us is fine
+# For ttyUSB try 600us
+#
+# When SLEEP is set to zero no delay is taken
+# When SLEEP is less than 10, then SLEEP x I/O bit time is taken for R-PI and tty
+# When SLEEP is less than 100 a busy loop is utilised
+# When SLEEP is >100 then system usleep is used.
+#
+# For BIT-BANG GPIO SLEEP configures the low and high clock durations in the driver
+#
+# cuad/ttyS
+#SLEEP=1
+# ttyUSB
+#SLEEP=600
+# RPI GPIO VELLEMAN K8048
+#SLEEP=10
+# RPI GPIO DIRECT
+#SLEEP=1
+# LINUX MCP23017 I2C
+#SLEEP=0
+# BIT-BANG GPIO
+SLEEP=0
+SLEEP_LOW=0                                                                                    
+SLEEP_HIGH=1
+
+# I/O bit rules. These determine the polarity of the control lines and whether
+#                data input requires data output pulled high.
+# 0x01 PGD_OUT_FLIP
+# 0x02 PGC_OUT_FLIP
+# 0x04 VPP_OUT_FLIP
+# 0x08 PGD_IN_FLIP
+# 0x10 PGD_IN_PULLUP
+#
+# TTY VELLEMAN K8048 = PGD_IN_PULLUP + PGD_OUT_FLIP + PGC_OUT_FLIP + VPP_OUT_FLIP + PGD_IN_FLIP
+# TTY VELLEMAN K8076 = PGD_IN_PULLUP
+# RPI GPIO VELLEMAN K8048 = PGD_IN_PULLUP
+#
+# TTY VELLEMAN K8048
+#BITRULES=0x1f
+# TTY VELLEMAN K8076
+#BITRULES=0x10
+# RPIO GPIO VELLEMAN K8048
+#BITRULES=0x00
+# RPIO GPIO DIRECT
+#BITRULES=0x10
+# LINUX MCP23017 I2C
+#BITRULES=0x10
+# BIT-BANG GPIO
+BITRULES=0x1000
+
+# I/O busy cursor (0=DISABLED)
+# 
+BUSY=0
+
+# WR-841N(D) BIT-BANG GPIO (single PGD DATA I/O)
+#
+#  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
+# !MCLR/VPP        - PI/O 
+VPP=2
+# PGM              - PI/O 
+PGM=255
+# PGC CLOCK        - PI/O 
+PGC=3
+# PGD DATA_I/O     - PI/O
+PGD=0
+
+# Carambola BIT-BANG GPIO (single PGD DATA I/O)
+#
+# !MCLR/VPP	- GPIO09 J5 CTS PIN06
+# VPP=9		
+# PGM		- GPIO07 J5 RTS PIN08
+# PGM=7
+# PGC CLOCK	- GPIO13 J5 DSR PIN10
+# PGC=13
+# PGD DATA_I/O	- GPIO11 J5 DTR PIN12
+# PGD=11
+
+# modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
+
+# LINUX MCP23017 I2C ADDRESS (README.i2c)
+#
+#MCP=0x20
+
+# ICSP I/O per half-bit sleep time for `kio'.
+FWSLEEP=30
+
+# Debug level (0=NONE, 1=ERROR, 10=INFO)
+DEBUG=1
