@@ -402,7 +402,18 @@ io_set_vpp(uint8_t vpp)
 	switch (p.iot) {
 #ifdef TTY
 	case IOTTY:	/* tty (pgm not supported) */
-		set_tx(p.serial_port, vpp);
+		if (p.bitrules & VPP_OUT_CLOCK) {
+			static uint8_t level = FLOAT;
+			if (vpp != level) {
+				char b = 0;
+				if (write(p.serial_port, &b, 1) < 0) {
+					printf("%s: fatal error: write failed\n", __func__);
+					io_exit(EX_OSERR); /* Panic */
+				}
+				level = vpp;
+			}
+		} else
+			set_tx(p.serial_port, vpp);
 		break;
 #endif
 #ifdef RPI

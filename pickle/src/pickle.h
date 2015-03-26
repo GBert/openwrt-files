@@ -46,8 +46,9 @@
 #include <limits.h>
 #include <stdint.h>
 
-#define LOW  (0)
-#define HIGH (1)
+#define LOW   (0x00)
+#define HIGH  (0x01)
+#define FLOAT (0xFF)
 
 #ifndef FALSE
 #define FALSE (LOW)

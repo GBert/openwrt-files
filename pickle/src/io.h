@@ -27,6 +27,7 @@
 #define PGD_IN_FLIP   (0x0008)	/* invert pgd i/p */
 #define PGD_IN_PULLUP (0x0010)	/* pgd o/p high for pgd i/p */
 #define PGM_OUT_FLIP  (0x0020)	/* invert pgm o/p */
+#define VPP_OUT_CLOCK (0x0040)	/* vpp clocks a T-type flip-flop */
 /* GPIO bit rules */
 #define PGD_RELEASE   (0x0100)	/* pgd released on exit */
 #define PGC_RELEASE   (0x0200)	/* pgc released on exit */

@@ -17,4 +17,4 @@
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
 
-const char VERSION[] = "4.0b";
+const char VERSION[] = "4.0c";
