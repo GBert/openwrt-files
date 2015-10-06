@@ -49,17 +49,15 @@ static int gpio_bb_io(uint8_t dir, uint16_t pin, uint8_t *bit)
 				dirs[pin] = 1;
 			}
 			*bit = gpio_get_value(pin) ? 1 : 0;
-		} else {
+		} else
 			return -EINVAL;
-		}
 		return 0;
 	}
 	if (dir == 0) {
-		if (*bit == 0) {
+		if (*bit == 0)
 			err = gpio_request_one(pin, GPIOF_OUT_INIT_LOW, "gpio-bb");
-		} else {
+		else
 			err = gpio_request_one(pin, GPIOF_OUT_INIT_HIGH, "gpio-bb");
-		}
 		if (err) {
 			printk("gpio-bb: pin %d is currently unavailable.\n", pin);
 			return err;
@@ -73,9 +71,8 @@ static int gpio_bb_io(uint8_t dir, uint16_t pin, uint8_t *bit)
 		}
 		dirs[pin] = 1;
 		*bit = gpio_get_value(pin) ? 1 : 0;
-	} else {
+	} else
 		return -EINVAL;
-	}
 	pins[pin] = 1;
 
 	return err;
@@ -226,8 +223,6 @@ static long gpio_bb_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 			return -EFAULT;
 		else {
 			uint8_t low = 0;
-			printk("%s: gpio config clock pin %d\n", __func__, config.clock_pin);
-
 			err = gpio_bb_io(0, config.clock_pin, &low);
 			if (err)
 				return err;
@@ -246,18 +241,16 @@ static long gpio_bb_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 				if (err)
 					return err;
 			} else if (shift.dir == 1) {
-				if (config.clock_falling) {
+				if (config.clock_falling)
 					err = gpio_bb_shift_in_falling(&shift.bits, shift.nbits);
-				} else {
+				else
 					err = gpio_bb_shift_in_rising(&shift.bits, shift.nbits);
-				}
 				if (err)
 					return err;
 				if (copy_to_user((struct gpio_bb_shift *)arg, &shift, sizeof(shift)) != 0)
 					return -EFAULT;
-			} else {
+			} else
 				return -EINVAL;
-			}
 		}
 		}
 		break;
