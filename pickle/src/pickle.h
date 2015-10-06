@@ -94,6 +94,9 @@ struct pickle;
 #ifdef BITBANG
 #include "gpio-bb.h"
 #endif
+#ifdef FTDI
+#include "ftdi-bb.h"
+#endif
 
 #include "util.h"
 #include "dotconf.h"
@@ -145,12 +148,12 @@ struct pickle {
 #ifdef MCP23017
 	int mcp;		/* MCP23017 I2C address				*/
 #endif
-#if defined(RPI) || defined(BITBANG)
-        uint8_t vpp;		/* TX/!MCLR/VPP     */
-        uint8_t pgc;		/* RTS/PGC CLOCK    */
-        uint8_t pgdo;		/* DTR/PGD DATA_OUT */
-        uint8_t pgdi;		/* CTS/PGD DATA_IN  */
-        uint8_t pgm;		/* PGM OUT          */
+#if defined(RPI) || defined(BITBANG) || defined(FTDI)
+        uint16_t vpp;		/* TX/!MCLR/VPP     */
+        uint16_t pgc;		/* RTS/PGC CLOCK    */
+        uint16_t pgdo;		/* DTR/PGD DATA_OUT */
+        uint16_t pgdi;		/* CTS/PGD DATA_IN  */
+        uint16_t pgm;		/* PGM OUT          */
 #endif
 	/* Hardware operations */
 	struct pic_ops *pic;

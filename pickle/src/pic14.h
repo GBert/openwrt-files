@@ -25,7 +25,7 @@
  *****************************************************************************/
 
 #define PIC14_MASK (0x3FFF)
-#define PIC14_CONFIG_MAX (3)
+#define PIC14_CONFIG_MAX (4)
 #define PIC14_CALIB_MAX  (32)
 #define PIC14_USERID_MAX (4)
 
@@ -47,6 +47,7 @@ struct pic14_dsmap {
 	uint32_t datasheet;	/*                                                     */
 	uint16_t configaddr;	/* CONFIG BASE                                         */
 	uint16_t dataaddr;	/* DATA BASE                                           */
+	uint16_t calibaddr;	/* CALIB BASE                                          */
 	uint8_t nconfig;	/* NUMBER OF CONFIG WORDS AT CONFIG BASE + 7           */
 	uint8_t ncalib;		/* NUMBER OF CALIB. WORDS AT CONFIG BASE + 7 + nconfig */
 	uint8_t nlatches;	/* PROGRAM FLASH MULTI-WORD LATCHES                    */
@@ -803,6 +804,43 @@ struct pic14_dsmap {
 #define PIC16LF1578 (0x3006)
 #define PIC16F1579  (0x3003)
 #define PIC16LF1579 (0x3007)
+
+/*
+ * DS40001738A
+ *  PIC16F18313  0x3066
+ *  PIC16LF18313 0x3068
+ *  PIC16F18323  0x3067
+ *  PIC16LF18323 0x3069
+ *
+ * DS40001738B/C
+ *  PIC16F18313  0x3034
+ *  PIC16LF18313 0x3036
+ *  PIC16F18323  0x3035
+ *  PIC16LF18323 0x3037
+ *
+ * DS40001738A/B/C
+ *  PIC16F18324  0x303A
+ *  PIC16LF18324 0x303C
+ *  PIC16F18344  0x303B
+ *  PIC16LF18344 0x303D
+ *  PIC16F18325  0x303E
+ *  PIC16LF18325 0x3040
+ *  PIC16F18345  0x303F
+ *  PIC16LF18345 0x3041
+ */
+#define DS40001738A (40001738)
+#define PIC16F18313  (0x3066)
+#define PIC16LF18313 (0x3068)
+#define PIC16F18323  (0x3067)
+#define PIC16LF18323 (0x3069)
+#define PIC16F18324  (0x303A)
+#define PIC16LF18324 (0x303C)
+#define PIC16F18344  (0x303B)
+#define PIC16LF18344 (0x303D)
+#define PIC16F18325  (0x303E)
+#define PIC16LF18325 (0x3040)
+#define PIC16F18345  (0x303F)
+#define PIC16LF18345 (0x3041)
 
 /******************************************************************************/
 

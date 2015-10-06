@@ -21,16 +21,16 @@
 #define _GPIO_BB_H
 
 struct gpio_bb_io {
+	uint16_t pin;
 	uint8_t dir;
-	uint8_t pin;
 	uint8_t bit;
 };
 
 struct gpio_bb_config {
-	uint8_t clock_pin;
+	uint16_t clock_pin;
+	uint16_t data_pin_input;
+	uint16_t data_pin_output;
 	uint8_t clock_falling;
-	uint8_t data_pin_input;
-	uint8_t data_pin_output;
 	uint8_t clock_delay_low;
 	uint8_t clock_delay_high;
 	uint8_t lock;
@@ -42,12 +42,13 @@ struct gpio_bb_shift {
 	uint64_t bits;
 };
 
-#define GPIO_BB_MAX (256)
+#define GPIO_BB_MAX (512)
+#define GPIO_BB_MASK (GPIO_BB_MAX - 1)
 
 #define GPIO_BB_MAJOR (180)
-#define GPIO_BB_IO		_IOWR(GPIO_BB_MAJOR, 100, struct gpio_bb_io *)
-#define GPIO_BB_CONFIGURE	_IOW(GPIO_BB_MAJOR,  101, struct gpio_bb_config *)
-#define GPIO_BB_SHIFT		_IOWR(GPIO_BB_MAJOR, 102, struct gpio_bb_shift *)
+#define GPIO_BB_IO		_IOWR(GPIO_BB_MAJOR, 200, struct gpio_bb_io *)
+#define GPIO_BB_CONFIGURE	_IOW(GPIO_BB_MAJOR,  201, struct gpio_bb_config *)
+#define GPIO_BB_SHIFT		_IOWR(GPIO_BB_MAJOR, 202, struct gpio_bb_shift *)
 
 #ifndef __KERNEL__
 int gpio_bb_open(const char *);

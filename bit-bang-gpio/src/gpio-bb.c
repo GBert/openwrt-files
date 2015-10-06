@@ -30,10 +30,11 @@ static DEFINE_SPINLOCK(gpio_bb_lock);
 static uint8_t pins[GPIO_BB_MAX] = {0}, dirs[GPIO_BB_MAX] = {0};
 static struct gpio_bb_config config = {0};
 
-static int gpio_bb_io(uint8_t dir, uint8_t pin, uint8_t *bit)
+static int gpio_bb_io(uint8_t dir, uint16_t pin, uint8_t *bit)
 {
 	int err = 0;
 
+	pin &= GPIO_BB_MASK;
 	if (pins[pin]) {
 		if (dir == 0) {
 			if (dirs[pin] == 1) {
@@ -225,6 +226,7 @@ static long gpio_bb_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 			return -EFAULT;
 		else {
 			uint8_t low = 0;
+			printk("%s: gpio config clock pin %d\n", __func__, config.clock_pin);
 
 			err = gpio_bb_io(0, config.clock_pin, &low);
 			if (err)
@@ -278,7 +280,7 @@ static int __init gpio_bb_init(void)
 
 static void gpio_bb_exit(void)
 {
-	uint16_t i;
+	uint32_t i;
 
 	for (i = 0; i < GPIO_BB_MAX; ++i) {
 		if (pins[i])

@@ -107,9 +107,9 @@ int gpio_open(const char *, uint8_t);
 void gpio_close(void);
 
 void gpio_delay(void);
-int gpio_get(uint8_t, uint8_t *);
-int gpio_set(uint8_t, uint8_t);
-int gpio_release(uint8_t, uint8_t);
+int gpio_get(uint16_t, uint8_t *);
+int gpio_set(uint16_t, uint8_t);
+int gpio_release(uint16_t, uint8_t);
 void gpio_test(int);
 
 #endif /* !_RASPI_H */

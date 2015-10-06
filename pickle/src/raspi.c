@@ -209,7 +209,7 @@ gpio_select_alt(uint8_t pin, uint8_t alt)
 }
 
 int
-gpio_get(uint8_t pin, uint8_t *level)
+gpio_get(uint16_t pin, uint8_t *level)
 {
 	if (pin > 31)
 		return -1;
@@ -233,7 +233,7 @@ gpio_get(uint8_t pin, uint8_t *level)
 }
 
 int
-gpio_set(uint8_t pin, uint8_t level)
+gpio_set(uint16_t pin, uint8_t level)
 {
 	if (pin > 31)
 		return -1;
@@ -257,7 +257,7 @@ gpio_set(uint8_t pin, uint8_t level)
  * Select pin as input, re-enable ALT0 for UART
  */
 int
-gpio_release(uint8_t pin, uint8_t alt)
+gpio_release(uint16_t pin, uint8_t alt)
 {
 	if (pin > 31)
 		return -1;
