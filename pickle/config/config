@@ -42,8 +42,8 @@ DEVICE=/dev/gpio-bb
 #SLEEP=0
 # BIT-BANG GPIO
 SLEEP=0
-SLEEP_LOW=0                                                                                    
-SLEEP_HIGH=1
+SLEEP_LOW=0
+SLEEP_HIGH=0
 
 # I/O bit rules. These determine the polarity of the control lines and whether
 #                data input requires data output pulled high.
@@ -74,34 +74,18 @@ BITRULES=0x1000
 # 
 BUSY=0
 
-# WR-841N(D) BIT-BANG GPIO (single PGD DATA I/O)
+# BananaPi BIT-BANG GPIO (single PGD DATA I/O)
 #
-#  insmod gpio-bb && mknod /dev/gpio-bb c 180 0
-# !MCLR/VPP        - PI/O 
-VPP=2
-# PGM              - PI/O 
-PGM=255
-# PGC CLOCK        - PI/O 
-PGC=3
-# PGD DATA_I/O     - PI/O
-PGD=0
-
-# Carambola BIT-BANG GPIO (single PGD DATA I/O)
-#
-# !MCLR/VPP	- GPIO09 J5 CTS PIN06
-# VPP=9		
-# PGM		- GPIO07 J5 RTS PIN08
-# PGM=7
-# PGC CLOCK	- GPIO13 J5 DSR PIN10
-# PGC=13
-# PGD DATA_I/O	- GPIO11 J5 DTR PIN12
-# PGD=11
-
 # modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
+# !MCLR/VPP        - PI19
+VPP=275
+# PGM              - unused
+PGM=65535
+# PGC CLOCK        - PI18
+PGC=274
+# PGD DATA_I/O     - PI17
+PGD=273
 
-# LINUX MCP23017 I2C ADDRESS (README.i2c)
-#
-#MCP=0x20
 
 # ICSP I/O per half-bit sleep time for `kio'.
 FWSLEEP=30
