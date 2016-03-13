@@ -44,7 +44,7 @@ define Package/pickle/install
 	$(INSTALL_DIR) $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/RIPE_06_000201.hex $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/RIPE_11_000301.hex $(1)/root/.pickle
-	$(INSTALL_BIN) ./config/config $(1)/root/.pickle
+	$(INSTALL_BIN) ./config/config* $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/*.sh $(1)/root/.pickle
 endef
 
