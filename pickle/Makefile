@@ -18,7 +18,7 @@ define Package/pickle
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Microchip PIC Programmer
-  DEPENDS:=+kmod-bit-bang-gpio
+  DEPENDS:=+libftdi1 +kmod-bit-bang-gpio
 endef
 
 define Package/pickle/description
@@ -30,10 +30,12 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)
 endef
 
+TARGET_CFLAGS+= -I$(STAGING_DIR)/usr/include/libftdi1 \
+
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DP12 -DP14 -DP16 -DP24 -DP32 -DPIO -DPCTRL -DPTEST -DBITBANG -DTTY -DQSORT" \
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DP12 -DP14 -DP16 -DP24 -DP32 -DPIO -DPCTRL -DPTEST -DBITBANG -DFTDI -DTTY -DQSORT" \
 		build
 endef
 

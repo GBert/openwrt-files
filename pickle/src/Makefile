@@ -131,6 +131,13 @@ ifeq "$(SYSTEM)" "Linux"
  SOURCE1+=gpio-bb.c
  SOURCE2+=gpio-bb.c
  endif
+
+ ifeq "$(FTDI)" "1"
+ CFLAGS+=-DFTDI
+ SOURCE1+=ftdi-bb.c
+ SOURCE2+=ftdi-bb.c
+ CLIB+=-lftdi1
+ endif
 endif
 
 ifeq "$(QSORT)" "1"
