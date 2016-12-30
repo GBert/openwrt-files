@@ -48,7 +48,7 @@ DEVICE=/dev/ftdi-bb
 #SLEEP=1
 # MCP23017 I2C
 #SLEEP=0
-# GPIO BIT-BANG
+# GPIO/FTDI BIT-BANG
 SLEEP=0
 
 # I/O bit rules.
@@ -85,7 +85,7 @@ SLEEP=0
 #BITRULES=0x1000
 # MCP23017 I2C
 #BITRULES=0x1010
-# GPIO BIT-BANG
+# GPIO/FTDI BIT-BANG
 BITRULES=0x1000
 # CHIPKIT PI PIC32 ICSP
 #BITRULES=0x4F00
@@ -94,15 +94,25 @@ BITRULES=0x1000
 # 
 BUSY=1
 
+# FT232R bit mapping
+# bit number (0..7, default = 1) 
+# D0 = TxD 
+# D1 = RxD
+# D2 = RTS 
+# D3 = CTS 
+# D4 = DTR 
+# D5 = DSR 
+# D6 = DCD 
+# D7 = RI
+#
 # CANBuster FTDI232RL LVP programmer
-#                  = CHIPKIT PI =
-# !MCLR/VPP        - RPi-Connect 18
+# !MCLR/VPP
 VPP=0
-# PGM              - RPi-Connect 12
+# PGM
 PGM=255
-# PGC CLOCK        - RPi-Connect 16
+# PGC CLOCK
 PGC=1
-# PGD DATA_I/O     - RPi-Connect 20
+# PGD DATA_I/O
 PGD=3
 
 FWSLEEP=0
