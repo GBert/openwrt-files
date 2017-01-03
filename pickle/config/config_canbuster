@@ -24,7 +24,7 @@
 # I/O device: tty, ttyUSB, RPI, I2C (MCP23017) or GPIO BIT-BANG
 #
 #DEVICE=/dev/i2c-1
-DEVICE=/dev/ftdi-bb
+DEVICE=FTDI
 
 # I/O 1/2-bit delay/sleep time
 #
@@ -92,7 +92,7 @@ BITRULES=0x1000
 
 # I/O busy cursor (0=DISABLED)
 # 
-BUSY=1
+BUSY=0
 
 # FT232R bit mapping
 # bit number (0..7, default = 1) 
