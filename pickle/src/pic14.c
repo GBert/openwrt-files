@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2015 Darron Broad
+ * Copyright (C) 2005-2017 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -24,6 +24,7 @@
  * Session
  *
  *****************************************************************************/
+
 extern struct pickle p;
 
 /*****************************************************************************
@@ -410,8 +411,28 @@ struct pic14_dsmap pic14_map[] =
 {"PIC16LF18325",PIC16LF18325,	8192, 0/*256*/,   DS40001738A,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
 {"PIC16F18345", PIC16F18345,	8192, 0/*256*/,   DS40001738A,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
 {"PIC16LF18345",PIC16LF18345,	8192, 0/*256*/,   DS40001738A,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
+{"PIC16F18326", PIC16F18326,	16384,0/*256*/,   DS40001738D,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
+{"PIC16LF18326",PIC16LF18326,	16384,0/*256*/,   DS40001738D,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
+{"PIC16F18346", PIC16F18346,	16384,0/*256*/,   DS40001738D,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
+{"PIC16LF18346",PIC16LF18346,	16384,0/*256*/,   DS40001738D,  0x8000, 0xF000, 0xE000, 4,      4,     32,      32},
 
-{"(null)",      0,              0,    0,     0,            0,      0,      0,      0,      0,     0,       0}
+/* These devices have two config words at 8007 & 8008 and multiple calibration words from 8009 onward */
+{"PIC16F1773",	PIC16F1773,	4096,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16F1776",	PIC16F1776,	8192,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16F1777",	PIC16F1777,	8192,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16F1778",	PIC16F1778,	16384,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16F1779",	PIC16F1779,	16384,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16LF1773",	PIC16LF1773,	4096,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16LF1776",	PIC16LF1776,	8192,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16LF1777",	PIC16LF1777,	8192,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16LF1778",	PIC16LF1778,	16384,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+{"PIC16LF1779",	PIC16LF1779,	16384,	0,   DS40001792A,  0x8000, 0xF000, 0x8009, 2,      16,    32,      32},
+
+/* This device has two config words at 8007 & 8008 and two calibration words at 8009 & 800A */
+{"PIC16LF1566",	PIC16LF1566,	8192,	0,   DS40001796A,  0x8000, 0xF000, 0x8009, 2,      2,     32,      32},
+{"PIC16LF1567",	PIC16LF1567,	8192,	0,   DS40001796A,  0x8000, 0xF000, 0x8009, 2,      2,     32,      32},
+
+{"(null)",      0,              0,      0,      0,         0,      0,      0,      0,      0,     0,       0}
 /*Device name	Device id	Flash	EEPROM	Data-sheet Config  Data    Calib   #Config #Calib #Latches EraseSize*/
 };
 #define PIC14_SIZE ((sizeof(pic14_map) / sizeof(struct pic14_dsmap)) - 1)
@@ -468,8 +489,8 @@ pic14_program_verify(void)
 	io_set_pgm(LOW);
 	io_usleep(1000);
 
-	/* INPUT DATA ON CLOCK RISING EDGE */
-	io_configure(FALSE);
+	/* INPUT DATA ON CLOCK RISING EDGE, LSB FIRST */
+	io_configure(FALSE, FALSE);
 
 	/* LVP(KEY) */
 	if (p.key == LVPKEY) {
@@ -581,6 +602,7 @@ pic14_standby(void)
  * DS41405A-page 8	16F707
  * DS40001683B-page 16	16F1708
  * DS40001738C-page 7   16F18313
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_load_configuration(uint16_t word)
@@ -631,6 +653,7 @@ pic14_load_configuration(uint16_t word)
  * DS41405A-page 8	16F707
  * DS40001683B-page 16	16F1708
  * DS40001738C-page 7   16F18313
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_load_data_for_program_memory(uint16_t word)
@@ -713,6 +736,7 @@ pic14_load_data_for_data_memory(uint16_t word)
  * DS41405A-page 8	16F707
  * DS40001683B-page 16	16F1708
  * DS40001738C-page 7   16F18313
+ * DS40001792A-page 15  16F1776
  */
 static inline uint16_t
 pic14_read_data_from_program_memory(void)
@@ -829,6 +853,7 @@ pic14_increment_address(void)
  * DS41642A-page 8	12LF1552
  * DS41405A-page 8	16F707
  * DS40001683B-page 16	16F1708
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_reset_address(void)
@@ -889,7 +914,8 @@ pic14_load_pc_address(uint32_t word)
  * DS41237D-page 8	16F785   TPROG1(2.5ms) OR TPROG1(6ms DATA)		INTERNAL
  * DS41405A-page 8	16F707   TPINT(2.5ms) OR TPINT(5ms CONFIG)		INTERNAL
  * DS40001683B-page 16	16F1708  TPINT(2.5ms) OR TPINT(5ms CONFIG)		INTERNAL
- * DS40001738C-page 7   16F18313
+ * DS40001738C-page 7   16F18313						INTERNAL
+ * DS40001792A-page 15  16F1776							INTERNAL
  */
 static inline void
 pic14_begin_programming_001000(uint32_t t)
@@ -933,7 +959,8 @@ pic14_begin_programming_001000(uint32_t t)
  * DS41237D-page 8	16F785   TPROG2(2.5ms)	EXTERNAL
  * DS41405A-page 8	16F707   TPEXT(2.1ms)	EXTERNAL (NOT CONFIG)
  * DS40001683B-page 16	16F1708  TPEXT(2.1ms)   EXTERNAL (NOT CONFIG)
- * DS40001738C-page 7   16F18313
+ * DS40001738C-page 7   16F18313		EXTERNAL
+ * DS40001792A-page 15  16F1776			EXTERNAL
  */
 static inline void
 pic14_begin_programming_011000(uint32_t t)
@@ -1002,6 +1029,7 @@ pic14_end_programming_001110(uint32_t t)
  * DS41405A-page 8	16F707   TDIS(100us)
  * DS40001683B-page 16	16F1708  TDIS(300us)
  * DS40001738C-page 7   16F18313
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_end_programming_001010(uint32_t t)
@@ -1050,6 +1078,7 @@ pic14_end_programming_001010(uint32_t t)
  * DS41405A-page 8	16F707   TERAB(5ms)
  * DS40001683B-page 16	16F1708  TERAB(5ms)
  * DS40001738C-page 7   16F18313
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_bulk_erase_program_memory(uint32_t t)
@@ -1159,6 +1188,7 @@ pic14_chip_erase(uint32_t t)
  * DS41237D-page 8	16F785   TERA(6ms)
  * DS41405A-page 8	16F707   TERAR(2.5ms)
  * DS40001683B-page 16	16F1708  TERAR(2.5ms)
+ * DS40001792A-page 15  16F1776
  */
 static inline void
 pic14_row_erase_program_memory(uint32_t t)
@@ -1280,7 +1310,7 @@ pic14_erase_device(void)
 			pic14_bulk_erase_data_memory(PIC14_TERASE_DEFAULT);
 			break;
 
-			/* HAS NVM */
+			/* FIXME HAS NVM */
 	case DS40001738A:/* PIC16F18313 */
 
 			 /* HAS NO DATA EEPROM	*/
@@ -1303,6 +1333,8 @@ pic14_erase_device(void)
 	case DS40001713A:/* PIC12LF1572		*/
 	case DS40001766A:/* PIC12LF1574		*/
 	case DS40001754A:/* PIC16F1764          */
+	case DS40001792A:/* PIC16F1776          */
+	case DS40001796A:/* PIC16LF1566         */
 			pic14_load_configuration(0x3FFF);
 			/* ERASE PROGRAM FLASH */
 			pic14_bulk_erase_program_memory(PIC14_TERASE_DEFAULT);
@@ -1676,6 +1708,8 @@ pic14_write_word(uint16_t region)
 	case DS40001766A:/* PIC12LF1574	  */
 	case DS40001754A:/* PIC16F1764    */
 	case DS40001738A:/* PIC16F18313   */
+	case DS40001792A:/* PIC16F1776    */
+	case DS40001796A:/* PIC16LF1566   */
 			pic14_begin_programming_001000(PIC14_TPROG_DEFAULT);
 			break;
 
@@ -1913,7 +1947,7 @@ pic14_write_config(void)
  * DETERMINE MEMORY REGION: CODE, ID, CONFIG or DATA
  *
  *  RETURN PIC_REGIONCODE:
- *	0 .. FLASH SIZE
+ *	0 .. FLASH SIZE - 1
  *
  *  RETURN PIC_REGIONID:
  *	0x2000 or 0x8000
@@ -1922,25 +1956,14 @@ pic14_write_config(void)
  *	0x2007 or 0x8007
  *
  *  RETURN PIC_REGIONDATA:
- *	0x2100 or 0xf000
+ *	0x2100 or 0xF000
  */
 uint16_t
 pic14_getregion(uint16_t address)
 {
 	/* CODE */
-	uint16_t code_high = pic14_map[pic14_index].flash - 1;
-
-	if (address <= code_high) {
+	if (address < pic14_map[pic14_index].flash) {
 		return PIC_REGIONCODE;
-	}
-	/* EEPROM */
-	if (pic14_map[pic14_index].eeprom) {
-		uint16_t data_low = pic14_map[pic14_index].dataaddr;
-		uint16_t data_high = data_low + pic14_map[pic14_index].eeprom - 1;
-
-		if (address >= data_low && address <= data_high) {
-			return PIC_REGIONDATA;
-		}
 	}
 	/* ID */
 	if (address >= pic14_map[pic14_index].configaddr &&
@@ -1952,6 +1975,13 @@ pic14_getregion(uint16_t address)
 	uint16_t config_high = config_low + pic14_map[pic14_index].nconfig;
 	if (address >= config_low && address < config_high) {
 		return PIC_REGIONCONFIG;
+	}
+	/* EEPROM */
+	if (pic14_map[pic14_index].eeprom) {
+		uint16_t data_low = pic14_map[pic14_index].dataaddr;
+		uint16_t data_high = data_low + pic14_map[pic14_index].eeprom;
+		if (address >= data_low && address < data_high)
+			return PIC_REGIONDATA;
 	}
 	if (p.f)
 		fprintf(p.f, "%s: warning: address unsupported [%04X]\n", __func__, address);
@@ -2064,7 +2094,7 @@ pic14_programregion(uint16_t address, uint16_t region, uint16_t data)
 /*
  * VERIFY DATA FOR REGION
  *
- *  RETURN BYTE FAILURE COUNT
+ *  RETURN DATA
  */
 static inline uint16_t
 pic14_verifyregion(uint16_t address, uint16_t region, uint16_t wdata)

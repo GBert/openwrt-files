@@ -34,14 +34,27 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/* I/O access */
-typedef volatile uint32_t *PIO_ADDR;
-#define PIO_MAP_LEN (0x1000)
+#define BPI_BASE_ADDR (0x01C20000)
+#define BPI_BASE_OFS  (0x00000800)
+#define BPI_MAP_LEN   (0x2000)
+
+/* Maximum possible number of pins */
+#define GPIO_BPI_NPINS (288)
 
 /*
  * PIO Controller Port Register List
  *
  * A20 User Manual Pages 237-238
+ *
+ * Port A(PA): 18 input/output port 
+ * Port B(PB): 24 input/output port
+ * Port C(PC): 25 input/output port
+ * Port D(PD): 28 input/output port
+ * Port E(PE): 12 input/output port
+ * Port F(PF):  6 input/output port
+ * Port G(PG): 12 input/output port
+ * Port H(PH): 28 input/output port
+ * Port I(PI): 22 input/output port
  */
 
 #define PIO_BASE_ADDR (0x01C20800)
@@ -135,5 +148,27 @@ typedef volatile uint32_t *PIO_ADDR;
 #define PG_PUL1 ((6 * 0x24 + 0x20) / 4)
 #define PH_PUL1 ((7 * 0x24 + 0x20) / 4)
 #define PI_PUL1 ((8 * 0x24 + 0x20) / 4)
+
+#define PX_PULL_DIS  (0)
+#define PX_PULL_UP   (1)
+#define PX_PULL_DOWN (2)
+#define PX_PULL_RES  (3)
+
+#define PX_SELECT0 (0)
+#define PX_SELECT1 (1)
+#define PX_SELECT2 (2)
+#define PX_SELECT3 (3)
+#define PX_SELECT4 (4)
+#define PX_SELECT5 (5)
+#define PX_SELECT6 (6)
+#define PX_SELECT7 (7)
+
+int gpio_bpi_open(const char *);
+void gpio_bpi_close(void);
+
+void gpio_bpi_delay(void);
+int gpio_bpi_get(uint16_t, uint8_t *);
+int gpio_bpi_set(uint16_t, uint8_t);
+int gpio_bpi_release(uint16_t, uint8_t);
 
 #endif /* !_A20_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2015 Darron Broad
+ * Copyright (C) 2005-2017 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -24,6 +24,7 @@
  * Session
  *
  *****************************************************************************/
+
 extern struct pickle p;
 
 /******************************************************************************
@@ -44,7 +45,7 @@ extern struct pickle p;
  *
  * Reads input line and updates the byte count and address fields.
  *
- * The record type field (*tt) is also updated as:
+ * The record type field (*tt) is also returned as:
  *
  *	TT_EOF		EOF record
  *	TT_DATA		Data record
@@ -107,28 +108,29 @@ inhx32_fgets(char *line, FILE *fp,
 	if (_tt == TT_DATA) {
 		/* Validate line length */
 		if (*bb == 0)
-			return line;
+			return line;	/* Not a data record */
 
 		/* Validate alignment */
 		if (p.pic && (*bb % p.pic->align))
-			return line;
+			return line;	/* Not a data record */
 	}
 	/* Process extended address record */
 	else if (_tt == TT_EXTENDED_LINEAR_ADDRESS) {
 		/* Validate extended address */
 		if (*aaaa != 0 || *bb != 2)
-			return line;
+			return line;	/* Not a data record */
 
 		/* Determine extended address */
 		*extended_addr = (hex2byte(&line[HHHH]) << 8) |
 				hex2byte(&line[HHHH + 2]);
-		return line;
+		return line;		/* Not a data record */
 	}
 	/* Ignore other records */
-	else
-		return line;
+	else {
+		return line;		/* Not a data record */
+	}
 
-	/* Return data line */
+	/* Return data record */
 	*tt = TT_DATA;
 
 	return line;

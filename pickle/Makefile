@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pickle
-PKG_RELEASE:=4.0c
+PKG_RELEASE:=4.0e
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
@@ -53,6 +53,7 @@ endef
 define Package/pickle/postinst
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p12
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p14
+	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/n14
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p16
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p24
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p32

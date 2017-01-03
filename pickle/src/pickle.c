@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2015 Darron Broad
+ * Copyright (C) 2005-2017 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -50,28 +50,33 @@ usage_pickle(void)
 #endif
 		"\n");
 
-	printf("BACKENDS:\n"
+	printf("BACKENDS:\n");
 #ifdef BITBANG
-		" BIT-BANG\n"
-		"\t\tLinux GPIO bit-bang.\n"
+	printf(" BIT-BANG\n"
+		"\t\tLinux GPIO bit-bang version %d.%d.\n",
+		GPIO_BB_VERSION_MAJ, GPIO_BB_VERSION_MIN);
 #endif
 #ifdef FTDI
-		" FTDI BIT-BANG\n"
-		"\t\tLinux FTDI bit-bang.\n"
+	printf(" FTDI BIT-BANG\n"
+		"\t\tLinux FTDI bit-bang.\n");
 #endif
 #ifdef MCP23017
-		" MCP23017\n"
-		"\t\tLinux MCP23017 I2C.\n"
+	printf(" MCP23017\n"
+		"\t\tLinux MCP23017 I2C.\n");
 #endif
 #ifdef RPI
-		" RPI\n"
-		"\t\tRaspberry Pi GPIO.\n"
+	printf(" RPI\n"
+		"\t\tRaspberry Pi GPIO.\n");
+#endif
+#ifdef BPI
+	printf(" BPI\n"
+		"\t\tBanana Pi GPIO.\n");
 #endif
 #ifdef TTY
-		" TTY\n"
-		"\t\tPOSIX serial I/O.\n"
+	printf(" TTY\n"
+		"\t\tPOSIX serial I/O.\n");
 #endif
-		"\n");
+	printf("\n");
 
 	printf("ENVIRONMENT:\n"
 		" PICKLE\n"
@@ -86,8 +91,16 @@ usage_pickle(void)
 		" p14 [SELECT DEVICE] [LVP] OPERATION [ARG]\n"
 		"\t\t14-bit word PIC10F/12F/16F operations.\n"
 #endif
+#ifdef N14
+		" n14 [LVP] OPERATION [ARG]\n"
+		"\t\t14-bit word PIC16F operations.\n"
+#endif
 #ifdef P16
 		" p16 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n"
+		"\t\t16-bit word PIC18F operations.\n"
+#endif
+#ifdef N16
+		" n16 [LVP] OPERATION [ARG]\n"
 		"\t\t16-bit word PIC18F operations.\n"
 #endif
 #ifdef P24
@@ -116,140 +129,6 @@ usage_pickle(void)
 
 	io_exit(EX_OK);
 }
-
-/*
- * pctrl help
- */
-#ifdef PCTRL
-void
-usage_pctrl(char *msg)
-{
-	printf("USAGE: pctrl RUN|STOP|RESTORE\n");
-	printf("Control master clear.\n\n");
-
-	if (msg)
-		printf("Error: %s.\n\n", msg);
-
-	printf("FILES:\n"
-		" %s\n"
-		"\t\tConfiguration file.\n\n", p.dotfile);
-
-	printf("ENVIRONMENT:\n"
-		" PICKLE\n"
-		"\t\tConfiguration file.\n\n");
-
-	printf("EXAMPLES:\n"
-		" pctrl RUN\n"
-		"\t\tRaise master clear to take the device out of reset.\n"
-		" pctrl STOP\n"
-		"\t\tLower master clear to put the device in reset.\n"
-		" pctrl RESTORE\n"
-		"\t\tLower then raise master clear to reset the device.\n"
-
-		"\n");
-
-	printf("VERSION:\n %s\n", VERSION);
-
-	if (msg)
-		io_exit(EX_USAGE);
-	io_exit(EX_OK);
-}
-#endif
-
-/*
- * pload help
- */
-#ifdef TTY
-void
-usage_pload(char *msg)
-{
-	printf("USAGE: pload PROGRAM|VERIFY TTY|IP FILE [16|24|32]\n");
-	printf("Program or verify file on TTY or network.\n\n");
-
-	if (msg)
-		printf("Error: %s.\n\n", msg);
-
-	printf("FILES:\n"
-		" %s\n"
-		"\t\tConfiguration file.\n\n", p.dotfile);
-
-	printf("ENVIRONMENT:\n"
-		" PICKLE\n"
-		"\t\tConfiguration file.\n\n");
-
-	printf("EXAMPLES:\n"
-		" pload program /dev/ttyS0 file.hex\n"
-		"\t\tProgram file.hex (INHX32 format) on /dev/ttyS0.\n"
-		" pload verify /dev/ttyS0 file.hex\n"
-		"\t\tVerify file.hex (INHX32 format) on /dev/ttyS0.\n"
-		" pload program 192.168.1.100 < led.hex\n"
-		"\t\tProgram stdin (INHX32 format) on 192.168.1.100 port 8048.\n"
-		" pload program /dev/ttyAMA0 led.hex 24\n"
-		"\t\tProgram led.hex (INHX32 format) on /dev/ttyAMA0 using 24-bit addressing.\n"
-
-		"\n");
-
-	printf("VERSION:\n %s\n", VERSION);
-
-	if (msg)
-		io_exit(EX_USAGE);
-	io_exit(EX_OK);
-}
-#endif
-
-/*
- * ptest help
- */
-#ifdef PTEST
-void
-usage_ptest(char *msg)
-{
-	printf("USAGE: ptest TEST ARG\n");
-	printf("Hardware tests.\n\n");
-
-	if (msg)
-		printf("Error: %s.\n\n", msg);
-
-	printf("FILES:\n"
-		" %s\n"
-		"\t\tConfiguration file.\n\n", p.dotfile);
-
-	printf("ENVIRONMENT:\n"
-		" PICKLE\n"
-		"\t\tConfiguration file.\n\n");
-
-	printf("EXAMPLES:\n"
-		" ptest VPP|PGC|PGD|PGM 5\n"
-		"\t\tVPP, PGC, PGD or PGM LOW->HIGH->LOW test with 5 seconds high time.\n"
-#ifdef RPI
-		" ptest 0 10\n"
-		"\t\tR-PI GPIO test with 10 seconds mark time.\n"
-#endif
-		" ptest 1 10\n"
-		"\t\tD-SUB-9 test with 10 seconds per step.\n"
-		" ptest 2 10\n"
-		"\t\tICSP test with 10 seconds per step.\n"
-		" ptest 3 0\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with no mark time.\n"
-		" ptest 3 1\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with SLEEP mark time.\n"
-		" ptest 3 100\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with 100 microseconds mark time.\n"
-		" ptest 4 100\n"
-		"\t\t16F627 debug test with 100 microseconds clock mark time.\n"
-#if defined(PTEST) && defined(PIO)
-		" ptest 5 100\n"
-		"\t\tICSPIO demo test with 100 microseconds clock mark time.\n"
-#endif
-		"\n");
-
-	printf("VERSION:\n %s\n", VERSION);
-
-	if (msg)
-		io_exit(EX_USAGE);
-	io_exit(EX_OK);
-}
-#endif
 
 /*
  * p12 help
@@ -378,6 +257,67 @@ usage_p14(char *msg)
 #endif
 
 /*
+ * n14 help
+ */
+#ifdef N14
+void
+usage_n14(char *msg)
+{
+	printf("USAGE: n14 [LVP] OPERATION [ARG]\n");
+	printf("14-bit PIC16F operations.\n\n");
+
+	if (msg)
+		printf("Error: %s.\n\n", msg);
+
+	printf("FILES:\n"
+		" %s\n"
+		"\t\tConfiguration file.\n\n", p.dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" PICKLE\n"
+		"\t\tConfiguration file.\n\n");
+
+	printf("EXAMPLES:\n");
+        printf(" n14 %ss%select\n"
+                "\t\tDump supported devices.\n", UL_ON, UL_OFF);
+        printf(" n14 %sl%svp OPERATION [ARG]\n"
+                "\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+        printf(" n14 %sb%slank\n"
+                "\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
+        printf(" n14 %sc%sonfig\n"
+                "\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+        printf(" n14 %sda%sta\n"
+                "\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+        printf(" n14 %sd%sump\n"
+                "\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
+#if 0
+        printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
+                "\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
+#endif
+        printf(" n14 %sf%slash [n] [address]\n"
+                "\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
+        printf(" n14 %si%sd\n"
+                "\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+        printf(" n14 %sp%srogram [file.hex] [noblank]\n"
+                "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n14 %sv%serify [file.hex]\n"
+                "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n14 %svi%sew [file.hex]\n"
+                "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n14 /dev/ttyUSB0 | %s8%s048\n"
+                "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
+
+	printf("\n");
+
+	printf("VERSION:\n %s\n", VERSION);
+
+	if (msg)
+		io_exit(EX_USAGE);
+	io_exit(EX_OK);
+}
+#endif
+
+/*
  * p16 help
  */
 #ifdef P16
@@ -432,6 +372,67 @@ usage_p16(char *msg)
 
 	printf("\n");
 	
+	printf("VERSION:\n %s\n", VERSION);
+
+	if (msg)
+		io_exit(EX_USAGE);
+	io_exit(EX_OK);
+}
+#endif
+
+/*
+ * n16 help
+ */
+#ifdef N16
+void
+usage_n16(char *msg)
+{
+	printf("USAGE: n16 [LVP] OPERATION [ARG]\n");
+	printf("16-bit PIC18F operations.\n\n");
+
+	if (msg)
+		printf("Error: %s.\n\n", msg);
+
+	printf("FILES:\n"
+		" %s\n"
+		"\t\tConfiguration file.\n\n", p.dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" PICKLE\n"
+		"\t\tConfiguration file.\n\n");
+
+	printf("EXAMPLES:\n");
+        printf(" n16 %ss%select\n"
+                "\t\tDump supported devices.\n", UL_ON, UL_OFF);
+        printf(" n16 %sl%svp OPERATION [ARG]\n"
+                "\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+        printf(" n16 %sb%slank\n"
+                "\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
+        printf(" n16 %sc%sonfig\n"
+                "\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+        printf(" n16 %sda%sta\n"
+                "\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+        printf(" n16 %sd%sump\n"
+                "\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
+#if 0
+        printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
+                "\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
+#endif
+        printf(" n16 %sf%slash [n] [address]\n"
+                "\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
+        printf(" n16 %si%sd\n"
+                "\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+        printf(" n16 %sp%srogram [file.hex] [noblank]\n"
+                "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n16 %sv%serify [file.hex]\n"
+                "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n16 %svi%sew [file.hex]\n"
+                "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+        printf(" n16 /dev/ttyUSB0 | %s8%s048\n"
+                "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
+
+	printf("\n");
+
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
@@ -574,9 +575,17 @@ usage(char *execname, char *msg)
 	if (strcmp("p14", execname) == 0)
 		usage_p14(msg);
 #endif
+#ifdef N14
+	if (strcmp("n14", execname) == 0)
+		usage_n14(msg);
+#endif
 #ifdef P16
 	if (strcmp("p16", execname) == 0)
 		usage_p16(msg);
+#endif
+#ifdef N16
+	if (strcmp("n16", execname) == 0)
+		usage_n16(msg);
 #endif
 #ifdef P24
 	if (strcmp("p24", execname) == 0)
@@ -590,26 +599,13 @@ usage(char *execname, char *msg)
 }
 
 /*
- * Reset user
- */
-void
-resetuid(void)
-{
-	if (getuid() != geteuid()) {
-		if (setuid(getuid()) < 0) {
-			printf("%s: fatal error: setuid failed\n", __func__);
-			io_exit(EX_OSERR); /* Panic */
-		}
-	}
-}
-
-/*
  * Open device and perform command
  */
 int
 main(int argc, char **argv)
 {
 	char *execdup, *execname;
+	int rc = EX_OK;
 
 	/* Get exec name */
 	execdup = (char *)strdup(argv[0]);
@@ -626,122 +622,27 @@ main(int argc, char **argv)
 	/* Get configuration */
 	getconf();
 	
-	/* Command: pickle */
-	if (strcmp(execname, "pickle") == 0) {
-		resetuid();
-		usage_pickle();
-	}
-#ifdef TTY
-	/* Command: pload */
-	if (strcmp(execname, "pload") == 0) {
-		resetuid();
-		if (argc < 3)
-			usage_pload("Missing arg");
-		if (argc > 5)
-			usage_pload("Too many args");
-
-		int prog_mode = tolower((int)argv[1][0]);
-		if (prog_mode != 'p' && prog_mode != 'v')
-			usage_pload("Invalid mode");
-
-		/* argv[2] = device or address */
-
-		char file[STRLEN];
-		strcpy(file, "-");
-		if (argc >= 4)
-			strncpy(file, argv[3], STRMAX);
-
-                uint8_t size = 32;
-                if (argc == 5) {
-                        size = (uint8_t)strtoul(argv[4], NULL, 0);
-                        if (size != 16 && size != 24 && size != 32)
-                                usage_pload("Invalid size");
-                }
-
-		io_signal_on(); // !SIGPIPE
-		stk500v2_load(prog_mode, argv[2], file, size);
-		io_exit(EX_OK);
-	}
-#endif
 	/* Open device */
 	if (io_open() < 0) {
-#ifdef PTEST
-		if (strcmp(execname, "ptest") == 0)
-			usage_ptest(io_error());
-#endif
 		usage(execname, io_error());
 	}
 
 	/* Raise priority */
 	setpriority(PRIO_PROCESS, 0, -20);
 
-	/* Reset user */
-	resetuid();
-#ifdef PCTRL
-	/* Command: pctrl */
-	if (strcmp(execname, "pctrl") == 0) {
-		if (argc < 2)
-			usage_pctrl("Missing arg");
-		if (argc > 2)
-			usage_pctrl("Too many args");
-		if (strcasecmp(argv[1], "RUN") == 0) {
-			io_close(HIGH);
-			printf("RUN\n");
-		} else if (strcasecmp(argv[1], "STOP") == 0) {
-			io_close(LOW);
-			printf("STOP\n");
-		} else if (strcasecmp(argv[1], "RESTORE") == 0) {
-			io_set_vpp(LOW);
-			io_usleep(10);
-			io_close(HIGH);
-			printf("RESTORE\n");
+	/* Reset uid */
+	if (getuid() != geteuid()) {
+		if (setuid(getuid()) < 0) {
+			printf("%s: fatal error: setuid failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
 		}
-		io_exit(EX_OK);
 	}
-#endif
-#ifdef PTEST
-	/* Command: ptest */
-	if (strcmp(execname, "ptest") == 0) {
-		if (argc < 3)
-			usage_ptest("Missing args");
-		if (argc > 3)
-			usage_ptest("Too many args");
-		int32_t testarg = strtol(argv[2], NULL, 0);
-		if (testarg < 0)
-			usage_ptest("Invalid arg");
 
-		if (strcasecmp(argv[1], "VPP") == 0) 
-			io_test0(0, testarg);
-		else if (strcasecmp(argv[1], "PGC") == 0)
-			io_test0(1, testarg);
-		else if (strcasecmp(argv[1], "PGD") == 0)
-			io_test0(2, testarg);
-		else if (strcasecmp(argv[1], "PGM") == 0)
-			io_test0(3, testarg);
-		else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
-			int32_t test = strtol(argv[1], NULL, 0);
-			switch (test) {
-#ifdef RPI
-			case 0: gpio_test(testarg);break;
-#endif
-			case 1: io_test1(testarg); break;
-			case 2: io_test2(testarg); break;
-			case 3: io_test3(testarg); break;
-			case 4: io_test4(testarg); break;
-#if defined(PTEST) && defined(PIO)
-			case 5: io_test5(testarg); break;
-#endif
-			default:usage_ptest("Invalid arg");break;
-			}
-		} else {
-			usage_ptest("Invalid arg");
-		}
-		io_exit(EX_OK);
-	}
-#endif
 	/* Determine arch: 12 | 14 | 16 | 24 | 32 */
 	if (pic_arch(execname) == 0)
 		usage_pickle();
+
+	/* Perform operation */
 	if (argc < 2)
 		usage(execname, "Missing arg(s)");
 
@@ -996,9 +897,9 @@ main(int argc, char **argv)
 				if (argc > 3)
 					usage(execname, "Too many args [verify]");
 				if (argc < 3)
-					pic_verify("-");
+					rc = 0 - pic_verify("-");
 				else
-					pic_verify(argv[2]);
+					rc = 0 - pic_verify(argv[2]);
 			}
 			break;
 #ifdef TTY
@@ -1019,5 +920,5 @@ main(int argc, char **argv)
 	}
 
 	free(execdup);
-	io_exit(EX_OK);
+	io_exit(rc);
 }

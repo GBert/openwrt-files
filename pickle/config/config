@@ -80,7 +80,7 @@ BUSY=0
 # !MCLR/VPP        - PI19
 VPP=275
 # PGM              - unused
-PGM=65535
+PGM=-1
 # PGC CLOCK        - PI18
 PGC=274
 # PGD DATA_I/O     - PI17

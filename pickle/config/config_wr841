@@ -80,7 +80,7 @@ BUSY=0
 # !MCLR/VPP        - PI/O 
 VPP=2
 # PGM              - PI/O 
-PGM=255
+PGM=-1
 # PGC CLOCK        - PI/O 
 PGC=3
 # PGD DATA_I/O     - PI/O

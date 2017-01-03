@@ -17,39 +17,13 @@
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
 
-#ifndef _FTDI_BB_H
-#define _FTDI_BB_H
+#ifndef _PLOAD_H
+#define _PLOAD_H
 
-#include <ftdi.h>
+#include "pickle.h"
 
-#define FTDI_BB_MAX_BITS_TRANSFER (128)
+/* prototypes */
+void usage(char *, char *);
+int main(int, char **);
 
-struct ftdi_bb_io {
-	uint8_t dir;
-	uint8_t pin;
-	uint8_t bit;
-} __attribute__((packed));
-
-struct ftdi_bb_config {
-	uint16_t clock_pin;
-	uint16_t data_pin_input;
-	uint16_t data_pin_output;
-	uint8_t clock_falling;
-	uint8_t msb_first;
-	uint8_t clock_delay_low;
-	uint8_t clock_delay_high;
-} __attribute__((packed));
-
-struct ftdi_bb_shift {
-	uint8_t dir;
-	uint8_t nbits;
-	uint64_t bits;
-} __attribute__((packed));
-
-int ftdi_bb_open(const char *);
-void ftdi_bb_close(void);
-int ftdi_bb_io(struct ftdi_bb_io *);
-int ftdi_bb_configure(struct ftdi_bb_config *);
-int ftdi_bb_shift(struct ftdi_bb_shift *);
-
-#endif /* _FTDI_BB_H */
+#endif /* !_PLOAD_H */
