@@ -824,7 +824,7 @@ static inline void
 pic24_six(uint32_t data, uint8_t nops)
 {
 	io_program_out(0x0, 4);		/* SIX        */
-	printf("%s: out      0x0(4)\n", __func__);
+	printf("%s: out        0x0(4)\n", __func__);
 	io_program_out(data, 24);
 	printf("%s: out   0x%06x(24)\n", __func__, data);
 	if (nops) {
