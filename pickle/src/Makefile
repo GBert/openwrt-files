@@ -162,8 +162,7 @@ ifeq "$(RPI)" "1"
  endif
 endif
 
-ifeq "$(BPI)" "1"
- ifeq "$(PLATFORM)" "armv7l"
+ ifeq "$(BPI)" "1"
  CFLAGS+=-DBPI
  SOURCE1+=a20.c
  SOURCE2+=a20.c
@@ -171,7 +170,6 @@ ifeq "$(BPI)" "1"
  SOURCE4+=a20.c
  SOURCE5+=a20.c
  endif
-endif
 
 ifeq "$(SYSTEM)" "Linux"
  ifeq "$(MCP23017)" "1"

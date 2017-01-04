@@ -30,13 +30,17 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)
 endef
 
-TARGET_CFLAGS+= -I$(STAGING_DIR)/usr/include/libftdi1 \
+TARGET_CFLAGS+= -I$(STAGING_DIR)/usr/include/libftdi1
+
+ifneq (,$(findstring Banana,$(CONFIG_TARGET_PROFILE)))
+	TARGET_CFLAGS_EXTENDED+= -DBPI
+endif
 
 define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
-		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DP12 -DP14 -DP16 -DP24 -DP32 -DPIO -DPCTRL -DPTEST -DBITBANG -DFTDI -DTTY -DQSORT" \
-		build
+		CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) -std=gnu99 -DP12 -DP14 -DN14 -DP16 -DP24 -DP32 -DPIO \
+		        -DPCTRL -DPTEST -DBITBANG -DFTDI -DTTY -DQSORT $(TARGET_CFLAGS_EXTENDED)"
 endef
 
 define Package/pickle/install
