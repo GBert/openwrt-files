@@ -25,10 +25,11 @@
  *****************************************************************************/
 
 #define PIC14N_MASK (0x3FFF)
-#define PIC14N_USERID_MAX (4)
-#define PIC14N_CONFIG_MAX (5)
+#define PIC14N_USERID_MAX  (4)
+#define PIC14N_CONFIG_MAX  (5)
 #define PIC14N_DEVINFO_MAX (32)
 #define PIC14N_DEVCONF_MAX (5)
+#define PIC14N_CALIB_MAX   (4)
 
 struct pic14n_config {
 	uint16_t userid[PIC14N_USERID_MAX];	/* 8000 .. 8003  */
@@ -38,6 +39,7 @@ struct pic14n_config {
 	uint16_t config[PIC14N_CONFIG_MAX]; 	/* 8007 .. 800X  */
 	uint16_t devinfo[PIC14N_DEVINFO_MAX];  	/* 8100 .. 811F  */
 	uint16_t devconf[PIC14N_DEVCONF_MAX];   /* 8200 .. 8205  */
+	uint16_t calib[PIC14N_CALIB_MAX]; 	/* E000 .. E003  */
 };
 
 struct pic14n_dsmap {
@@ -50,6 +52,7 @@ struct pic14n_dsmap {
 	uint32_t latches;		/* latch / erase row size    */
 	uint32_t devinfo;		/* devinfo size              */
 	uint32_t devconf;		/* devconf size              */
+	uint32_t calib;			/* calib size                */
 };
 
 /******************************************************************************
@@ -65,6 +68,7 @@ struct pic14n_dsmap {
 #define PIC14N_CONFIG_ADDR  (0x8007)
 #define PIC14N_DEVINFO_ADDR (0x8100)
 #define PIC14N_DEVCONF_ADDR (0x8200)
+#define PIC14N_CALIB_ADDR   (0xE000)
 #define PIC14N_EEPROM_ADDR  (0xF000)
 
 #define PIC14N_DEVICEID_MASK (0x0FFF)
@@ -145,6 +149,7 @@ uint32_t pic14n_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
 uint32_t pic14n_write_config(void);
 uint16_t pic14n_getregion(uint32_t);
 uint32_t pic14n_program_data(uint32_t, pic_data *);
+void pic14n_program_begin(void);
 void pic14n_program_end(int);
 uint32_t pic14n_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic14n_view_data(pic_data *);

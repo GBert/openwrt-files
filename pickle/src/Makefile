@@ -164,11 +164,11 @@ endif
 
  ifeq "$(BPI)" "1"
  CFLAGS+=-DBPI
- SOURCE1+=a20.c
- SOURCE2+=a20.c
- SOURCE3+=a20.c
- SOURCE4+=a20.c
- SOURCE5+=a20.c
+ SOURCE1+=allwinner.c
+ SOURCE2+=allwinner.c
+ SOURCE3+=allwinner.c
+ SOURCE4+=allwinner.c
+ SOURCE5+=allwinner.c
  endif
 
 ifeq "$(SYSTEM)" "Linux"

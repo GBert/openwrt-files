@@ -26,7 +26,6 @@
 
 #define PIC16N_WORD_MASK (0x0000FFFF)
 #define PIC16N_DATA_MASK (0x000000FF)
-#define PIC16N_EVEN_MASK (0xFFFFFFFE)
 #define PIC16N_USERID_MAX (8)
 #define PIC16N_CONFIG_MAX (12)
 
@@ -63,10 +62,10 @@ struct pic16n_dsmap {
 
 #define PIC16N_USERID_ADDR  (0x200000)
 #define PIC16N_CONFIG_ADDR  (0x300000)
-#define PIC16N_EEPHY_ADDR   (0x310000) /* EEPROM physical address */
+#define PIC16N_EEPROM_ADDR  (0x310000) /* EEPROM physical address */
 #define PIC16N_REVID_ADDR   (0x3FFFFC)
 #define PIC16N_DEVID_ADDR   (0x3FFFFE)
-#define PIC16N_EEPROM_ADDR  (0xF00000) /* EEPROM pseudo address */
+#define PIC16N_EEFAKE_ADDR  (0xF00000) /* EEPROM pseudo address */
 
 #define PIC16N_TPINT_CODE   (2800)	/*  2.8 ms */
 #define PIC16N_TPINT_CONFIG (5600)	/*  5.6 ms */
@@ -113,6 +112,7 @@ uint32_t pic16n_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
 uint32_t pic16n_write_config(void);
 uint16_t pic16n_getregion(uint32_t);
 uint32_t pic16n_program_data(uint32_t, pic_data *);
+void pic16n_program_begin(void);
 void pic16n_program_end(int);
 uint32_t pic16n_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic16n_view_data(pic_data *);

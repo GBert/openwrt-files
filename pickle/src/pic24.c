@@ -727,7 +727,11 @@ pic24_program_verify(void)
 		/* DS39768D-page 13 PIC24FJ64GA002 */
 		/* NOP (5)              */
 		/* NOP (28) [,NOP, NOP] */
-		io_program_out(0, 5 + pic24_conf.gotonop * 28);
+		uint8_t nops = pic24_conf.gotonop;
+
+		io_program_out(0, 5);
+		while (nops--)
+			io_program_out(0, 28);	/* NOP */
 
 		/* GOTO 200, NOP [,NOP, NOP] */
 		pic24_goto200();
@@ -823,14 +827,10 @@ pic24_standby(void)
 static inline void
 pic24_six(uint32_t data, uint8_t nops)
 {
-	io_program_out(0x0, 4);		/* SIX        */
-	printf("%s: out        0x0(4)\n", __func__);
+	io_program_out(0x0, 4);		/* SIX */
 	io_program_out(data, 24);
-	printf("%s: out   0x%06x(24)\n", __func__, data);
-	if (nops) {
-		io_program_out(0, 28 * nops);/* NOP [,NOP] */
-		printf("%s: out  0x0000000(28) * NOP(%d)\n", __func__, nops);
-	}
+	while (nops--)
+		io_program_out(0, 28);	/* NOP */
 }
 
 /*
@@ -844,11 +844,8 @@ pic24_regout(void)
 	uint16_t word;
 
 	io_program_out(0x1, 4);		/* REGOUT */
-	printf("%s: out        0x1(4)\n", __func__);
 	word = io_program_in(24) >> 8;	/* VISI   */
-	printf("%s: out   0x000000(24) in 0x%04x\n", __func__, word);
 	io_program_out(0, 28);		/* NOP    */
-	printf("%s: out  0x0000000(28) NOP\n", __func__);
 
 	return word;
 }

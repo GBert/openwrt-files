@@ -32,7 +32,7 @@ endef
 
 TARGET_CFLAGS+= -I$(STAGING_DIR)/usr/include/libftdi1
 
-ifneq (,$(findstring Banana,$(CONFIG_TARGET_PROFILE)))
+ifneq (,$(findstring banana,$(CONFIG_TARGET_PROFILE)))
 	TARGET_CFLAGS_EXTENDED+= -DBPI
 endif
 

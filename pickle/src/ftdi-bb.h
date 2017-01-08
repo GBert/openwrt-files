@@ -22,7 +22,8 @@
 
 #include <ftdi.h>
 
-#define FTDI_BB_MAX_BITS_TRANSFER (128)
+#define FTDI_BB_MAX_BITS_TRANSFER (64)
+#define FTDI_BB_BUFFER_SIZE (FTDI_BB_MAX_BITS_TRANSFER * 8) /* 512 */
 
 struct ftdi_bb_io {
 	uint8_t dir;

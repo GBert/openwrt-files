@@ -111,8 +111,12 @@ inhx32_fgets(char *line, FILE *fp,
 			return line;	/* Not a data record */
 
 		/* Validate alignment */
-		if (p.pic && (*bb % p.pic->align))
+		if (p.pic && (*bb % p.pic->align)) {
+#if 0
+			printf("%s: information: unaligned input ignored\n", __func__);
+#endif
 			return line;	/* Not a data record */
+		}
 	}
 	/* Process extended address record */
 	else if (_tt == TT_EXTENDED_LINEAR_ADDRESS) {
