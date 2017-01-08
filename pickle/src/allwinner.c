@@ -18,6 +18,7 @@
  */
 
 #include "pickle.h"
+#include "allwinner.h"
 
 /*
  * Session

@@ -52,6 +52,9 @@ define Package/pickle/install
 	$(INSTALL_BIN) ./config/RIPE_11_000301.hex $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/config* $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/*.sh $(1)/root/.pickle
+ifneq (,$(findstring wr841,$(CONFIG_TARGET_PROFILE)))
+	$(INSTALL_BIN) ./config/config_wr841 $(1)/root/.pickle/config
+endif
 endef
 
 define Package/pickle/postinst
