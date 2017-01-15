@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <strings.h>
 #include <sysexits.h>
@@ -39,13 +40,14 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/select.h>
+#include <sys/mman.h>
 #include <time.h>
 #include <errno.h> 
 #include <libgen.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdint.h>
 #include <assert.h>
+#include <dirent.h>
 
 #define LOW   (0x00)
 #define HIGH  (0x01)
@@ -90,7 +92,7 @@ struct pickle;
 #ifdef RPI
 #include "raspi.h"
 #endif
-#ifdef BPI
+#ifdef ALLWINNER
 #include "allwinner.h"
 #endif
 #ifdef MCP23017

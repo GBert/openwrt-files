@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Darron Broad
+ * Copyright (C) 2015-2017 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -20,31 +20,50 @@
 #ifndef _ALLWINNER_H
 #define _ALLWINNER_H
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <unistd.h>
 #include <stdint.h>
-#include <sysexits.h>
-#include <errno.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
-#define BPI_BASE_ADDR (0x01C20000)
-#define BPI_BASE_OFS  (0x00000800)
-#define BPI_MAP_LEN   (0x2000)
+/* AllWinner A20/H2+/H3 */
+#define AW_BASE_ADDR (0x01C20000)
+#define AW_BASE_OFS1 (0x00000800)	/* PIO 0x01C20800 .. 0x01C20BFF 1K                 */
+#define AW_BASE_OFS2 (0x00000C00)	/* PIO 0x01C20C00 .. 0x01C20FFF 1K (H2+/H3 PORT L) */
+#define AW_MAP_LEN   (0x2000)
+#define AW_A20_NPINS (288)		/* PORT A .. PORT I                      */
+#define AW_H3_NPINS  (224)		/* PORT A .. PORT G (PORT L UNSUPPORTED) */
+#define AW_NPINS     (288)		/* Max Supported Pins                    */
 
-/* Maximum possible number of pins */
-#define GPIO_BPI_NPINS (288)
+/* Banana Pi      A20 */
+/* Orange Pi/Mini A20 */
+#define BOPI_TX (224)			/* H00 = (32 * 7) + 0 */
+#define BOPI_RX (225)			/* H01 = (32 * 7) + 1 */
 
+/* Orange Pi Zero H2+ */
+#define OPI0_TX (198)			/* PG6  = (32 * 6) + 6 */
+#define OPI0_RX (199)			/* PG7  = (32 * 6) + 7 */
+
+/* Orange Pi One     H3 */
+/* Orange Pi Lite    H3 */
+/* Orange Pi PC      H3 */
+/* Orange Pi PC Plus H3 */
+/* Orange Pi Plus    H3 */
+/* Orange Pi Plus 2e H3 */
+/* Orange Pi Plus 2  H3 */
+#define OPIX_TX (13)			/* PA13 = (32 * 0) + 13 */
+#define OPIX_RX (14)			/* PA14 = (32 * 0) + 14 */
+
+typedef struct aw_device {
+	uint16_t npins;
+	uint16_t tx;
+	uint16_t rx;
+	uint8_t sel;
+} aw_device_t;
+
+#if 0
 /*
- * PIO Controller Port Register List
+ * A20 User Manual Page 240
+ * 
+ * 1.19 Port Controller
  *
- * A20 User Manual Pages 237-238
+ * 1.19.1 Port Description
  *
  * Port A(PA): 18 input/output port 
  * Port B(PB): 24 input/output port
@@ -55,9 +74,18 @@
  * Port G(PG): 12 input/output port
  * Port H(PH): 28 input/output port
  * Port I(PI): 22 input/output port
+ *
+ * H3 Datasheet Page 316
+ * 
+ * 4.22 Port Controller
+ *
+ * Port A(PA): 22 input/output port 
+ * Port C(PC): 19 input/output port
+ * Port D(PD): 18 input/output port
+ * Port E(PE): 16 input/output port
+ * Port F(PF):  7 input/output port
+ * Port G(PG): 14 input/output port
  */
-
-#define PIO_BASE_ADDR (0x01C20800)
 
 #define PA_CFG0 ((0 * 0x24 + 0x00) / 4)
 #define PB_CFG0 ((1 * 0x24 + 0x00) / 4)
@@ -148,27 +176,28 @@
 #define PG_PUL1 ((6 * 0x24 + 0x20) / 4)
 #define PH_PUL1 ((7 * 0x24 + 0x20) / 4)
 #define PI_PUL1 ((8 * 0x24 + 0x20) / 4)
+#endif
 
-#define PX_PULL_DIS  (0)
-#define PX_PULL_UP   (1)
-#define PX_PULL_DOWN (2)
-#define PX_PULL_RES  (3)
+#define AW_PX_PULL_DIS  (0)
+#define AW_PX_PULL_UP   (1)
+#define AW_PX_PULL_DOWN (2)
+#define AW_PX_PULL_RES  (3)
 
-#define PX_SELECT0 (0)
-#define PX_SELECT1 (1)
-#define PX_SELECT2 (2)
-#define PX_SELECT3 (3)
-#define PX_SELECT4 (4)
-#define PX_SELECT5 (5)
-#define PX_SELECT6 (6)
-#define PX_SELECT7 (7)
+#define AW_PX_SELECT0 (0)
+#define AW_PX_SELECT1 (1)
+#define AW_PX_SELECT2 (2)
+#define AW_PX_SELECT3 (3)
+#define AW_PX_SELECT4 (4)
+#define AW_PX_SELECT5 (5)
+#define AW_PX_SELECT6 (6)
+#define AW_PX_SELECT7 (7)
 
-int gpio_bpi_open(const char *);
-void gpio_bpi_close(void);
+int gpio_aw_open(const char *);
+void gpio_aw_close(void);
 
-void gpio_bpi_delay(void);
-int gpio_bpi_get(uint16_t, uint8_t *);
-int gpio_bpi_set(uint16_t, uint8_t);
-int gpio_bpi_release(uint16_t, uint8_t);
+void gpio_aw_delay(void);
+int gpio_aw_get(uint16_t, uint8_t *);
+int gpio_aw_set(uint16_t, uint8_t);
+int gpio_aw_release(uint16_t, uint8_t);
 
 #endif /* !_ALLWINNER_H */

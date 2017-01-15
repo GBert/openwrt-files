@@ -475,7 +475,7 @@ pic_verify(char *filename)
  * VIEW FILE
  */
 void
-pic_view(char *filename)
+pic_view(char *filename, int raw)
 {
 	uint32_t count = 0, nbytes;
 	pic_data **pdata = NULL;
@@ -489,10 +489,19 @@ pic_view(char *filename)
 	if (nbytes == 0)
 		return;
 
-	for (uint32_t i = 0; i < count; ++i)
-		p.pic->view_data(pdata[i]);
+	if (!raw) {
+		for (uint32_t i = 0; i < count; ++i)
+			p.pic->view_data(pdata[i]);
 
-	printf("Total: %u\n", nbytes);
+		printf("Total: %u\n", nbytes);
+	} else {
+		for (uint32_t i = 0; i < count; ++i) {
+			for (uint32_t j = 0; j < pdata[i]->nbytes; ++j)
+				printf("%02X ", pdata[i]->bytes[j]);
+
+			printf("\n");
+		}
+	}
 
 	inhx32_array_free(pdata, count);
 }
@@ -1028,6 +1037,24 @@ pic_dumpinhxdata(uint32_t addr, uint32_t size, uint16_t *data)
 		p.pic->dumpinhxdata(addr, size, data);
 	else
 		printf("%s: information: unimplemented\n", __func__);
+}
+
+/******************************************************************************
+  DEBUGGING
+ *****************************************************************************/
+
+void
+pic_debug(void)
+{
+	if (!p.pic->debug) {
+		printf("%s: information: unimplemented\n", __func__);
+		return;
+	}
+
+	if (pic_read_config() < 0)
+		return;
+
+	p.pic->debug();
 }
 
 /******************************************************************************

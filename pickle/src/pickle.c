@@ -68,9 +68,9 @@ usage_pickle(void)
 	printf(" RPI\n"
 		"\t\tRaspberry Pi GPIO.\n");
 #endif
-#ifdef BPI
-	printf(" BPI\n"
-		"\t\tBanana Pi GPIO.\n");
+#ifdef ALLWINNER
+	printf(" ALLWINNER\n"
+		"\t\tBanana Pi, Orange Pi Zero / Plus 2 GPIO.\n");
 #endif
 #ifdef TTY
 	printf(" TTY\n"
@@ -174,7 +174,7 @@ usage_p12(char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" p12 %ss%select PIC1XFXXX %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-	printf(" p12 %ss%select PIC1XFXXX %svi%sew [file.hex]\n"
+	printf(" p12 %ss%select PIC1XFXXX %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" p12 %ss%select PIC1XFXXX /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
@@ -241,7 +241,7 @@ usage_p14(char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p14 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" p14 %svi%sew [file.hex]\n"
+	printf(" p14 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p14 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -302,7 +302,7 @@ usage_n14(char *msg)
                 "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
         printf(" n14 %sv%serify [file.hex]\n"
                 "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n14 %svi%sew [file.hex]\n"
+        printf(" n14 %svi%sew [file.hex] [raw]\n"
                 "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
         printf(" n14 /dev/ttyUSB0 | %s8%s048\n"
                 "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -365,7 +365,7 @@ usage_p16(char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p16 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" p16 %svi%sew [file.hex]\n"
+	printf(" p16 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p16 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -426,7 +426,7 @@ usage_n16(char *msg)
                 "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
         printf(" n16 %sv%serify [file.hex]\n"
                 "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n16 %svi%sew [file.hex]\n"
+        printf(" n16 %svi%sew [file.hex] [raw]\n"
                 "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
         printf(" n16 /dev/ttyUSB0 | %s8%s048\n"
                 "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -491,7 +491,7 @@ usage_p24(char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p24 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" p24 %svi%sew [file.hex]\n"
+	printf(" p24 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p24 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -546,7 +546,7 @@ usage_p32(char *msg)
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p32 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-	printf(" p32 %svi%sew [file.hex]\n"
+	printf(" p32 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p32 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
@@ -763,7 +763,7 @@ main(int argc, char **argv)
 					usage(execname, "Too many args [data]");
 				pic_dumpdata();
 			} else if (argv11 == 'e') { 	/* DEBUG */
-				printf("Hello world!\n");
+				pic_debug();
 			} else {			/* DUMP */
 				if (argc > 2)
 					usage(execname, "Too many args [dump]");
@@ -876,7 +876,7 @@ main(int argc, char **argv)
 				case 'Y':
 				case '1': blank = 1;
 					break;
-				default:usage(execname, "Invalid arg [program]");
+				default:usage(execname, "invalid arg [program]");
 					break;
 			}
 			if (argc < 3)
@@ -887,12 +887,20 @@ main(int argc, char **argv)
 			break;
 
 	case 'v':	if (argv11 == 'i') {		/* VIEW */
-				if (argc > 3)
+				int raw = 0;
+				if (argc > 4)
 					usage(execname, "Too many args [view]");
+				if (argc == 4) switch (argv[3][0]) {
+					case 'r':
+					case 'R': raw = 1;
+						break;
+					default:usage(execname, "invalid arg [view]");
+						break;
+				}
 				if (argc < 3)
-					pic_view("-");
+					pic_view("-", 0);
 				else
-					pic_view(argv[2]);
+					pic_view(argv[2], raw);
 			} else {			/* VERIFY */
 				if (argc > 3)
 					usage(execname, "Too many args [verify]");

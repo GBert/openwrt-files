@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pickle
-PKG_RELEASE:=4.0f
+PKG_RELEASE:=4.0g
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
@@ -33,7 +33,7 @@ endef
 TARGET_CFLAGS+= -I$(STAGING_DIR)/usr/include/libftdi1
 
 ifneq (,$(findstring banana,$(CONFIG_TARGET_PROFILE)))
-	TARGET_CFLAGS_EXTENDED+= -DBPI
+	TARGET_CFLAGS_EXTENDED+= -DBPI -DALLWINNER
 endif
 
 define Build/Compile

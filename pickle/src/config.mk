@@ -33,7 +33,7 @@ PLOAD=0
 # back/front-ends (where available) (enable:1 disable:0)
 TTY=1
 RPI=0
-BPI=1
+ALLWINNER=1
 MCP23017=0
 BITBANG=1
 FTDI=1

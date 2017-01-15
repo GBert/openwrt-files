@@ -62,6 +62,7 @@ struct pic_ops {
 	void (*dumpinhxcode)(uint32_t, uint32_t, uint32_t *);
 	void (*dumphexdata)(uint32_t, uint32_t, uint16_t *);
 	void (*dumpinhxdata)(uint32_t, uint32_t, uint16_t *);
+	void (*debug)(void);
 };
 
 /*
@@ -110,7 +111,7 @@ uint32_t pic_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
 #define PIC_VOID (0xFFFF)
 void pic_program(char *, int);
 uint32_t pic_verify(char *);
-void pic_view(char *);
+void pic_view(char *, int);
 
 void pic_writebandgap(uint16_t);
 void pic_writeosccal(uint16_t);
@@ -152,6 +153,8 @@ void pic_dump_data(uint32_t, uint32_t, int);
 int pic_mtdata(uint16_t, uint32_t, uint16_t *);
 void pic_dumphexdata(uint32_t, uint32_t, uint16_t *);
 void pic_dumpinhxdata(uint32_t, uint32_t, uint16_t *);
+
+void pic_debug(void);
 
 /* MEMORY REGIONS */
 #define PIC_REGIONNOTSUP (0)	/* NOT BELOW      */

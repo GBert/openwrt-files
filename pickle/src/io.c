@@ -74,7 +74,7 @@ io_config(void)
 	strncpy(p.device, SERIAL_DEVICE, STRLEN);
 	p.baudrate = 115200;		/* not speed_t      */
 #endif
-#if defined(RPI) || defined(BITBANG) || defined(FTDI) || defined(BPI)
+#if defined(RPI) || defined(BITBANG) || defined(FTDI) || defined(ALLWINNER)
 	/* rpi etc */
 	p.vpp  = GPIO_VPP;		/* TX/!MCLR/VPP     */
 	p.pgm  = GPIO_PGM_DISABLED;	/* PGM              */
@@ -121,19 +121,19 @@ io_open(void)
 #ifdef RPI
 	if (mystrcasestr(p.device, "rpi") == p.device) {
 		/* rpi */
-		if (gpio_rpi_open("/dev/mem", p.device[3]) < 0)
+		if (gpio_rpi_open(p.device[3]) < 0)
 			return -1;
 		p.iot = IORPI;
 		io_signal_on();
 		return 0;
 	} 
 #endif
-#ifdef BPI
-	if (mystrcasestr(p.device, "bpi") == p.device) {
-		/* bpi */
-		if (gpio_bpi_open("/dev/mem") < 0)
+#ifdef ALLWINNER
+	if ((strcasecmp(p.device, "bpi") == 0) || (mystrcasestr(p.device, "opi") == p.device)) {
+		/* allwinner */
+		if (gpio_aw_open(p.device) < 0)
 			return -1;
-		p.iot = IOBPI;
+		p.iot = IOALLWINNER;
 		io_signal_on();
 		return 0;
 	} 
@@ -149,7 +149,7 @@ io_open(void)
 	} 
 #endif
 #ifdef BITBANG
-	if (strstr(p.device, "/dev/gpio-bb") == p.device) {
+	if (strcmp(p.device, "/dev/gpio-bb") == 0) {
 		/* gpio bit-bang */
 		if (gpio_bb_open("/dev/gpio-bb") < 0)
 			return -1;
@@ -159,7 +159,7 @@ io_open(void)
 	}
 #endif
 #ifdef FTDI
-	if (mystrcasestr(p.device, "ftdi") == p.device) {
+	if (strcasecmp(p.device, "ftdi") == 0) {
 		/* ftdi bit-bang */
 		if (ftdi_bb_open(p.usb_serial) < 0)
 			return -1;
@@ -194,19 +194,19 @@ io_release(void)
 		}
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
+#ifdef ALLWINNER
+	case IOALLWINNER:/* allwinner */
 		{
 		uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
 
 		if (p.bitrules & PGD_RELEASE)
-			gpio_bpi_release(p.pgdo, alt);
+			gpio_aw_release(p.pgdo, alt);
 		if (p.bitrules & PGC_RELEASE)
-			gpio_bpi_release(p.pgc, alt);
+			gpio_aw_release(p.pgc, alt);
 		if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
-			gpio_bpi_release(p.pgm, alt);
+			gpio_aw_release(p.pgm, alt);
 		if (p.bitrules & VPP_RELEASE)
-			gpio_bpi_release(p.vpp, alt);
+			gpio_aw_release(p.vpp, alt);
 		}
 		break;
 #endif
@@ -269,7 +269,7 @@ io_close(int run)
 		printf("%s: fatal error: device not open.\n", __func__);
 		io_exit(EX_SOFTWARE); /* Panic */
 	}
-#if defined(RPI) || defined(MCP23017) || defined(BITBANG) || defined(FTDI) || defined(BPI)
+#if defined(RPI) || defined(MCP23017) || defined(BITBANG) || defined(FTDI) || defined(ALLWINNER)
 	io_usleep(10);
 	if (run) {
 		io_set_vpp(HIGH);
@@ -291,10 +291,10 @@ io_close(int run)
 		gpio_rpi_close();
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:
-		/* bpi */
-		gpio_bpi_close();
+#ifdef ALLWINNER
+	case IOALLWINNER:
+		/* allwinner */
+		gpio_aw_close();
 		break;
 #endif
 #ifdef MCP23017
@@ -346,9 +346,9 @@ io_error(void)
 		msg = "Can't open RPI I/O";
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
-		msg = "Can't open BPI I/O";
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
+		msg = "Can't open ALLWINNER I/O";
 		break;
 #endif
 #ifdef MCP23017
@@ -411,11 +411,11 @@ io_usleep(uint32_t n)
 		return;
 	}
 #endif
-#ifdef BPI
+#ifdef ALLWINNER
 	/* I/O sleep */
-	if (p.iot == IOBPI && n < 10) {
+	if (p.iot == IOALLWINNER && n < 10) {
 		for (uint32_t i = 0; i < n; ++i) {
-			gpio_bpi_delay();
+			gpio_aw_delay();
 		}
 		return;
 	}
@@ -462,10 +462,10 @@ io_set_pgm(uint8_t pgm)
 			gpio_rpi_set(p.pgm, pgm);
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
 		if (p.pgm != GPIO_PGM_DISABLED)
-			gpio_bpi_set(p.pgm, pgm);
+			gpio_aw_set(p.pgm, pgm);
 		break;
 #endif
 #ifdef MCP23017
@@ -529,9 +529,9 @@ io_set_vpp(uint8_t vpp)
 		gpio_rpi_set(p.vpp, vpp);
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
-		gpio_bpi_set(p.vpp, vpp);
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
+		gpio_aw_set(p.vpp, vpp);
 		break;
 #endif
 #ifdef MCP23017
@@ -584,9 +584,9 @@ io_set_pgd(uint8_t pgd)
 		gpio_rpi_set(p.pgdo, pgd);
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
-		gpio_bpi_set(p.pgdo, pgd);
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
+		gpio_aw_set(p.pgdo, pgd);
 		break;
 #endif
 #ifdef MCP23017
@@ -639,9 +639,9 @@ io_set_pgc(uint8_t pgc)
 		gpio_rpi_set(p.pgc, pgc);
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
-		gpio_bpi_set(p.pgc, pgc);
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
+		gpio_aw_set(p.pgc, pgc);
 		break;
 #endif
 #ifdef MCP23017
@@ -692,9 +692,9 @@ io_get_pgd(void)
 		gpio_rpi_get(p.pgdi, &pgd);
 		break;
 #endif
-#ifdef BPI
-	case IOBPI:	/* bpi */
-		gpio_bpi_get(p.pgdi, &pgd);
+#ifdef ALLWINNER
+	case IOALLWINNER:	/* allwinner */
+		gpio_aw_get(p.pgdi, &pgd);
 		break;
 #endif
 #ifdef MCP23017
@@ -802,8 +802,8 @@ io_data_input(void)
 	if (p.iot == IORPI && p.pgdi == p.pgdo)
 		return;
 #endif
-#ifdef BPI
-	if (p.iot == IOBPI && p.pgdi == p.pgdo)
+#ifdef ALLWINNER
+	if (p.iot == IOALLWINNER && p.pgdi == p.pgdo)
 		return;
 #endif
 #ifdef BITBANG

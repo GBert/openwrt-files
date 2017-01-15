@@ -20,13 +20,6 @@
 #include "pickle.h"
 
 /*
- * Session
- */
-extern struct pickle p;
-
-extern int io_stop;
-
-/*
  * Memory handle
  */
 static int gpio_mem = -1;
@@ -45,7 +38,7 @@ static uint8_t gpio_pins[GPIO_RPI_NPINS], gpio_dirs[GPIO_RPI_NPINS];
  * Map Raspberry-Pi GPIO memory
  */
 int
-gpio_rpi_open(const char *device, uint8_t type)
+gpio_rpi_open(uint8_t type)
 {
 #ifdef RPI
 	off_t gpio_base_addr;
@@ -62,7 +55,7 @@ gpio_rpi_open(const char *device, uint8_t type)
 	}
 
 	/* Open /dev/mem */
-	gpio_mem = open(device, O_RDWR | O_SYNC);
+	gpio_mem = open("/dev/mem", O_RDWR | O_SYNC);
 	if (gpio_mem < 0) {
 		printf("%s: warning: open failed [%s]\n", __func__, strerror(errno));
 		gpio_mem = -1;

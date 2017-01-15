@@ -54,13 +54,13 @@ struct io_ops {
 #define ALT_RELEASE   (0x4000)	/* re-enable ALT function if released */
 
 /* I/O backends */
-#define IONONE   (0)
-#define IOTTY    (1)	/* TTY/TTYUSB                     */
-#define IORPI    (2)	/* RPI GPIO DIRECT/VELLEMAN K8048 */
-#define IOI2C    (3)	/* MCP23017 I2C                   */
-#define IOBB     (4)	/* LINUX BIT-BANG DRIVER          */
-#define IOFTDIBB (5)	/* LINUX FTDI BIT-BANG DRIVER     */
-#define IOBPI    (6)	/* BPI GPIO                       */
+#define IONONE      (0)
+#define IOTTY       (1)	/* TTY/TTYUSB                     */
+#define IORPI       (2)	/* RPI GPIO DIRECT/VELLEMAN K8048 */
+#define IOI2C       (3)	/* MCP23017 I2C                   */
+#define IOBB        (4)	/* LINUX BIT-BANG DRIVER          */
+#define IOFTDIBB    (5)	/* LINUX FTDI BIT-BANG DRIVER     */
+#define IOALLWINNER (6)	/* ALLWINNER GPIO                 */
 
 /* Default GPIO pins */
 #define GPIO_PGM_DISABLED (uint16_t)(-1)

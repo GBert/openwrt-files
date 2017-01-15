@@ -70,9 +70,9 @@ usage(char *execname, char *msg)
 		" ptest 6 10\n"
 		"\t\tRPi GPIO test with 10 seconds mark time.\n"
 #endif
-#ifdef BPI
+#ifdef ALLWINNER
 		" ptest 7 10\n"
-		"\t\tBPi GPIO test with 10 seconds mark time.\n"
+		"\t\tAllWinner GPIO test with 10 seconds mark time.\n"
 #endif
 		"\n");
 
@@ -445,35 +445,35 @@ test_rpi(int seconds)
 #endif /* RPI */
 
 /*
- * Test BPi GPIO pins
+ * Test AllWinner GPIO pins
  */
-#ifdef BPI
+#ifdef ALLWINNER
 void
-test_bpi(int seconds)
+test_allwinner(int seconds)
 {
 	uint8_t output_level = 0, input_level;
 
-	printf("\nTEST MODE 7 [BPI GPIO] CTRL-C TO STOP\n");
+	printf("\nTEST MODE 7 [ALLWINNER GPIO] CTRL-C TO STOP\n");
 
 	while (!io_stop) {
 		printf("\n");
 
-		gpio_bpi_set(p.vpp, output_level);
+		gpio_aw_set(p.vpp, output_level);
 		printf("GPIO %-3d (VPP) = %d\n", p.vpp, output_level);
 
 		if (p.pgm != GPIO_PGM_DISABLED) {
-		        gpio_bpi_set(p.pgm, output_level);
+		        gpio_aw_set(p.pgm, output_level);
 		        printf("GPIO %-3d (PGM) = %d\n", p.pgm, output_level);
 		}
 
-		gpio_bpi_set(p.pgc, output_level);
+		gpio_aw_set(p.pgc, output_level);
 		printf("GPIO %-3d (PGC) = %d\n", p.pgc, output_level);
 
-		gpio_bpi_set(p.pgdo, output_level);
+		gpio_aw_set(p.pgdo, output_level);
 		printf("GPIO %-3d (PGD) = %d\n", p.pgdo,output_level);
 
 		if (p.pgdi != p.pgdo) {
-		        gpio_bpi_get(p.pgdi, &input_level);
+		        gpio_aw_get(p.pgdi, &input_level);
 		        printf("GPIO %02d (PGD) = %d\n", p.pgdi, input_level);
 		}
 
@@ -483,7 +483,7 @@ test_bpi(int seconds)
 		output_level = 1 - output_level;
 	}
 }
-#endif /* BPI */
+#endif /* ALLWINNER */
 
 int
 main(int argc, char *argv[])
@@ -557,8 +557,8 @@ main(int argc, char *argv[])
 		case 6: test_rpi(testarg);
 			break;
 #endif
-#ifdef BPI
-		case 7: test_bpi(testarg);
+#ifdef ALLWINNER
+		case 7: test_allwinner(testarg);
 			break;
 #endif
 		default:usage(execname, "Invalid arg");

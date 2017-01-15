@@ -162,8 +162,8 @@ ifeq "$(RPI)" "1"
  endif
 endif
 
- ifeq "$(BPI)" "1"
- CFLAGS+=-DBPI
+ ifeq "$(ALLWINNER)" "1"
+ CFLAGS+=-DBPI -DALLWINNER
  SOURCE1+=allwinner.c
  SOURCE2+=allwinner.c
  SOURCE3+=allwinner.c
