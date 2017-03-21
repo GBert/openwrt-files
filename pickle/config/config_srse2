@@ -1,0 +1,32 @@
+#
+# modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
+#
+DEVICE=/dev/gpio-bb
+
+# BIT-BANG GPIO
+SLEEP=0
+SLEEP_LOW=0
+SLEEP_HIGH=0
+
+# BIT-BANG GPIO
+BITRULES=0x1000
+
+# I/O busy cursor (0=DISABLED)
+#
+BUSY=0
+
+#
+# !MCLR/VPP
+VPP=17
+# PGM              - unused
+PGM=-1
+# PGC CLOCKD
+PGC=46
+# PGD DATA_I/O
+PGD=45
+
+# ICSP I/O per half-bit sleep time for `pio'.
+FWSLEEP=30                                   
+          
+# Debug level (0=NONE, 1=ERROR, 10=INFO)
+DEBUG=1

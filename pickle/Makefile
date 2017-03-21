@@ -22,7 +22,7 @@ define Package/pickle
 endef
 
 define Package/pickle/description
-  Darron Broad Microchip PIC Programmer 'pickle'
+  Darron Broads Microchip PIC Programmer 'pickle'
   Only LVP PICs are supported
 endef
 
@@ -55,6 +55,9 @@ define Package/pickle/install
 ifneq (,$(findstring wr841,$(CONFIG_TARGET_PROFILE)))
 	$(INSTALL_BIN) ./config/config_wr841 $(1)/root/.pickle/config
 endif
+ifneq (,$(findstring omega2,$(CONFIG_TARGET_PROFILE)))
+	$(INSTALL_BIN) ./config/config_srse2 $(1)/root/.pickle/config
+endif
 endef
 
 define Package/pickle/postinst
@@ -68,6 +71,5 @@ define Package/pickle/postinst
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/pload
 	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/ptest
 endef
-
 
 $(eval $(call BuildPackage,pickle))
