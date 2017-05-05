@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <strings.h>
 #include <sysexits.h>
@@ -48,10 +49,10 @@
 #include <limits.h>
 #include <assert.h>
 #include <dirent.h>
+#include <poll.h>
 
-#define LOW   (0x00)
-#define HIGH  (0x01)
-#define FLOAT (0xFF)
+#define LOW (0x00)
+#define HIGH (0x01)
 
 #ifndef FALSE
 #define FALSE (LOW)
@@ -67,28 +68,21 @@
 #define BUFLEN (512)
 #define BUFMAX (BUFLEN - 1)
 
-#define UL_ON  ("\033[4m")
+#define UL_ON ("\033[4m")
 #define UL_OFF ("\033[0m")
 
-#define ARCH8BIT  (0x000000FF) /* HYBRID 14/16-bit WORD DEVICE PROGRAMMING */
 #define ARCH12BIT (0x00000FFF)
 #define ARCH14BIT (0x00003FFF)
 #define ARCH16BIT (0x0000FFFF)
 #define ARCH24BIT (0x00FFFFFF)
-#define ARCH32BIT (0xFFFFFFFF) /* UNIMPLEMENTED */
+#define ARCH32BIT (0xFFFFFFFF)
 
-#define NOKEY  (0) /* NO  KEY IN OPERATION  */
+#define NOKEY (0) /* NO KEY IN OPERATION */
 #define HVPKEY (1) /* HVP KEY IN OPERATION */
 #define LVPKEY (2) /* LVP KEY IN OPERATION */
 
 struct pickle;
 
-/* OUTPUT BACKENDS */
-#ifdef TTY
-#include "rw.h"
-#include "serial_posix.h"
-#include "ip.h"
-#endif
 #ifdef RPI
 #include "raspi.h"
 #endif
@@ -104,6 +98,25 @@ struct pickle;
 #ifdef FTDI
 #include "ftdi-bb.h"
 #endif
+#ifdef MCP2221
+#include "mcp2221.h"
+#endif
+#ifdef SERIAL
+#include "serial_posix.h"
+#include "serial-bb.h"
+#endif
+#ifdef CP2104
+#include "cp2104-bb.h"
+#endif
+
+#if defined(STK500) || defined(PLOAD)
+#include "serial_posix.h"
+#include "rw.h"
+#include "ip.h"
+#include "stk500v2.h"
+#include "stk500v2_listen.h"
+#include "stk500v2_load.h"
+#endif
 
 #include "util.h"
 #include "dotconf.h"
@@ -117,73 +130,52 @@ struct pickle;
 #include "pic16n.h"
 #include "pic24.h"
 #include "pic32.h"
-
-/* INPUT FRONTENDS */
 #include "inhx32.h"
-#ifdef TTY
-#include "stk500v2.h"
-#include "stk500v2_listen.h"
-#include "stk500v2_load.h"
-#endif
 
 /* SESSION */
 struct pickle {
-	/* Message output stream (NULL = disable) */
+	/* Message output stream */
 	FILE *f;
 
 	/* Command line options */
-	char devicename[STRLEN];/* overridden PICMicro device name */
-	uint32_t key;		/* MCHP LVP key */
+	char devicename[STRLEN];/* PICMicro device name     */
+	uint32_t key;		/* MCHP LVP key             */
+	uint32_t partition;	/* dsPIC/PIC24 partition    */
 
 	/* Dot file settings */
-	char dotfile[STRLEN];	/* configuration file name */
-	char device[STRLEN];	/* I/O device name: tty or rpi */
-	char etc[STRLEN];	/* overridden etc directory path */
-	uint16_t bitrules;	/* I/O bit rules */
-	uint32_t busy;		/* I/O busy cursor speed */
-	uint32_t sleep_low;	/* I/O clock low duration */
-	uint32_t sleep_high;	/* I/O clock high duration */
-	uint32_t fwsleep;	/* ICSPIO bit timeo */
+	char dotfile[STRLEN];	/* configuration file name  */
+	char device[STRLEN];	/* I/O device name          */
+	char etc[STRLEN];	/* user PE directory        */
+	uint32_t bitrules;	/* I/O bit rules            */
+	uint32_t busy;		/* I/O busy cursor speed    */
+	uint32_t sleep_low;	/* I/O clock low duration   */
+	uint32_t sleep_high;	/* I/O clock high duration  */
+	uint32_t fwsleep;	/* ICSPIO bit time          */
 	uint32_t debug;		/* default 0 (no debugging) */
-	uint8_t clock_falling;	/* Clock falling edge for shifting in bits */
+	uint32_t baudrate;	/* STK500v2 baud rate       */
+	uint32_t mcp;		/* MCP23017 I2C address     */
+	char usb_serial[STRLEN];/* USB serial number        */
+	uint16_t vpp;		/* TX/!MCLR/VPP             */
+	uint16_t pgc;		/* RTS/PGC CLOCK            */
+	uint16_t pgdo;		/* DTR/PGD DATA_OUT         */
+	uint16_t pgdi;		/* CTS/PGD DATA_IN          */
+	uint16_t pgm;		/* PGM OUT                  */
+
+	/* Device configuration */
+	uint8_t clock_falling;	/* Clock falling edge for shifting in bits        */
 	uint8_t msb_first;	/* Shift direction is MSB>LSB rather than LSB>MSB */
-#ifdef TTY
-	uint32_t baudrate;	/* TTY baud rate */
-#endif
-	/* I/O backends */
-	uint8_t iot;		/* I/O type (tty, rpi or i2c) */
-#ifdef TTY
-	int serial_port;	/* tty bit-bang port descriptor */
-#endif
-#ifdef MCP23017
-	int mcp;		/* MCP23017 I2C address */
-#endif
-#if defined(RPI) || defined(BITBANG) || defined(FTDI)
-        uint16_t vpp;		/* TX/!MCLR/VPP     */
-        uint16_t pgc;		/* RTS/PGC CLOCK    */
-        uint16_t pgdo;		/* DTR/PGD DATA_OUT */
-        uint16_t pgdi;		/* CTS/PGD DATA_IN  */
-        uint16_t pgm;		/* PGM OUT          */
-#endif
-#if defined(FTDI)
-	/* USB serial ID */
-	char usb_serial[STRLEN];
-#endif
+
 	/* Hardware operations */
 	struct pic_ops *pic;
+
+	/* I/O operations */
+	struct io_ops *io;
+
+	/* I/O open */
+	uint8_t iot;
 };
 
 /* prototypes */
-void usage_k8048(void);
-void usage_kctrl(char *);
-void usage_kload(char *);
-void usage_ktest(char *);
-void usage_k12(char *);
-void usage_k14(char *);
-void usage_k16(char *);
-void usage_k24(char *);
-void usage_k32(char *);
-void usage(char *, char *);
 int main(int, char **);
 
 #endif /* !_PICKLE_H */

@@ -18,35 +18,88 @@
  */
 
 #include "pickle.h"
-#include "allwinner.h"
 
-/*
- * Memory handle
- */
-static int gpio_mem = -1;
+/******************************************************************************
+ *
+ * Session
+ *
+ *****************************************************************************/
 
-/*
- * Memory mapped I/O pointer
- */
-static void *gpio_map = NULL;
+extern struct pickle p;
 
-/*
- * I/O Pins 0..NPINS-1
- */
+/******************************************************************************
+ *
+ * Back-end
+ *
+ *****************************************************************************/
+
+static int gpio_mem = -1;	/* Memory handle */
+
+static void *gpio_map = NULL;	/* Memory mapped I/O pointer */
+
+/* I/O Pins 0..NPINS-1 */
 static uint8_t gpio_pins[AW_NPINS], gpio_dirs[AW_NPINS];
 static uint32_t gpio_cfg[AW_NPINS], gpio_dat[AW_NPINS], gpio_pull[AW_NPINS];
 
-/*
- * Type of Pi.
- */
-static aw_device_t aw = {0};
+static aw_device_t aw = {0};	/* Type of Pi.  */
 
-/*
- * Map AllWinner GPIO memory
- */
-int
-gpio_aw_open(const char *device)
+/*******************************************************************************
+ *
+ * I/O operations
+ *
+ ******************************************************************************/
+
+struct io_ops allwinner_ops = {
+	.type		= IOALLWINNER,
+	.single		= 1,
+	.run		= 1,
+	.open		= allwinner_open,
+	.close		= allwinner_close,
+	.error		= allwinner_error,
+	.usleep		= allwinner_usleep,
+	.set_pgm	= allwinner_set_pgm,
+	.set_vpp	= allwinner_set_vpp,
+	.set_pgd	= allwinner_set_pgd,
+	.set_pgc	= allwinner_set_pgc,
+	.get_pgd	= allwinner_get_pgd,
+	.configure	= NULL,
+	.shift_in 	= NULL,
+	.shift_out	= NULL,
+};
+
+uint8_t
+allwinner_backend(void)
 {
+	p.io = &allwinner_ops;
+
+	return p.io->type;
+}
+
+int
+allwinner_open(void)
+{
+	/* Setup device */
+	if ((strcasecmp(p.device, "bpi") == 0) || (strcasecmp(p.device, "opi") == 0)) {
+		aw.npins = AW_A20_NPINS;
+		aw.tx = BOPI_TX;
+		aw.rx = BOPI_RX;
+		aw.sel = AW_PX_SELECT4;
+	}
+	else if (strcasecmp(p.device, "opi0") == 0) {
+		aw.npins = AW_H3_NPINS;
+		aw.tx = OPI0_TX;
+		aw.rx = OPI0_RX;
+		aw.sel = AW_PX_SELECT2;
+	}
+	else if (mystrcasestr(p.device, "opi") == p.device) {
+		aw.npins = AW_H3_NPINS;
+		aw.tx = OPIX_TX;
+		aw.rx = OPIX_RX;
+		aw.sel = AW_PX_SELECT3;
+	}
+	else
+		return -1;
+
 	/* Open /dev/mem */
 	gpio_mem = open("/dev/mem", O_RDWR | O_SYNC);
 	if (gpio_mem < 0) {
@@ -81,15 +134,23 @@ gpio_aw_open(const char *device)
 		gpio_pull[i] = (ofs >> 2);
 	}
 
-	return gpio_mem;
+	return 0;
 }
 
-/*
- * Un-map AllWinner GPIO memory
- */
 void
-gpio_aw_close(void)
+allwinner_close(void)
 {
+	uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
+
+	if (p.bitrules & PGD_RELEASE)
+		allwinner_release(p.pgdo, alt);
+	if (p.bitrules & PGC_RELEASE)
+		allwinner_release(p.pgc, alt);
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+		allwinner_release(p.pgm, alt);
+	if (p.bitrules & VPP_RELEASE)
+		allwinner_release(p.vpp, alt);
+
 	if (gpio_map) {
 		if (munmap(gpio_map, AW_MAP_LEN)) {
 			printf("%s: warning: munmap failed\n", __func__);
@@ -104,24 +165,69 @@ gpio_aw_close(void)
 	}
 }
 
+char *
+allwinner_error(void)
+{
+	return "Can't open AllWinner I/O";
+}
+
+void
+allwinner_usleep(int n)
+{
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_dat[aw.rx];
+	uint32_t val;
+
+	while (n--)
+		val = *reg;
+
+	(void)val;
+}
+
+void
+allwinner_set_pgm(uint8_t pgm)
+{
+	if (p.pgm != GPIO_PGM_DISABLED)
+		allwinner_set(p.pgm, pgm);
+}
+
+void
+allwinner_set_vpp(uint8_t vpp)
+{
+	allwinner_set(p.vpp, vpp);
+}
+
+void
+allwinner_set_pgd(uint8_t pgd)
+{
+	allwinner_set(p.pgdo, pgd);
+}
+
+void
+allwinner_set_pgc(uint8_t pgc)
+{
+	allwinner_set(p.pgc, pgc);
+}
+
+uint8_t
+allwinner_get_pgd(void)
+{
+	uint8_t pgd;
+
+	allwinner_get(p.pgdi, &pgd);
+
+	return pgd;
+}
+
 static inline void
-gpio_aw_read(uint32_t gpio_reg, uint32_t *val)
+allwinner_read(uint32_t gpio_reg, uint32_t *val)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_reg;
 
 	*val = *reg;
 }
 
-void
-gpio_aw_delay(void)
-{
-	uint32_t val;
-
-	gpio_aw_read(gpio_dat[aw.rx], &val);
-}
-
 static inline void
-gpio_aw_write(uint32_t gpio_reg, uint32_t val)
+allwinner_write(uint32_t gpio_reg, uint32_t val)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_reg;
 
@@ -132,61 +238,61 @@ gpio_aw_write(uint32_t gpio_reg, uint32_t val)
  * Determine PULL bit shift for GPIO
  */
 static inline uint32_t
-gpio_aw_pshift(uint16_t pin)
+allwinner_pshift(uint16_t pin)
 {
 	return (pin & 0x0F) << 1;
 }
 
 static inline void
-gpio_aw_pud(uint16_t pin, uint8_t pud)
+allwinner_pud(uint16_t pin, uint8_t pud)
 {
 	uint32_t val;
 
-	gpio_aw_read(gpio_pull[pin], &val);
+	allwinner_read(gpio_pull[pin], &val);
 
-	val &= ~(3UL << gpio_aw_pshift(pin));
-	val |= (uint32_t)pud << gpio_aw_pshift(pin);
+	val &= ~(3UL << allwinner_pshift(pin));
+	val |= (uint32_t)pud << allwinner_pshift(pin);
 
-	gpio_aw_write(gpio_pull[pin], val);
+	allwinner_write(gpio_pull[pin], val);
 }
 
 /*
  * Determine CFG SEL bit shift for GPIO
  */
 static inline uint32_t
-gpio_aw_lshift(uint16_t pin)
+allwinner_lshift(uint16_t pin)
 {
 	return (pin & 0x07) << 2;
 }
 
 static inline void
-gpio_aw_select_input(uint16_t pin)
+allwinner_select_input(uint16_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_cfg[pin];
 
-	uint32_t val = ~(0x7 << gpio_aw_lshift(pin));
+	uint32_t val = ~(0x7 << allwinner_lshift(pin));
 	*reg &= val; /* X000 = Input */
 
 	gpio_dirs[pin] = 1;
 }
 
 static inline void
-gpio_aw_select_output(uint16_t pin)
+allwinner_select_output(uint16_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_cfg[pin];
 	
-	uint32_t val = 0x1 << gpio_aw_lshift(pin);
+	uint32_t val = 0x1 << allwinner_lshift(pin);
 	*reg |= val; /* X001 = Output */
 
 	gpio_dirs[pin] = 0;
 }
 
 static inline void
-gpio_aw_select_alt(uint16_t pin, uint8_t alt)
+allwinner_select_alt(uint16_t pin, uint8_t alt)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_cfg[pin];
 
-	uint32_t val = alt << gpio_aw_lshift(pin);
+	uint32_t val = alt << allwinner_lshift(pin);
 	*reg |= val; /* MULTIPLEX FUNCTION SELECT */
 }
 
@@ -194,61 +300,61 @@ gpio_aw_select_alt(uint16_t pin, uint8_t alt)
  * Determine DAT bit for GPIO
  */
 static inline uint32_t
-gpio_aw_bit(uint16_t pin)
+allwinner_bit(uint16_t pin)
 {
 	return (1UL << (pin & 31));
 }
 
 int
-gpio_aw_get(uint16_t pin, uint8_t *level)
+allwinner_get(uint16_t pin, uint8_t *level)
 {
 	if (pin >= aw.npins)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
 		gpio_pins[pin] = 1;
-		gpio_aw_pud(pin, AW_PX_PULL_UP);
-		gpio_aw_select_input(pin);
+		allwinner_pud(pin, AW_PX_PULL_UP);
+		allwinner_select_input(pin);
 	}
 	else if (gpio_dirs[pin] == 0) {
-		gpio_aw_select_input(pin);
+		allwinner_select_input(pin);
 	}
 
 	uint32_t val;
 
-	gpio_aw_read(gpio_dat[pin], &val);
+	allwinner_read(gpio_dat[pin], &val);
 
-	*level = (val & gpio_aw_bit(pin)) ? (HIGH) : (LOW);
+	*level = (val & allwinner_bit(pin)) ? (HIGH) : (LOW);
 
 	return 0;
 }
 
 int
-gpio_aw_set(uint16_t pin, uint8_t level)
+allwinner_set(uint16_t pin, uint8_t level)
 {
 	if (pin >= aw.npins)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
 		gpio_pins[pin] = 1;
-		gpio_aw_pud(pin, AW_PX_PULL_UP);
-		gpio_aw_select_input(pin);
-		gpio_aw_select_output(pin);
+		allwinner_pud(pin, AW_PX_PULL_UP);
+		allwinner_select_input(pin);
+		allwinner_select_output(pin);
 	}
 	else if (gpio_dirs[pin] == 1) {
-		gpio_aw_select_output(pin);
+		allwinner_select_output(pin);
 	}
 
 	uint32_t val;
 
-	gpio_aw_read(gpio_dat[pin], &val);
+	allwinner_read(gpio_dat[pin], &val);
 
 	if (!level)
-		val &= ~gpio_aw_bit(pin);
+		val &= ~allwinner_bit(pin);
 	else
-		val |= gpio_aw_bit(pin);
+		val |= allwinner_bit(pin);
 
-	gpio_aw_write(gpio_dat[pin], val);
+	allwinner_write(gpio_dat[pin], val);
 
 	return 0;
 }
@@ -257,16 +363,16 @@ gpio_aw_set(uint16_t pin, uint8_t level)
  * Select pin as input, may reconfigure UART
  */
 int
-gpio_aw_release(uint16_t pin, uint8_t alt)
+allwinner_release(uint16_t pin, uint8_t alt)
 {
 	if (pin >= aw.npins)
 		return -1;
 
-	gpio_aw_pud(pin, AW_PX_PULL_DIS);
-	gpio_aw_select_input(pin);
+	allwinner_pud(pin, AW_PX_PULL_DIS);
+	allwinner_select_input(pin);
 	if (alt) {
 		if (pin == aw.tx || pin == aw.rx)
-			gpio_aw_select_alt(pin, aw.sel);
+			allwinner_select_alt(pin, aw.sel);
 	}
 
 	return 0;

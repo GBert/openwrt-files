@@ -19,56 +19,153 @@
 
 #include "pickle.h"
 
-/*
- * File descriptor
- */
-static int mcp_fd = -1;
+/******************************************************************************
+ *
+ * Session
+ *
+ *****************************************************************************/
 
-/*
- * Shadow output
- */
-static uint8_t mcp_latch;
+extern struct pickle p;
+
+/******************************************************************************
+ *
+ * Back-end
+ *
+ *****************************************************************************/
+
+static int mcp_fd = -1;		/* File descriptor */
+
+static uint8_t mcp_latch;	/* Shadow output */
+
+/*******************************************************************************
+ *
+ * I/O operations
+ *
+ ******************************************************************************/
+
+struct io_ops mcp23017_ops = {
+	.type		= IOMCP23017,
+	.single		= 0,
+	.run		= 1,
+	.open		= mcp23017_open,
+	.close		= mcp23017_close,
+	.error		= mcp23017_error,
+	.usleep		= NULL,
+	.set_pgm	= mcp23017_set_pgm,
+	.set_vpp	= mcp23017_set_vpp,
+	.set_pgd	= mcp23017_set_pgd,
+	.set_pgc	= mcp23017_set_pgc,
+	.get_pgd	= mcp23017_get_pgd,
+	.configure	= NULL,
+	.shift_in	= NULL,
+	.shift_out	= NULL,
+};
+
+uint8_t
+mcp23017_backend(void)
+{
+	p.io = &mcp23017_ops;
+
+	return p.io->type;
+}
 
 int
-mcp_open(const char *i2c_device, int address)
+mcp23017_open(void)
 {
-#ifdef __linux
-	mcp_fd = open(i2c_device, O_RDWR);
+	mcp_fd = open(p.device, O_RDWR);
 	if (mcp_fd < 0) {
 		mcp_fd = -1;
 		return -1; /* Error */
 	}
-	if (ioctl(mcp_fd, I2C_SLAVE, address) < 0) {
+
+	if (ioctl(mcp_fd, I2C_SLAVE, p.mcp) < 0) {
 		close(mcp_fd);
 		mcp_fd = -1;
 		return -1; /* Error */
 	}
 
 	/* Initialise mcp23017 */
-	mcp_set(MCP_IOCON, 0x00);
+	mcp23017_set(MCP23017_IOCON, 0x00);
 
 	/* All O/P except PGDI I/P */
-	mcp_set(MCP_IODIR, MCP_PGDI);
+	mcp23017_set(MCP23017_IODIR, MCP23017_PGDI);
 
 	/* All O/P low */
 	mcp_latch = 0;
-	mcp_set(MCP_OUT, mcp_latch);
+	mcp23017_set(MCP23017_OUT, mcp_latch);
 
-	return mcp_fd; /* Okay */
-#else
-	return -1; /* Unsupported */
-#endif
+	return mcp_fd;
 }
 
 void
-mcp_close(void)
+mcp23017_close(void)
 {
 	close(mcp_fd);
 	mcp_fd = -1;
 }
 
+char *
+mcp23017_error(void)
+{
+	return "Can't open MCP23017 I2C I/O";
+}
+
 void
-mcp_set(uint8_t reg, uint8_t val)
+mcp23017_set_pgm(uint8_t pgm)
+{
+	if (pgm)
+		mcp_latch |= MCP23017_PGM;
+	else
+		mcp_latch &= ~MCP23017_PGM;
+
+	mcp23017_set(MCP23017_OUT, mcp_latch);
+}
+
+void
+mcp23017_set_vpp(uint8_t vpp)
+{
+	if (vpp)
+		mcp_latch |= MCP23017_VPP;
+	else
+		mcp_latch &= ~MCP23017_VPP;
+
+	mcp23017_set(MCP23017_OUT, mcp_latch);
+}
+
+void
+mcp23017_set_pgd(uint8_t pgd)
+{
+	if (pgd)
+		mcp_latch |= MCP23017_PGDO;
+	else
+		mcp_latch &= ~MCP23017_PGDO;
+
+	mcp23017_set(MCP23017_OUT, mcp_latch);
+}
+
+void
+mcp23017_set_pgc(uint8_t pgc)
+{
+	if (pgc)
+		mcp_latch |= MCP23017_PGC;
+	else
+		mcp_latch &= ~MCP23017_PGC;
+
+	mcp23017_set(MCP23017_OUT, mcp_latch);
+}
+
+uint8_t
+mcp23017_get_pgd(void)
+{
+	uint8_t pgd;
+
+	mcp23017_get(MCP23017_IN, &pgd);
+
+	return (pgd & MCP23017_PGDI) ? HIGH : LOW;
+}
+
+void
+mcp23017_set(uint8_t reg, uint8_t val)
 {
 	uint8_t buf[2];
 
@@ -81,7 +178,7 @@ mcp_set(uint8_t reg, uint8_t val)
 }
 
 void
-mcp_get(uint8_t reg, uint8_t *val)
+mcp23017_get(uint8_t reg, uint8_t *val)
 {
 	uint8_t buf[1];
 
@@ -95,54 +192,4 @@ mcp_get(uint8_t reg, uint8_t *val)
 		printf("%s: warning: unhandled error\n", __func__);
 	}
 	*val = buf[0];
-}
-
-void
-mcp_set_pgd(int pgd)
-{
-	if (pgd)
-		mcp_latch |=  MCP_PGDO;
-	else
-		mcp_latch &= ~MCP_PGDO;
-	mcp_set(MCP_OUT, mcp_latch);
-}
-
-void
-mcp_set_pgc(int pgc)
-{
-	if (pgc)
-		mcp_latch |=  MCP_PGC;
-	else
-		mcp_latch &= ~MCP_PGC;
-	mcp_set(MCP_OUT, mcp_latch);
-}
-
-void
-mcp_set_pgm(int pgm)
-{
-	if (pgm)
-		mcp_latch |=  MCP_PGM;
-	else
-		mcp_latch &= ~MCP_PGM;
-	mcp_set(MCP_OUT, mcp_latch);
-}
-
-void
-mcp_set_vpp(int vpp)
-{
-	if (vpp)
-		mcp_latch |=  MCP_VPP;
-	else
-		mcp_latch &= ~MCP_VPP;
-	mcp_set(MCP_OUT, mcp_latch);
-}
-
-int
-mcp_get_pgd(void)
-{
-	uint8_t pgd;
-
-	mcp_get(MCP_IN, &pgd);
-
-	return (pgd & MCP_PGDI) ? HIGH : LOW;
 }

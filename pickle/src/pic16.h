@@ -384,6 +384,7 @@ struct pic16_dsmap {
 
 uint32_t pic16_arch(void);
 void pic16_selector(void);
+void pic16_bootloader(void);
 void pic16_program_verify(void);
 void pic16_standby(void);
 void pic16_init_code_memory_access(void);
@@ -399,7 +400,8 @@ void pic16_erase_row(uint32_t, uint32_t);
 void pic16_bulk_erase(void);
 void pic16_row_erase(uint32_t, uint32_t);
 int pic16_read_config_memory(void);
-uint32_t pic16_get_program_size(uint32_t *);
+uint32_t pic16_get_program_count(void);
+uint32_t pic16_get_program_size(uint32_t *, uint32_t);
 uint32_t pic16_get_data_size(uint32_t *);
 uint32_t pic16_read_program_memory_block(uint32_t *, uint32_t, uint32_t);
 uint32_t pic16_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
@@ -418,7 +420,7 @@ void pic16_program_end(int);
 uint32_t pic16_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic16_view_data(pic_data *);
 void pic16_dumpdeviceid(void);
-void pic16_dumpconfig(int);
+void pic16_dumpconfig(uint32_t, uint32_t);
 void pic16_dumpconfig_verbose(void);
 void pic16_dumphexcode(uint32_t, uint32_t, uint32_t *);
 void pic16_dumpinhxcode(uint32_t, uint32_t, uint32_t *);

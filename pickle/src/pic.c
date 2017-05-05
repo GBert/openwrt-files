@@ -60,7 +60,7 @@ pic_arch(const char *execname)
 	if (strcmp(execname, "p32") == 0)
 		return pic32_arch();	/* 32-bit word PIC32 */
 #endif
-	return 0;
+	return 0; /* Unsupported */
 }
 
 /*
@@ -82,6 +82,18 @@ pic_selector(void)
 {
 	if (p.pic->selector)
 		p.pic->selector();
+	else
+		printf("%s: information: unimplemented\n", __func__);
+}
+
+/*
+ * DUMP LOADER CONFIGURATION
+ */
+void
+pic_bootloader(void)
+{
+	if (p.pic->bootloader)
+		p.pic->bootloader();
 	else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -148,6 +160,7 @@ void pic_verify_end(void)
 		p.pic->verify_end();
 }
 
+#ifdef P32
 /*
  * READ PE FILE
  *
@@ -253,6 +266,7 @@ pic_pe_lookup(char *pathname, const char *file)
 	snprintf(filename, STRLEN, "%s.hex", file);
 	return pic_pe_lookup_file(pathname, filename);
 }
+#endif /* P32 */
 
 /*
  * READ CONFIG
@@ -266,7 +280,26 @@ pic_read_config(void)
 		return p.pic->read_config_memory();
 
 	printf("%s: information: unimplemented\n", __func__);
+
 	return -1;
+}
+
+/*
+ * DETERMINE PROGRAM PARTITION COUNT
+ *
+ *  INVOKE AFTER `pic_read_config'
+ */
+uint32_t
+pic_get_program_count(void)
+{
+	uint32_t count = 1;
+
+	if (p.pic->get_program_count)
+		count = p.pic->get_program_count();
+	else
+		printf("%s: information: unimplemented\n", __func__);
+
+	return count;
 }
 
 /*
@@ -275,12 +308,12 @@ pic_read_config(void)
  *  INVOKE AFTER `pic_read_config'
  */
 uint32_t
-pic_get_program_size(uint32_t *addr)
+pic_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	uint32_t size = UINT32_MAX;
 
 	if (p.pic->get_program_size)
-		size = p.pic->get_program_size(addr);
+		size = p.pic->get_program_size(addr, partition);
 	else
 		printf("%s: information: unimplemented\n", __func__);
 
@@ -579,8 +612,12 @@ void
 pic_dumpconfig(void)
 {
 	if (p.pic->dumpconfig) {
-		if (!pic_read_config())
-			p.pic->dumpconfig(PIC_VERBOSE);
+		if (!pic_read_config()) {
+			uint32_t count = pic_get_program_count();
+
+			for (uint32_t i = 0; i < count; ++i)
+				p.pic->dumpconfig(PIC_VERBOSE, i);
+		}
 	} else
 		printf("%s: information: unimplemented\n", __func__);
 }
@@ -689,16 +726,17 @@ pic_dumpword32(uint32_t addr, uint32_t word)
 void
 pic_dumpdevice(void)
 {
-	uint32_t addr, size;
+	uint32_t addr, size, count;
 
 	/* Get userid/config */
 	if (pic_read_config() < 0)
 		return;
 
 	/* Program flash */
-	if (p.pic->get_program_size) {
+	count = pic_get_program_count();
+	for (uint i = 0; i < count; ++i) {
 		/* Get program flash size */
-		size = pic_get_program_size(&addr);
+		size = pic_get_program_size(&addr, i);
 		if (size == UINT32_MAX) {
 			printf("%s: fatal error: program flash size invalid\n", __func__);
 			io_exit(EX_SOFTWARE); /* Panic */
@@ -776,31 +814,29 @@ pic_dumpadj(uint32_t *baddr, uint32_t *bsize, uint32_t naddr, uint32_t nwords)
 void
 pic_dumpprogram(uint32_t a, uint32_t n)
 {
-	uint32_t addr, size;
-
-	if (!p.pic->get_program_size) {
-		printf("%s: information: program flash is not supported on this architecture\n", __func__);
-		return;
-	}
+	uint32_t addr, size, count;
 
 	if (pic_read_config() < 0)
 		return;
 
-	/* Get program flash size */
-	size = pic_get_program_size(&addr);
-	if (size == UINT32_MAX) {
-		printf("%s: fatal error: program flash size invalid\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
+	count = pic_get_program_count();
+	for (uint32_t i = 0; i < count; ++i) {
+		/* Get program flash size */
+		size = pic_get_program_size(&addr, i);
+		if (size == UINT32_MAX) {
+			printf("%s: fatal error: program flash size invalid\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+		if (size == 0) {
+			printf("%s: information: program flash is not supported on this device\n", __func__);
+			return;
+		}
+		/* Adjust address and size */
+		if (pic_dumpadj(&addr, &size, a, n))
+			return;
+		/* Dump program flash */
+		pic_dump_program(addr, size, PIC_HEXDEC);
 	}
-	if (size == 0) {
-		printf("%s: information: program flash is not supported on this device\n", __func__);
-		return;
-	}
-	/* Adjust address and size */
-	if (pic_dumpadj(&addr, &size, a, n))
-		return;
-	/* Dump program flash */
-	pic_dump_program(addr, size, PIC_HEXDEC);
 }
 
 /*

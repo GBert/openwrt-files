@@ -37,6 +37,11 @@ struct pic_ops pic14_ops = {
 	.arch				= ARCH14BIT,
 	.align				= sizeof(uint16_t),
 	.selector			= pic14_selector,
+#ifdef LOADER
+	.bootloader                     = pic14_bootloader,
+#else
+	.bootloader                     = NULL,
+#endif
 	.program_begin			= NULL,
 	.program_data			= pic14_program_data,
 	.program_end			= pic14_program_end,
@@ -45,6 +50,7 @@ struct pic_ops pic14_ops = {
 	.verify_end			= pic14_standby,
 	.view_data			= pic14_view_data,
 	.read_config_memory		= pic14_read_config_memory,
+	.get_program_count		= pic14_get_program_count,
 	.get_program_size		= pic14_get_program_size,
 	.get_data_size			= pic14_get_data_size,
 	.get_executive_size		= NULL,
@@ -66,6 +72,7 @@ struct pic_ops pic14_ops = {
 	.dumpinhxcode			= pic14_dumpinhxcode,
 	.dumphexdata			= pic14_dumphexdata,
 	.dumpinhxdata			= pic14_dumpinhxdata,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -460,6 +467,42 @@ pic14_selector(void)
 		printf("\n");
 	printf("Total: %u\n", (uint32_t)PIC14_SIZE);
 }
+
+#ifdef LOADER
+void
+pic14_bootloader(void)
+{
+	uint32_t dev, i;
+	char s[BUFLEN];
+
+	for (dev = 0; pic14_map[dev].deviceid; ++dev) {
+		for (i = 0; pic14_map[dev].devicename[i] && i < BUFLEN; ++i)
+			s[i] = tolower(pic14_map[dev].devicename[i]);
+		s[i] = 0;
+		if (strstr(s, "f1") == NULL)
+			continue;
+		printf("#IFDEF __%s\n", &pic14_map[dev].devicename[3]);
+		printf("    LIST        P=%s\n", pic14_map[dev].devicename);
+		printf("    #INCLUDE    \"p%s.inc\"\n", &s[3]);
+		printf("    NOLIST\n");
+		printf("    #DEFINE     ERASE_FLASH 0x94\n");
+		printf("    #DEFINE     WRITE_LATCH 0xA4\n");
+		printf("    #DEFINE     WRITE_FLASH 0x84\n");
+		printf("    #DEFINE     READ_FLASH  0x81\n");
+		printf("    #DEFINE     MAX_FLASH   0x%X\n",
+			pic14_map[dev].flash);
+		if (pic14_map[dev].eeprom)
+		printf("    #DEFINE     MAX_EE      %d ; X 64\n",
+			pic14_map[dev].eeprom / 64);
+		printf("    #DEFINE     ROWSIZE     %d\n",
+			pic14_map[dev].nlatches);
+		printf("    #DEFINE     ERASESIZE   %d\n",
+			pic14_map[dev].erasesize);
+		printf("    #DEFINE     TYPE        2\n");
+		printf("#ENDIF\n");
+	}
+}
+#endif
 
 /*****************************************************************************
  *
@@ -1254,6 +1297,17 @@ pic14_read_data_memory_increment(void)
 void
 pic14_erase_device(void)
 {
+	if (pic14_map[pic14_index].datasheet == DS41390D && p.key == LVPKEY &&
+		(pic14_conf.deviceid & PIC14_DEVICEREV_MASK) == 0) {
+
+		/* ERRATA DS80000517H-page 5 */
+		pic14_row_erase(0, -1);
+		pic14_row_erase(PIC_ERASE_ID, 0);
+		pic14_row_erase(PIC_ERASE_CONFIG, 0);
+		pic14_row_erase(PIC_ERASE_EEPROM, 0);
+		return;
+	}
+
 	pic14_program_verify();
 
 	switch (pic14_map[pic14_index].datasheet) {
@@ -1372,6 +1426,27 @@ pic14_bulk_erase(void)
 }
 
 /*
+ * ERASE ROW
+ */
+static void
+pic14_erase_row(uint32_t address, uint32_t nrows)
+{
+	uint32_t PC_address = 0;
+
+	while (nrows--) {
+		while (address > PC_address) {
+			PC_address++;
+			pic14_increment_address();
+		}
+
+		/* ERASE PROGRAM FLASH */
+		pic14_row_erase_program_memory(6000); /* 6ms */
+
+		address += pic14_map[pic14_index].erasesize;
+	}
+}
+
+/*
  * ROW ERASE
  */
 void
@@ -1400,12 +1475,7 @@ pic14_row_erase(uint32_t row, uint32_t nrows)
 		pic14_standby();
 		return;
 	}
-#if 1
-	if (pic14_map[pic14_index].erasesize == 0) {
-		printf("%s: information: unsupported\n", __func__);
-		return;
-	}
-#endif
+
 	if (row == PIC_ERASE_ID) {
 		pic14_program_verify();
 
@@ -1417,55 +1487,43 @@ pic14_row_erase(uint32_t row, uint32_t nrows)
 		pic14_standby();
 		return;
 	}
-#if 0
+
 	if (row == PIC_ERASE_CONFIG) {
-		pic14_program_verify();
-
-		pic14_load_configuration(0x3FFF);
-
+		for (uint32_t i = 0; i < PIC14_CONFIG_MAX; ++i)
+			pic14_conf.config[i] = 0x3FFF;
+		
 		/* ERASE CONFIG */
-		pic14_row_erase_program_memory(6000); /* 6ms */
-
-		pic14_standby();
+		pic14_write_config();
 		return;
 	}
-#endif
+
 	/*
 	 * ERASE PROGRAM FLASH ROW(S)
 	 */
 
-	uint32_t erasesize = pic14_map[pic14_index].erasesize;
-	if (erasesize == 0)
-		erasesize = 16;
+	if (pic14_map[pic14_index].erasesize == 0) {
+		printf("%s: information: unsupported\n", __func__);
+		return;
+	}
 
-	uint32_t maxrows = pic14_map[pic14_index].flash / erasesize;
+	uint32_t maxrows = pic14_map[pic14_index].flash / pic14_map[pic14_index].erasesize;
 	if (row >= maxrows) {
 		printf("%s: information: row out of range\n", __func__);
 		return;
 	}
 
 	uint32_t numrows = maxrows - row;
-	if (nrows > numrows) {
+	if (nrows > numrows)
 		nrows = numrows;
-	}
 
-	uint32_t address = row * erasesize, PC_address = 0;
+	uint32_t address = row * pic14_map[pic14_index].erasesize;
 
 	pic14_program_verify();
 
 	pic14_load_data_for_program_memory(0x3FFF);
 
-	while (nrows--) {
-		while (address > PC_address) {
-			PC_address++;
-			pic14_increment_address();
-		}
-
-		/* ERASE PROGRAM FLASH */
-		pic14_row_erase_program_memory(6000); /* 6ms */
-
-		address += erasesize;
-	}
+	/* ERASE ROWS */
+	pic14_erase_row(address, nrows);
 
 	pic14_standby();
 }
@@ -1576,12 +1634,23 @@ pic14_read_config_memory(void)
 }
 
 /*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic14_get_program_count(void)
+{
+	return 1;
+}
+
+/*
  * GET PROGRAM FLASH SIZE
  *
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic14_get_program_size(uint32_t *addr)
+pic14_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = 0;
 
@@ -2060,7 +2129,7 @@ pic14_programregion(uint16_t address, uint16_t region, uint16_t data)
 		uint16_t config = address - pic14_map[pic14_index].configaddr - PIC14_CONFIG_OFFSET;
 		if (config >= PIC14_CONFIG_MAX) {
 			printf("%s: fatal error: config offset invalid \n", __func__);
-                        io_exit(EX_SOFTWARE); /* Panic */
+			io_exit(EX_SOFTWARE); /* Panic */
 		}
 		pic14_conf.config[config] = data;
 		}
@@ -2087,7 +2156,7 @@ pic14_programregion(uint16_t address, uint16_t region, uint16_t data)
 		return region;
 	}
 	if (p.f)
-       		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2288,7 +2357,7 @@ pic14_dumpdeviceid(void)
 	}
 	printf(" %s\n", pic14_map[pic14_index].devicename);
 
-	pic14_dumpconfig(PIC_BRIEF);
+	pic14_dumpconfig(PIC_BRIEF, 0);
 
 	if (pic14_map[pic14_index].ncalib) {
 		uint16_t caddr = pic14_map[pic14_index].calibaddr;
@@ -2325,7 +2394,7 @@ pic14_dumposccal(void)
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
-pic14_dumpconfig(int mode)
+pic14_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	if (pic14_map[pic14_index].nconfig == 1) {
 		printf("[%04X] [CONFIG]   %04X\n",

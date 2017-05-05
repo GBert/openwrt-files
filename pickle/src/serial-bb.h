@@ -17,12 +17,17 @@
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
 
-#ifndef _PIO_H
-#define _PIO_H
+#ifndef _SERIAL_BB_H
+#define _SERIAL_BB_H
 
-#include "pickle.h"
+uint8_t serial_bb_backend(void);
+int serial_bb_open(void);
+void serial_bb_close(void);
+char *serial_bb_error(void);
+void serial_bb_usleep(int);
+void serial_bb_set_vpp(uint8_t);
+void serial_bb_set_pgd(uint8_t);
+void serial_bb_set_pgc(uint8_t);
+uint8_t serial_bb_get_pgd(void);
 
-/* prototypes */
-int main(int, char **);
-
-#endif /* !_PIO_H */
+#endif

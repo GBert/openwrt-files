@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2005-2017 Darron Broad
- * Copyright (C) 2015 Gerhard Bertelsmann
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -85,7 +84,7 @@ icspio_in(int t1, int t2, uint8_t *byte)
 
 	if (p.debug >= 10) {
 		fprintf(stderr, "%s(t1=%d, t2=%d, %p)\n",
-			__func__, t1, t2, byte);
+			__func__, t1, t2, (void *)(byte));
 	}
 
 	/* Get start bit */
@@ -136,7 +135,7 @@ icspio_command(int t1, int t2, uint8_t *cmdarg, int cmdargc, uint32_t *res, int 
 
 	if (p.debug >= 10)
 		fprintf(stderr, "%s(t1=%d, t2=%d, cmdarg[0]=%02X, cmdargc=%d, %p, %d)\n", __func__,
-			t1, t2, cmdarg[0], cmdargc, (void *)res, resw);
+			t1, t2, cmdarg[0], cmdargc, (void *)(res), resw);
 
 	if (cmdargc < 0) {
 		printf("%s: fatal error: invalid length: %d\n", __func__, cmdargc);
@@ -166,8 +165,7 @@ icspio_command(int t1, int t2, uint8_t *cmdarg, int cmdargc, uint32_t *res, int 
 	}
 
 	/* Send arg(s), get data byte(s) */
-	if (cmdargc > 0 || resw > 0)
-	{
+	if (cmdargc > 0 || resw > 0) {
 		uint8_t checksum = cmdarg[0] + byte;
 
 		/* Send arg(s) */
@@ -245,10 +243,10 @@ icspio_err(int err)
  * ICSP I/O routine(s) for `ptest'
  *****************************************************************************/
 
+#ifdef PTEST
 /*
  * Read and output switches.
  */
-#ifdef PTEST
 int
 icspio_switch(int t)
 {

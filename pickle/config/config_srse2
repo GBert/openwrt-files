@@ -1,6 +1,12 @@
 #
 # modprobe gpio-bb && mknod /dev/gpio-bb c 180 0
 #
+# programming:
+# omega2-ctrl gpiomux set uart1 gpio
+#
+# after programming:
+# omega2-ctrl gpiomux set uart1 uart
+#
 DEVICE=/dev/gpio-bb
 
 # BIT-BANG GPIO
@@ -8,7 +14,7 @@ SLEEP=0
 SLEEP_LOW=0
 SLEEP_HIGH=0
 
-# BIT-BANG GPIO
+# VPP RUN
 BITRULES=0x1000
 
 # I/O busy cursor (0=DISABLED)

@@ -28,7 +28,7 @@ struct pickle p = {0};
 
 extern int io_stop;
 
-void
+static void
 usage(char *execname, char *msg)
 {
 	printf("USAGE: %s COMMAND [ARG]\n", execname);
@@ -84,7 +84,7 @@ usage(char *execname, char *msg)
  *
  * Arg may be 0..255
  */
-uint8_t
+static uint8_t
 getbytearg(char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
@@ -101,7 +101,7 @@ getbytearg(char *execname, char *args)
  *
  * Arg may be 0..65535
  */
-uint16_t
+static uint16_t
 getshortarg(char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
@@ -118,7 +118,7 @@ getshortarg(char *execname, char *args)
  *
  * Arg may be 0..0xFFFFFF
  */
-uint32_t
+static uint32_t
 get24arg(char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
@@ -135,7 +135,7 @@ get24arg(char *execname, char *args)
  *
  * Arg may be 0..0xFFFFFFFF
  */
-uint32_t
+static uint32_t
 getintarg(char *execname, char *args)
 {
 	uint32_t argn = strtoul(args, NULL, 0);
@@ -148,7 +148,7 @@ getintarg(char *execname, char *args)
  *
  * Arg may be G (GPIO), A .. D
  */
-uint8_t
+static uint8_t
 getportarg(char *execname, char *args)
 {
 	char p = toupper((int)args[0]);
@@ -182,6 +182,10 @@ main(int argc, char *argv[])
 
 	/* Get configuration */
 	getconf();
+
+	/* Determine back-end */
+	if (io_backend() == 0)
+		usage(execname, "Unsupported I/O");
 
 	/* Open device */
 	if (io_open() < 0) {

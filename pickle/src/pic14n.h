@@ -132,17 +132,28 @@ struct pic14n_dsmap {
 #define PIC16F15376  (0x30B4)
 #define PIC16LF15376 (0x30B5)
 
+/* DS40001846B */
+#define DS40001846B (0x40001846)
+#define PIC16F19195  (0x309E)
+#define PIC16LF19195 (0x309F)
+#define PIC16F19196  (0x30A0)
+#define PIC16LF19196 (0x30A1)
+#define PIC16F19197  (0x30A2)
+#define PIC16LF19197 (0x30A3)
+
 /******************************************************************************/
 
 uint32_t pic14n_arch(void);
 void pic14n_selector(void);
+void pic14n_bootloader(void);
 void pic14n_program_verify(void);
 void pic14n_standby(void);
 void pic14n_bulk_erase(void);
 void pic14n_row_erase(uint32_t, uint32_t);
 int pic14n_read_config_memory(void);
 void pic14n_write_panel(uint32_t, uint32_t, uint32_t *, uint32_t);
-uint32_t pic14n_get_program_size(uint32_t *);
+uint32_t pic14n_get_program_count(void);
+uint32_t pic14n_get_program_size(uint32_t *, uint32_t);
 uint32_t pic14n_get_data_size(uint32_t *);
 uint32_t pic14n_read_program_memory_block(uint32_t *, uint32_t, uint32_t);
 uint32_t pic14n_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
@@ -154,7 +165,7 @@ void pic14n_program_end(int);
 uint32_t pic14n_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic14n_view_data(pic_data *);
 void pic14n_dumpdeviceid(void);
-void pic14n_dumpconfig(int);
+void pic14n_dumpconfig(uint32_t, uint32_t);
 void pic14n_dumphexcode(uint32_t, uint32_t, uint32_t *);
 void pic14n_dumpinhxcode(uint32_t, uint32_t, uint32_t *);
 void pic14n_dumphexdata(uint32_t, uint32_t, uint16_t *);

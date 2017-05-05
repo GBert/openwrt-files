@@ -31,18 +31,22 @@ PIO=1
 PLOAD=0
 
 # back/front-ends (where available) (enable:1 disable:0)
-TTY=1
-RPI=0
-ALLWINNER=1
+STK500=0
 MCP23017=0
 BITBANG=1
 FTDI=1
+MCP2221=0
+CP2104=1
+SERIAL=0
 
 # gdb else strip (gdb:1 strip:0)
 GDB=0
 
 # output verbose config (enable:1 disable:0)
 VERBOSE=1
+
+# output boot loader config (enable:1 disable:0)
+LOADER=1
 
 # use QSORT (quick sort) else TSEARCH (tree sort) (qsort:1 tsearch:0)
 QSORT=1

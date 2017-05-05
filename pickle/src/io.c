@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2005-2017 Darron Broad
- * Copyright (C) 2015 Gerhard Bertelsmann
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -20,15 +19,56 @@
 
 #include "pickle.h"
 
-/******************************************************************************
- * Session
- *****************************************************************************/
-
+/*
+ * SESSION
+ */
 extern struct pickle p;
 
-/******************************************************************************
+/*
+ * DETERMINE BACK-END
+ */
+uint8_t
+io_backend(void)
+{
+#ifdef ALLWINNER
+	if ((strcasecmp(p.device, "bpi") == 0) ||
+		(mystrcasestr(p.device, "opi") == p.device))
+		return allwinner_backend();
+#endif
+#ifdef BITBANG
+	if (strcmp(p.device, "/dev/gpio-bb") == 0)
+		return gpio_bb_backend();
+#endif
+#ifdef CP2104
+	if (mystrcasestr(p.device, "cp") == p.device)
+		return cp2104_bb_backend();
+#endif
+#ifdef FTDI
+	if (strcasecmp(p.device, "ftdi") == 0)
+		return ftdi_bb_backend();
+#endif
+#ifdef MCP2221
+	if (strcasecmp(p.device, "mcp") == 0)
+		return mcp2221_backend();
+#endif
+#ifdef MCP23017
+	if (strstr(p.device, "/dev/i2c") == p.device)
+		return mcp23017_backend();
+#endif
+#ifdef RPI
+	if (mystrcasestr(p.device, "rpi") == p.device)
+		return raspi_backend();
+#endif
+#ifdef SERIAL
+	if (strstr(p.device, "/dev/tty") == p.device)
+		return serial_bb_backend();
+#endif
+	return 0; /* Unsupported */
+}
+
+/*
  * CTRL-C signal handler
- *****************************************************************************/
+ */
 
 int io_stop = 0;
 
@@ -53,322 +93,99 @@ io_signal_off()
 	signal(SIGPIPE, SIG_DFL);
 }
 
-/******************************************************************************
- * I/O
- *****************************************************************************/
-
 /*
- * Configure defaults
+ * Config defaults
  */
 void
 io_config(void)
 {
-	/* Reset */
 	bzero(&p, sizeof(struct pickle));
-
-	p.f = stderr;			/* Messages go here */
-
-	p.iot = IONONE;
-#ifdef TTY
-	/* Velleman K8048/K8076 tty */
-	strncpy(p.device, SERIAL_DEVICE, STRLEN);
-	p.baudrate = 115200;		/* not speed_t      */
-#endif
-#if defined(RPI) || defined(BITBANG) || defined(FTDI) || defined(ALLWINNER)
-	/* rpi etc */
-	p.vpp  = GPIO_VPP;		/* TX/!MCLR/VPP     */
-	p.pgm  = GPIO_PGM_DISABLED;	/* PGM              */
-	p.pgc  = GPIO_PGC;		/* RTS/PGC CLOCK    */
-	p.pgdo = GPIO_PGDO;		/* DTR/PGD DATA_OUT */
-	p.pgdi = GPIO_PGDI;		/* CTS/PGD DATA_IN  */
-#endif
-#ifdef MCP23017
-	/* mcp23017 */
-	p.mcp = MCP_ADDR;
-#endif
-	/* default:Velleman K8048 */
-	p.bitrules = PGD_IN_PULLUP | PGD_OUT_FLIP | PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP;
-
-	/* Mark/space time */
-	p.sleep_high = 1;
-	p.sleep_low = 1;
-
-	/* ICSPIO mark/space time */
-	p.fwsleep = 30;
+	p.f = stderr;					/* Message output stream  */
+	strncpy(p.device, "/dev/ttyS0", STRLEN);	/* Default device         */
+	p.bitrules = PGD_IN_PULLUP | PGD_OUT_FLIP |	/* Default BITRULES       */
+	PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP;
+	p.sleep_high = 1;				/* Mark time              */
+	p.sleep_low = 1;				/* Space time             */
+	p.fwsleep = 30;					/* ICSPIO mark/space time */
+	p.baudrate = 115200;				/* STK500v2 baud rate     */
+	p.mcp  = 0x20;					/* MCP23017 I2C address   */
+	p.vpp  = 11;					/* TX/!MCLR/VPP           */
+	p.pgc  = 10;					/* RTS/PGC CLOCK          */
+	p.pgdo = 9;					/* DTR/PGD DATA_OUT       */
+	p.pgdi = 9;					/* CTS/PGD DATA_IN        */
+	p.pgm  = GPIO_PGM_DISABLED;			/* PGM                    */
 }
 
 /*
- * Open I/O
+ * Open
  */
 int
 io_open(void)
 {
-	if (p.iot != IONONE) {
-		printf("%s: fatal error: device already open.\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
-	}
-#ifdef TTY
-	if (strstr(p.device, "/dev/tty") == p.device) {
-		/* tty */
-		p.serial_port = serial_open(p.device, B0);
-		if (p.serial_port < 0)
+	if (p.iot != IONONE)
+		return -1;
+
+	if (p.io && p.io->open) {
+		if (p.io->open() < 0)
 			return -1;
-		p.iot = IOTTY;
+
 		io_signal_on();
-		return 0;
-	} 
-#endif
-#ifdef RPI
-	if (mystrcasestr(p.device, "rpi") == p.device) {
-		/* rpi */
-		if (gpio_rpi_open(p.device[3]) < 0)
-			return -1;
-		p.iot = IORPI;
-		io_signal_on();
-		return 0;
-	} 
-#endif
-#ifdef ALLWINNER
-	if ((strcasecmp(p.device, "bpi") == 0) || (mystrcasestr(p.device, "opi") == p.device)) {
-		/* allwinner */
-		if (gpio_aw_open(p.device) < 0)
-			return -1;
-		p.iot = IOALLWINNER;
-		io_signal_on();
-		return 0;
-	} 
-#endif
-#ifdef MCP23017
-	if (strstr(p.device, "/dev/i2c") == p.device) {
-		/* mcp23017 */
-		if (mcp_open(p.device, p.mcp) < 0)
-			return -1;
-		p.iot = IOI2C;
-		io_signal_on();
-		return 0;
-	} 
-#endif
-#ifdef BITBANG
-	if (strcmp(p.device, "/dev/gpio-bb") == 0) {
-		/* gpio bit-bang */
-		if (gpio_bb_open("/dev/gpio-bb") < 0)
-			return -1;
-		p.iot = IOBB;
-		io_signal_on();
+
+		p.iot = p.io->type;
+
 		return 0;
 	}
-#endif
-#ifdef FTDI
-	if (strcasecmp(p.device, "ftdi") == 0) {
-		/* ftdi bit-bang */
-		if (ftdi_bb_open(p.usb_serial) < 0)
-			return -1;
-		p.iot = IOFTDIBB;
-		io_signal_on();
-		return 0;
-	}
-#endif
-	return -1; /* Unsupported */
+
+	return -1;
 }
 
 /*
- * Release GPIO
+ * Close
  */
-void
-io_release(void)
-{
-	switch (p.iot) {
-#ifdef RPI
-	case IORPI:	/* rpi */
-		{
-		uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
-
-		if (p.bitrules & PGD_RELEASE)
-			gpio_rpi_release(p.pgdo, alt);
-		if (p.bitrules & PGC_RELEASE)
-			gpio_rpi_release(p.pgc, alt);
-		if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
-			gpio_rpi_release(p.pgm, alt);
-		if (p.bitrules & VPP_RELEASE)
-			gpio_rpi_release(p.vpp, alt);
-		}
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:/* allwinner */
-		{
-		uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
-
-		if (p.bitrules & PGD_RELEASE)
-			gpio_aw_release(p.pgdo, alt);
-		if (p.bitrules & PGC_RELEASE)
-			gpio_aw_release(p.pgc, alt);
-		if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
-			gpio_aw_release(p.pgm, alt);
-		if (p.bitrules & VPP_RELEASE)
-			gpio_aw_release(p.vpp, alt);
-		}
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		{
-		struct gpio_bb_io io = {.dir = 1, .pin = 0, .bit = 0};
-
-		if (p.bitrules & PGD_RELEASE) {
-			io.pin = p.pgdo;
-			gpio_bb_io(&io);
-		}
-		if (p.bitrules & PGC_RELEASE) {
-			io.pin = p.pgc;
-			gpio_bb_io(&io);
-		}
-		if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED) {
-			io.pin = p.pgm;
-			gpio_bb_io(&io);
-		}
-		if (p.bitrules & VPP_RELEASE) {
-			io.pin = p.vpp;
-			gpio_bb_io(&io);
-		}
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* ftdi bit-bang */
-		{
-		struct ftdi_bb_io io = {.dir = 1, .pin = 0, .bit = 0};
-
-		if (p.bitrules & PGD_RELEASE) {
-			io.pin = p.pgdo;
-			ftdi_bb_io(&io);
-		}
-		if (p.bitrules & PGC_RELEASE) {
-			io.pin = p.pgc;
-			ftdi_bb_io(&io);
-		}
-		if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED) {
-			io.pin = p.pgm;
-			ftdi_bb_io(&io);
-		}
-		if (p.bitrules & VPP_RELEASE) {
-			io.pin = p.vpp;
-			ftdi_bb_io(&io);
-		}
-		}
-		break;
-#endif
-	default:break;
-	}
-}
-
 void
 io_close(int run)
 {
-	if (p.iot == IONONE) {
-		printf("%s: fatal error: device not open.\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
+	if (p.iot == IONONE)
+		return;
+
+	if (p.io && p.io->run) {
+		io_usleep(10);
+		if (run)
+			io_set_vpp(HIGH);
+		else
+			io_set_vpp(LOW);
 	}
-#if defined(RPI) || defined(MCP23017) || defined(BITBANG) || defined(FTDI) || defined(ALLWINNER)
-	io_usleep(10);
-	if (run) {
-		io_set_vpp(HIGH);
-	} else {
-		io_set_vpp(LOW);
-	}
-	io_release();
-#endif
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:
-		/* tty */
-		serial_close(p.serial_port);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:
-		/* rpi */
-		gpio_rpi_close();
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:
-		/* allwinner */
-		gpio_aw_close();
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:
-		/* mcp23017 */
-		mcp_close();
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:
-		/* gpio bit-bang */
-		gpio_bb_close();
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:
-		/* FTDI bit-bang */
-		ftdi_bb_close();
-		break;
-#endif
-	default:break;
-	}
+	if (p.io && p.io->close)
+		p.io->close();
+
+	p.io = NULL;
 	p.iot = IONONE;
+
 	io_signal_off();
 }
 
 void
 io_exit(int err)
 {
-	if (p.iot != IONONE) {
+	if (p.iot != IONONE)
 		io_close(p.bitrules & VPP_RUN);
-	}
+
 	exit(err);
 }
 
+/*
+ * Error
+ */
 char *
 io_error(void)
 {
 	static char *msg;
 
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		msg = "Can't open serial I/O";
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		msg = "Can't open RPI I/O";
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		msg = "Can't open ALLWINNER I/O";
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		msg = "Can't open MCP23017 I2C I/O";
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		msg = "Can't open GPIO bit-bang I/O";
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* FTDI bit-bang */
-		msg = "Can't open FTDI bit-bang I/O";
-		break;
-#endif
-	default:msg = "Unsupported I/O";
-		break;
-	}
+	if (p.io && p.io->error)
+		msg = p.io->error();
+ 	else
+		msg = "I/O error";
+
 	return msg;
 }
 
@@ -385,61 +202,43 @@ io_fault(int errorcode)
 	return msg;
 }
 
+/*
+ * Usleep
+ */
 void
 io_usleep(uint32_t n)
 {
 	/* No sleep */
-	if (n == 0) {
+	if (n == 0)
 		return;
-	}
-#ifdef TTY
+
 	/* I/O sleep */
-	if (p.iot == IOTTY && n < 10) {
-		for (uint32_t i = 0; i < n; ++i) {
-			/* 1us ttyS, 3ms ttyUSB */
-			get_cts(p.serial_port);
-		}
+	if (n < 10 && p.io && p.io->usleep) {
+		p.io->usleep(n);
+
 		return;
 	}
-#endif
-#ifdef RPI
-	/* I/O sleep */
-	if (p.iot == IORPI && n < 10) {
-		for (uint32_t i = 0; i < n; ++i) {
-			gpio_rpi_delay();
-		}
-		return;
-	}
-#endif
-#ifdef ALLWINNER
-	/* I/O sleep */
-	if (p.iot == IOALLWINNER && n < 10) {
-		for (uint32_t i = 0; i < n; ++i) {
-			gpio_aw_delay();
-		}
-		return;
-	}
-#endif
+
 	/* Busy sleep */
 	if (n < 100) {
 		struct timeval tv1, tv2;
 		int diff;
+
 		gettimeofday(&tv1, NULL);
 		do {
 			gettimeofday(&tv2, NULL);
 			diff = tv2.tv_usec - tv1.tv_usec;
 			if (diff < 0)
 				diff += 1000000;	
-		} while (diff < n);
+		}
+		while (diff < n);
+
 		return;
 	}
+
 	/* System sleep */
 	usleep(n);
 }
-
-/******************************************************************************
- * BIT BANGING (nb. output is positive when feature is enabled)
- *****************************************************************************/
 
 /*
  * Set PGM (LVP PROGRAM OUT)
@@ -447,54 +246,11 @@ io_usleep(uint32_t n)
 void
 io_set_pgm(uint8_t pgm)
 {
-	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
-	if (p.bitrules & PGM_OUT_FLIP) {
+	if (p.bitrules & PGM_OUT_FLIP)
 		pgm = HIGH - pgm;
-	}
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty (PGM not supported) */
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		if (p.pgm != GPIO_PGM_DISABLED)
-			gpio_rpi_set(p.pgm, pgm);
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		if (p.pgm != GPIO_PGM_DISABLED)
-			gpio_aw_set(p.pgm, pgm);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		mcp_set_pgm(pgm);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		if (p.pgm != GPIO_PGM_DISABLED) {
-			struct gpio_bb_io io = {.dir = 0, .pin = p.pgm, .bit = pgm};
 
-			gpio_bb_io(&io);
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* gpio bit-bang */
-		if (p.pgm != GPIO_PGM_DISABLED) {
-			struct ftdi_bb_io io = {.dir = 0, .pin = p.pgm, .bit = pgm};
-
-			ftdi_bb_io(&io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-	       	io_exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
+	if (p.io && p.io->set_pgm)
+		p.io->set_pgm(pgm);
 }
 
 /*
@@ -503,64 +259,11 @@ io_set_pgm(uint8_t pgm)
 void
 io_set_vpp(uint8_t vpp)
 {
-	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
-	if (p.bitrules & VPP_OUT_FLIP) {
+	if (p.bitrules & VPP_OUT_FLIP)
 		vpp = HIGH - vpp;
-	}
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty (pgm not supported) */
-		if (p.bitrules & VPP_OUT_CLOCK) {
-			static uint8_t level = FLOAT;
-			if (vpp != level) {
-				char b = 0;
-				if (write(p.serial_port, &b, 1) < 0) {
-					printf("%s: fatal error: write failed\n", __func__);
-					io_exit(EX_OSERR); /* Panic */
-				}
-				level = vpp;
-			}
-		} else
-			set_tx(p.serial_port, vpp);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_rpi_set(p.vpp, vpp);
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		gpio_aw_set(p.vpp, vpp);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		mcp_set_vpp(vpp);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		{
-		struct gpio_bb_io io = {.dir = 0, .pin = p.vpp, .bit = vpp};
 
-		gpio_bb_io(&io);
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* ftdi bit-bang */
-		{
-		struct ftdi_bb_io io = {.dir = 0, .pin = p.vpp, .bit = vpp};
-
-		ftdi_bb_io(&io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
+	if (p.io && p.io->set_vpp)
+		p.io->set_vpp(vpp);
 }
 
 /*
@@ -569,53 +272,11 @@ io_set_vpp(uint8_t vpp)
 void
 io_set_pgd(uint8_t pgd)
 {
-	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
-	if (p.bitrules & PGD_OUT_FLIP) {
+	if (p.bitrules & PGD_OUT_FLIP)
 		pgd = HIGH - pgd;
-	}
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		set_dtr(p.serial_port, pgd);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_rpi_set(p.pgdo, pgd);
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		gpio_aw_set(p.pgdo, pgd);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		mcp_set_pgd(pgd);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		{
-		struct gpio_bb_io io = {.dir = 0, .pin = p.pgdo, .bit = pgd};
 
-		gpio_bb_io(&io);
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* FTDI bit-bang */
-		{
-		struct ftdi_bb_io io = {0, p.pgdo, pgd};
-
-		ftdi_bb_io(&io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
+	if (p.io && p.io->set_pgd)
+		p.io->set_pgd(pgd);
 }
 
 /*
@@ -624,53 +285,11 @@ io_set_pgd(uint8_t pgd)
 void
 io_set_pgc(uint8_t pgc)
 {
-	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
-	if (p.bitrules & PGC_OUT_FLIP) {
+	if (p.bitrules & PGC_OUT_FLIP)
 		pgc = HIGH - pgc;
-	}
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		set_rts(p.serial_port, pgc);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_rpi_set(p.pgc, pgc);
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		gpio_aw_set(p.pgc, pgc);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		mcp_set_pgc(pgc);
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		{
-		struct gpio_bb_io io = {.dir = 0, .pin = p.pgc, .bit = pgc};
 
-		gpio_bb_io(&io);
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* ftdi bit-bang */
-		{
-		struct ftdi_bb_io io = {.dir = 0, .pin = p.pgc, .bit = pgc};
-
-		ftdi_bb_io(&io);
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
+	if (p.io && p.io->set_pgc)
+		p.io->set_pgc(pgc);
 }
 
 /*
@@ -681,64 +300,17 @@ io_get_pgd(void)
 {
 	uint8_t pgd = 0;
 
-	switch (p.iot) {
-#ifdef TTY
-	case IOTTY:	/* tty */
-		pgd = get_cts(p.serial_port);
-		break;
-#endif
-#ifdef RPI
-	case IORPI:	/* rpi */
-		gpio_rpi_get(p.pgdi, &pgd);
-		break;
-#endif
-#ifdef ALLWINNER
-	case IOALLWINNER:	/* allwinner */
-		gpio_aw_get(p.pgdi, &pgd);
-		break;
-#endif
-#ifdef MCP23017
-	case IOI2C:	/* mcp23017 */
-		pgd = mcp_get_pgd();
-		break;
-#endif
-#ifdef BITBANG
-	case IOBB:	/* gpio bit-bang */
-		{
-		struct gpio_bb_io io = {.dir = 1, .pin = p.pgdi, .bit = 0};
+	if (p.io && p.io->get_pgd)
+		pgd = p.io->get_pgd();
 
-		gpio_bb_io(&io);
-		pgd = io.bit;
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:	/* FTDI bit-bang */
-		{
-		struct ftdi_bb_io io = {.dir = 1, .pin = p.pgdi, .bit = 0};
-
-		ftdi_bb_io(&io);
-		pgd = io.bit;
-		}
-		break;
-#endif
-	default:printf("%s: fatal error: unsupported\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
-		break;
-	}
-	/* BITRULES: K8048/tty = inverting, K8076/tty = non-inverting */
-	if (p.bitrules & PGD_IN_FLIP) {
+	if (p.bitrules & PGD_IN_FLIP)
 		pgd = HIGH - pgd;
-	}
+
 	return pgd;
 }
 
-/******************************************************************************
- * BIT BANGING FOR PROGRAM/VERIFY MODE, HARDWARE TESTS AND ICSPIO
- *****************************************************************************/
-
 /*
- * Configure chip I/O
+ * Configure
  *
  * Clock falling is to satisfy LVP mode PIC24F devices which output data
  * on the falling edge of the clock and not on the rising edge.
@@ -748,35 +320,13 @@ io_get_pgd(void)
 void
 io_configure(uint8_t clock_falling, uint8_t msb_first)
 {
+	/* Device configuration */
 	p.clock_falling = clock_falling;
 	p.msb_first = msb_first;
-#ifdef BITBANG
-	if (p.iot == IOBB) {
-		struct gpio_bb_config config;
-		config.clock_pin = p.pgc;
-		config.clock_falling = clock_falling;
-		config.msb_first = msb_first;
-		config.data_pin_input = p.pgdi;
-		config.data_pin_output = p.pgdo;
-		config.clock_delay_low = p.sleep_low;
-		config.clock_delay_high = p.sleep_high;
-		config.lock = (p.bitrules & BB_LOCK) ? 1 : 0;
-		gpio_bb_configure(&config);
-	}
-#endif
-#ifdef FTDI
-	if (p.iot == IOFTDIBB) {
-		struct ftdi_bb_config config;
-		config.clock_pin = p.pgc;
-		config.clock_falling = clock_falling;
-		config.msb_first = msb_first;
-		config.data_pin_input = p.pgdi;
-		config.data_pin_output = p.pgdo;
-		config.clock_delay_low = p.sleep_low;
-		config.clock_delay_high = p.sleep_high;
-		ftdi_bb_configure(&config);
-	}
-#endif
+
+	/* Back-end configuration */
+	if (p.io && p.io->configure)
+		p.io->configure();
 }
 
 /*
@@ -785,35 +335,25 @@ io_configure(uint8_t clock_falling, uint8_t msb_first)
 static inline void
 io_clock_bit(uint32_t ldly, uint32_t hdly)
 {
-	io_set_pgc(HIGH);		/* Clock high */
+	io_set_pgc(HIGH);	/* Clock high */
 	io_usleep(hdly);
 
-	io_set_pgc(LOW);		/* Clock low */
+	io_set_pgc(LOW);	/* Clock low */
 	io_usleep(ldly);
 }
 
 /*
+ * Data Input
+ *
  * Initialise data input from chip (PGD=IN, SDATA=OUTPUT)
  */
 void
 io_data_input(void)
 {
-#ifdef RPI
-	if (p.iot == IORPI && p.pgdi == p.pgdo)
+	/* Not for single data GPIO */
+	if (p.io && p.io->single && p.pgdi == p.pgdo)
 		return;
-#endif
-#ifdef ALLWINNER
-	if (p.iot == IOALLWINNER && p.pgdi == p.pgdo)
-		return;
-#endif
-#ifdef BITBANG
-	if (p.iot == IOBB && p.pgdi == p.pgdo)
-		return;
-#endif
-#ifdef FTDI
-	if (p.iot == IOFTDIBB && p.pgdi == p.pgdo)
-		return;
-#endif
+
 	/* Pull-up PGD output for PGD input (Eg. Velleman K8048) */
 	io_set_pgd((p.bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
 }
@@ -880,10 +420,10 @@ io_clock_out_bits(uint32_t ldly, uint32_t hdly, uint32_t bits, uint8_t nbits)
 	}
 }
 
+#ifdef P32
 /*
  * Clock 1 bit in and 2 bits out (2-wire 4-phase)
  */
-#ifdef P32
 uint8_t
 io_clock_bit_4phase(uint8_t tms, uint8_t tdi)
 {
@@ -925,108 +465,52 @@ io_clock_bits_4phase(uint8_t nbits, uint32_t tms, uint32_t tdi)
 {
 	uint32_t tdo = 0;
 
-	/* FEEDBACK IN/OUT */
 	if (p.busy)
 		io_program_feedback('+');
 
-	for (int i = 0; i < nbits; ++i)
+	for (uint32_t i = 0; i < nbits; ++i)
 		tdo |= io_clock_bit_4phase((tms >> i) & 1, (tdi >> i) & 1) << i;
 
 	return tdo;
 }
 #endif /* P32 */
 
-/******************************************************************************
- * BIT-BANG SHIFTING FOR PROGRAM/VERIFY MODE
- *****************************************************************************/
-
 /*
+ * Program In
+ *
  * Shift in 1..N bits for program/verify mode
  */
 uint32_t
 io_program_in(uint8_t nbits)
 {
-	uint32_t bits;
-	
-	/* FEEDBACK IN */
 	if (p.busy)
 		io_program_feedback('i');
 
-	/* INPUT BITS */
-	switch (p.iot) {
-	default:/* tty */
-		/* rpi */
-		/* mcp23017 */
-		bits = io_clock_in_bits(p.sleep_low, p.sleep_high, nbits);
-		break;
-#ifdef BITBANG
-	case IOBB:
-		/* gpio bit-bang */
-		{
-		struct gpio_bb_shift shift = {1, nbits, 0};
+	if (p.io && p.io->shift_in)
+		return p.io->shift_in(nbits);
 
-		gpio_bb_shift(&shift);
-		bits = (uint32_t)shift.bits;
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:
-		/* FTDI bit-bang */
-		{
-		struct ftdi_bb_shift shift = {1, nbits, 0};
-
-		ftdi_bb_shift(&shift);
-		bits = (uint32_t)shift.bits;
-		}
-		break;
-#endif
-	}
-	return bits;
+	return io_clock_in_bits(p.sleep_low, p.sleep_high, nbits);
 }
 
 /*
+ * Program Out
+ *
  * Shift out 1..N bits for program/verify mode
  */
 void
 io_program_out(uint32_t bits, uint8_t nbits)
 {
-	/* FEEDBACK OUT */
 	if (p.busy)
 		io_program_feedback('o');
 
-	/* OUTPUT BITS */
-	switch (p.iot) {
-	default:/* tty */
-		/* rpi */
-		/* mcp23017 */
+	if (p.io && p.io->shift_out)
+		p.io->shift_out(bits, nbits);
+	else
 		io_clock_out_bits(p.sleep_low, p.sleep_high, bits, nbits);
-		break;
-#ifdef BITBANG
-	case IOBB:
-		/* gpio bit-bang */
-		{
-		struct gpio_bb_shift shift = {0, nbits, (uint64_t)bits};
-
-		gpio_bb_shift(&shift);
-		}
-		break;
-#endif
-#ifdef FTDI
-	case IOFTDIBB:
-		/* FTDI bit-bang */
-		{
-		struct ftdi_bb_shift shift = {0, nbits, (uint64_t)bits};
-
-		ftdi_bb_shift(&shift);
-		}
-		break;
-#endif
-	}
 }
 
 /*
- * Visual feedback for program/verify mode
+ * Busy feedback for program/verify mode
  */
 void
 io_program_feedback(char c)

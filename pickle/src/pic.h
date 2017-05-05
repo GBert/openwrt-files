@@ -23,9 +23,9 @@
 /* ICSP DATA */
 #define PIC_BYTLEN (256)
 typedef struct {
-        uint32_t address;     /* Address of data */
-        uint16_t nbytes;      /* Number of bytes */
-        uint8_t bytes[PIC_BYTLEN]; /* Data bytes */
+	uint32_t address;     /* Address of data */
+	uint16_t nbytes;      /* Number of bytes */
+	uint8_t bytes[PIC_BYTLEN]; /* Data bytes */
 } pic_data;
 
 /* ISCP OPERATIONS */
@@ -33,6 +33,7 @@ struct pic_ops {
 	uint32_t arch;	/* bit mask */
 	uint16_t align;	/* hex input alignment */
 	void (*selector)(void);
+	void (*bootloader)(void);
 	void (*program_begin)(void);
 	uint32_t (*program_data)(uint32_t, pic_data *);
 	void (*program_end)(int);
@@ -41,7 +42,8 @@ struct pic_ops {
 	void (*verify_end)(void);
 	void (*view_data)(pic_data *);
 	int (*read_config_memory)(void);
-	uint32_t (*get_program_size)(uint32_t *);
+	uint32_t (*get_program_count)(void);
+	uint32_t (*get_program_size)(uint32_t *, uint32_t);
 	uint32_t (*get_data_size)(uint32_t *);
 	uint32_t (*get_executive_size)(uint32_t *);
 	uint32_t (*get_boot_size)(uint32_t *);
@@ -54,7 +56,7 @@ struct pic_ops {
 	uint32_t (*write_calib)(uint16_t, uint16_t);
 	void (*row_erase)(uint32_t, uint32_t);
 	void (*dumpdeviceid)(void);
-	void (*dumpconfig)(int);
+	void (*dumpconfig)(uint32_t, uint32_t);
 	void (*dumposccal)(void);
 	void (*dumpdevice)(void);
 	uint32_t dumpadj;
@@ -86,6 +88,7 @@ uint32_t pic_arch(const char *);
 int pic_cmp(const void *, const void *);
 #define PIC_NCOLS (4)
 void pic_selector(void);
+void pic_bootloader(void);
 
 void pic_program_begin(void);
 uint32_t pic_program_data(uint32_t, pic_data *);
@@ -100,7 +103,7 @@ int pic_pe_lookup(char *, const char *);
 
 int pic_read_config(void);
 
-uint32_t pic_get_program_size(uint32_t *);
+uint32_t pic_get_program_size(uint32_t *, uint32_t);
 uint32_t pic_get_data_size(uint32_t *);
 uint32_t pic_get_executive_size(uint32_t *);
 uint32_t pic_get_boot_size(uint32_t *);
@@ -157,13 +160,14 @@ void pic_dumpinhxdata(uint32_t, uint32_t, uint16_t *);
 void pic_debug(void);
 
 /* MEMORY REGIONS */
-#define PIC_REGIONNOTSUP (0)	/* NOT BELOW      */
-#define PIC_REGIONCODE   (1)	/* PROGRAM CODE   */
-#define PIC_REGIONCONFIG (2)	/* CONFIG WORD(S) */
-#define PIC_REGIONDATA   (3)	/* DATA EEPROM    */
-#define PIC_REGIONID     (4)	/* USER ID        */
-#define PIC_REGIONEXEC   (5)	/* EXECUTIVE      */
-#define PIC_REGIONBOOT   (6)	/* BOOT SECTOR    */
+#define PIC_REGIONNOTSUP (0)	/* NOT BELOW                         */
+#define PIC_REGIONCODE   (1)	/* PROGRAM CODE                      */
+#define PIC_REGIONCONFIG (2)	/* CONFIG WORD(S)                    */
+#define PIC_REGIONDATA   (3)	/* DATA EEPROM / FLASH               */
+#define PIC_REGIONID     (4)	/* USER ID                           */
+#define PIC_REGIONEXEC   (5)	/* EXECUTIVE, UNIT / FUID, UDID, OTP */
+#define PIC_REGIONBOOT   (6)	/* PIC32 BOOT SECTOR / PIC24 FBOOT   */
+#define PIC_REGIONPART   (7)	/* PARTITIONED PROGRAM CODE          */
 
 /* PANEL WRITING */
 #define PIC_PANEL_BEGIN  (1)
@@ -171,5 +175,9 @@ void pic_debug(void);
 #define PIC_PANEL_END    (3)
 #define PIC_TIMEOUT      (1) /* 1 second */
 void pic_write_panel(int, uint32_t, uint32_t);
+
+/* PARTITIONS */
+#define PIC_PART1 (0)
+#define PIC_PART2 (1)
 
 #endif /* !_PIC_H */

@@ -20,16 +20,7 @@
 #ifndef _MCP23017_H
 #define _MCP23017_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sysexits.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdint.h>
-#include <sys/ioctl.h>
-#ifdef __linux
 #include <linux/i2c-dev.h>
-#endif
 
 #if 1
 /*
@@ -110,30 +101,29 @@
 #define IOCON0  (0x0A)
 #define IOCON1  (0x0B)
 
-/* mcp23017 i2c address (default) */
-#define MCP_ADDR (0x020)
-
 /* I/O ports */
-#define MCP_IOCON (IOCONA)
-#define MCP_IODIR (IODIRA)
-#define MCP_OUT   (OLATA)
-#define MCP_IN    (GPIOA)
+#define MCP23017_IOCON (IOCONA)
+#define MCP23017_IODIR (IODIRA)
+#define MCP23017_OUT   (OLATA)
+#define MCP23017_IN    (GPIOA)
 
 /* I/O bits */
-#define MCP_VPP  (0x01)
-#define MCP_PGC  (0x02)
-#define MCP_PGDO (0x04)
-#define MCP_PGDI (0x08)
-#define MCP_PGM  (0x10)
+#define MCP23017_VPP  (0x01)
+#define MCP23017_PGC  (0x02)
+#define MCP23017_PGDO (0x04)
+#define MCP23017_PGDI (0x08)
+#define MCP23017_PGM  (0x10)
 
-int mcp_open(const char *, int);
-void mcp_close(void);
-void mcp_set(uint8_t, uint8_t);
-void mcp_get(uint8_t, uint8_t *);
-void mcp_set_pgm(int);
-void mcp_set_vpp(int);
-void mcp_set_pgd(int);
-void mcp_set_pgc(int);
-int mcp_get_pgd(void);
+uint8_t mcp23017_backend(void);
+int mcp23017_open(void);
+void mcp23017_close(void);
+char *mcp23017_error(void);
+void mcp23017_set_pgm(uint8_t);
+void mcp23017_set_vpp(uint8_t);
+void mcp23017_set_pgd(uint8_t);
+void mcp23017_set_pgc(uint8_t);
+uint8_t mcp23017_get_pgd(void);
+void mcp23017_set(uint8_t, uint8_t);
+void mcp23017_get(uint8_t, uint8_t *);
 
 #endif /* !_MCP23017_H */

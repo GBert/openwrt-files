@@ -405,9 +405,9 @@ struct pic14_dsmap {
  *  PIC16LF1847 --01 0100 101X XXXX
  */
 #define DS41439A (41439)
-#define PIC12F1840  (0x1D80)
+#define PIC12F1840  (0x1B80)
 #define PIC16F1847  (0x1480)
-#define PIC12LF1840 (0x1DC0)
+#define PIC12LF1840 (0x1BC0)
 #define PIC16LF1847 (0x14A0)
 
 /*
@@ -889,6 +889,7 @@ struct pic14_dsmap {
 
 uint32_t pic14_arch(void);
 void pic14_selector(void);
+void pic14_bootloader(void);
 void pic14_program_verify(void);
 void pic14_standby(void);
 uint16_t pic14_read_program_memory_increment(void);
@@ -896,7 +897,8 @@ uint8_t  pic14_read_data_memory_increment(void);
 void pic14_bulk_erase(void);
 void pic14_row_erase(uint32_t, uint32_t);
 int pic14_read_config_memory(void);
-uint32_t pic14_get_program_size(uint32_t *);
+uint32_t pic14_get_program_count(void);
+uint32_t pic14_get_program_size(uint32_t *, uint32_t);
 uint32_t pic14_get_data_size(uint32_t *);
 uint32_t pic14_read_program_memory_block(uint32_t *, uint32_t, uint32_t);
 uint32_t pic14_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
@@ -917,7 +919,7 @@ uint32_t pic14_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic14_view_data(pic_data *);
 void pic14_dumpdeviceid(void);
 void pic14_dumposccal(void);
-void pic14_dumpconfig(int);
+void pic14_dumpconfig(uint32_t, uint32_t);
 void pic14_dumpconfig_16f627(uint16_t);
 void pic14_dumpconfig_12f675(uint16_t);
 void pic14_dumpconfig_16f877a(uint16_t);

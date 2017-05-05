@@ -20,23 +20,10 @@
 #ifndef _RASPI_H
 #define _RASPI_H
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <unistd.h>
-#include <stdint.h>
-#include <sysexits.h>
-#include <errno.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 /* Access from ARM Running Linux */
 #define BCM2835_PERI_BASE_ADDR (0x20000000)
 #define BCM2836_PERI_BASE_ADDR (0x3F000000)
+#define BCM2837_PERI_BASE_ADDR (0x3F000000)
 #define GPIO_BASE_ADDR_OFFSET (0x200000)
 #define GPIO_MAP_LEN (0x1000)
 
@@ -103,12 +90,18 @@
 #define GPIO_ALT4 (3) /* 011 */
 #define GPIO_ALT5 (2) /* 010 */
 
-int gpio_rpi_open(const char *, uint8_t);
-void gpio_rpi_close(void);
-
-void gpio_rpi_delay(void);
-int gpio_rpi_get(uint16_t, uint8_t *);
-int gpio_rpi_set(uint16_t, uint8_t);
-int gpio_rpi_release(uint16_t, uint8_t);
+uint8_t raspi_backend(void);
+int raspi_open(void);
+void raspi_close(void);
+char *raspi_error(void);
+void raspi_usleep(int);
+void raspi_set_pgm(uint8_t);
+void raspi_set_vpp(uint8_t);
+void raspi_set_pgd(uint8_t);
+void raspi_set_pgc(uint8_t);
+uint8_t raspi_get_pgd(void);
+int raspi_get(uint16_t, uint8_t *);
+int raspi_set(uint16_t, uint8_t);
+int raspi_release(uint16_t, uint8_t);
 
 #endif /* !_RASPI_H */

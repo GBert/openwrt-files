@@ -37,6 +37,11 @@ struct pic_ops pic16n_ops = {
 	.arch				= ARCH16BIT,
 	.align				= sizeof(uint8_t),
 	.selector			= pic16n_selector,
+#ifdef LOADER
+	.bootloader			= pic16n_bootloader,
+#else
+	.bootloader			= NULL,
+#endif
 	.program_begin			= pic16n_program_begin,
 	.program_data			= pic16n_program_data,
 	.program_end			= pic16n_program_end,
@@ -45,6 +50,7 @@ struct pic_ops pic16n_ops = {
 	.verify_end			= pic16n_standby,
 	.view_data			= pic16n_view_data,
 	.read_config_memory		= pic16n_read_config_memory,
+	.get_program_count		= pic16n_get_program_count,
 	.get_program_size		= pic16n_get_program_size,
 	.get_data_size			= pic16n_get_data_size,
 	.get_executive_size		= NULL,
@@ -66,6 +72,7 @@ struct pic_ops pic16n_ops = {
 	.dumpinhxcode			= pic16n_dumpinhxcode,
 	.dumphexdata			= pic16n_dumphexdata,
 	.dumpinhxdata			= pic16n_dumpinhxdata,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -92,23 +99,41 @@ struct pic16n_config pic16n_conf;
 
 struct pic16n_dsmap pic16n_map[] =
 {
-/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches*/
-{"PIC18F24K40", PIC18F24K40,    DS40001772B,	PIC16N_WORD(16), 12,      	256,	64},
-{"PIC18F25K40", PIC18F25K40,    DS40001772B,	PIC16N_WORD(32), 12,      	256,	64},
-{"PIC18F45K40", PIC18F45K40,    DS40001772B,	PIC16N_WORD(32), 12,      	256,	64},
-{"PIC18F26K40", PIC18F26K40,    DS40001772B,	PIC16N_WORD(64), 12,      	1024,	64},
-{"PIC18F46K40", PIC18F46K40,    DS40001772B,	PIC16N_WORD(64), 12,      	1024,	64},
-{"PIC18F27K40", PIC18F27K40,    DS40001772B,	PIC16N_WORD(128),12,      	1024,	128},
-{"PIC18F47K40", PIC18F47K40,    DS40001772B,	PIC16N_WORD(128),12,      	1024,	128},
-{"PIC18LF24K40",PIC18LF24K40,   DS40001772B,	PIC16N_WORD(16), 12,      	256,	64},
-{"PIC18LF25K40",PIC18LF25K40,   DS40001772B,	PIC16N_WORD(32), 12,      	256,	64},
-{"PIC18LF45K40",PIC18LF45K40,   DS40001772B,	PIC16N_WORD(32), 12,      	256,	64},
-{"PIC18LF26K40",PIC18LF26K40,   DS40001772B,	PIC16N_WORD(64), 12,      	1024,	64},
-{"PIC18LF46K40",PIC18LF46K40,   DS40001772B,	PIC16N_WORD(64), 12,      	1024,	64},
-{"PIC18LF27K40",PIC18LF27K40,   DS40001772B,	PIC16N_WORD(128),12,      	1024,	128},
-{"PIC18LF47K40",PIC18LF47K40,   DS40001772B,	PIC16N_WORD(128),12,      	1024,	128},
+/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches Inf/Con*/
+{"PIC18F24K40", PIC18F24K40,    DS40001772B,	PIC16N_WORD(16), 12,      0/*256*/,	64,	0,0},
+{"PIC18F25K40", PIC18F25K40,    DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
+{"PIC18F45K40", PIC18F45K40,    DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
+{"PIC18F26K40", PIC18F26K40,    DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
+{"PIC18F46K40", PIC18F46K40,    DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
+{"PIC18F27K40", PIC18F27K40,    DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
+{"PIC18F47K40", PIC18F47K40,    DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
+{"PIC18LF24K40",PIC18LF24K40,   DS40001772B,	PIC16N_WORD(16), 12,      0/*256*/,	64,	0,0},
+{"PIC18LF25K40",PIC18LF25K40,   DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
+{"PIC18LF45K40",PIC18LF45K40,   DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
+{"PIC18LF26K40",PIC18LF26K40,   DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
+{"PIC18LF46K40",PIC18LF46K40,   DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
+{"PIC18LF27K40",PIC18LF27K40,   DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
+{"PIC18LF47K40",PIC18LF47K40,   DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
 
-{"(null)",      0,              0,              0,               0,             0,      0},
+{"PIC18F24K42", PIC18F24K42,    DS40001836A,	PIC16N_WORD(16), 10,      0/*256*/,	64,	32,5},
+{"PIC18F25K42", PIC18F25K42,    DS40001836A,	PIC16N_WORD(32), 10,      0/*256*/,	64,	32,5},
+{"PIC18LF24K42",PIC18LF24K42,   DS40001836A,	PIC16N_WORD(16), 10,      0/*256*/,	64,	32,5},
+{"PIC18LF25K42",PIC18LF25K42,   DS40001836A,	PIC16N_WORD(32), 10,      0/*256*/,	64,	32,5},
+
+#if 0
+{"PIC18F26K42", PIC18F26K42,    DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18F45K42", PIC18F45K42,    DS40001886A,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
+{"PIC18F46K42", PIC18F46K42,    DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18F55K42", PIC18F55K42,    DS40001886A,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
+{"PIC18F56K42", PIC18F56K42,    DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18LF26K42",PIC18LF26K42,   DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18LF45K42",PIC18LF45K42,   DS40001886A,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
+{"PIC18LF46K42",PIC18LF46K42,   DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18LF55K42",PIC18LF55K42,   DS40001886A,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
+{"PIC18LF56K42",PIC18LF56K42,   DS40001886A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+#endif
+
+{"(null)",      0,              0,              0,               0,             0,      0,	0,0},
 /*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches*/
 };
 #define PIC16N_SIZE ((sizeof(pic16n_map) / sizeof(struct pic16n_dsmap)) - 1)
@@ -136,6 +161,38 @@ pic16n_selector(void)
 		printf("\n");
 	printf("Total: %u\n", (uint32_t)PIC16N_SIZE);
 }
+
+#ifdef LOADER
+void
+pic16n_bootloader(void)
+{
+	uint32_t dev, i;
+	char s[BUFLEN];
+
+	for (dev = 0; pic16n_map[dev].deviceid; ++dev) {
+		for (i = 0; pic16n_map[dev].devicename[i] && i < BUFLEN; ++i)
+			s[i] = tolower(pic16n_map[dev].devicename[i]);
+		s[i] = 0;
+		printf("#IFDEF __%s\n", &pic16n_map[dev].devicename[3]);
+		printf("    LIST        P=%s\n", pic16n_map[dev].devicename);
+		printf("    #INCLUDE    \"p%s.inc\"\n", &s[3]);
+		printf("    NOLIST\n");
+		printf("    #DEFINE     ERASE_FLASH 0x94\n");
+		printf("    #DEFINE     WRITE_FLASH 0x84\n");
+		printf("    #DEFINE     MAX_FLASH   0x%X\n",
+			pic16n_map[dev].flash << 1);
+		if (pic16n_map[dev].eeprom)
+		printf("    #DEFINE     MAX_EE      %d ; X 64\n",
+			pic16n_map[dev].eeprom / 64);
+		printf("    #DEFINE     ROWSIZE     %d\n",
+			pic16n_map[dev].latches);
+		printf("    #DEFINE     ERASESIZE   %d\n",
+			pic16n_map[dev].latches);
+		printf("    #DEFINE     TYPE        2\n");
+		printf("#ENDIF\n");
+	}
+}
+#endif
 
 /*****************************************************************************
  *
@@ -470,9 +527,34 @@ pic16n_read_config_memory(void)
 		pic16n_conf.config[i + 1] = word >> 8;
 	}
 
+	/* Device information area */
+	if (pic16n_map[pic16n_index].devinfo) {
+		pic16n_load_pc_address(PIC16N_DEVINFO_ADDR);
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devinfo && i < PIC16N_DEVINFO_MAX; ++i)
+			pic16n_conf.devinfo[i] = pic16n_read_data_from_nvm(1);
+	}
+
+	/* Device configuration information */
+	if (pic16n_map[pic16n_index].devconf) {
+		pic16n_load_pc_address(PIC16N_DEVCONF_ADDR);
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devconf && i < PIC16N_DEVCONF_MAX; ++i)
+			pic16n_conf.devconf[i] = pic16n_read_data_from_nvm(1);
+	}
+
 	pic16n_standby();
 
 	return 0;
+}
+
+/*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic16n_get_program_count(void)
+{
+	return 1;
 }
 
 /*
@@ -481,7 +563,7 @@ pic16n_read_config_memory(void)
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic16n_get_program_size(uint32_t *addr)
+pic16n_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = 0;
 
@@ -684,7 +766,7 @@ uint16_t
 pic16n_getregion(uint32_t address)
 {
 	/* CODE */
-	if (address < pic16n_map[pic16n_index].flash) {
+	if (address < (pic16n_map[pic16n_index].flash << 1)) {
 		return PIC_REGIONCODE;
 	}
 	/* ID */
@@ -949,12 +1031,33 @@ pic16n_dumpdeviceid(void)
 			pic16n_conf.userid[i], PIC_CHAR(0xFF & pic16n_conf.userid[i]));
 	}
 
-	pic16n_dumpconfig(PIC_BRIEF);
+	pic16n_dumpconfig(PIC_BRIEF, 0);
 
 	if (pic16n_map[pic16n_index].eeprom) {
 		printf("[%06X] [DATA]        %04X BYTES\n",
 			PIC16N_EEPROM_ADDR, pic16n_map[pic16n_index].eeprom);
-        }
+	}
+
+	/* Device information area */
+	if (pic16n_map[pic16n_index].devinfo) {
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devinfo; i += 8) {
+			printf("[%04X] [DEVINF%02X]    ", PIC16N_DEVINFO_ADDR + 2 * i, 2 * i);
+			uint32_t j;
+			for (j = 0; j < 7; ++j)
+				printf("%04X ", pic16n_conf.devinfo[i + j]);
+			printf("%04X\n", pic16n_conf.devinfo[i + j]);
+		}
+	}
+
+	/* Device configuration information */
+	if (pic16n_map[pic16n_index].devconf) {
+		printf("[%04X] [ERASE]       %04X\n", PIC16N_ERASE, pic16n_conf.devconf[0]);
+		printf("[%04X] [LATCHES]     %04X\n", PIC16N_LATCHES, pic16n_conf.devconf[1]);
+		printf("[%04X] [ROWS]        %04X\n", PIC16N_ROWS, pic16n_conf.devconf[2]);
+		printf("[%04X] [EEPROM]      %04X\n", PIC16N_EEPROM, pic16n_conf.devconf[3]);
+		printf("[%04X] [PINS]        %04X\n", PIC16N_PINS, pic16n_conf.devconf[4]);
+	}
+
 	printf("[3FFFFC] [REVISION]    %04X MAJ:%02X MIN:%02X\n",
 		pic16n_conf.revisionid,
 		(pic16n_conf.revisionid >> PIC16N_MAJOR_SHIFT) & PIC16N_REV_MASK,
@@ -967,19 +1070,17 @@ pic16n_dumpdeviceid(void)
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
-pic16n_dumpconfig(int mode)
+pic16n_dumpconfig(uint32_t mode, uint32_t partition)
 {
-	for (uint32_t i = 0; i < PIC16N_CONFIG_MAX; i += 2) {
+	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
 		printf("[%06X] [CONFIG%d]     %04X\n",
 			PIC16N_CONFIG_ADDR + i,
 			i / 2 + 1,
 			(pic16n_conf.config[i + 1] << 8) | pic16n_conf.config[i]);
 	}
 #ifdef VERBOSE
-	if (mode == PIC_VERBOSE)
-		switch (pic16n_map[pic16n_index].datasheet) {
-		default:
-			break;
+	if (mode == PIC_VERBOSE) switch (pic16n_map[pic16n_index].datasheet) {
+	default:break;
 	}
 #endif
 }

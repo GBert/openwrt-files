@@ -37,6 +37,11 @@ struct pic_ops pic14n_ops = {
 	.arch				= ARCH14BIT,
 	.align				= sizeof(uint16_t),
 	.selector			= pic14n_selector,
+#ifdef LOADER
+	.bootloader                     = pic14n_bootloader,
+#else
+	.bootloader                     = NULL,
+#endif
 	.program_begin			= pic14n_program_begin,
 	.program_data			= pic14n_program_data,
 	.program_end			= pic14n_program_end,
@@ -45,6 +50,7 @@ struct pic_ops pic14n_ops = {
 	.verify_end			= pic14n_standby,
 	.view_data			= pic14n_view_data,
 	.read_config_memory		= pic14n_read_config_memory,
+	.get_program_count		= pic14n_get_program_count,
 	.get_program_size		= pic14n_get_program_size,
 	.get_data_size			= pic14n_get_data_size,
 	.get_executive_size		= NULL,
@@ -66,6 +72,7 @@ struct pic_ops pic14n_ops = {
 	.dumpinhxcode			= pic14n_dumpinhxcode,
 	.dumphexdata			= pic14n_dumphexdata,
 	.dumpinhxdata			= pic14n_dumpinhxdata,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -93,20 +100,20 @@ struct pic14n_config pic14n_conf;
 struct pic14n_dsmap pic14n_map[] =
 {
 /*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches	Inf/Con/Cal*/
-{"PIC16F18854", PIC16F18854,    DS40001753B,	PIC14N_WORD(7),  5,      	256,	32,	0,0,4},
-{"PIC16LF18854",PIC16LF18854,   DS40001753B,	PIC14N_WORD(7),  5,      	256,	32,	0,0,4},
-{"PIC16F18855", PIC16F18855,    DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4},
-{"PIC16LF18855",PIC16LF18855,   DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4},
-{"PIC16F18875", PIC16F18875,    DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4},
-{"PIC16LF18875",PIC16LF18875,   DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4},
-{"PIC16F18856", PIC16F18856,    DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4},
-{"PIC16LF18856",PIC16LF18856,   DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4},
-{"PIC16F18876", PIC16F18876,    DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4},
-{"PIC16LF18876",PIC16LF18876,   DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4},
-{"PIC16F18857", PIC16F18857,    DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4},
-{"PIC16LF18857",PIC16LF18857,   DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4},
-{"PIC16F18877", PIC16F18877,    DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4},
-{"PIC16LF18877",PIC16LF18877,   DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4},
+{"PIC16F18854", PIC16F18854,    DS40001753B,	PIC14N_WORD(7),  5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18854",PIC16LF18854,   DS40001753B,	PIC14N_WORD(7),  5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18855", PIC16F18855,    DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18855",PIC16LF18855,   DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18875", PIC16F18875,    DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18875",PIC16LF18875,   DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18856", PIC16F18856,    DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18856",PIC16LF18856,   DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18876", PIC16F18876,    DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18876",PIC16LF18876,   DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18857", PIC16F18857,    DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18857",PIC16LF18857,   DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16F18877", PIC16F18877,    DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
+{"PIC16LF18877",PIC16LF18877,   DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
 
 {"PIC16F15313", PIC16F15313,    DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
 {"PIC16LF15313",PIC16LF15313,   DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
@@ -159,6 +166,40 @@ pic14n_selector(void)
 		printf("\n");
 	printf("Total: %u\n", (uint32_t)PIC14N_SIZE);
 }
+
+#ifdef LOADER
+void
+pic14n_bootloader(void)
+{
+	uint32_t dev, i;
+	char s[BUFLEN];
+
+	for (dev = 0; pic14n_map[dev].deviceid; ++dev) {
+		for (i = 0; pic14n_map[dev].devicename[i] && i < BUFLEN; ++i)
+			s[i] = tolower(pic14n_map[dev].devicename[i]);
+		s[i] = 0;
+		printf("#IFDEF __%s\n", &pic14n_map[dev].devicename[3]);
+		printf("    LIST        P=%s\n", pic14n_map[dev].devicename);
+		printf("    #INCLUDE    \"p%s.inc\"\n", &s[3]);
+		printf("    NOLIST\n");
+		printf("    #DEFINE     ERASE_FLASH 0x14\n");
+		printf("    #DEFINE     WRITE_LATCH 0x24\n");
+		printf("    #DEFINE     WRITE_FLASH 0x04\n");
+		printf("    #DEFINE     READ_FLASH  0x01\n");
+		printf("    #DEFINE     MAX_FLASH   0x%X\n",
+			pic14n_map[dev].flash);
+		if (pic14n_map[dev].eeprom)
+		printf("    #DEFINE     MAX_EE      %d ; X 64\n",
+			pic14n_map[dev].eeprom / 64);
+		printf("    #DEFINE     ROWSIZE     %d\n",
+			pic14n_map[dev].latches);
+		printf("    #DEFINE     ERASESIZE   %d\n",
+			pic14n_map[dev].latches);
+		printf("    #DEFINE     TYPE        3\n");
+		printf("#ENDIF\n");
+	}
+}
+#endif
 
 /*****************************************************************************
  *
@@ -483,21 +524,21 @@ pic14n_read_config_memory(void)
 	/* Device information area */
 	if (pic14n_map[pic14n_index].devinfo) {
 		pic14n_load_pc_address(PIC14N_DEVINFO_ADDR);
-		for (uint32_t i = 0; i < pic14n_map[pic14n_index].devinfo; ++i)
+		for (uint32_t i = 0; i < pic14n_map[pic14n_index].devinfo && i < PIC14N_DEVINFO_MAX; ++i)
 			pic14n_conf.devinfo[i] = pic14n_read_data_from_nvm(1);
 	}
 
 	/* Device configuration information */
 	if (pic14n_map[pic14n_index].devconf) {
 		pic14n_load_pc_address(PIC14N_DEVCONF_ADDR);
-		for (uint32_t i = 0; i < pic14n_map[pic14n_index].devconf; ++i)
+		for (uint32_t i = 0; i < pic14n_map[pic14n_index].devconf && i < PIC14N_DEVCONF_MAX; ++i)
 			pic14n_conf.devconf[i] = pic14n_read_data_from_nvm(1);
 	}
 
 	/* Device calibration */
 	if (pic14n_map[pic14n_index].calib) {
 		pic14n_load_pc_address(PIC14N_CALIB_ADDR);
-		for (uint32_t i = 0; i < pic14n_map[pic14n_index].calib; ++i)
+		for (uint32_t i = 0; i < pic14n_map[pic14n_index].calib && i < PIC14N_CALIB_MAX; ++i)
 			pic14n_conf.calib[i] = pic14n_read_data_from_nvm(1);
 	}
 
@@ -507,12 +548,23 @@ pic14n_read_config_memory(void)
 }
 
 /*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic14n_get_program_count(void)
+{
+	return 1;
+}
+
+/*
  * GET PROGRAM FLASH SIZE
  *
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic14n_get_program_size(uint32_t *addr)
+pic14n_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = 0;
 
@@ -827,8 +879,10 @@ pic14n_program_begin(void)
 {
 	pic14n_program_verify();
 
-	memset(pic14n_conf.userid, -1, sizeof(uint16_t) * PIC14N_USERID_MAX);
-	memset(pic14n_conf.config, -1, sizeof(uint16_t) * PIC14N_CONFIG_MAX);
+	for (uint32_t i = 0; i < PIC14N_USERID_MAX; ++i)
+		pic14n_conf.userid[i] = 0x3FFF;
+	for (uint32_t i = 0; i < PIC14N_CONFIG_MAX; ++i)
+		pic14n_conf.config[i] = 0x3FFF;
 }
 
 /*
@@ -944,7 +998,7 @@ pic14n_dumpdeviceid(void)
 	printf("[%04X] [DEVICEID] %04X DEV:%04X %s\n", PIC14N_DEVID_ADDR, pic14n_conf.deviceid,
 		pic14n_conf.deviceid & PIC14N_DEVICEID_MASK, pic14n_map[pic14n_index].devicename);
 
-	pic14n_dumpconfig(PIC_BRIEF);
+	pic14n_dumpconfig(PIC_BRIEF, 0);
 
 	/* Device information area */
 	if (pic14n_map[pic14n_index].devinfo) {
@@ -982,7 +1036,7 @@ pic14n_dumpdeviceid(void)
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
-pic14n_dumpconfig(int mode)
+pic14n_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	for (uint32_t i = 0; i < pic14n_map[pic14n_index].config; ++i) {
 		printf("[%04X] [CONFIG%d]  %04X\n",

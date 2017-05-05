@@ -19,29 +19,64 @@
 
 #include "pickle.h"
 
-/*
- * Memory handle
- */
-static int gpio_mem = -1;
+/******************************************************************************
+ *
+ * Session
+ *
+ *****************************************************************************/
 
-/*
- * Memory mapped I/O pointer
- */
-static void *gpio_map = NULL;
+extern struct pickle p;
 
-/*
- * I/O Pins 0..31 on headers P1 & P5
- */
+/******************************************************************************
+ *
+ * Back-end
+ *
+ *****************************************************************************/
+
+static int gpio_mem = -1;	/* Memory handle */
+
+static void *gpio_map = NULL;	/* Memory mapped I/O pointer */
+
+/* I/O Pins 0..31 on headers P1 & P5 */
 static uint8_t gpio_pins[GPIO_RPI_NPINS], gpio_dirs[GPIO_RPI_NPINS];
 
-/*
- * Map Raspberry-Pi GPIO memory
- */
-int
-gpio_rpi_open(uint8_t type)
+/*******************************************************************************
+ *
+ * I/O operations
+ *
+ ******************************************************************************/
+
+struct io_ops raspi_ops = {
+	.type		= IORPI,
+	.single		= 1,
+	.run		= 1,
+	.open		= raspi_open,
+	.close		= raspi_close,
+	.error		= raspi_error,
+	.usleep		= raspi_usleep,
+	.set_pgm	= raspi_set_pgm,
+	.set_vpp	= raspi_set_vpp,
+	.set_pgd	= raspi_set_pgd,
+	.set_pgc	= raspi_set_pgc,
+	.get_pgd	= raspi_get_pgd,
+	.configure	= NULL,
+	.shift_in	= NULL,
+	.shift_out	= NULL,
+};
+
+uint8_t
+raspi_backend(void)
 {
-#ifdef RPI
+	p.io = &raspi_ops;
+
+	return p.io->type;
+}
+
+int
+raspi_open(void)
+{
 	off_t gpio_base_addr;
+	uint8_t type = p.device[3];
 
 	/* Determine GPIO base address */
 	if (type == '\0' || type == '0' || type == '1') {
@@ -74,18 +109,23 @@ gpio_rpi_open(uint8_t type)
 	/* Reset used pin flags */
 	memset(&gpio_pins, 0, GPIO_RPI_NPINS);
 
-	return gpio_mem;
-#else
-	return -1; /* Unsupported */
-#endif
+	return 0;
 }
 
-/*
- * Un-map Raspberry-Pi GPIO memory
- */
 void
-gpio_rpi_close(void)
+raspi_close(void)
 {
+	uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
+
+	if (p.bitrules & PGD_RELEASE)
+		raspi_release(p.pgdo, alt);
+	if (p.bitrules & PGC_RELEASE)
+		raspi_release(p.pgc, alt);
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+		raspi_release(p.pgm, alt);
+	if (p.bitrules & VPP_RELEASE)
+		raspi_release(p.vpp, alt);
+
 	if (gpio_map) {
 		if (munmap(gpio_map, GPIO_MAP_LEN)) {
 			printf("%s: warning: munmap failed\n", __func__);
@@ -100,24 +140,69 @@ gpio_rpi_close(void)
 	}
 }
 
+char *
+raspi_error(void)
+{
+	return "Can't open RPi I/O";
+}
+
+void
+raspi_usleep(int n)
+{
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + GPLEV0;
+	uint32_t val;
+
+	while (n--)
+		val = *reg;
+
+	(void)val;
+}
+
+void
+raspi_set_pgm(uint8_t pgm)
+{
+	if (p.pgm != GPIO_PGM_DISABLED)
+		raspi_set(p.pgm, pgm);
+}
+
+void
+raspi_set_vpp(uint8_t vpp)
+{
+	raspi_set(p.vpp, vpp);
+}
+
+void
+raspi_set_pgd(uint8_t pgd)
+{
+	raspi_set(p.pgdo, pgd);
+}
+
+void
+raspi_set_pgc(uint8_t pgc)
+{
+	raspi_set(p.pgc, pgc);
+}
+
+uint8_t
+raspi_get_pgd(void)
+{
+	uint8_t pgd;
+
+	raspi_get(p.pgdi, &pgd);
+
+	return pgd;
+}
+
 static inline void
-gpio_rpi_read(uint8_t gpio_reg, uint32_t *val)
+raspi_read(uint8_t gpio_reg, uint32_t *val)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_reg;
 
 	*val = *reg;
 }
 
-void
-gpio_rpi_delay(void)
-{
-	uint32_t val;
-
-	gpio_rpi_read(GPLEV0, &val);
-}
-
 static inline void
-gpio_rpi_write(uint8_t gpio_reg, uint32_t val)
+raspi_write(uint8_t gpio_reg, uint32_t val)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_reg;
 
@@ -125,14 +210,14 @@ gpio_rpi_write(uint8_t gpio_reg, uint32_t val)
 }
 
 static inline void
-gpio_rpi_pud(uint8_t pin, uint8_t pud)
+raspi_pud(uint8_t pin, uint8_t pud)
 {
-	gpio_rpi_write(GPPUD, pud);
+	raspi_write(GPPUD, pud);
 	usleep(10); /* ? */
-	gpio_rpi_write(GPPUDCLK0, (1 << pin));
+	raspi_write(GPPUDCLK0, (1 << pin));
 	usleep(10); /* ? */
-	gpio_rpi_write(GPPUD, 0);
-	gpio_rpi_write(GPPUDCLK0, 0);
+	raspi_write(GPPUD, 0);
+	raspi_write(GPPUDCLK0, 0);
 }
 
 /*
@@ -148,7 +233,7 @@ gpio_rpi_pud(uint8_t pin, uint8_t pud)
  * BCM2835-ARM-Peripherals Page 92
  */
 static inline uint32_t
-gpio_rpi_gpfsel(uint8_t pin)
+raspi_gpfsel(uint8_t pin)
 {
 	return (pin / 10) /* + GPFSEL0 */;
 }
@@ -165,60 +250,60 @@ gpio_rpi_gpfsel(uint8_t pin)
  * BCM2835-ARM-Peripherals Page 92
  */
 static inline uint32_t
-gpio_rpi_lshift(uint8_t pin)
+raspi_lshift(uint8_t pin)
 {
 	return (pin % 10) * 3;
 }
 
 static inline void
-gpio_rpi_select_input(uint8_t pin)
+raspi_select_input(uint8_t pin)
 {
-	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_rpi_gpfsel(pin);
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
 
-	uint32_t val = ~(7 << gpio_rpi_lshift(pin));
+	uint32_t val = ~(7 << raspi_lshift(pin));
 	*reg &= val; /* 000 = Input */
 
 	gpio_dirs[pin] = 1;
 }
 
 static inline void
-gpio_rpi_select_output(uint8_t pin)
+raspi_select_output(uint8_t pin)
 {
-	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_rpi_gpfsel(pin);
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
 	
-	uint32_t val = 1 << gpio_rpi_lshift(pin);
+	uint32_t val = 1 << raspi_lshift(pin);
 	*reg |= val; /* 001 = Output */
 
 	gpio_dirs[pin] = 0;
 }
 
 static inline void
-gpio_rpi_select_alt(uint8_t pin, uint8_t alt)
+raspi_select_alt(uint8_t pin, uint8_t alt)
 {
-	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_rpi_gpfsel(pin);
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
 
-	uint32_t val = alt << gpio_rpi_lshift(pin);
+	uint32_t val = alt << raspi_lshift(pin);
 	*reg |= val; /* ALT0 .. ALT5 */
 }
 
 int
-gpio_rpi_get(uint16_t pin, uint8_t *level)
+raspi_get(uint16_t pin, uint8_t *level)
 {
 	if (pin >= GPIO_RPI_NPINS)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
 		gpio_pins[pin] = 1;
-		gpio_rpi_pud(pin, GPPUD_UP);
-		gpio_rpi_select_input(pin);
+		raspi_pud(pin, GPPUD_UP);
+		raspi_select_input(pin);
 	}
 	else if (gpio_dirs[pin] == 0) {
-		gpio_rpi_select_input(pin);
+		raspi_select_input(pin);
 	}
 
 	uint32_t val;
 
-	gpio_rpi_read(GPLEV0, &val);
+	raspi_read(GPLEV0, &val);
 
 	*level = (val & (1 << pin)) ? (HIGH) : (LOW);
 
@@ -226,22 +311,22 @@ gpio_rpi_get(uint16_t pin, uint8_t *level)
 }
 
 int
-gpio_rpi_set(uint16_t pin, uint8_t level)
+raspi_set(uint16_t pin, uint8_t level)
 {
 	if (pin >= GPIO_RPI_NPINS)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
 		gpio_pins[pin] = 1;
-		gpio_rpi_pud(pin, GPPUD_UP);
-		gpio_rpi_select_input(pin);
-		gpio_rpi_select_output(pin);
+		raspi_pud(pin, GPPUD_UP);
+		raspi_select_input(pin);
+		raspi_select_output(pin);
 	}
 	else if (gpio_dirs[pin] == 1) {
-		gpio_rpi_select_output(pin);
+		raspi_select_output(pin);
 	}
 
-	gpio_rpi_write((level) ? (GPSET0) : (GPCLR0), (1 << pin));
+	raspi_write((level) ? (GPSET0) : (GPCLR0), (1 << pin));
 
 	return 0;
 }
@@ -250,16 +335,16 @@ gpio_rpi_set(uint16_t pin, uint8_t level)
  * Select pin as input, re-enable ALT0 for UART
  */
 int
-gpio_rpi_release(uint16_t pin, uint8_t alt)
+raspi_release(uint16_t pin, uint8_t alt)
 {
 	if (pin >= GPIO_RPI_NPINS)
 		return -1;
 
-	gpio_rpi_pud(pin, GPPUD_OFF);
-	gpio_rpi_select_input(pin);
+	raspi_pud(pin, GPPUD_OFF);
+	raspi_select_input(pin);
 	if (alt) {
 		if (pin == 14 || pin == 15)
-			gpio_rpi_select_alt(pin, GPIO_ALT0);
+			raspi_select_alt(pin, GPIO_ALT0);
 	}
 	return 0;
 }

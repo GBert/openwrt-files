@@ -279,7 +279,7 @@ stk500v2_read_flash_isp(void)
 	pdata.nbytes = stk_msg[1] << 8 | stk_msg[2];
 
 	if (pdata.nbytes <= PIC_BYTLEN) {
-        	memset((void *)pdata.bytes, -1, pdata.nbytes);
+		memset((void *)pdata.bytes, -1, pdata.nbytes);
 		pdata.address = stk_addr;
 		stk_addr += pdata.nbytes;
 		region = pic_verify_data(region, &pdata, &fail);

@@ -192,12 +192,18 @@ typedef struct aw_device {
 #define AW_PX_SELECT6 (6)
 #define AW_PX_SELECT7 (7)
 
-int gpio_aw_open(const char *);
-void gpio_aw_close(void);
-
-void gpio_aw_delay(void);
-int gpio_aw_get(uint16_t, uint8_t *);
-int gpio_aw_set(uint16_t, uint8_t);
-int gpio_aw_release(uint16_t, uint8_t);
+uint8_t allwinner_backend(void);
+int allwinner_open(void);
+void allwinner_close(void);
+char *allwinner_error(void);
+void allwinner_usleep(int);
+void allwinner_set_pgm(uint8_t);
+void allwinner_set_vpp(uint8_t);
+void allwinner_set_pgd(uint8_t);
+void allwinner_set_pgc(uint8_t);
+uint8_t allwinner_get_pgd(void);
+int allwinner_get(uint16_t, uint8_t *);
+int allwinner_set(uint16_t, uint8_t);
+int allwinner_release(uint16_t, uint8_t);
 
 #endif /* !_ALLWINNER_H */

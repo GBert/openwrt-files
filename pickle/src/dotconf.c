@@ -103,7 +103,7 @@ getconf(void)
 	FILE *f1;
 	char line[STRLEN];
 
-	/* Configure defaults */
+	/* Config defaults */
 	io_config();
 
 	/* Determine dot file name */
@@ -118,11 +118,9 @@ getconf(void)
 			if (mystrcasestr(line, "DEVICE=") == line) {
 				strncpy(p.device, &line[7], STRLEN);
 			}
-#ifdef TTY
 			else if (mystrcasestr(line, "BAUDRATE=") == line) {
 				p.baudrate = strtoul(&line[9], NULL, 0);
 			}
-#endif
 			else if (mystrcasestr(line, "SLEEP=") == line) {
 				p.sleep_low = strtoul(&line[6], NULL, 0);
 				p.sleep_high = p.sleep_low;
@@ -139,7 +137,6 @@ getconf(void)
 			else if (mystrcasestr(line, "BUSY=") == line) {
 				p.busy = strtoul(&line[5], NULL, 0);
 			}
-#if defined(RPI) || defined(BITBANG) || defined(FTDI) || defined(ALLWINNER)
 			else if (mystrcasestr(line, "VPP=") == line) {
 				p.vpp = strtoul(&line[4], NULL, 0);
 			}
@@ -159,18 +156,12 @@ getconf(void)
 			else if (mystrcasestr(line, "PGDI=") == line) {
 				p.pgdi = strtoul(&line[5], NULL, 0);
 			}
-#endif /* RPI || BITBANG || FTDI || ALLWINNER */
-#if defined(FTDI)
 			else if (mystrcasestr(line, "USB_SERIAL=") == line) {
 				strncpy(p.usb_serial, &line[11], STRLEN);
 			}
-#endif /* FTDI*/
-
-#ifdef MCP23017
 			else if (mystrcasestr(line, "MCP=") == line) {
 				p.mcp = strtoul(&line[4], NULL, 0);
 			}
-#endif /* MCP23017 */
 			else if (mystrcasestr(line, "FWSLEEP=") == line) {
 				p.fwsleep = strtoul(&line[8], NULL, 0);
 			}

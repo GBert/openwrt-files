@@ -34,9 +34,9 @@ extern struct pickle p;
  *  Two algorithms exist for parsing input. Quick sort or tree sort.
  *
  *  Tree sort is the original algorithm and quick sort a new addition that
- *  in relatively untested (2014-10-19).
+ *  is relatively untested (2014-10-19).
  *
- *  Selection of which algorithm to use is done in config.mk
+ *  Selection of which algorithm to use is done in make file config
  *
  *****************************************************************************/
 

@@ -22,18 +22,21 @@
 
 /* I/O OPERATIONS */
 struct io_ops {
-	void (*open)(void);
-	void (*release)(void);
-	void (*close)(int);
-	void (*error)(void);
+	uint8_t type;
+	uint8_t single;
+	uint8_t run;
+	int (*open)(void);
+	void (*close)(void);
+	char *(*error)(void);
 	void (*usleep)(int);
 	void (*set_pgm)(uint8_t);
 	void (*set_vpp)(uint8_t);
 	void (*set_pgd)(uint8_t);
 	void (*set_pgc)(uint8_t);
 	uint8_t (*get_pgd)(void);
-	void (*configure)(uint8_t);
-	void (*data_input)(void);
+	void (*configure)(void);
+	uint32_t (*shift_in)(uint8_t);
+	void (*shift_out)(uint32_t, uint8_t);
 };
 
 /* I/O bit rules */
@@ -52,34 +55,30 @@ struct io_ops {
 #define VPP_RUN       (0x1000)	/* vpp high on exit if not released */
 #define BB_LOCK       (0x2000)	/* gpio-bb shift with lock */
 #define ALT_RELEASE   (0x4000)	/* re-enable ALT function if released */
+/* Winklepicker reset */
+#define TX_BREAK      (0x8000)	/* send BREAK after open and before close */
 
-/* I/O backends */
-#define IONONE      (0)
-#define IOTTY       (1)	/* TTY/TTYUSB                     */
-#define IORPI       (2)	/* RPI GPIO DIRECT/VELLEMAN K8048 */
-#define IOI2C       (3)	/* MCP23017 I2C                   */
-#define IOBB        (4)	/* LINUX BIT-BANG DRIVER          */
-#define IOFTDIBB    (5)	/* LINUX FTDI BIT-BANG DRIVER     */
-#define IOALLWINNER (6)	/* ALLWINNER GPIO                 */
+#define IONONE      (0) /* NO I/O                               */
+#define IOALLWINNER (1)	/* LINUX ALLWINNER GPIO                 */
+#define IOBITBANG   (2)	/* LINUX BIT-BANG DRIVER                */
+#define IOCP2104    (3)	/* LINUX CP2104 USB UART                */
+#define IOFTDI      (4)	/* LINUX FTDI BIT-BANG                  */
+#define IOMCP2221   (5)	/* LINUX MCP2221 USB GPIO               */
+#define IOMCP23017  (6)	/* LINUX MCP23017 I2C GPIO              */
+#define IORPI       (7)	/* LINUX RPI GPIO DIRECT/VELLEMAN K8048 */
+#define IOSERIAL    (8)	/* POSIX SERIAL BIT-BANG TTY/TTYUSB     */
 
-/* Default GPIO pins */
 #define GPIO_PGM_DISABLED (uint16_t)(-1)
-#define GPIO_VPP  (9)
-#define GPIO_PGC  (10)
-#define GPIO_PGDO (11)
-#define GPIO_PGDI (11)
-#define GPIO_PGM  (GPIO_PGM_DISABLED)
 
-/* GPIO access */
 typedef volatile uint32_t *GPIO_ADDR;
 
 /* prototypes */
+uint8_t io_backend(void);
 void io_signal();
 void io_signal_on();
 void io_signal_off();
 void io_config(void);
 int io_open(void);
-void io_release(void);
 void io_close(int);
 void io_exit(int);
 char *io_fault(int);

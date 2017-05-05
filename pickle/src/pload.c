@@ -58,8 +58,8 @@ usage(char *execname, char *msg)
 	printf("VERSION:\n %s\n", VERSION);
 
 	if (msg)
-		io_exit(EX_USAGE);
-	io_exit(EX_OK);
+		exit(EX_USAGE);
+	exit(EX_OK);
 }
 
 int
@@ -71,15 +71,15 @@ main(int argc, char *argv[])
 	execdup = (char *)strdup(argv[0]);
 	if (execdup == NULL) {
 		printf("%s: fatal error: strdup failed\n", __func__);
-		io_exit(EX_OSERR); /* Panic */
+		exit(EX_OSERR); /* Panic */
 	}
 	execname = basename(execdup);
 	if (execname == NULL) {
 		printf("%s: fatal error: basename failed\n", __func__);
-		io_exit(EX_OSERR); /* Panic */
+		exit(EX_OSERR); /* Panic */
 	}
 
-	/* Get configuration */
+	/* Get configuration (BAUDRATE) */
 	getconf();
 
 	/* Perform operation */
@@ -112,6 +112,7 @@ main(int argc, char *argv[])
 
 	io_signal_on(); // !SIGPIPE
 	stk500v2_load(prog_mode, target, file, size);
+	io_signal_off();
 
-	io_exit(EX_OK);
+	exit(EX_OK);
 }

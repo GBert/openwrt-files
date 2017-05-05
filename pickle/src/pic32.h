@@ -353,7 +353,7 @@ struct pic32_dsmap {
  *
  * Programming spec.
  *
- * DS0001364C
+ * DS60001364C
  */
 #define DS60001324B (60001324)
 #define PIC32MM0016GPL020 (0x06B04053)
@@ -374,7 +374,8 @@ void pic32_program_verify(void);
 void pic32_standby(void);
 void pic32_setmode(uint8_t, uint32_t);
 int32_t pic32_read_config_memory(void);
-uint32_t pic32_get_program_size(uint32_t *);
+uint32_t pic32_get_program_count(void);
+uint32_t pic32_get_program_size(uint32_t *, uint32_t);
 uint32_t pic32_get_boot_size(uint32_t *);
 uint32_t pic32_read_program_memory_block(uint32_t *, uint32_t, uint32_t);
 void pic32_bulk_erase(void);
@@ -386,8 +387,9 @@ void pic32_program_end(int);
 uint32_t pic32_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic32_view_data(pic_data *);
 void pic32_dumpdeviceid(void);
-void pic32_dumpconfig(int);
+void pic32_dumpconfig(uint32_t, uint32_t);
 void pic32_dumphexcode(uint32_t, uint32_t, uint32_t *);
 void pic32_dumpinhxcode(uint32_t, uint32_t, uint32_t *);
+void pic32_debug(void);
 
 #endif

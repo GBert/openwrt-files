@@ -23,15 +23,6 @@
 #include "pickle.h"
 
 /* prototypes */
-void usage(char *, char *);
-void test_pin(int, int);
-void test_dsub9(int);
-void test_icsp(int);
-void test_toggle(int);
-void test_debug(int);
-void test_icspio(int);
-void test_rpi(int);
-void test_bpi(int);
 int main(int, char **);
 
 #endif /* !_PTEST_H */

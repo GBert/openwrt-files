@@ -28,7 +28,7 @@ struct pickle p = {0};
 
 extern int io_stop;
 
-void
+static void
 usage(char *execname, char *msg)
 {
 	printf("USAGE: ptest TEST ARG\n");
@@ -90,7 +90,7 @@ usage(char *execname, char *msg)
 /*
  * Test VPP, PGC or PGD output
  */
-void
+static void
 test_pin(int pin, int t)
 {
 	printf("\nTEST MODE VPP|PGD|PGC|PGM\n\n");
@@ -152,7 +152,7 @@ test_pin(int pin, int t)
 /*
  * Test PGD input
  */
-void
+static void
 test_in(int t)
 {
 	printf("\nTEST PGD INPUT\n\n");
@@ -168,7 +168,7 @@ test_in(int t)
 /*
  * Test D-SUB-9
  */
-void
+static void
 test_dsub9(int t)
 {
 	printf("\nTEST MODE 1 [D-SUB-9]\n\n");
@@ -223,7 +223,7 @@ test_dsub9(int t)
 /*
  * Test ICSP
  */
-void
+static void
 test_icsp(int t)
 {
 	printf("\nTEST MODE 2 [ICSP]\n\n");
@@ -276,7 +276,7 @@ test_icsp(int t)
 /*
  * Test D-SUB-9 RTS 7 (PGC) DTR 4 (PGD)
  */
-void
+static void
 test_toggle(int t)
 {
 	printf("\nTEST MODE 3 [D-SUB-9 RTS 7 (PGC) DTR 4 (PGD)] CTRL-C TO STOP\n\n");
@@ -301,7 +301,7 @@ test_toggle(int t)
  *
  * Note: This is the PICMicro which came with the Velleman K8048 kit.
  */
-void
+static void
 test_debug(int t)
 {
 	int i, j = 0;
@@ -355,11 +355,11 @@ test_debug(int t)
 	printf("\nTEST DONE\n\n");
 }
 
+#ifdef PIO
 /*
  * Test ICSP I/O LEDs and switches
  */
-#ifdef PIO
-void
+static void
 test_icspio(int t)
 {
 	int err;
@@ -403,11 +403,11 @@ test_icspio(int t)
 }
 #endif /* PIO */
 
+#ifdef RPI
 /*
  * Test RPi GPIO pins
  */
-#ifdef RPI
-void
+static void
 test_rpi(int seconds)
 {
 	uint8_t output_level = 0, input_level;
@@ -417,22 +417,22 @@ test_rpi(int seconds)
 	while (!io_stop) {
 		printf("\n");
 
-		gpio_rpi_set(p.vpp, output_level);
+		raspi_set_vpp(output_level);
 		printf("GPIO %-3d (VPP) (TX)  = %d\n", p.vpp, output_level);
 
 		if (p.pgm != GPIO_PGM_DISABLED) {
-			gpio_rpi_set(p.pgm, output_level);
+			raspi_set_pgm(output_level);
 			printf("GPIO %-3d (PGM)       = %d\n", p.pgm, output_level);
 		}
 
-		gpio_rpi_set(p.pgc, output_level);
+		raspi_set_pgc(output_level);
 		printf("GPIO %-3d (PGC) (RTS) = %d\n", p.pgc, output_level);
 
-		gpio_rpi_set(p.pgdo, output_level);
+		raspi_set_pgd(output_level);
 		printf("GPIO %-3d (PGD) (DTR) = %d\n", p.pgdo,output_level);
 
 		if (p.pgdi != p.pgdo) {
-			gpio_rpi_get(p.pgdi, &input_level);
+			input_level = raspi_get_pgd();
 			printf("GPIO %02d (PGD) (CTS) = %d\n", p.pgdi, input_level);
 		}
 
@@ -444,11 +444,11 @@ test_rpi(int seconds)
 }
 #endif /* RPI */
 
+#ifdef ALLWINNER
 /*
  * Test AllWinner GPIO pins
  */
-#ifdef ALLWINNER
-void
+static void
 test_allwinner(int seconds)
 {
 	uint8_t output_level = 0, input_level;
@@ -458,22 +458,22 @@ test_allwinner(int seconds)
 	while (!io_stop) {
 		printf("\n");
 
-		gpio_aw_set(p.vpp, output_level);
+		allwinner_set_vpp(output_level);
 		printf("GPIO %-3d (VPP) = %d\n", p.vpp, output_level);
 
 		if (p.pgm != GPIO_PGM_DISABLED) {
-		        gpio_aw_set(p.pgm, output_level);
+		        allwinner_set_pgm(output_level);
 		        printf("GPIO %-3d (PGM) = %d\n", p.pgm, output_level);
 		}
 
-		gpio_aw_set(p.pgc, output_level);
+		allwinner_set_pgc(output_level);
 		printf("GPIO %-3d (PGC) = %d\n", p.pgc, output_level);
 
-		gpio_aw_set(p.pgdo, output_level);
+		allwinner_set_pgd(output_level);
 		printf("GPIO %-3d (PGD) = %d\n", p.pgdo,output_level);
 
 		if (p.pgdi != p.pgdo) {
-		        gpio_aw_get(p.pgdi, &input_level);
+		        input_level = allwinner_get_pgd();
 		        printf("GPIO %02d (PGD) = %d\n", p.pgdi, input_level);
 		}
 
@@ -504,6 +504,10 @@ main(int argc, char *argv[])
 
 	/* Get configuration */
 	getconf();
+
+	/* Determine back-end */
+	if (io_backend() == 0)
+		usage(execname, "Unsupported I/O");
 
 	/* Open device */
 	if (io_open() < 0) {

@@ -37,6 +37,11 @@ struct pic_ops pic16_ops = {
 	.arch				= ARCH16BIT,
 	.align				= sizeof(uint8_t),
 	.selector			= pic16_selector,
+#ifdef LOADER
+	.bootloader			= pic16_bootloader,
+#else
+	.bootloader			= NULL,
+#endif
 	.program_begin			= pic16_program_begin,
 	.program_data			= pic16_program_data,
 	.program_end			= pic16_program_end,
@@ -45,6 +50,7 @@ struct pic_ops pic16_ops = {
 	.verify_end			= pic16_standby,
 	.view_data			= pic16_view_data,
 	.read_config_memory		= pic16_read_config_memory,
+	.get_program_count		= pic16_get_program_count,
 	.get_program_size		= pic16_get_program_size,
 	.get_data_size			= pic16_get_data_size,
 	.get_executive_size		= NULL,
@@ -66,6 +72,7 @@ struct pic_ops pic16_ops = {
 	.dumpinhxcode			= pic16_dumpinhxcode,
 	.dumphexdata			= pic16_dumphexdata,
 	.dumpinhxdata			= pic16_dumpinhxdata,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -311,6 +318,45 @@ pic16_selector(void)
 	printf("Total: %d\n", (int)PIC16_SIZE);
 }
 
+#ifdef LOADER
+void
+pic16_bootloader(void)
+{
+	uint32_t dev, i;
+	char s[BUFLEN];
+
+	for (dev = 0; pic16_map[dev].deviceid; ++dev) {
+		for (i = 0; pic16_map[dev].devicename[i] && i < BUFLEN; ++i)
+			s[i] = tolower(pic16_map[dev].devicename[i]);
+		s[i] = 0;
+		if (strchr(s, '-') != NULL) /* ICD */
+			continue;
+		printf("#IFDEF __%s\n", &pic16_map[dev].devicename[3]);
+		printf("    LIST        P=%s\n", pic16_map[dev].devicename);
+		printf("    #INCLUDE    \"p%s.inc\"\n", &s[3]);
+		printf("    NOLIST\n");
+		if (strchr(s, 'j') == NULL) {
+		printf("    #DEFINE     ERASE_FLASH 0x94\n");
+		printf("    #DEFINE     WRITE_FLASH 0x84\n");
+		} else {
+		printf("    #DEFINE     ERASE_FLASH 0x14\n");
+		printf("    #DEFINE     WRITE_FLASH 0x04\n");
+		}
+		printf("    #DEFINE     MAX_FLASH   0x%X\n",
+			pic16_map[dev].flash << 1);
+		if (pic16_map[dev].eeprom)
+		printf("    #DEFINE     MAX_EE      %d ; X 64\n",
+			pic16_map[dev].eeprom / 64);
+		printf("    #DEFINE     ROWSIZE     %d\n",
+			pic16_map[dev].panelsize);
+		printf("    #DEFINE     ERASESIZE   %d\n",
+			pic16_map[dev].erasesize);
+		printf("    #DEFINE     TYPE        1\n");
+		printf("#ENDIF\n");
+	}
+}
+#endif
+
 /*****************************************************************************
  *
  * Program/Verify mode
@@ -439,9 +485,9 @@ static inline void
 pic16_core_instruction_nopp(uint32_t h, uint32_t l)
 {
 	io_program_out(0x00, 3);
-	io_set_pgc(HIGH);		/* Clock high         */
+	io_set_pgc(HIGH);	/* Clock high         */
 	io_usleep(h);		/* Delay high P9      */
-	io_set_pgc(LOW);		/* Clock low          */
+	io_set_pgc(LOW);	/* Clock low          */
 	io_usleep(l);		/* Delay low P10/NONE */ 
 	io_program_out(0, 16);
 }
@@ -723,12 +769,12 @@ pic16_set_table_pointer(uint32_t address)
 	uint8_t addrh = ((address & 0x0000ff00) >> 8);	/* 15:8	 */
 	uint8_t addru = ((address & 0x003f0000) >> 16);	/* 21:16 */
 
-	pic16_core_instruction(0x0E00 | addru);	/* MOVLW <Addr[21:16]>	*/
-	pic16_core_instruction(0x6EF8);		/* MOVWF TBLPTRU	*/
-	pic16_core_instruction(0x0E00 | addrh);	/* MOVLW <Addr[15:8]>	*/
-	pic16_core_instruction(0x6EF7);		/* MOVWF TBLPTRH	*/
-	pic16_core_instruction(0x0E00 | addrl);	/* MOVLW <Addr[7:0]>	*/
-	pic16_core_instruction(0x6EF6);		/* MOVWF TBLPTRL	*/
+	pic16_core_instruction(0x0E00 | addru);		/* MOVLW <Addr[21:16]>	*/
+	pic16_core_instruction(0x6EF8);			/* MOVWF TBLPTRU	*/
+	pic16_core_instruction(0x0E00 | addrh);		/* MOVLW <Addr[15:8]>	*/
+	pic16_core_instruction(0x6EF7);			/* MOVWF TBLPTRH	*/
+	pic16_core_instruction(0x0E00 | addrl);		/* MOVLW <Addr[7:0]>	*/
+	pic16_core_instruction(0x6EF6);			/* MOVWF TBLPTRL	*/
 }
 
 /*
@@ -745,13 +791,13 @@ pic16_erase_block(uint32_t block)
 
 	pic16_set_table_pointer(0x3C0004);
 	pic16_table_write((datal << 8) | datal);	/* Write datal to 3C0004h */
-	pic16_core_instruction(0x0E05);		/* MOVLW 05h		  */
-	pic16_core_instruction(0x6EF6);		/* MOVWF TBLPTRL	  */
+	pic16_core_instruction(0x0E05);			/* MOVLW 05h		  */
+	pic16_core_instruction(0x6EF6);			/* MOVWF TBLPTRL	  */
 	pic16_table_write((datah << 8) | datah);	/* Write datah to 3C0005h */
-	pic16_core_instruction(0x0E06);		/* MOVLW 06h		  */
-	pic16_core_instruction(0x6EF6);		/* MOVWF TBLPTRL	  */
+	pic16_core_instruction(0x0E06);			/* MOVLW 06h		  */
+	pic16_core_instruction(0x6EF6);			/* MOVWF TBLPTRL	  */
 	pic16_table_write((datau << 8) | datau);	/* Write datah to 3C0006h */
-	pic16_core_instruction(0x0000);		/* NOP			  */
+	pic16_core_instruction(0x0000);			/* NOP			  */
 	pic16_core_instruction_nope();			/* NOP ERASE P11 + P10	  */
 }
 
@@ -819,7 +865,7 @@ pic16_bulk_erase(void)
 	case DS30480C: /* PIC18LF2539 */
 		pic16_set_table_pointer(0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(0x0080);		/* BULK ERASE CHIP	*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 		pic16_core_instruction_nope();		/* NOP ERASE P11 + P10	*/
 		break;
 
@@ -828,7 +874,7 @@ pic16_bulk_erase(void)
 		pic16_table_write(0x3f3f);		/* BULK ERASE CHIP	*/
 		pic16_set_table_pointer(0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(0x8f8f);		/* BULK ERASE CHIP	*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 		pic16_core_instruction_nope();		/* NOP ERASE P11 + P10	*/
 		break;
 
@@ -837,7 +883,7 @@ pic16_bulk_erase(void)
 		pic16_table_write(0x0f0f);		/* BULK ERASE CHIP	*/
 		pic16_set_table_pointer(0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(0x8787);		/* BULK ERASE CHIP	*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 		pic16_core_instruction_nope();		/* NOP ERASE P11 + P10	*/
 		break;
 
@@ -850,28 +896,20 @@ pic16_bulk_erase(void)
 		pic16_table_write(0x0f0f);		/* BULK ERASE CHIP	*/
 		pic16_set_table_pointer(0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(0x8f8f);		/* BULK ERASE CHIP	*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 		pic16_core_instruction_nope();		/* NOP ERASE P11 + P10	*/
 		break;
 
 	case DS39972B: /* PIC18F26K80 */
-		/*
-		 * Description			Data (3C0006h:3C0004h)
-	 	 * Erase Data EEPROM		800004h
-		 * Erase Boot Block		800005h
-		 * Erase Config Bits		800002h
-		 * Erase Code EEPROM Block 0    800104h
-		 * Erase Code EEPROM Block 1    800204h
-		 * Erase Code EEPROM Block 2    800404h
-		 * Erase Code EEPROM Block 3    800804h
-		 */
-		pic16_erase_block(0x800104);		/* ERASE CODE BLOCK 0 TABLE 3-2 */
-		pic16_erase_block(0x800204);		/* ERASE CODE BLOCK 1 TABLE 3-3 */
-		pic16_erase_block(0x800404);		/* ERASE CODE BLOCK 2 TABLE 3-4 */
-		pic16_erase_block(0x800804);		/* ERASE CODE BLOCK 3 TABLE 3-5 */
-		pic16_erase_block(0x800005);		/* ERASE BOOT BLOCK   TABLE 3-6 */
-		pic16_erase_block(0x800002);		/* ERASE CONFIG BITS  TABLE 3-7 */
-		pic16_erase_row(PIC16_ID_LOW, 1);	/* ERASE IDLOC		  	*/
+		pic16_erase_block(0x800104);		/* ERASE CODE EEPROM BLOCK 0 TABLE 3-2 */
+		pic16_erase_block(0x800204);		/* ERASE CODE EEPROM BLOCK 1 TABLE 3-3 */
+		pic16_erase_block(0x800404);		/* ERASE CODE EEPROM BLOCK 2 TABLE 3-4 */
+		pic16_erase_block(0x800804);		/* ERASE CODE EEPROM BLOCK 3 TABLE 3-5 */
+		pic16_erase_block(0x800005);		/* ERASE BOOT BLOCK          TABLE 3-6 */
+		pic16_erase_block(0x800002);            /* ERASE CONFIG BITS         TABLE 3-7 */
+		pic16_standby();
+		pic16_program_verify();
+		pic16_erase_row(PIC16_ID_LOW, 1);	/* ERASE IDLOCATIONS */
 		break;
 
 	case DS39687E: /* PIC18LF27J53 */
@@ -879,7 +917,7 @@ pic16_bulk_erase(void)
 		pic16_table_write(0x0101);		/* BULK ERASE CHIP	*/
 		pic16_set_table_pointer(0x3C0004);	/* BULK ERASE CONFIG &	*/
 		pic16_table_write(0x8080);		/* BULK ERASE CHIP	*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 		pic16_core_instruction_nope();		/* NOP ERASE P11 + P10	*/
 		break;
 
@@ -930,7 +968,7 @@ pic16_row_erase(uint32_t row, uint32_t nrows)
 		pic16_standby();
 		return;
 	}
-#if 0
+
 	if (row == PIC_ERASE_CONFIG) {
 		if (pic16_map[pic16_index].datasheet == DS39687E) { /* PIC18J */
 			pic16_program_verify();
@@ -940,15 +978,14 @@ pic16_row_erase(uint32_t row, uint32_t nrows)
 
 			pic16_standby();
 		} else {
-			for (int i = 0; i < pic16_map[pic16_index].configsize; i++) {
-				pic16_conf.config[i] = 0xFF;
-			}
+			memset(pic16_conf.config, -1, 16);
+
 			/* ERASE CONFIG */
 			pic16_write_config();
 		}
 		return;
 	}
-#endif
+
 	/*
 	 * ERASE PROGRAM FLASH ROW(S)
 	 */
@@ -1071,12 +1108,23 @@ pic16_read_config_memory(void)
 }
 
 /*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic16_get_program_count(void)
+{
+	return 1;
+}
+
+/*
  * GET PROGRAM FLASH SIZE
  *
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic16_get_program_size(uint32_t *addr)
+pic16_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = 0;
 
@@ -1157,9 +1205,9 @@ pic16_set_data_pointer(uint16_t address)
 	uint8_t eeadrl = pic16_eeadr();
 	uint8_t eeadrh = eeadrl + 1;
 
-	pic16_core_instruction(0x0E00 | addrl);	/* MOVLW <Addr>	*/
+	pic16_core_instruction(0x0E00 | addrl);		/* MOVLW <Addr>	*/
 	pic16_core_instruction(0x6E00 | eeadrl);	/* MOVWF EEADR	*/
-	pic16_core_instruction(0x0E00 | addrh);	/* MOVLW <AddrH>*/
+	pic16_core_instruction(0x0E00 | addrh);		/* MOVLW <AddrH>*/
 	pic16_core_instruction(0x6E00 | eeadrh);	/* MOVWF EEADRH	*/
 }
 
@@ -1174,8 +1222,8 @@ pic16_read_data_memory(void)
 
 	pic16_core_instruction(0x8000 | eecon1);	/* BSF EECON1, RD	*/
 	pic16_core_instruction(0x5000 | eedata);	/* MOVF EEDATA, W, 0	*/
-	pic16_core_instruction(0x6EF5);		/* MOVWF TABLAT		*/
-	pic16_core_instruction(0x0000);		/* NOP			*/
+	pic16_core_instruction(0x6EF5);			/* MOVWF TABLAT		*/
+	pic16_core_instruction(0x0000);			/* NOP			*/
 
 	return pic16_shift_out_tablat_register();
 }
@@ -1193,7 +1241,7 @@ pic16_write_data_memory(uint8_t data)
 	uint8_t eecon1 = pic16_eecon1();
 	uint8_t incomplete;
 
-	pic16_core_instruction(0x0E00 | data);	/* MOVLW <Data>		*/
+	pic16_core_instruction(0x0E00 | data);		/* MOVLW <Data>		*/
 	pic16_core_instruction(0x6E00 | eedata);	/* MOVWF EEDATA		*/
 
 	pic16_write_enable();				/* BSF EECON1, WREN     */
@@ -1204,10 +1252,10 @@ pic16_write_data_memory(uint8_t data)
 	case DS39592E: /* PIC18F1320  */
 		       /* PIC18F2320  */
 	case DS30480C: /* PIC18LF2539 */
-		pic16_core_instruction(0x0E55);	/* MOVLW 0x55		*/
-		pic16_core_instruction(0x6EA7);	/* MOVWF EECON2		*/
-		pic16_core_instruction(0x0EAA);	/* MOVLW 0xAA		*/
-		pic16_core_instruction(0x6EA7);	/* MOVWF EECON2		*/
+		pic16_core_instruction(0x0E55);		/* MOVLW 0x55		*/
+		pic16_core_instruction(0x6EA7);		/* MOVWF EECON2		*/
+		pic16_core_instruction(0x0EAA);		/* MOVLW 0xAA		*/
+		pic16_core_instruction(0x6EA7);		/* MOVWF EECON2		*/
 		break;
 	}
 	pic16_write();					/* BSF EECON1, WR       */
@@ -1216,8 +1264,8 @@ pic16_write_data_memory(uint8_t data)
 	do	/* Until write completes or times out */
 	{
 		pic16_core_instruction(0x5000 | eecon1);/* MOVF EECON1, W, 0	*/
-		pic16_core_instruction(0x6EF5);	/* MOVWF TABLAT		*/
-		pic16_core_instruction(0x0000);	/* NOP			*/
+		pic16_core_instruction(0x6EF5);		/* MOVWF TABLAT		*/
+		pic16_core_instruction(0x0000);		/* NOP			*/
 
 		gettimeofday(&tv2, NULL);
 		timersub(&tv2, &tv1, &tv3);
@@ -1228,7 +1276,7 @@ pic16_write_data_memory(uint8_t data)
 
 	pic16_write_disable();				/* BCF EECON1, WREN     */
 
-	if (tv3.tv_sec >= PIC_TIMEOUT)
+	if (incomplete)
 		printf("%s: information: data write timed out.\n", __func__);
 }
 
@@ -1312,8 +1360,8 @@ pic16_write_panel(uint32_t region, uint32_t address, uint32_t *panel, uint32_t p
 void
 pic16_goto100000(void)
 {
-	pic16_core_instruction(0xEF00);		/* GOTO 0x100000	*/
-	pic16_core_instruction(0xF800);		/* GOTO 0x100000	*/
+	pic16_core_instruction(0xEF00);			/* GOTO 0x100000	*/
+	pic16_core_instruction(0xF800);			/* GOTO 0x100000	*/
 }
 
 /*
@@ -1421,7 +1469,7 @@ pic16_getregion(uint32_t address)
 		}
 	}
 	if (p.f)
-	        fprintf(p.f, "%s: warning: address unsupported [%06X]\n", __func__, address);
+		fprintf(p.f, "%s: warning: address unsupported [%06X]\n", __func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -1515,7 +1563,7 @@ pic16_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint8_t wd
 		vdata = pic16_table_read_post_increment();
 		break;
 	case PIC_REGIONCONFIG:
-		/* Can't verify config */
+		/* UNSUPPORTED: BIT MASKS NEEDED */
 		return wdata;
 	case PIC_REGIONDATA:
 		pic16_set_data_pointer(address & PIC16_DATA_MASK);
@@ -1579,8 +1627,8 @@ pic16_program_end(int config)
 {
 	pic_write_panel(PIC_PANEL_END, PIC_VOID, PIC_VOID);
 	pic16_standby();
-        if (config)
-                pic16_write_config();
+	if (config)
+		pic16_write_config();
 }
 
 /*
@@ -1653,7 +1701,7 @@ pic16_dumpdeviceid(void)
 		}
 	}
 
-	pic16_dumpconfig(PIC_BRIEF);
+	pic16_dumpconfig(PIC_BRIEF, 0);
 	
 	if (p.devicename[0]) {
 		printf("[3FFFFE] [DEVICEID]    %04X", pic16_conf.deviceid);
@@ -1685,7 +1733,7 @@ pic16_dumpdeviceid(void)
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
-pic16_dumpconfig(int mode)
+pic16_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	for (uint32_t i = 0; i < pic16_map[pic16_index].configsize; i += 2) {
 		printf("[%06X] [CONFIG%d]     %04X\n",

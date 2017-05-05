@@ -23,7 +23,6 @@
 #include "pickle.h"
 
 /* prototypes */
-void usage(char *, char *);
 int main(int, char **);
 
 #endif /* !_PCTRL_H */

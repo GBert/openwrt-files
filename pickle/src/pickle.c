@@ -29,7 +29,7 @@ struct pickle p = {0};
 /*
  * pickle help
  */
-void
+static void
 usage_pickle(void)
 {
 	printf("USAGE: pickle\n");
@@ -40,25 +40,35 @@ usage_pickle(void)
 		"\t\tConfiguration file.\n\n", p.dotfile);
 
 	printf("FRONTENDS:\n"
-		" FILE\n"
-		"\t\tFile input (INHX32 format).\n"
-		" STDIN\n"
-		"\t\tStandard input (INHX32 format).\n"
-#ifdef TTY
-		" TTY\n"
-		"\t\tPOSIX serial I/O.\n"
+		" INHX32\n"
+		"\t\tFile or standard input.\n"
+#ifdef STK500
+		" STK500\n"
+		"\t\tPOSIX serial or network input.\n"
 #endif
 		"\n");
 
 	printf("BACKENDS:\n");
+#ifdef ALLWINNER
+	printf(" ALLWINNER\n"
+		"\t\tLinux Banana Pi (A20), Orange Pi (H2+/H3) GPIO.\n");
+#endif
 #ifdef BITBANG
 	printf(" BIT-BANG\n"
 		"\t\tLinux GPIO bit-bang version %d.%d.\n",
 		GPIO_BB_VERSION_MAJ, GPIO_BB_VERSION_MIN);
 #endif
+#ifdef CP2104
+	printf(" CP2104\n"
+		"\t\tLinux CP2104 GPIO.\n");
+#endif
 #ifdef FTDI
-	printf(" FTDI BIT-BANG\n"
+	printf(" FTDI\n"
 		"\t\tLinux FTDI bit-bang.\n");
+#endif
+#ifdef MCP2221
+	printf(" MCP2221\n"
+		"\t\tLinux MCP2221 GPIO.\n");
 #endif
 #ifdef MCP23017
 	printf(" MCP23017\n"
@@ -66,15 +76,11 @@ usage_pickle(void)
 #endif
 #ifdef RPI
 	printf(" RPI\n"
-		"\t\tRaspberry Pi GPIO.\n");
+		"\t\tLinux Raspberry Pi GPIO.\n");
 #endif
-#ifdef ALLWINNER
-	printf(" ALLWINNER\n"
-		"\t\tBanana Pi, Orange Pi Zero / Plus 2 GPIO.\n");
-#endif
-#ifdef TTY
-	printf(" TTY\n"
-		"\t\tPOSIX serial I/O.\n");
+#ifdef SERIAL
+	printf(" SERIAL\n"
+		"\t\tPOSIX serial bit-bang.\n");
 #endif
 	printf("\n");
 
@@ -104,7 +110,7 @@ usage_pickle(void)
 		"\t\t16-bit word PIC18F operations.\n"
 #endif
 #ifdef P24
-		" p24 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n"
+		" p24 [SELECT|PARTITION DEVICE] [LVP|HVP] OPERATION [ARG]\n"
 		"\t\t24-bit word PIC24/dsPIC operations.\n"
 #endif
 #ifdef P32
@@ -115,7 +121,7 @@ usage_pickle(void)
 		" pctrl RUN|STOP|RESTORE\n"
 		"\t\tControl master clear.\n"
 #endif
-#ifdef TTY
+#ifdef STK500
 		" pload PROGRAM|VERIFY TTY|IP FILE [16|24|32]\n"
 		"\t\tProgram or verify file on TTY or network.\n"
 #endif
@@ -134,7 +140,7 @@ usage_pickle(void)
  * p12 help
  */
 #ifdef P12
-void
+static void
 usage_p12(char *msg)
 {
 	printf("USAGE: p12 SELECT DEVICE OPERATION [ARG]\n");
@@ -153,7 +159,7 @@ usage_p12(char *msg)
 
 	printf("EXAMPLES:\n");
 	printf(" p12 %ss%select\n"
-		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
 	printf(" p12 %ss%select PIC1XFXXX %sb%slank\n"
 		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" p12 %ss%select PIC1XFXXX %sc%sonfig\n"
@@ -176,9 +182,10 @@ usage_p12(char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
 	printf(" p12 %ss%select PIC1XFXXX %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
+#ifdef STK500
 	printf(" p12 %ss%select PIC1XFXXX /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF, UL_ON, UL_OFF);
-
+#endif
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
@@ -193,7 +200,7 @@ usage_p12(char *msg)
  * p14 help
  */
 #ifdef P14
-void
+static void
 usage_p14(char *msg)
 {
 	printf("USAGE: p14 [SELECT DEVICE] [LVP] OPERATION [ARG]\n");
@@ -212,7 +219,7 @@ usage_p14(char *msg)
 
 	printf("EXAMPLES:\n");
 	printf(" p14 %ss%select\n"
-		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
 	printf(" p14 %ss%select 16F84 OPERATION [ARG]\n"
 		"\t\tSelect device PIC16F84.\n", UL_ON, UL_OFF);
 	printf(" p14 %sl%svp OPERATION [ARG]\n"
@@ -233,6 +240,10 @@ usage_p14(char *msg)
 		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" p14 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+#ifdef LOADER
+	printf(" p14 %slo%sader\n"
+		"\t\tOutput boot loader configuration.\n", UL_ON, UL_OFF);
+#endif
 	printf(" p14 %so%ssccal\n"
 		"\t\tDisplay oscillator calibration.\n", UL_ON, UL_OFF);
 	printf(" p14 %so%ssccal 0x343c\n"
@@ -243,9 +254,10 @@ usage_p14(char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p14 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
 	printf(" p14 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+#endif
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
@@ -260,7 +272,7 @@ usage_p14(char *msg)
  * n14 help
  */
 #ifdef N14
-void
+static void
 usage_n14(char *msg)
 {
 	printf("USAGE: n14 [LVP] OPERATION [ARG]\n");
@@ -278,35 +290,40 @@ usage_n14(char *msg)
 		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
-        printf(" n14 %ss%select\n"
-                "\t\tDump supported devices.\n", UL_ON, UL_OFF);
-        printf(" n14 %sl%svp OPERATION [ARG]\n"
-                "\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
-        printf(" n14 %sb%slank\n"
-                "\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
-        printf(" n14 %sc%sonfig\n"
-                "\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
-        printf(" n14 %sda%sta\n"
-                "\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
-        printf(" n14 %sd%sump\n"
-                "\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n14 %ss%select\n"
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
+	printf(" n14 %sl%svp OPERATION [ARG]\n"
+		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+	printf(" n14 %sb%slank\n"
+		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
+	printf(" n14 %sc%sonfig\n"
+		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+	printf(" n14 %sda%sta\n"
+		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+	printf(" n14 %sd%sump\n"
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 #if 0
-        printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
-                "\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
+	printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
+		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
 #endif
-        printf(" n14 %sf%slash [n] [address]\n"
-                "\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
-        printf(" n14 %si%sd\n"
-                "\t\tDisplay device identification.\n", UL_ON, UL_OFF);
-        printf(" n14 %sp%srogram [file.hex] [noblank]\n"
-                "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n14 %sv%serify [file.hex]\n"
-                "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n14 %svi%sew [file.hex] [raw]\n"
-                "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n14 /dev/ttyUSB0 | %s8%s048\n"
-                "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+	printf(" n14 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
+	printf(" n14 %si%sd\n"
+		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+#ifdef LOADER
+	printf(" n14 %slo%sader\n"
+		"\t\tOutput boot loader configuration.\n", UL_ON, UL_OFF);
+#endif
+	printf(" n14 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n14 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n14 %svi%sew [file.hex] [raw]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
+	printf(" n14 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
+#endif
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
@@ -321,7 +338,7 @@ usage_n14(char *msg)
  * p16 help
  */
 #ifdef P16
-void
+static void
 usage_p16(char *msg)
 {
 	printf("USAGE: p16 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n");
@@ -340,7 +357,7 @@ usage_p16(char *msg)
 
 	printf("EXAMPLES:\n");
 	printf(" p16 %ss%select\n"
-		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
 	printf(" p16 %ss%select 18LF2539 OPERATION [ARG]\n"
 		"\t\tSelect device PIC18LF2539.\n", UL_ON, UL_OFF);
 	printf(" p16 %sl%svp OPERATION [ARG]\n"
@@ -361,15 +378,20 @@ usage_p16(char *msg)
 		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" p16 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+#ifdef LOADER
+	printf(" p16 %slo%sader\n"
+		"\t\tOutput boot loader configuration.\n", UL_ON, UL_OFF);
+#endif
 	printf(" p16 %sp%srogram [file.hex] [noblank]\n"
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p16 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p16 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
 	printf(" p16 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+#endif
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
@@ -384,7 +406,7 @@ usage_p16(char *msg)
  * n16 help
  */
 #ifdef N16
-void
+static void
 usage_n16(char *msg)
 {
 	printf("USAGE: n16 [LVP] OPERATION [ARG]\n");
@@ -402,35 +424,40 @@ usage_n16(char *msg)
 		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n");
-        printf(" n16 %ss%select\n"
-                "\t\tDump supported devices.\n", UL_ON, UL_OFF);
-        printf(" n16 %sl%svp OPERATION [ARG]\n"
-                "\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
-        printf(" n16 %sb%slank\n"
-                "\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
-        printf(" n16 %sc%sonfig\n"
-                "\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
-        printf(" n16 %sda%sta\n"
-                "\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
-        printf(" n16 %sd%sump\n"
-                "\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n16 %ss%select\n"
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
+	printf(" n16 %sl%svp OPERATION [ARG]\n"
+		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
+	printf(" n16 %sb%slank\n"
+		"\t\tBlank device (disable protection and bulk erase).\n", UL_ON, UL_OFF);
+	printf(" n16 %sc%sonfig\n"
+		"\t\tDisplay device configuration.\n", UL_ON, UL_OFF);
+	printf(" n16 %sda%sta\n"
+		"\t\tDisplay data EEPROM content.\n", UL_ON, UL_OFF);
+	printf(" n16 %sd%sump\n"
+		"\t\tDump device content (INHX32 format).\n", UL_ON, UL_OFF);
 #if 0
-        printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
-                "\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
+	printf(" n14 %ser%sase eeprom | flash | id | row [n]\n"
+		"\t\tErase EEPROM, flash, id or flash at row for n rows.\n", UL_ON, UL_OFF);
 #endif
-        printf(" n16 %sf%slash [n] [address]\n"
-                "\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
-        printf(" n16 %si%sd\n"
-                "\t\tDisplay device identification.\n", UL_ON, UL_OFF);
-        printf(" n16 %sp%srogram [file.hex] [noblank]\n"
-                "\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n16 %sv%serify [file.hex]\n"
-                "\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n16 %svi%sew [file.hex] [raw]\n"
-                "\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
-        printf(" n16 /dev/ttyUSB0 | %s8%s048\n"
-                "\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+	printf(" n16 %sf%slash [n] [address]\n"
+		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
+	printf(" n16 %si%sd\n"
+		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+#ifdef LOADER
+	printf(" n16 %slo%sader\n"
+		"\t\tOutput boot loader configuration.\n", UL_ON, UL_OFF);
+#endif
+	printf(" n16 %sp%srogram [file.hex] [noblank]\n"
+		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n16 %sv%serify [file.hex]\n"
+		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
+	printf(" n16 %svi%sew [file.hex] [raw]\n"
+		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
+	printf(" n16 /dev/ttyUSB0 | %s8%s048\n"
+		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
+#endif
 	printf("\n");
 
 	printf("VERSION:\n %s\n", VERSION);
@@ -445,10 +472,10 @@ usage_n16(char *msg)
  * p24 help
  */
 #ifdef P24
-void
+static void
 usage_p24(char *msg)
 {
-	printf("USAGE: p24 [SELECT DEVICE] [LVP|HVP] OPERATION [ARG]\n");
+	printf("USAGE: p24 [SELECT|PARTITION DEVICE] [LVP|HVP] OPERATION [ARG]\n");
 	printf("24-bit word PIC24/dsPIC operations.\n\n");
 
 	if (msg)
@@ -464,11 +491,13 @@ usage_p24(char *msg)
 
 	printf("EXAMPLES:\n");
 	printf(" p24 %ss%select\n"
-		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
 	printf(" p24 %ss%select 33EP128GP502 OPERATION [ARG]\n"
 		"\t\tSelect device dsPIC33EP128GP502.\n", UL_ON, UL_OFF);
 	printf(" p24 %ss%select 24FJ128GB202 OPERATION [ARG]\n"
 		"\t\tSelect device PIC24FJ128GB202.\n", UL_ON, UL_OFF);
+	printf(" p24 %spa%srtition 33EP64GS502 OPERATION [ARG]\n"
+		"\t\tSelect and partition device dsPIC33EP64GS502.\n", UL_ON, UL_OFF);
 	printf(" p24 %sl%svp OPERATION [ARG]\n"
 		"\t\tLVP 32-bit key entry.\n", UL_ON, UL_OFF);
 	printf(" p24 %sh%svp OPERATION [ARG]\n"
@@ -487,15 +516,20 @@ usage_p24(char *msg)
 		"\t\tDisplay all or n words of program flash content from address.\n", UL_ON, UL_OFF);
 	printf(" p24 %si%sd\n"
 		"\t\tDisplay device identification.\n", UL_ON, UL_OFF);
+#ifdef LOADER
+	printf(" p24 %slo%sader\n"
+		"\t\tOutput boot loader configuration.\n", UL_ON, UL_OFF);
+#endif
 	printf(" p24 %sp%srogram [file.hex] [noblank]\n"
 		"\t\tBlank and program file.hex or stdin to flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p24 %sv%serify [file.hex]\n"
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p24 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
 	printf(" p24 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+#endif
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
@@ -510,7 +544,7 @@ usage_p24(char *msg)
  * p32 help
  */
 #ifdef P32
-void
+static void
 usage_p32(char *msg)
 {
 	printf("USAGE: p32 OPERATION [ARG]\n");
@@ -529,7 +563,7 @@ usage_p32(char *msg)
 
 	printf("EXAMPLES:\n");
 	printf(" p32 %ss%select\n"
-		"\t\tDump supported devices.\n", UL_ON, UL_OFF);
+		"\t\tShow supported devices.\n", UL_ON, UL_OFF);
 	printf(" p32 %sbo%sot [n] [address]\n"
 		"\t\tDisplay all or n words of boot flash content from address.\n", UL_ON, UL_OFF);
 	printf(" p32 %sb%slank\n"
@@ -548,9 +582,10 @@ usage_p32(char *msg)
 		"\t\tVerify file.hex or stdin in flash (INHX32 format).\n", UL_ON, UL_OFF);
 	printf(" p32 %svi%sew [file.hex] [raw]\n"
 		"\t\tView file.hex or stdin (INHX32 format).\n", UL_ON, UL_OFF);
+#ifdef STK500
 	printf(" p32 /dev/ttyUSB0 | %s8%s048\n"
 		"\t\tListen on /dev/ttyUSB0 or network for remote programming.\n", UL_ON, UL_OFF);
-
+#endif
 	printf("\n");
 	
 	printf("VERSION:\n %s\n", VERSION);
@@ -564,7 +599,7 @@ usage_p32(char *msg)
 /*
  * p12/p14/p16/p24/p32 help
  */
-void
+static void
 usage(char *execname, char *msg)
 {
 #ifdef P12
@@ -622,10 +657,13 @@ main(int argc, char **argv)
 	/* Get configuration */
 	getconf();
 	
+	/* Determine back-end */
+	if (io_backend() == 0)
+		usage(execname, "Unsupported I/O");
+
 	/* Open device */
-	if (io_open() < 0) {
+	if (io_open() < 0)
 		usage(execname, io_error());
-	}
 
 	/* Raise priority */
 	setpriority(PRIO_PROCESS, 0, -20);
@@ -646,13 +684,16 @@ main(int argc, char **argv)
 	if (argc < 2)
 		usage(execname, "Missing arg(s)");
 
-	/* Device selection */
+	/* Device selection and partition */
 	int argv1 = tolower((int)argv[1][0]);
-	if (argv1 == 's') { /* Select device */
+	int argv11 = tolower((int)argv[1][1]);
+	if (argv1 == 's' || (argv1 == 'p' && argv11 == 'a')) {
+		/* Select or partition device */
 		if (argc < 3) {
 			pic_selector();
 			io_exit(EX_OK);
 		}
+		p.partition = (argv1 == 'p') ? TRUE : FALSE;
 		if (mystrcasestr(argv[2], "dspic") == argv[2]) {
 			strncpy(p.devicename, argv[2], STRLEN);
 		} else if (mystrcasestr(argv[2], "pic") == argv[2]) {
@@ -678,10 +719,19 @@ main(int argc, char **argv)
 		usage(execname, "Missing select");
 	}
 
-	/* Key entry */
+	/* Key entry or loader output */
 	argv1 = tolower((int)argv[1][0]);
-	if (argv1 == 'l') {			/* LVP 32-bit key entry */
+	if (argv1 == 'l') {			/* LVP 32-bit key entry or loader output */
+#ifdef LOADER
+		if (argv11 == 'o') {		/* LOADER OUTPUT */
+			if (argc > 2)
+				usage(execname, "Too many args [loader]");
+			pic_bootloader();
+			io_exit(EX_OK);
+		}
+#endif
 		if (p.pic->arch == ARCH12BIT) {
+			/* NOT SUPPORTED */
 			usage(execname, "Invalid arg [lvp]");
 		}
 		/* ARCH14BIT || ARCH16BIT || ARCH24BIT || ARCH32BIT */
@@ -693,6 +743,7 @@ main(int argc, char **argv)
 	}
 	else if (argv1 == 'h') {		/* HVP 32-bit key entry */
 		if (p.pic->arch == ARCH12BIT || p.pic->arch == ARCH14BIT || p.pic->arch == ARCH32BIT) {
+			/* NOT SUPPORTED */
 			usage(execname, "Invalid arg [hvp]");
 		}
 		/* ARCH16BIT || ARCH24BIT */
@@ -713,7 +764,7 @@ main(int argc, char **argv)
 
 	/* Command */
 	argv1 = tolower((int)argv[1][0]);
-	int argv11 = tolower((int)argv[1][1]);
+	argv11 = tolower((int)argv[1][1]);
 	switch (argv1) {
 	case 'b':	if (argv11 == 'o') {		/* BOOT */
 				uint32_t addr = UINT32_MAX, words = UINT32_MAX;
@@ -851,7 +902,7 @@ main(int argc, char **argv)
 			break;
 
 	case 'i':	if (argc > 2)
-				usage(execname, "Too many args [id]");
+				usage(execname, "too many args [id]");
 			pic_dumpdeviceid();
 			break;
 
@@ -910,7 +961,7 @@ main(int argc, char **argv)
 					rc = 0 - pic_verify(argv[2]);
 			}
 			break;
-#ifdef TTY
+#ifdef STK500
 	case '/':	if (strstr(argv[1], "/dev/tty") != argv[1]) {
 				usage(execname, "Invalid device [TTY]");
 			}

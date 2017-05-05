@@ -27,22 +27,28 @@
 #define PIC24_MASK (0x00FFFFFF)
 #define PIC24_CALIB_MAX  (256)
 #define PIC24_CONFIG_MAX (256)
-#define PIC24_FUID_MAX   (255)
+#define PIC24_FUID_MAX   (256)
+#define PIC24_CONFIG     (0)
+#define PIC24_PART_LOWER (0)
+#define PIC24_PART_UPPER (1)
+#define PIC24_PART_MAX   (2)
+#define PIC24_FBTSEQ     (0xFC)
 
 struct pic24_config {
-	uint32_t appid;				/* 8005BE OR 8007F0	 */
-	uint32_t calib[PIC24_CALIB_MAX];	/* CALIBRATION WORDS 	 */
-	uint32_t config[PIC24_CONFIG_MAX];	/* CONFIG BYTES/WORDS	*/
-	uint32_t fuid[PIC24_FUID_MAX];		/* UNIT/FUID BYTES/WORDS */
-	uint32_t deviceid;			/* FF0000 		 */
-	uint32_t revision;			/* FF0002 		 */
-	char pepath[STRLEN];			/* PE FILE PATH		 */
-	/* required for program verify mode entry and device detection	 */
-	uint16_t tblpag;			/* TBLPAG REGISTER ADDR	 */
-	uint16_t nvmcon;			/* NVMCON REGISTER ADDR	 */
-	uint16_t visi;				/* VISI REGISTER ADDR	 */
-	uint8_t tblnop;				/* TBL READ NOP COUNT	 */
-	uint8_t gotonop;			/* GOTO NOP COUNT	 */
+	uint32_t calib[PIC24_CALIB_MAX];			/* CALIBRATION WORDS 	 */
+	uint32_t config[PIC24_PART_MAX][PIC24_CONFIG_MAX]; 	/* CONFIG BYTES/WORDS	 */
+	uint32_t fboot;						/* FBOOT WORD            */
+	uint32_t fuid[PIC24_FUID_MAX];				/* UNIT/FUID BYTES/WORDS */
+	uint32_t deviceid;					/* FF0000 		 */
+	uint32_t revision;					/* FF0002 		 */
+#if 0
+	char pepath[STRLEN];					/* PE FILE PATH		 */
+#endif
+	uint16_t tblpag;					/* TBLPAG REGISTER ADDR	 */
+	uint16_t nvmcon;					/* NVMCON REGISTER ADDR	 */
+	uint16_t visi;						/* VISI REGISTER ADDR	 */
+	uint8_t tblnop;						/* TBL READ NOP COUNT	 */
+	uint8_t gotonop;					/* GOTO NOP COUNT	 */
 };
 
 /* NVM register addresses */
@@ -51,11 +57,13 @@ struct pic24_config {
 #define PIC24_NVMADRU	(pic24_conf.nvmcon + 4)
 #define PIC24_NVMKEY	(pic24_conf.nvmcon + 6)
 
+#if 0
 struct pic24_dstab {
 	uint32_t datasheet;
 	char filename[STRLEN];
 	uint8_t appid;
 };
+#endif
 
 struct pic24_dsmap {
 	char devicename[STRLEN];
@@ -63,7 +71,7 @@ struct pic24_dsmap {
 	uint32_t flash;		/* flash size in words                   */
 	uint16_t eeprom;	/* eeprom size in bytes 0=unsupported    */
 	uint32_t datasheet;
-	uint32_t configaddr;    /* CONFIG BASE                           */
+	uint32_t configaddr;	/* CONFIG BASE                           */
 	uint8_t nconfig;	/* NUMBER OF CONFIG WORDS AT CONFIG BASE */
 	uint32_t fuidaddr;	/* UNIT/FUID BASE                        */
 	uint8_t nfuid;		/* NUMBER OF FUID WORDS AT FUID BASE     */
@@ -71,6 +79,11 @@ struct pic24_dsmap {
 	uint8_t ncalib;		/* NUMBER OF CALIBRATION WORDS           */
 	uint8_t codepanelsize;	/* PROGRAM FLASH PANEL SIZE              */
 	uint8_t datapanelsize;	/* DATA EEPROM PANEL SIZE                */
+	uint16_t erasepanelsize;/* ERASE PANEL SIZE                      */
+	uint8_t latch;		/* LATCHES AT 0xFA0000                   */
+	uint32_t fbootaddr;	/* FBOOT ADDRESS                         */
+	uint32_t configlower;	/* LOWER CONFIG BASE                     */
+	uint8_t mempanelsize;	/* MEMORY PANEL SIZE (NVMSRCADR SUPPORT) */
 };
 
 /******************************************************************************
@@ -78,41 +91,97 @@ struct pic24_dsmap {
  *****************************************************************************/
 
 /*
- * MEMORY MAP
+ * DUAL PARTITION FLASH
  */
-#if 0
-#define PIC24_CODE_LOW  (0x000000)
-#endif
-#define PIC24_EXEC_LOW          (0x00800000) /* EXECUTIVE                   */
-#define PIC24_GA6_GB6_EXEC_LOW  (0x00800100) /* EXECUTIVE                   */
-#define dsPIC30F_APPID_ADDR     (0x008005BE) /* APP ID WORD FOR dsPIC30F    */
-#define dsPIC30F_EXEC_HIGH      (0x00800600) /* EXEC + UNIT/FUID            */
-#define PIC24_GA6_GB6_EXEC_HIGH (0x00800FFE) /* EXECUTIVE                   */
-#define PIC24_APPID_ADDR        (0x008007F0) /* APP ID WORD FOR PIC24FJ     */
-#define PIC24_CALIB_ADDR        (0x008007F4) /* up to 6 calibration words   */
-#define PIC24_EXEC_HIGH         (0x00800800)
-#define dsPIC33EP_APPID_ADDR    (0x00800FF0) /* APP ID WORD FOR dsPIC33EP   */
-#define dsPIC33EV_APPID_ADDR    (0x00800BFE) /* APP ID WORD FOR dsPIC33EV?  */
-#define dsPIC33E_EXEC_HIGH      (0x00801000) /* EXEC + UNIT/FUID/UDID + OTP */
-#define PIC24_CONFIG_ADDR       (0x00F80000) /* base address                */
-#define PIC24_CONFIG_MASK       (0x0000FFFF) /* 16-bit word mask            */
-#define PIC24_CONFIG_PENDING    (0x80000000) /* config/fuid Write pending   */
-#define PIC24_DEVID             (0x00FF0000)
-#define PIC24_DEVREV            (0x00FF0002)
+#define PIC24_CODE_LOWER (0x000000) /* LOWER PARTITION */
+#define PIC24_CODE_UPPER (0x400000) /* UPPER PARTITION */
 
 /*
- * DEVID / DEVREV
+ * EXECUTIVE, UNIT / FUID, UDID & OTP (FOR INSPECTION ONLY)
  */
+#define PIC24_EXEC_LOW      (0x00800000) /* EXECUTIVE LOW          */
+#define PIC24_EXEC_HIGH     (0x00800800) /* EXEC, CALIBRATION      */
+#define PIC24_GAB_EXEC_LOW  (0x00800100) /* EXECUTIVE LOW          */
+#define PIC24_GA4_EXEC_HIGH (0x00801400) /* EXEC, UDID, OTP        */
+#define PIC24_GA6_EXEC_HIGH (0x00801800) /* EXEC, UDID, OTP        */
+#define PIC24_GA7_EXEC_HIGH (0x00801800) /* EXEC, UDID, OTP        */
+#define dsPIC30F_EXEC_HIGH  (0x00800600) /* EXEC, UNIT             */
+#define dsPIC33E_EXEC_HIGH  (0x00801000) /* EXEC, FUID / UDID, OTP */
+
+/*
+ * EXECUTIVE APP ID (UNSUPPORTED)
+ */
+#if 0
+#define PIC24_APPID_ADDR     (0x008007F0) /* APP ID WORD FOR PIC24FJ   */
+#define dsPIC30F_APPID_ADDR  (0x008005BE) /* APP ID WORD FOR dsPIC30F  */
+#define dsPIC33EP_APPID_ADDR (0x00800FF0) /* APP ID WORD FOR dsPIC33EP */
+#define dsPIC33EV_APPID_ADDR (0x00800BFE) /* APP ID WORD FOR dsPIC33EV */
+#endif
+
+/*
+ * CALIBRATION
+ */
+#define PIC24_CALIB_ADDR (0x008007F4) /* up to 6 calibration words */
+
+/*
+ * UDID (UNSUPPORTED)
+ */
+#if 0
+#define dsPIC33EV_GM_UDID (0x00800CF0)
+#define dsPIC33EP_GS_UDID (0x00800F00)
+#define PIC24_GA4_UDID    (0x00801300)
+#define PIC24_GA6_UDID    (0x00801600)
+#define PIC24_GA7_UDID    (0x00801600)
+#endif
+
+/*
+ * OTP (UNSUPPORTED)
+ */
+#if 0
+#define dsPIC33EV_GM_OTP (0x00800F80) /* .. 0x801000 */
+#define dsPIC33EP_GS_OTP (0x00800F80) /* .. 0x801000 */
+#define PIC24_GA4_OTP    (0x00801380) /* .. 0x801400 */
+#define PIC24_GA6_OTP    (0x00801700) /* .. 0x801800 */
+#define PIC24_GA7_OTP    (0x00801700) /* .. 0x801800 */
+#endif
+
+/*
+ * DUAL PARTITION CONFIG
+ *
+ *  00 Privileged Dual Partition Mode
+ *  01 Protected Dual Partition Mode
+ *  10 Dual Partition Mode
+ *  11 Standard Mode (Single Partition, default)
+ */
+#define dsPIC_FBOOT      (0x801000) /* dsPIC33EP64GS502                   */
+#define PIC24_FBOOT      (0x801800) /* PIC24FJ256GA412 / PIC24FJ1024GA610 */
+#define PIC24_FBOOT_MASK (0x000003)
+#define PIC24_DUALPRIV   (0)        /* 0xFFFFFC */
+#define PIC24_DUALPROT   (1)        /* 0xFFFFFD */
+#define PIC24_DUAL       (2)        /* 0xFFFFFE */
+#define PIC24_SINGLE     (3)        /* 0xFFFFFF */
+
+/*
+ * CONFIG SPACE
+ */
+#define PIC24_CONFIG_ADDR    (0x00F80000) /* base address              */
+#define PIC24_CONFIG_MASK    (0x0000FFFF) /* 16-bit word mask          */
+#define PIC24_CONFIG_PENDING (0x80000000) /* config/fuid write pending */
+
+/*
+ * DEVICE ID & REVISION
+ */
+#define PIC24_DEVID         (0x00FF0000)
+#define PIC24_DEVREV        (0x00FF0002)
 #define PIC24FJ_FAMILY_MASK (0x3FC0) /* FAMID<7:0>                            */
 #define PIC24FJ_DEV_MASK    (0x003F) /* DEV  <5:0>                            */
 #define PIC24FJ_MAJRV_MASK  (0x01C0) /* MAJRV<2:0>                            */
 #define PIC24FJ_DOT_MASK    (0x0007) /* DOT  <2:0>                            */
-
-#define dsPIC30F_MASK        (0xFFC0) /* MASK<9:0>                             */
-#define dsPIC30F_VAR_MASK    (0x003F) /* VARIANT<5:0>                          */
-#define dsPIC30F_PROC_MASK   (0xF000) /* PROC<3:0> = 0x001                     */
-#define dsPIC30F_REV_MASK    (0x0FC0) /* REV <5:0> 0000000=A 000001=B 000010=C */
-#define dsPIC30F_DOT_MASK    (0x003F) /* DOT <5:0>                             */
+#define dsPIC30F_MASK       (0xFFC0) /* MASK<9:0>                             */
+#define dsPIC30F_VAR_MASK   (0x003F) /* VARIANT<5:0>                          */
+#define dsPIC30F_PROC_MASK  (0xF000) /* PROC<3:0> = 0x001                     */
+#define dsPIC30F_REV_MASK   (0x0FC0) /* REV <5:0> 0000000=A 000001=B 000010=C */
+#define dsPIC30F_DOT_MASK   (0x003F) /* DOT <5:0>                             */
 
 /*
  * PIC24FJ NVCON  NVMOP<3:0>
@@ -121,6 +190,7 @@ struct pic24_dsmap {
  *    0010 MEMORY PAGE ERASE
  *    0001 MEMORY WRITE ROW
  */
+#if 0
 #define PIC24FJ_ERASE_CHIP (0x404F) /* WREN | ERASE  | NVMOP3 | NVMOP2 | NVMOP1 | NVMOP0 */
 #define PIC24FJ_WRITE_WORD (0x4003) /* WREN |                            NVMOP1 | NVMOP0 */
 #define PIC24FJ_ERASE_PAGE (0x4042) /* WREN | ERASE  |                   NVMOP1          */
@@ -152,6 +222,7 @@ struct pic24_dsmap {
 #define dsPIC30F_WRITE_WORD        (0x4008)
 #define dsPIC30F_WRITE_CODE_SIZE (32)
 #define dsPIC30F_WRITE_DATA_SIZE (16)
+#endif
 
 /******************************************************************************
  * PICMicro devices
@@ -187,8 +258,8 @@ struct pic24_dsmap {
  * DO NOT REFER TO DS70102K AS IT CONTAINS INCORRECT INFORMATION
  * REGARDING ICSP MODE ENTRY. USE DS70102H WHICH IS THE LAST
  * KNOWN GOOD VERSION WHICH CORRECTLY DESCRIBES ICSP MODE ENTRY
- * AND THE ALSO THE CORRECT METHOD TO EXIT FROM THE RESET
- * VECTOR UNLIKE ALL LATER DOCUMENTS.
+ * AND THE CORRECT METHOD TO EXIT FROM THE RESET VECTOR UNLIKE
+ * ALL LATER DOCUMENTS.
  *
  * 13V HVP 5V VDD
  *
@@ -733,11 +804,55 @@ struct pic24_dsmap {
 #define PIC24FJ128GA705 (0x750B)
 #define PIC24FJ256GA705 (0x750F)
 
+/*
+ * DS70005160C
+ */
+#define DS70005160C (70005160)
+#define dsPIC33EP16GS502 (0x4E01)
+#define dsPIC33EP16GS504 (0x4E02)
+#define dsPIC33EP16GS505 (0x4E02)
+#define dsPIC33EP16GS506 (0x4E03)
+#define dsPIC33EP32GS502 (0x4E11)
+#define dsPIC33EP32GS504 (0x4E12)
+#define dsPIC33EP32GS505 (0x4E12)
+#define dsPIC33EP32GS506 (0x4E13)
+#define dsPIC33EP64GS502 (0x4E21)
+#define dsPIC33EP64GS504 (0x4E22)
+#define dsPIC33EP64GS505 (0x4E22)
+#define dsPIC33EP64GS506 (0x4E23)
+
+/*
+ * DS70005192B
+ */
+#define DS70005192B (70005192)
+#define dsPIC33EP16GS202 (0x6D01)
+#define dsPIC33EP32GS202 (0x6D11)
+
+/*
+ * DS70005256A
+ */
+#define DS70005256A (70005256)
+#define dsPIC33EP64GS708  (0x6C03)
+#define dsPIC33EP64GS804  (0x6C40)
+#define dsPIC33EP64GS805  (0x6C60)
+#define dsPIC33EP64GS806  (0x6C42)
+#define dsPIC33EP64GS808  (0x6C43)
+#define dsPIC33EP128GS702 (0x6C11)
+#define dsPIC33EP128GS704 (0x6C10)
+#define dsPIC33EP128GS705 (0x6C30)
+#define dsPIC33EP128GS706 (0x6C12)
+#define dsPIC33EP128GS708 (0x6C13)
+#define dsPIC33EP128GS804 (0x6C50)
+#define dsPIC33EP128GS805 (0x6C70)
+#define dsPIC33EP128GS806 (0x6C52)
+#define dsPIC33EP128GS808 (0x6C53)
+
 /******************************************************************************/
 
 #define _PCL (0x002E)
 uint32_t pic24_arch(void);
 void pic24_selector(void);
+void pic24_bootloader(void);
 void pic24_program_verify(void);
 void pic24_standby(void);
 void pic24_goto200(void);
@@ -750,15 +865,17 @@ void pic24_table_read48_post_increment(uint32_t *, uint32_t *);
 void pic24_nvmcon_write_completion(uint16_t, uint16_t);
 void pic24_nvmcon_write_external(uint32_t);
 void pic24_bulk_erase(void);
+void pic24_row_erase(uint32_t, uint32_t);
+void pic24_erase_row(uint32_t, uint32_t);
 int pic24_read_config_memory(void);
-uint32_t pic24_get_program_size(uint32_t *);
+uint32_t pic24_get_program_count(void);
+uint32_t pic24_get_program_size(uint32_t *, uint32_t);
 uint32_t pic24_get_data_size(uint32_t *);
 uint32_t pic24_get_executive_size(uint32_t *);
 uint32_t pic24_read_program_memory_block(uint32_t *, uint32_t, uint32_t);
 uint32_t pic24_read_data_memory_block(uint16_t *, uint32_t, uint16_t);
 void pic24_write_program_init(void);
 void pic24_write_program(uint32_t, uint32_t *, uint32_t);
-uint32_t pic24_has_config(void);
 void pic24_write_panel(uint32_t, uint32_t, uint32_t *, uint32_t);
 void pic24_write_config_init1(void);
 void pic24_write_config_init2(void);
@@ -766,6 +883,7 @@ void pic24_write_config_word(uint32_t, uint16_t);
 uint32_t pic24_write_config_words(void);
 uint32_t pic24_write_fuid_words(void);
 uint32_t pic24_write_config(void);
+void pic24_write_fboot(void);
 uint32_t pic24_getregion(uint32_t);
 void pic24_program_begin(void);
 uint32_t pic24_program_data(uint32_t, pic_data *);
@@ -773,7 +891,7 @@ void pic24_program_end(int);
 uint32_t pic24_verify_data(uint32_t, pic_data *, uint32_t *);
 void pic24_view_data(pic_data *);
 void pic24_dumpdeviceid(void);
-void pic24_dumpconfig(int);
+void pic24_dumpconfig(uint32_t, uint32_t);
 void pic24_dumpconfig_verbose(void);
 void pic24_dumphexcode(uint32_t, uint32_t, uint32_t *);
 void pic24_dumpinhxcode(uint32_t, uint32_t, uint32_t *);

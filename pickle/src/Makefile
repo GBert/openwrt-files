@@ -46,6 +46,10 @@ ifeq "$(VERBOSE)" "1"
 CFLAGS+=-DVERBOSE
 endif
 
+ifeq "$(LOADER)" "1"
+CFLAGS+=-DLOADER
+endif
+
 ifneq (,$(findstring CYGWIN,$(SYSTEM)))
 CFLAGS+=-D__USE_LINUX_IOCTL_DEFS
 endif
@@ -74,7 +78,7 @@ SOURCE4=pctrl.c dotconf.c io.c util.c
 
 CLIB5=$(CLIB)
 TARGET5=pload
-SOURCE5=pload.c dotconf.c inhx32.c io.c util.c stk500v2.c stk500v2_load.c ip.c rw.c
+SOURCE5=pload.c dotconf.c inhx32.c io.c util.c stk500v2.c stk500v2_load.c ip.c rw.c serial_posix.c
 
 ifeq "$(DRYRUN)" "1"
 CFLAGS+=-DDRYRUN
@@ -128,48 +132,26 @@ CFLAGS+=-DPIO
 endif
 
 ifeq "$(PLOAD)" "1"
-CFLAGS+=-DLOAD
+CFLAGS+=-DPLOAD
 endif
 
-ifeq "$(TTY)" "1"
-CFLAGS+=-DTTY
-SOURCE1+=serial_posix.c stk500v2.c stk500v2_load.c stk500v2_listen.c ip.c rw.c
-SOURCE2+=serial_posix.c
-SOURCE3+=serial_posix.c
-SOURCE4+=serial_posix.c
-SOURCE5+=serial_posix.c
-endif
+$(info $$CONFIG_TARGET_PROFILE is [${CONFIG_TARGET_PROFILE}])
 
-ifeq "$(RPI)" "1"
- ifeq "$(PLATFORM)" "armv6l"
- CFLAGS+=-DRPI
+ifeq "$(PICKLE_RPI)" "1"
  SOURCE1+=raspi.c
  SOURCE2+=raspi.c
  SOURCE3+=raspi.c
  SOURCE4+=raspi.c
  SOURCE5+=raspi.c
- endif
 endif
 
-ifeq "$(RPI)" "1"
- ifeq "$(PLATFORM)" "armv7l"
- CFLAGS+=-DRPI
- SOURCE1+=raspi.c
- SOURCE2+=raspi.c
- SOURCE3+=raspi.c
- SOURCE4+=raspi.c
- SOURCE5+=raspi.c
- endif
-endif
-
- ifeq "$(ALLWINNER)" "1"
- CFLAGS+=-DBPI -DALLWINNER
+ifeq "$(PICKLE_BPI)" "1"
  SOURCE1+=allwinner.c
  SOURCE2+=allwinner.c
  SOURCE3+=allwinner.c
  SOURCE4+=allwinner.c
  SOURCE5+=allwinner.c
- endif
+endif
 
 ifeq "$(SYSTEM)" "Linux"
  ifeq "$(MCP23017)" "1"
@@ -179,6 +161,24 @@ ifeq "$(SYSTEM)" "Linux"
  SOURCE3+=mcp23017.c
  SOURCE4+=mcp23017.c
  SOURCE5+=mcp23017.c
+ endif
+
+ ifeq "$(MCP23017)" "1"
+ CFLAGS+=-DMCP2221
+ SOURCE1+=mcp2221.c
+ SOURCE2+=mcp2221.c
+ SOURCE3+=mcp2221.c
+ SOURCE4+=mcp2221.c
+ SOURCE5+=mcp2221.c
+ endif
+
+ ifeq "$(CP2104)" "1"
+ CFLAGS+=-DCP2104
+ SOURCE1+=cp2104-bb.c
+ SOURCE2+=cp2104-bb.c
+ SOURCE3+=cp2104-bb.c
+ SOURCE4+=cp2104-bb.c
+ SOURCE5+=cp2104-bb.c
  endif
 
  ifeq "$(BITBANG)" "1"
@@ -199,6 +199,31 @@ ifeq "$(SYSTEM)" "Linux"
  SOURCE5+=ftdi-bb.c
  CLIB+=-lftdi1
  endif
+endif
+
+SERIAL_POSIX=0
+
+ifeq "$(SERIAL)" "1"
+CFLAGS+=-DSERIAL
+SOURCE1+=serial-bb.c
+SOURCE2+=serial-bb.c
+SOURCE3+=serial-bb.c
+SOURCE4+=serial-bb.c
+SOURCE5+=serial-bb.c
+SERIAL_POSIX=1
+endif
+
+ifeq "$(STK500)" "1"
+CFLAGS+=-DSTK500
+SOURCE1+=stk500v2.c stk500v2_listen.c ip.c rw.c
+SERIAL_POSIX=1
+endif
+
+ifeq "$(SERIAL_POSIX)" "1"
+SOURCE1+=serial_posix.c
+SOURCE2+=serial_posix.c
+SOURCE3+=serial_posix.c
+SOURCE4+=serial_posix.c
 endif
 
 ifeq "$(QSORT)" "1"
@@ -343,6 +368,7 @@ uninstall:
 	rm -f $(BINDIR)/p14
 	rm -f $(BINDIR)/n14
 	rm -f $(BINDIR)/p16
+	rm -f $(BINDIR)/n16
 	rm -f $(BINDIR)/p24
 	rm -f $(BINDIR)/p32
 	rm -f $(BINDIR)/pio

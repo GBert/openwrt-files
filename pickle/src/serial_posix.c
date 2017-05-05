@@ -19,6 +19,8 @@
 
 #include "pickle.h"
 
+static struct termios old_options;
+
 /*
  * Open serial port
  *
@@ -40,6 +42,9 @@ serial_open(const char *device, speed_t speed)
 
 	/* Get options */
 	tcgetattr(serial_port, &options);
+
+	/* Save options */
+	old_options = options;
 
 	/*
 	 * Raw mode
@@ -70,10 +75,7 @@ serial_open(const char *device, speed_t speed)
 	cfsetospeed(&options, speed);
 
 	/* Set options */
-	tcsetattr(serial_port, TCSANOW, &options);
-
-	/* Discard */
-	tcflush(serial_port, TCIOFLUSH);
+	tcsetattr(serial_port, TCSAFLUSH, &options);
 
 	return serial_port;
 }
@@ -84,15 +86,17 @@ serial_open(const char *device, speed_t speed)
 void
 serial_close(int serial_port)
 {
-	tcdrain(serial_port);
+	/* Restore options */
+	tcsetattr(serial_port, TCSAFLUSH, &old_options);
+
 	close(serial_port);
 }
 
 /*
- * Get CTS (input set when +ve) (DATA_IN)
+ * Get CTS
  */
 int
-get_cts(int serial_port)
+serial_get_cts(int serial_port)
 {
 	int status;
 
@@ -102,10 +106,10 @@ get_cts(int serial_port)
 }
 
 /*
- * Set DTR (output +ve on set) (DATA_OUT)
+ * Set DTR
  */
 void
-set_dtr(int serial_port, int dtr)
+serial_set_dtr(int serial_port, int dtr)
 {
 	int status;
 
@@ -120,10 +124,10 @@ set_dtr(int serial_port, int dtr)
 }
 
 /*
- * Set RTS (output +ve on set) (CLOCK)
+ * Set RTS
  */
 void
-set_rts(int serial_port, int rts)
+serial_set_rts(int serial_port, int rts)
 {
 	int status;
 
@@ -138,15 +142,26 @@ set_rts(int serial_port, int rts)
 }
 
 /*
- * Set Tx (output +ve on set) (VPP)
+ * Set Tx
  */
 void
-set_tx(int serial_port, int tx)
+serial_set_tx(int serial_port, int tx)
 {
 	if (tx)
 		ioctl(serial_port, TIOCSBRK, 0); /* +ve */
 	else
 		ioctl(serial_port, TIOCCBRK, 0); /* -ve */
+}
+
+/*
+ * Pulse Tx
+ */
+void
+serial_pulse_tx(int serial_port)
+{
+	char b = 0;
+
+	write(serial_port, &b, 1);
 }
 
 /*

@@ -37,6 +37,7 @@ struct pic_ops pic32_ops = {
 	.arch				= ARCH32BIT,
 	.align				= sizeof(uint32_t),
 	.selector			= pic32_selector,
+	.bootloader			= NULL,
 	.program_begin			= pic32_program_begin,
 	.program_data			= pic32_program_data,
 	.program_end			= pic32_program_end,
@@ -45,6 +46,7 @@ struct pic_ops pic32_ops = {
 	.verify_end			= pic32_standby,
 	.view_data			= pic32_view_data,
 	.read_config_memory		= pic32_read_config_memory,
+	.get_program_count		= pic32_get_program_count,
 	.get_program_size		= pic32_get_program_size,
 	.get_data_size			= NULL,
 	.get_executive_size		= NULL,
@@ -66,6 +68,7 @@ struct pic_ops pic32_ops = {
 	.dumpinhxcode			= pic32_dumpinhxcode,
 	.dumphexdata			= NULL,
 	.dumpinhxdata			= NULL,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -340,9 +343,8 @@ struct pic32_dstab pic32_tab[] =
 
 	/* PIC32MK 0512/1024                          */
 	/* "RIPE_15a_000506"                          */
-
-	/* PIC32MM0016/0032/0064/0128/0256GPL0XX      */
 #if 0
+	/* PIC32MM0016/0032/0064/0128/0256GPL0XX      */
 	{DS60001324B,	"RIPE_20b_000510"},
 #endif
 	/* EOF					      */
@@ -694,7 +696,7 @@ pic32_readfromaddress_m4k(uint32_t addr)
 
 	/* LUI T0, <Addr31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
 	pic32_xferinstruction(0x3C080000 | (addr >> 16));
-	/* ORI T0, <Addr15:0>	OR LOWER IMMEDIATE */
+	/* ORI T0,T0 <Addr15:0>	OR LOWER IMMEDIATE */
 	pic32_xferinstruction(0x35080000 | (addr & 0xFFFF));
 
 	/*
@@ -752,7 +754,7 @@ pic32_readfromaddress_mm(uint32_t addr)
 
 	/* LUI T0, <Addr31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
 	pic32_xferinstruction(0x000041A8 | (addr & 0xFFFF0000));
-	/* ORI T0, <Addr15:0>	OR LOWER IMMEDIATE */
+	/* ORI T0,T0 <Addr15:0>	OR LOWER IMMEDIATE */
 	pic32_xferinstruction(0x00005108 | (addr << 16));
 
 	/*
@@ -768,7 +770,7 @@ pic32_readfromaddress_mm(uint32_t addr)
 
 	/* SW T1, 0(S3)		STORE WORD   */
 	pic32_xferinstruction(0x0000F933);
-	/* NOP                               */
+	/* NOP32                             */
 	pic32_xferinstruction(0x00000000);
 
 	/*
@@ -953,6 +955,107 @@ pic32_enter_serial_execution_mode(void)
 	pic32_sendcommand(PIC32_MTAP_SW_ETAP);
 }
 
+/*****************************************************************************
+ *
+ * PE loader
+ *
+ *****************************************************************************/
+
+/*
+ * PIC32MX BMX
+ */
+static void
+pic32_bmx(void)
+{
+	/*
+	 * PIC32MX devices only: Initialize BMXCON to 0x1F0040.
+	 *
+	 * lui a0,0xbf88
+	 * ori a0,a0,0x2000 // address of BMXCON
+	 * lui a1,0x1f
+	 * ori a1,a1,0x40   // $a1 has 0x1f0040
+	 * sw a1,0(a0)      // BMXCON initialized
+	 */
+
+	pic32_xferinstruction(0x3c04bf88);
+	pic32_xferinstruction(0x34842000);
+	pic32_xferinstruction(0x3c05001f);
+	pic32_xferinstruction(0x34a50040);
+	pic32_xferinstruction(0xac850000);
+
+	/*
+	 * PIC32MX devices only: Initialize BMXDKPBA to 0x800.
+	 *
+	 * li a1,0x800
+	 * sw a1,16(a0)
+	 */
+
+	pic32_xferinstruction(0x34050800);
+	pic32_xferinstruction(0xac850010);
+
+	/*
+	 * PIC32MX devices only: Initialize BMXDUDBA and BMXDUPBA to the value of BMXDRMSZ.
+	 *
+	 * lw a1,64(a0) // load BMXDMSZ
+	 * sw a1,32(a0)
+	 * sw a1,48(a0)
+	 */
+
+	pic32_xferinstruction(0x8C850040);
+	pic32_xferinstruction(0xac850020);
+	pic32_xferinstruction(0xac850030);
+}
+
+#if 0
+/*
+ * Download the PE for PIC32MX, PIC32MZ & PIC32MK devices
+ *
+ * Custom PE loader.
+ */
+void
+pic32_download_custom_pe_m4k(uint8_t *pe, uint32_t nbytes)
+{
+	/* PIC32MX BMX */
+	if (pic32_map[pic32_index].datasheet != DS60001191C) /* ! MZ EC */
+		pic32_bmx();
+
+	/* LUI S0, <RAM_ADDR(31:16)>   */
+	pic32_xferinstruction(0x3C1A0000);
+
+ 	/* ORI S0,S0, <RAM_ADDR(15:0)> */
+	pic32_xferinstruction(0x36100900);
+
+	for (uint32_t i = 0; i < nbytes; i += 4) {
+		/* Get low and high word data */
+		uint16_t datal = pe[i]     | (pe[i + 1] << 8);
+		uint16_t datah = pe[i + 2] | (pe[i + 3] << 8);
+
+		/* LUI T0, <Data31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
+		pic32_xferinstruction(0x3C080000 + datah);
+
+		/* ORI T0,T0 <Data15:0>	OR LOWER IMMEDIATE */
+		pic32_xferinstruction(0x35080000 + datal);
+
+		/* SW T0, <OFFSET>(S0)	STORE WORD */
+		pic32_xferinstruction(0xAE080000 + i);
+	}
+
+	/*
+	 * Jump to the PE
+	 *
+	 * lui t9,0xa000
+	 * ori t9,t9,0x900
+	 * jr t9
+	 * nop
+	 */
+
+	pic32_xferinstruction(0x3c19a000);
+	pic32_xferinstruction(0x37390900);
+	pic32_xferinstruction(0x03200008);
+	pic32_xferinstruction(0x00000000);
+}
+#endif
+
 /*
  * Download the PE for PIC32MX, PIC32MZ & PIC32MK devices
  *
@@ -990,45 +1093,9 @@ pic32_download_pe_m4k(uint8_t *pe, uint32_t nbytes)
 	};
 	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
 
-	/*
-	 * PIC32MX devices only: Initialize BMXCON to 0x1F0040.
-	 *
-	 * lui a0,0xbf88
-	 * ori a0,a0,0x2000 // address of BMXCON
-	 * lui a1,0x1f
-	 * ori a1,a1,0x40   // $a1 has 0x1f0040
-	 * sw a1,0(a0)      // BMXCON initialized
-	 */
-
-	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
-		pic32_xferinstruction(0x3c04bf88);
-		pic32_xferinstruction(0x34842000);
-		pic32_xferinstruction(0x3c05001f);
-		pic32_xferinstruction(0x34a50040);
-		pic32_xferinstruction(0xac850000);
-
-	/*
-	 * PIC32MX devices only: Initialize BMXDKPBA to 0x800.
-	 *
-	 * li a1,0x800
-	 * sw a1,16(a0)
-	 */
-
-		pic32_xferinstruction(0x34050800);
-		pic32_xferinstruction(0xac850010);
-
-	/*
-	 * PIC32MX devices only: Initialize BMXDUDBA and BMXDUPBA to the value of BMXDRMSZ.
-	 *
-	 * lw a1,64(a0) // load BMXDMSZ
-	 * sw a1,32(a0)
-	 * sw a1,48(a0)
-	 */
-
-		pic32_xferinstruction(0x8C850040);
-		pic32_xferinstruction(0xac850020);
-		pic32_xferinstruction(0xac850030);
-	}
+	/* PIC32MX BMX */
+	if (pic32_map[pic32_index].datasheet != DS60001191C) /* ! MZ EC */
+		pic32_bmx();
 
 	/*
 	 * Set up PIC32 RAM address for PE.
@@ -1097,6 +1164,79 @@ pic32_download_pe_m4k(uint8_t *pe, uint32_t nbytes)
 	io_usleep(10000); /* 10ms */
 }
 
+#if 0
+/*
+ * PIC32MM CFGCON
+ */
+static void
+pic32_cfgcon(void)
+{
+	pic32_xferinstruction(0xBF8041A4); /* lui a0,0xbf80    */
+	pic32_xferinstruction(0x3B005084); /* ori a0,a0,0x3b00 */
+	pic32_xferinstruction(0x000041A5); /* lui a1,0x0000    */
+	pic32_xferinstruction(0x000050A5); /* ori a1,a1,0x0000 */
+	pic32_xferinstruction(0x0000F8A4); /* sw a1,0(a0)      */
+}
+#endif
+
+/*
+ * Download the PE for PIC32MM devices
+ *
+ * Custom PE loader.
+ */
+void
+pic32_download_custom_pe_mm(uint8_t *pe, uint32_t nbytes)
+{
+	uint32_t address = 0xA0000300;
+
+	/* LUI A0, <RAM_ADDR(31:16)> */
+	pic32_xferinstruction(0x41A4 | (address & 0xFFFF0000));
+
+ 	/* ORI A0,A0, <RAM_ADDR(15:0)> */
+	pic32_xferinstruction(0x5084 | (address << 16));
+
+	for (uint32_t i = 0; i < nbytes; i += 4) {
+		/* Get low and high word data */
+		uint16_t datal = pe[i]     | (pe[i + 1] << 8);
+		uint16_t datah = pe[i + 2] | (pe[i + 3] << 8);
+
+		/* LUI A1, <Data31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
+		pic32_xferinstruction(0x41A5 | (datah << 16));
+
+		/* ORI A1,A1 <Data15:0>	OR LOWER IMMEDIATE */
+		pic32_xferinstruction(0x50A5 | (datal << 16));
+
+		/* SW A1, <OFFSET>(A0)	STORE WORD */
+		pic32_xferinstruction(0xF8A4 | (i << 16));
+	}
+#if 1
+	for (uint32_t i = 0; i < nbytes; i += 4) {
+		uint32_t *ptr = (uint32_t *)&pe[i];
+		uint32_t wrote = *ptr;
+		uint32_t read = pic32_readfromaddress(address + i);
+		printf("ADDRESS=0x%08X WROTE=0x%08X READ=0x%08X\n",
+			address + i, wrote, read);
+		if (wrote != read) {
+			printf("FAULT\n");
+			pic32_standby();
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+	}
+#endif
+	/*
+	 * Jump to the PE.
+	 *
+	 * lui t9,0xXXXX
+	 * ori t9,t9,0xXXXX
+	 * jr t9; nop16
+	 */
+
+	pic32_xferinstruction(0x41B9 | (address & 0xFFFF0000));
+	pic32_xferinstruction(0x5339 | (address << 16));
+	pic32_xferinstruction(0x0C004599);
+}
+
+#if 0
 /*
  * Download the PE for PIC32MM devices
  *
@@ -1117,7 +1257,7 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 		0x69E06A60, // lw a0, 0 (a2)
 			    // lw v1, 0 (a2)
 		0x000C94E3, // beq v1, a3, <here3>
-		0x8DFA0C00, // nop
+		0x8DFA0C00, // nop16
 			    // beqz v1, <here1>
 			    // here2:
 			    // lw v0, 0 (a1)
@@ -1125,22 +1265,24 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 			    // sw v0, 0 (a0)
 		0xADFB6E42, // addiu a0, a0, 4
 			    // bnez v1, <here2>
-		0xCFF20C00, // nop
+		0xCFF20C00, // nop16
 			    // b <here1>
-		0x0C000C00, // nop; nop
+		0x0C000C00, // nop16; nop16
 			    // here3:
 		0xA00041A2, // lui v0, 0xa000
 		0x03005042, // ori v0, v0, 0x300
 		0x0C004582, // jr v0
-			    // nop
+			    // nop16
 	};
 	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
+
+printf("%s() 1\n", __func__);
 
 	/*
 	 * Set up the PIC32MM RAM address for the PE.
 	 *
-	 * lui a0, 0xa000
-	 * ori a0, a0, 0x200
+	 * lui a0,0xa000
+	 * ori a0,a0,0x200 XXX
 	 */
 
 	pic32_xferinstruction(0xA00041A4);
@@ -1150,9 +1292,9 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 	 * Load the PE_loader.
 	 *
 	 * lui a2, <PE_loader hi++>
-	 * ori a2, a2, <PE_loader lo++>
-	 * sw a2, 0(a0)
-	 * addiu a0, a0, 4
+	 * ori a2,a2, <PE_loader lo++>
+	 * sw a2,0(a0)
+	 * addiu a0,a0,4
 	 */
 
 	for (uint32_t i = 0; i < PESIZE; ++i) {
@@ -1164,10 +1306,9 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 	/*
 	 * Jump to the PE_loader.
 	 *
-	 * lui t9, 0xa000
-	 * ori t9, t9,0x200
-	 * jr t9
-	 * nop
+	 * lui t9,0xa000
+	 * ori t9,t9,0x200 XXX
+	 * jr t9; nop16
 	 */
 
 	pic32_xferinstruction(0xA00041B9);
@@ -1177,6 +1318,8 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 	/*
 	 * Load the PE using the PE_loader.
 	 */
+
+printf("%s() 2\n", __func__);
 
 	pic32_sendcommand(PIC32_ETAP_FASTDATA);
 	pic32_xferfastdata(pic32_kseg1(0x0300));
@@ -1193,10 +1336,19 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 	 * Jump to the PE.
 	 */
 
+printf("%s() 3\n", __func__);
+
 	pic32_xferfastdata(0x00000000);
 	pic32_xferfastdata(0xDEAD0000);
 	io_usleep(10000); /* 10ms */
 }
+#endif
+
+/*****************************************************************************
+ *
+ * Download data
+ *
+ *****************************************************************************/
 
 /*
  * Download Data Block for PIC32MX, PIC32MZ & PIC32MK devices
@@ -1227,13 +1379,13 @@ pic32_download_data_block_m4k(uint32_t *panel, uint32_t panel_size)
 		datah = (uint16_t)panel[offset + 2] | (uint16_t)panel[offset + 3] << 8;
 
 		/* LUI T0, <Data31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
-		pic32_xferinstruction(0x3C080000 + datah);
+		pic32_xferinstruction(0x3C080000 | datah);
 
-		/* ORI T0, <Data15:0>	OR LOWER IMMEDIATE */
-		pic32_xferinstruction(0x35080000 + datal);
+		/* ORI T0,T0 <Data15:0>	OR LOWER IMMEDIATE */
+		pic32_xferinstruction(0x35080000 | datal);
 
 		/* SW T0, <OFFSET>(S0)	STORE WORD */
-		pic32_xferinstruction(0xAE080000 + offset);
+		pic32_xferinstruction(0xAE080000 | offset);
 
 		/* OFFSET increments by 4 */
 		offset += 4;
@@ -1270,13 +1422,13 @@ pic32_download_data_block_mm(uint32_t *panel, uint32_t panel_size)
 		datah = (uint16_t)panel[offset + 2] | (uint16_t)panel[offset + 3] << 8;
 
 		/* LUI A1, <Data31:16>	LOAD UPPER IMMEDIATE, CLEAR LOWER */
-		pic32_xferinstruction(0x000041A5 + (datah << 16));
+		pic32_xferinstruction(0x41A5 | (datah << 16));
 
-		/* ORI A1, <Data15:0>	OR LOWER IMMEDIATE */
-		pic32_xferinstruction(0x000050A5 + (datal << 16));
+		/* ORI A1,A1 <Data15:0>	OR LOWER IMMEDIATE */
+		pic32_xferinstruction(0x50A5 | (datal << 16));
 
-		/* SW A1, <OFFSET>(S0)	STORE WORD */
-		pic32_xferinstruction(0x0000F8A4 + (offset << 16));
+		/* SW A1, <OFFSET>(A0)	STORE WORD */
+		pic32_xferinstruction(0xF8A4 | (offset << 16));
 
 		/* OFFSET increments by 4 */
 		offset += 4;
@@ -1299,12 +1451,17 @@ pic32_download_data_block(uint32_t *panel, uint32_t panel_size)
 	}
 }
 
+/*****************************************************************************
+ *
+ * Flash write
+ *
+ *****************************************************************************/
+
 /*
  * Flash Row Write for PIC32MX, PIC32MZ & PIC32MK devices
  *
  * DS60001145M-page 26
  */
-#define RAMADDR (0x0000)
 void
 pic32_flash_row_write_m4k(uint32_t address)
 {
@@ -1325,7 +1482,11 @@ pic32_flash_row_write_m4k(uint32_t address)
 	pic32_xferinstruction(0x3c125566); /* lui s2,0x5566    */
 	pic32_xferinstruction(0x365299aa); /* ori s2,s2,0x99aa */
 
-	pic32_xferinstruction(0x3c100000); /* lui s0,0x0000    */
+	/*
+	 * Set the physical source SRAM address
+	 */
+
+	pic32_xferinstruction(0x3c100000); /* lui s0,0x0000 <RAM_ADDR(31:16)> */
 
 	/*
 	 * PIC32MX devices only: Set register a0 to the base address of the NVM
@@ -1375,29 +1536,25 @@ pic32_flash_row_write_m4k(uint32_t address)
 	 * source SRAM address (offset is 64).
 	 */
 
-	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
-		pic32_xferinstruction(0x36100000 + RAMADDR); /* ori s0,s0,<RAM_ADDR(15:0)> */
-		pic32_xferinstruction(0xac900040);           /* sw s0,64(a0)               */
-	}
+	if (pic32_map[pic32_index].datasheet != DS60001191C) /* ! MZ EC */
+		pic32_xferinstruction(0xac900040);           /* sw s0,64(a0) */
 
 	/*
 	 * PIC32MZ EC devices only: Set the NVMSRCADDR register with the
 	 * physical source SRAM address (offset is 112).
 	 */
 
-	else {
-		pic32_xferinstruction(0x36100000 + RAMADDR); /* ori s0,s0,<RAM_ADDR(15:0)> */
-		pic32_xferinstruction(0xac900070);           /* sw s0,112(a0)              */
-	}
+	else
+ 		pic32_xferinstruction(0xac900070);           /* sw s0,112(a0) */
 
 	/*
 	 * Set up the NVMCON register for write operation.
 	 */
 
 	pic32_xferinstruction(0xac850000); /* sw a1,0(a0) */
-
-	/* Min. delay 6 us (inherent) */
-
+#if 0
+	io_usleep(6); /* Min. delay 6 us */
+#endif
 	/*
 	 * Unlock the NVMCON register and start the write operation.
 	 */
@@ -1411,8 +1568,9 @@ pic32_flash_row_write_m4k(uint32_t address)
 	 *
 	 * Eg. DS60001324B-page 214
 	 */
+#if 0
 	io_usleep(1500); /* 1.5 ms */
-
+#endif
 	/*
 	 * Clear the WREN bit (NVMCONM<14>).
 	 */
@@ -1437,17 +1595,23 @@ pic32_flash_row_write_mm(uint32_t address)
 
 	pic32_xferinstruction(0x400350A0); /* li a1,0x4003     */
 	pic32_xferinstruction(0x800050C0); /* li a2,0x8000     */
+
 	pic32_xferinstruction(0xAA9941B1); /* lui s1,0xaa99    */
 	pic32_xferinstruction(0x66555231); /* ori s1,s1,0x6655 */
 	pic32_xferinstruction(0x556641B2); /* lui s2,0x5566    */
 	pic32_xferinstruction(0x99AA5252); /* ori s2,s2,0x99aa */
-	pic32_xferinstruction(0x000041B0); /* lui s0,0x0000    */
+
+	/*
+	 * Set the physical source SRAM address
+	 */
+
+	pic32_xferinstruction(0x000041B0); /* lui s0,0x0000 <RAM_ADDR(31:16)> */
 
 	/*
 	 * Set register a0 to the base address of the NVM controller (0xBF80_2380). Register s3
 	 * is set for the value used to disable write protection in NVMBPB.
 	 */
-
+	
 	pic32_xferinstruction(0xBF8041A4); /* lui a0,0xbf80    */
 	pic32_xferinstruction(0x23805084); /* ori a0,a0,0x2380 */
 	pic32_xferinstruction(0x80005260); /* li s3,0x8000 // BWPAUNLK bit mask */
@@ -1472,17 +1636,16 @@ pic32_flash_row_write_mm(uint32_t address)
 	 * Set the NVMSRCADDR register with the physical source SRAM address.
 	 */
 
-	pic32_xferinstruction(0x5200 | (RAMADDR << 16)); /* li s0,<RAM_ADDR(15:0)> */
-	pic32_xferinstruction(0x0050FA04);               /* sw s0,80(a0)           */
+	pic32_xferinstruction(0x0050FA04); /* sw s0,80(a0) */
 
 	/*
 	 * Set up the NVMCON register for write operation.
 	 */
 
-	pic32_xferinstruction(0x0C00EAC0); /* sw a1,0(a0); nop // NVMCON = 0x4003 */
-
-	/* Min. delay 6 us (inherent) */
-
+	pic32_xferinstruction(0x0C00EAC0); /* sw a1,0(a0); nop16 // NVMCON = 0x4003 */
+#if 0
+	io_usleep(6); /* Min. delay 6 us */
+#endif
 	/*
 	 * Unlock the NVMCON register and start the write operation (WR bit = 1).
 	 */
@@ -1495,14 +1658,15 @@ pic32_flash_row_write_mm(uint32_t address)
 	 *
 	 * Eg. DS60001324B-page 214
 	 */
+#if 0
 	io_usleep(1500); /* 1.5 ms */
-
+#endif
 	/*
 	 * Clear the WREN bit (NVMCONM<14>).
 	 */
 
-	pic32_xferinstruction(0x400050E0); /* li a3,0x4000     */
-	pic32_xferinstruction(0x0C00EBC1); /* sw a3,4(a0); nop */
+	pic32_xferinstruction(0x400050E0); /* li a3,0x4000       */
+	pic32_xferinstruction(0x0C00EBC1); /* sw a3,4(a0); nop16 */
 }
 
 /*
@@ -1519,7 +1683,6 @@ pic32_flash_row_write(uint32_t address)
 		break;
 	}
 }
-#undef RAMADDR
 
 /*
  * Get PE Resonse
@@ -1644,7 +1807,7 @@ pic32_pe_load(void)
 	default:pic32_download_pe_m4k(pe, nbytes);
 		break;
 	case DS60001324B: /* PIC32MM */
-		pic32_download_pe_mm(pe, nbytes);
+		pic32_download_custom_pe_mm(pe, nbytes);
 		break;
 	}
 
@@ -1794,12 +1957,23 @@ pic32_read_config_memory(void)
 }
 
 /*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic32_get_program_count(void)
+{
+	return 1;
+}
+
+/*
  * GET PROGRAM FLASH SIZE
  *
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic32_get_program_size(uint32_t *addr)
+pic32_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = pic32_phy(PIC32_CODE);
 
@@ -2116,7 +2290,7 @@ pic32_dumpdeviceid(void)
 		(pic32_conf.deviceid & 0x00000FFF),
 		pic32_map[pic32_index].devicename);
 	printf("[%08X] [BOOT]     %08X WORDS\n", pic32_phy(PIC32_BOOT), pic32_map[pic32_index].boot);
-	pic32_dumpconfig(PIC_BRIEF);
+	pic32_dumpconfig(PIC_BRIEF, 0);
 	if (pic32_conf.pepath[0]) {
 		char *pedup = (char *)strdup(pic32_conf.pepath);
 		if (pedup == NULL) {
@@ -2132,7 +2306,7 @@ pic32_dumpdeviceid(void)
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
-pic32_dumpconfig(int mode)
+pic32_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	switch (pic32_map[pic32_index].datasheet) {
 	default:for (uint32_t i = 0; i < pic32_conf.configsize; ++i) {

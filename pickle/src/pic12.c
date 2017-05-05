@@ -37,6 +37,7 @@ struct pic_ops pic12_ops = {
 	.arch				= ARCH12BIT,
 	.align				= sizeof(uint16_t),
 	.selector			= pic12_selector,
+	.bootloader			= NULL,
 	.program_begin			= NULL,
 	.program_data			= pic12_program_data,
 	.program_end			= pic12_program_end,
@@ -45,6 +46,7 @@ struct pic_ops pic12_ops = {
 	.verify_end			= pic12_standby,
 	.view_data			= pic12_view_data,
 	.read_config_memory		= pic12_read_config_memory,
+	.get_program_count		= pic12_get_program_count,
 	.get_program_size		= pic12_get_program_size,
 	.get_data_size			= pic12_get_data_size,
 	.get_executive_size		= NULL,
@@ -66,6 +68,7 @@ struct pic_ops pic12_ops = {
 	.dumpinhxcode			= pic12_dumpinhxcode,
 	.dumphexdata			= pic12_dumphexdata,
 	.dumpinhxdata			= pic12_dumpinhxdata,
+	.debug				= NULL,
 };
 
 uint32_t
@@ -531,12 +534,23 @@ pic12_read_config_memory(void)
 }
 
 /*
+ * GET PROGRAM COUNT
+ *
+ *  RETURN NUMBER OF PARTITIONS
+ */
+uint32_t
+pic12_get_program_count(void)
+{
+	return 1;
+}
+
+/*
  * GET PROGRAM FLASH SIZE
  *
  *  RETURN SIZE IN WORDS
  */
 uint32_t
-pic12_get_program_size(uint32_t *addr)
+pic12_get_program_size(uint32_t *addr, uint32_t partition)
 {
 	*addr = 0;
 
@@ -798,7 +812,7 @@ pic12_programregion(uint16_t address, uint16_t region, uint16_t data)
 	static int write_pending = 0;
 
 	switch (region) {
-        case PIC_REGIONCONFIG:
+	case PIC_REGIONCONFIG:
 		pic12_conf.config = data;
 		return region;
 	case PIC_REGIONCODE:
@@ -992,7 +1006,7 @@ pic12_dumpdeviceid(void)
 			pic12_conf.osccal_backup);
 	}
 
-	pic12_dumpconfig(PIC_BRIEF);
+	pic12_dumpconfig(PIC_BRIEF, 0);
 	printf("       [DEVICEID] %s\n", pic12_map[pic12_index].devicename);
 }
 
@@ -1018,7 +1032,7 @@ pic12_dumposccal(void)
  * DUMP CONFIG WORD DETAILS
  */
 void
-pic12_dumpconfig(int mode)
+pic12_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	printf("[%04X] [CONFIG]   %04X\n",
 		PIC12_CONFIG, pic12_conf.config);

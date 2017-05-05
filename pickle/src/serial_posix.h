@@ -27,9 +27,6 @@
 #include <errno.h>   /* Error number definitions */
 #include <termios.h> /* POSIX terminal control definitions */
 
-/* Linux / CYGWIN */
-#define SERIAL_DEVICE "/dev/ttyS0"
-
 typedef struct {
 	uint32_t baud;
 	speed_t speed;
@@ -37,13 +34,11 @@ typedef struct {
 
 int serial_open(const char *, speed_t);
 void serial_close(int);
-int get_cts(int);
-void set_dtr(int, int);
-void set_rts(int, int);
-void set_tx(int, int);
-int serial_get(int, char *, int, int);
-int serial_read(int, char *, int, int);
-int serial_write(int, char *, int, int);
+int serial_get_cts(int);
+void serial_set_dtr(int, int);
+void serial_set_rts(int, int);
+void serial_set_tx(int, int);
+void serial_pulse_tx(int);
 speed_t serial_speed(uint32_t);
 
-#endif
+#endif /* !_SERIAL_POSIX_H */

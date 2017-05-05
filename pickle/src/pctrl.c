@@ -26,7 +26,7 @@
  */
 struct pickle p = {0};
 
-void
+static void
 usage(char *execname, char *msg)
 {
 	printf("USAGE: %s RUN|STOP|RESTORE\n", execname);
@@ -80,10 +80,13 @@ main(int argc, char *argv[])
 	/* Get configuration */
 	getconf();
 
+	/* Determine back-end */
+	if (io_backend() == 0)
+		usage(execname, "Unsupported I/O");
+
 	/* Open device */
-	if (io_open() < 0) {
+	if (io_open() < 0)
 		usage(execname, io_error());
-	}
 
 	/* Reset uid */
 	if (getuid() != geteuid()) {
@@ -108,7 +111,7 @@ main(int argc, char *argv[])
 		printf("STOP\n");
 	} else if (strcasecmp(argv[1], "RESTORE") == 0) {
 		io_set_vpp(LOW);
-		io_usleep(10);
+		io_usleep(50);
 		io_close(HIGH);
 		printf("RESTORE\n");
 	} else {
