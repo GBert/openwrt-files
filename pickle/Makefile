@@ -1,4 +1,4 @@
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2018 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -54,6 +54,15 @@ endef
 define Package/pickle/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pickle $(1)/usr/bin/
+	$(LN) pickle $(1)/usr/bin/p12
+	$(LN) pickle $(1)/usr/bin/p14
+	$(LN) pickle $(1)/usr/bin/n14
+	$(LN) pickle $(1)/usr/bin/p16
+	$(LN) pickle $(1)/usr/bin/p24
+	$(LN) pickle $(1)/usr/bin/p32
+	$(LN) pickle $(1)/usr/bin/pctrl
+	$(LN) pickle $(1)/usr/bin/pload
+	$(LN) pickle $(1)/usr/bin/ptest
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/pio $(1)/usr/bin/
 	$(INSTALL_DIR) $(1)/root/.pickle
 	$(INSTALL_BIN) ./config/RIPE_06_000201.hex $(1)/root/.pickle
@@ -66,18 +75,6 @@ endif
 ifneq (,$(findstring omega2,$(CONFIG_TARGET_PROFILE)))
 	$(INSTALL_BIN) ./config/config_srse2 $(1)/root/.pickle/config
 endif
-endef
-
-define Package/pickle/postinst
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p12
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p14
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/n14
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p16
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p24
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/p32
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/pctrl
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/pload
-	ln -sf /usr/bin/pickle $${IPKG_INSTROOT}/usr/bin/ptest
 endef
 
 $(eval $(call BuildPackage,pickle))
