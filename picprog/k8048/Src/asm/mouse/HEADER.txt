@@ -1,7 +1,0 @@
-
-gpasm (part of gputils) is required to assemble these files.
-
-gputils may be found here: http://gputils.sourceforge.net/
-
-or here (FreeBSD ports): /usr/ports/devel/gputils/
-
