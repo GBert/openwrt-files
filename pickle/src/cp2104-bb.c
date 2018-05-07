@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Darron Broad
+ * Copyright (C) 2017-2018 Darron Broad
  * Copyright (C) 2015 Gerhard Bertelsmann
  * All rights reserved.
  * 
@@ -47,6 +47,7 @@ struct io_ops cp2104_bb_ops = {
 	.single		= 0,
 	.run		= 1,
 	.open		= cp2104_bb_open,
+	.release        = NULL,
 	.close		= cp2104_bb_close,
 	.error		= cp2104_bb_error,
 	.usleep		= NULL,

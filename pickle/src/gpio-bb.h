@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2017 Darron Broad
+ * Copyright (C) 2013-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -46,6 +46,8 @@ struct gpio_bb_shift {
 	uint64_t bits;
 } __attribute__((packed));
 
+#define GPIO_BB_MAX (512)
+
 #define GPIO_BB_MAJOR (180)
 #define GPIO_BB_IO		_IOWR(GPIO_BB_MAJOR, 205, struct gpio_bb_io *)
 #define GPIO_BB_CONFIGURE	_IOW(GPIO_BB_MAJOR,  206, struct gpio_bb_config *)
@@ -53,6 +55,7 @@ struct gpio_bb_shift {
 
 uint8_t gpio_bb_backend(void);
 int gpio_bb_open(void);
+void gpio_bb_release(void);
 void gpio_bb_close(void);
 char *gpio_bb_error(void);
 void gpio_bb_set_pgm(uint8_t);
@@ -63,5 +66,6 @@ uint8_t gpio_bb_get_pgd(void);
 void gpio_bb_configure(void);
 uint32_t gpio_bb_shift_in(uint8_t);
 void gpio_bb_shift_out(uint32_t, uint8_t);
+void gpio_bb_release_pin(uint16_t);
 
 #endif /* _GPIO_BB_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Darron Broad
+ * Copyright (C) 2015-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -194,6 +194,7 @@ typedef struct aw_device {
 
 uint8_t allwinner_backend(void);
 int allwinner_open(void);
+void allwinner_release(void);
 void allwinner_close(void);
 char *allwinner_error(void);
 void allwinner_usleep(int);
@@ -204,6 +205,6 @@ void allwinner_set_pgc(uint8_t);
 uint8_t allwinner_get_pgd(void);
 int allwinner_get(uint16_t, uint8_t *);
 int allwinner_set(uint16_t, uint8_t);
-int allwinner_release(uint16_t, uint8_t);
+int allwinner_release_pin(uint16_t);
 
 #endif /* !_ALLWINNER_H */

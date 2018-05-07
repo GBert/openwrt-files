@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2017 Darron Broad
+ * Copyright (C) 2013-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -46,6 +46,7 @@ struct io_ops gpio_bb_ops = {
 	.single		= 1,
 	.run		= 1,
 	.open		= gpio_bb_open,
+	.release        = gpio_bb_release,
 	.close		= gpio_bb_close,
 	.error		= gpio_bb_error,
 	.usleep		= NULL,
@@ -81,27 +82,25 @@ gpio_bb_open(void)
 }
 
 void
-gpio_bb_close(void)
+gpio_bb_release(void)
 {
-	struct gpio_bb_io io = {.dir = 1, .pin = 0, .bit = 0};
-
 	if (p.bitrules & PGD_RELEASE) {
-		io.pin = p.pgdo;
-		ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+		gpio_bb_release_pin(p.pgdo);
 	}
 	if (p.bitrules & PGC_RELEASE) {
-		io.pin = p.pgc;
-		ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+		gpio_bb_release_pin(p.pgc);
 	}
 	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED) {
-		io.pin = p.pgm;
-		ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+		gpio_bb_release_pin(p.pgm);
 	}
 	if (p.bitrules & VPP_RELEASE) {
-		io.pin = p.vpp;
-		ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+		gpio_bb_release_pin(p.vpp);
 	}
+}
 
+void
+gpio_bb_close(void)
+{
 	close(gpio_bb_fd);
 	gpio_bb_fd = -1;
 }
@@ -189,4 +188,15 @@ gpio_bb_shift_out(uint32_t bits, uint8_t nbits)
 	struct gpio_bb_shift shift = {0, nbits, (uint64_t)(bits)};
 
 	ioctl(gpio_bb_fd, GPIO_BB_SHIFT, &shift);
+}
+
+/*
+ * Reselect pin as input
+ */
+void
+gpio_bb_release_pin(uint16_t pin)
+{
+	struct gpio_bb_io io = {.dir = 1, .pin = pin, .bit = 0};
+
+	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
 }

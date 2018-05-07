@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -39,18 +39,38 @@ getdotpath(void)
 		io_exit(EX_SOFTWARE); /* Panic */
 	}
 	if (S_ISREG(st.st_mode)) {
+		if (getuid() && getuid() != st.st_uid) {
+			printf("%s: fatal error: invalid owner [%s]\n", __func__, p.dotfile);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
 		return access(p.dotfile, R_OK);
 	}
+
 	if (S_ISDIR(st.st_mode)) {
 		char *dotdup = (char *)strdup(p.dotfile);
+
 		if (dotdup == NULL) {
 			printf("%s: fatal error: strdup failed\n", __func__);
 			io_exit(EX_OSERR); /* Panic */
 		}
 		snprintf(p.dotfile, STRLEN, "%s/%s", dotdup, DOTCONFIGNAME);
 		free(dotdup);
-		return access(p.dotfile, R_OK);
+
+		if (stat(p.dotfile, &st) < 0) {
+			if (errno == ENOENT)
+				return -1;
+			printf("%s: fatal error: stat failed [%s]\n", __func__, p.dotfile);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+		if (S_ISREG(st.st_mode)) {
+			if (getuid() && getuid() != st.st_uid) {
+				printf("%s: fatal error: invalid owner [%s]\n", __func__, p.dotfile);
+				io_exit(EX_SOFTWARE); /* Panic */
+			}
+			return access(p.dotfile, R_OK);
+		}
 	}
+
 	return -1;
 }
 

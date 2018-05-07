@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -148,17 +148,28 @@ io_close(int run)
 	if (p.iot == IONONE)
 		return;
 
-	if (p.io && p.io->run) {
-		io_usleep(10);
-		if (run)
-			io_set_vpp(HIGH);
-		else
-			io_set_vpp(LOW);
-	}
-	if (p.io && p.io->close)
-		p.io->close();
+	if (p.io != NULL) {
+		if (p.io->release) {
+			p.io->release();
+		}
 
-	p.io = NULL;
+		if (p.io->run) {
+			if ((p.bitrules & VPP_RELEASE) == 0) {
+				io_usleep(10);
+				if (run)
+					io_set_vpp(HIGH);
+				else
+					io_set_vpp(LOW);
+			}
+		}
+
+		if (p.io->close) {
+			p.io->close();
+		}
+
+		p.io = NULL;
+	}
+
 	p.iot = IONONE;
 
 	io_signal_off();

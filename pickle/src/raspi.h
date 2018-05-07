@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -83,6 +83,18 @@
 #define GPPUD_RESERVED (3)
 #define GPPUD_DELAY (150)
 
+/*
+ *  FSEL - Function Select
+ *
+ *  000 = GPIO Pin is an input
+ *  001 = GPIO Pin is an output
+ *  100 = GPIO Pin takes alternate function 0
+ *  101 = GPIO Pin takes alternate function 1
+ *  110 = GPIO Pin takes alternate function 2
+ *  111 = GPIO Pin takes alternate function 3
+ *  011 = GPIO Pin takes alternate function 4
+ *  010 = GPIO Pin takes alternate function 5
+ */
 #define GPIO_ALT0 (4) /* 100 */
 #define GPIO_ALT1 (5) /* 101 */
 #define GPIO_ALT2 (6) /* 110 */
@@ -92,6 +104,7 @@
 
 uint8_t raspi_backend(void);
 int raspi_open(void);
+void raspi_release(void);
 void raspi_close(void);
 char *raspi_error(void);
 void raspi_usleep(int);
@@ -102,6 +115,6 @@ void raspi_set_pgc(uint8_t);
 uint8_t raspi_get_pgd(void);
 int raspi_get(uint16_t, uint8_t *);
 int raspi_set(uint16_t, uint8_t);
-int raspi_release(uint16_t, uint8_t);
+int raspi_release_pin(uint16_t);
 
 #endif /* !_RASPI_H */

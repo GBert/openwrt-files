@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -18,6 +18,14 @@
  */
 
 #include "pickle.h"
+
+#undef DEBUG
+
+#ifdef DEBUG
+#define DPRINT(...) printf(__VA_ARGS__)
+#else
+#define DPRINT(...)
+#endif
 
 /******************************************************************************
  *
@@ -38,7 +46,7 @@ static int gpio_mem = -1;	/* Memory handle */
 static void *gpio_map = NULL;	/* Memory mapped I/O pointer */
 
 /* I/O Pins 0..31 on headers P1 & P5 */
-static uint8_t gpio_pins[GPIO_RPI_NPINS], gpio_dirs[GPIO_RPI_NPINS];
+static uint8_t gpio_pins[GPIO_RPI_NPINS], gpio_dirs[GPIO_RPI_NPINS], gpio_alt[GPIO_RPI_NPINS];
 
 /*******************************************************************************
  *
@@ -51,6 +59,7 @@ struct io_ops raspi_ops = {
 	.single		= 1,
 	.run		= 1,
 	.open		= raspi_open,
+	.release        = raspi_release,
 	.close		= raspi_close,
 	.error		= raspi_error,
 	.usleep		= raspi_usleep,
@@ -113,19 +122,21 @@ raspi_open(void)
 }
 
 void
+raspi_release(void)
+{
+	if (p.bitrules & PGD_RELEASE)
+		raspi_release_pin(p.pgdo);
+	if (p.bitrules & PGC_RELEASE)
+		raspi_release_pin(p.pgc);
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+		raspi_release_pin(p.pgm);
+	if (p.bitrules & VPP_RELEASE)
+		raspi_release_pin(p.vpp);
+}
+
+void
 raspi_close(void)
 {
-	uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
-
-	if (p.bitrules & PGD_RELEASE)
-		raspi_release(p.pgdo, alt);
-	if (p.bitrules & PGC_RELEASE)
-		raspi_release(p.pgc, alt);
-	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
-		raspi_release(p.pgm, alt);
-	if (p.bitrules & VPP_RELEASE)
-		raspi_release(p.vpp, alt);
-
 	if (gpio_map) {
 		if (munmap(gpio_map, GPIO_MAP_LEN)) {
 			printf("%s: warning: munmap failed\n", __func__);
@@ -255,6 +266,9 @@ raspi_lshift(uint8_t pin)
 	return (pin % 10) * 3;
 }
 
+/*
+ * Function select = Input
+ */
 static inline void
 raspi_select_input(uint8_t pin)
 {
@@ -266,26 +280,68 @@ raspi_select_input(uint8_t pin)
 	gpio_dirs[pin] = 1;
 }
 
+/*
+ * Function select = Output
+ *
+ * Call after pin set to input.
+ */
 static inline void
 raspi_select_output(uint8_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
-	
+
 	uint32_t val = 1 << raspi_lshift(pin);
 	*reg |= val; /* 001 = Output */
 
 	gpio_dirs[pin] = 0;
 }
 
+/*
+ * Function select = Input (no change), Output or ALT0 .. ALT5
+ *
+ * Call after pin set to input.
+ */
 static inline void
-raspi_select_alt(uint8_t pin, uint8_t alt)
+raspi_select_alt(uint8_t pin)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
 
-	uint32_t val = alt << raspi_lshift(pin);
-	*reg |= val; /* ALT0 .. ALT5 */
+	uint32_t val = gpio_alt[pin] << raspi_lshift(pin);
+
+	DPRINT("%s() PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
+
+	*reg |= val; /* Input, Output or ALT0 .. ALT5 */
 }
 
+/*
+ * Prepare pin for use.
+ *
+ *  1. Save previous configuration.
+ *  2. Enable pull-up.
+ *  3. Set to input.
+ */
+static inline void
+raspi_select_pin(uint8_t pin)
+{
+	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + raspi_gpfsel(pin);
+
+	uint32_t val = 7 << raspi_lshift(pin);
+	val = (*reg & val) >> raspi_lshift(pin);
+
+	gpio_alt[pin] = val;		/* Save Input, Output or ALT0 .. ALT5 */
+
+	DPRINT("%s() PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
+
+	raspi_select_input(pin);	/* Input */
+
+	raspi_pud(pin, GPPUD_UP);	/* Pull-up on */
+
+	gpio_pins[pin] = 1;		/* Pin now in use */
+}
+
+/*
+ * Read pin.
+ */
 int
 raspi_get(uint16_t pin, uint8_t *level)
 {
@@ -293,9 +349,7 @@ raspi_get(uint16_t pin, uint8_t *level)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
-		gpio_pins[pin] = 1;
-		raspi_pud(pin, GPPUD_UP);
-		raspi_select_input(pin);
+		raspi_select_pin(pin);
 	}
 	else if (gpio_dirs[pin] == 0) {
 		raspi_select_input(pin);
@@ -310,6 +364,9 @@ raspi_get(uint16_t pin, uint8_t *level)
 	return 0;
 }
 
+/*
+ * Write pin.
+ */
 int
 raspi_set(uint16_t pin, uint8_t level)
 {
@@ -317,9 +374,7 @@ raspi_set(uint16_t pin, uint8_t level)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
-		gpio_pins[pin] = 1;
-		raspi_pud(pin, GPPUD_UP);
-		raspi_select_input(pin);
+		raspi_select_pin(pin);
 		raspi_select_output(pin);
 	}
 	else if (gpio_dirs[pin] == 1) {
@@ -332,19 +387,24 @@ raspi_set(uint16_t pin, uint8_t level)
 }
 
 /*
- * Select pin as input, re-enable ALT0 for UART
+ * Release and reset pin.
  */
 int
-raspi_release(uint16_t pin, uint8_t alt)
+raspi_release_pin(uint16_t pin)
 {
-	if (pin >= GPIO_RPI_NPINS)
+	if (pin >= GPIO_RPI_NPINS || gpio_pins[pin] == 0)
 		return -1;
 
-	raspi_pud(pin, GPPUD_OFF);
-	raspi_select_input(pin);
-	if (alt) {
-		if (pin == 14 || pin == 15)
-			raspi_select_alt(pin, GPIO_ALT0);
+	raspi_pud(pin, GPPUD_OFF);	/* Pull-up off */
+
+	raspi_select_input(pin);	/* Input */
+
+	if ((p.bitrules & ALT_RELEASE) != 0) {
+		/* Restore Input (no change), Output or ALT0 .. ALT5 */
+		raspi_select_alt(pin);
 	}
+
+	gpio_pins[pin] = 0;		/* Pin no longer in use */
+
 	return 0;
 }

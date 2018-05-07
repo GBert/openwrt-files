@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -26,6 +26,7 @@ struct io_ops {
 	uint8_t single;
 	uint8_t run;
 	int (*open)(void);
+	void (*release)(void);
 	void (*close)(void);
 	char *(*error)(void);
 	void (*usleep)(int);

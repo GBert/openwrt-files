@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -107,18 +107,30 @@ struct pic16n_dsmap {
 #define PIC18LF25K42 (0x6DC0)
 #define PIC18LF24K42 (0x6DE0)
 
-#define DS40001886A (40001886)
+#define DS40001886B (0x40001886)
 #define PIC18F26K42  (0x6C60)
+#define PIC18F27K42  (0x6C40)
 #define PIC18F45K42  (0x6C20)
 #define PIC18F46K42  (0x6C00)
+#define PIC18F47K42  (0x6BE0)
 #define PIC18F55K42  (0x6BC0)
 #define PIC18F56K42  (0x6BA0)
+#define PIC18F57K42  (0x6B80)
 #define PIC18LF26K42 (0x6DA0)
+#define PIC18LF27K42 (0x6D80)
 #define PIC18LF45K42 (0x6D60)
 #define PIC18LF46K42 (0x6D40)
+#define PIC18LF47K42 (0x6D20)
 #define PIC18LF55K42 (0x6D00)
 #define PIC18LF56K42 (0x6CE0)
+#define PIC18LF57K42 (0x6CC0)
 
+#define DS40001927A (0x40001927)
+#define PIC18F25K83  (0x6EE0)
+#define PIC18F26K83  (0x6EC0)
+#define PIC18LF25K83 (0x6F20)
+#define PIC18LF26K83 (0x6F00)
+ 
 /******************************************************************************/
 
 uint32_t pic16n_arch(void);

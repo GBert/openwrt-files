@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -140,6 +140,40 @@ struct pic14n_dsmap {
 #define PIC16LF19196 (0x30A1)
 #define PIC16F19197  (0x30A2)
 #define PIC16LF19197 (0x30A3)
+
+/* DS40001880A */
+#define DS40001880A (0x40001880)
+#define PIC16F19155  (0x3096)
+#define PIC16LF19155 (0x3097)
+#define PIC16F19156  (0x3098)
+#define PIC16LF19156 (0x3099)
+#define PIC16F19175  (0x309A)
+#define PIC16LF19175 (0x309B)
+#define PIC16F19176  (0x309C)
+#define PIC16LF19176 (0x309D)
+#define PIC16F19185  (0x30BA)
+#define PIC16LF19185 (0x30BB)
+#define PIC16F19186  (0x30BC)
+#define PIC16LF19186 (0x30BD)
+
+/* DS40001970A */
+#define DS40001970A (0x40001970)
+#define PIC16F18424  (0x30CA)
+#define PIC16LF18424 (0x30CB)
+#define PIC16F18425  (0x30CC)
+#define PIC16LF18425 (0x30CD)
+#define PIC16F18426  (0x30D2)
+#define PIC16LF18426 (0x30D3)
+#define PIC16F18444  (0x30CE)
+#define PIC16LF18444 (0x30CF)
+#define PIC16F18445  (0x30D0)
+#define PIC16LF18445 (0x30D1)
+#define PIC16F18446  (0x30D4)
+#define PIC16LF18446 (0x30D5)
+#define PIC16F18455  (0x30D7)
+#define PIC16LF18455 (0x30D8)
+#define PIC16F18456  (0x30D9)
+#define PIC16LF18456 (0x30DA)
 
 /******************************************************************************/
 

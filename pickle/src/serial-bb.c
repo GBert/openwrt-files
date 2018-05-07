@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -46,6 +46,7 @@ struct io_ops serial_bb_ops = {
 	.single		= 0,
 	.run		= 0,
 	.open		= serial_bb_open,
+	.release        = NULL,
 	.close		= serial_bb_close,
 	.error		= serial_bb_error,
 	.usleep		= serial_bb_usleep,

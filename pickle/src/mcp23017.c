@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * All rights reserved.
  * 
  * This file is part of Pickle Microchip PIC ICSP.
@@ -48,6 +48,7 @@ struct io_ops mcp23017_ops = {
 	.single		= 0,
 	.run		= 1,
 	.open		= mcp23017_open,
+	.release        = NULL,
 	.close		= mcp23017_close,
 	.error		= mcp23017_error,
 	.usleep		= NULL,

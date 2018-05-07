@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2017 Darron Broad
+ * Copyright (C) 2005-2018 Darron Broad
  * Copyright (C) 2016 Gerhard Bertelsmann
  * All rights reserved.
  *
@@ -54,6 +54,7 @@ struct io_ops ftdi_bb_ops = {
 	.single		= 1,
 	.run		= 0,
 	.open		= ftdi_bb_open,
+	.release        = NULL,
 	.close		= ftdi_bb_close,
 	.error		= ftdi_bb_error,
 	.usleep		= NULL,

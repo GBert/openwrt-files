@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pickle
-PKG_RELEASE:=4.0g
+PKG_RELEASE:=4.1d
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1
@@ -58,6 +58,7 @@ define Package/pickle/install
 	$(LN) pickle $(1)/usr/bin/p14
 	$(LN) pickle $(1)/usr/bin/n14
 	$(LN) pickle $(1)/usr/bin/p16
+	$(LN) pickle $(1)/usr/bin/n16
 	$(LN) pickle $(1)/usr/bin/p24
 	$(LN) pickle $(1)/usr/bin/p32
 	$(LN) pickle $(1)/usr/bin/pctrl

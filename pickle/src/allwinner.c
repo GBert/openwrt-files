@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Darron Broad
+ * Copyright (C) 2015-2018 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -54,6 +54,7 @@ struct io_ops allwinner_ops = {
 	.single		= 1,
 	.run		= 1,
 	.open		= allwinner_open,
+	.release	= allwinner_release,
 	.close		= allwinner_close,
 	.error		= allwinner_error,
 	.usleep		= allwinner_usleep,
@@ -138,19 +139,21 @@ allwinner_open(void)
 }
 
 void
+allwinner_release(void)
+{
+	if (p.bitrules & PGD_RELEASE)
+		allwinner_release_pin(p.pgdo);
+	if (p.bitrules & PGC_RELEASE)
+		allwinner_release_pin(p.pgc);
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+		allwinner_release_pin(p.pgm);
+	if (p.bitrules & VPP_RELEASE)
+		allwinner_release_pin(p.vpp);
+}
+
+void
 allwinner_close(void)
 {
-	uint8_t alt = (p.bitrules & ALT_RELEASE) != 0;
-
-	if (p.bitrules & PGD_RELEASE)
-		allwinner_release(p.pgdo, alt);
-	if (p.bitrules & PGC_RELEASE)
-		allwinner_release(p.pgc, alt);
-	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
-		allwinner_release(p.pgm, alt);
-	if (p.bitrules & VPP_RELEASE)
-		allwinner_release(p.vpp, alt);
-
 	if (gpio_map) {
 		if (munmap(gpio_map, AW_MAP_LEN)) {
 			printf("%s: warning: munmap failed\n", __func__);
@@ -265,6 +268,9 @@ allwinner_lshift(uint16_t pin)
 	return (pin & 0x07) << 2;
 }
 
+/*
+ * Function select = Input
+ */
 static inline void
 allwinner_select_input(uint16_t pin)
 {
@@ -276,6 +282,11 @@ allwinner_select_input(uint16_t pin)
 	gpio_dirs[pin] = 1;
 }
 
+/*
+ * Function select = Output
+ *
+ * Call after pin set to input.
+ */
 static inline void
 allwinner_select_output(uint16_t pin)
 {
@@ -287,12 +298,18 @@ allwinner_select_output(uint16_t pin)
 	gpio_dirs[pin] = 0;
 }
 
+/*
+ * Function select = Input (no change), Output or MULTIPLEX FUNCTION SELECT
+ *
+ * Call after pin set to input.
+ */
 static inline void
 allwinner_select_alt(uint16_t pin, uint8_t alt)
 {
 	GPIO_ADDR reg = (GPIO_ADDR)(gpio_map) + gpio_cfg[pin];
 
 	uint32_t val = alt << allwinner_lshift(pin);
+
 	*reg |= val; /* MULTIPLEX FUNCTION SELECT */
 }
 
@@ -305,6 +322,22 @@ allwinner_bit(uint16_t pin)
 	return (1UL << (pin & 31));
 }
 
+/*
+ * Prepare pin for use.
+ *
+ *  1. Enable pull-up.
+ *  2. Set to input.
+ */
+static inline void
+allwinner_select_pin(uint8_t pin)
+{
+	allwinner_select_input(pin);		/* Input */
+
+	allwinner_pud(pin, AW_PX_PULL_UP);	/* Pull-up on */
+
+        gpio_pins[pin] = 1;             	/* Pin now in use */
+}
+
 int
 allwinner_get(uint16_t pin, uint8_t *level)
 {
@@ -312,9 +345,7 @@ allwinner_get(uint16_t pin, uint8_t *level)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
-		gpio_pins[pin] = 1;
-		allwinner_pud(pin, AW_PX_PULL_UP);
-		allwinner_select_input(pin);
+		allwinner_select_pin(pin);
 	}
 	else if (gpio_dirs[pin] == 0) {
 		allwinner_select_input(pin);
@@ -336,9 +367,7 @@ allwinner_set(uint16_t pin, uint8_t level)
 		return -1;
 
 	if (gpio_pins[pin] == 0) {
-		gpio_pins[pin] = 1;
-		allwinner_pud(pin, AW_PX_PULL_UP);
-		allwinner_select_input(pin);
+		allwinner_select_pin(pin);
 		allwinner_select_output(pin);
 	}
 	else if (gpio_dirs[pin] == 1) {
@@ -360,20 +389,26 @@ allwinner_set(uint16_t pin, uint8_t level)
 }
 
 /*
- * Select pin as input, may reconfigure UART
+ * Release and reset pin.
  */
 int
-allwinner_release(uint16_t pin, uint8_t alt)
+allwinner_release_pin(uint16_t pin)
 {
-	if (pin >= aw.npins)
+	if (pin >= aw.npins || gpio_pins[pin] == 0)
 		return -1;
 
-	allwinner_pud(pin, AW_PX_PULL_DIS);
-	allwinner_select_input(pin);
-	if (alt) {
-		if (pin == aw.tx || pin == aw.rx)
+	allwinner_pud(pin, AW_PX_PULL_DIS); 	/* Pull-up off */
+
+	allwinner_select_input(pin);		/* Input */
+
+	if ((p.bitrules & ALT_RELEASE) != 0) {
+		if (pin == aw.tx || pin == aw.rx) {
+			/* Restore MULTIPLEX FUNCTION SELECT */
 			allwinner_select_alt(pin, aw.sel);
+		}
 	}
+
+	gpio_pins[pin] = 0;			/* Pin no longer in use */
 
 	return 0;
 }
