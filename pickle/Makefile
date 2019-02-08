@@ -73,7 +73,7 @@ define Package/pickle/install
 ifneq (,$(findstring wr841,$(CONFIG_TARGET_PROFILE)))
 	$(INSTALL_BIN) ./config/config_wr841 $(1)/root/.pickle/config
 endif
-ifneq (,$(findstring mt7688,$(CONFIG_TARGET_SUBTARGET)))
+ifneq (,$(findstring mt76x8,$(CONFIG_TARGET_SUBTARGET)) or $(findstring mt7688,$(CONFIG_TARGET_SUBTARGET)))
 	$(INSTALL_BIN) ./config/config_srse2 $(1)/root/.pickle/config
 endif
 endef
