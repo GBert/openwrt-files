@@ -36,7 +36,7 @@ define Package/shellinabox/description
 	enabled web browser and does not require any additional browser plugins.
 endef
 
-CONFIGURE_ARGS += --disable-utmp
+CONFIGURE_ARGS += --disable-utmp --disable-runtime-loading
 
 define Package/shellinabox/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/shellinabox
