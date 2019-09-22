@@ -11,7 +11,7 @@ CTARGET=gpiod-test
 build:$(COBJECT) $(CTARGET)
 
 $(CTARGET):$(COBJECT)
-	$(CC) $(COBJECT) -o $(CTARGET) $(CLIB)
+	$(CC) $(COBJECT) -o $(CTARGET) $(CLIB) -lgpiod
 
 $(COBJECT):$(CHEADER) Makefile
 
