@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -53,6 +53,7 @@ struct pic14n_dsmap {
 	uint32_t devinfo;		/* devinfo size              */
 	uint32_t devconf;		/* devconf size              */
 	uint32_t calib;			/* calib size                */
+	uint16_t *masks;                /* config masks              */
 };
 
 /******************************************************************************
@@ -91,7 +92,7 @@ struct pic14n_dsmap {
  *****************************************************************************/
 
 /* DS40001753B */
-#define DS40001753B (0x40001753)
+#define DS40001753B (40001753)
 #define PIC16F18854  (0x306A)
 #define PIC16LF18854 (0x306B)
 #define PIC16F18855  (0x306C)
@@ -108,7 +109,7 @@ struct pic14n_dsmap {
 #define PIC16LF18877 (0x3077)
 
 /* DS40001838B */
-#define DS40001838B (0x40001838)
+#define DS40001838B (40001838)
 #define PIC16F15313  (0x30BE)
 #define PIC16LF15313 (0x30BF)
 #define PIC16F15323  (0x30C0)
@@ -133,7 +134,7 @@ struct pic14n_dsmap {
 #define PIC16LF15376 (0x30B5)
 
 /* DS40001846B */
-#define DS40001846B (0x40001846)
+#define DS40001846B (40001846)
 #define PIC16F19195  (0x309E)
 #define PIC16LF19195 (0x309F)
 #define PIC16F19196  (0x30A0)
@@ -142,7 +143,7 @@ struct pic14n_dsmap {
 #define PIC16LF19197 (0x30A3)
 
 /* DS40001880A */
-#define DS40001880A (0x40001880)
+#define DS40001880A (40001880)
 #define PIC16F19155  (0x3096)
 #define PIC16LF19155 (0x3097)
 #define PIC16F19156  (0x3098)
@@ -157,7 +158,7 @@ struct pic14n_dsmap {
 #define PIC16LF19186 (0x30BD)
 
 /* DS40001970A */
-#define DS40001970A (0x40001970)
+#define DS40001970A (40001970)
 #define PIC16F18424  (0x30CA)
 #define PIC16LF18424 (0x30CB)
 #define PIC16F18425  (0x30CC)

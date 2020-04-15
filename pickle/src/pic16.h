@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -26,10 +26,13 @@
 
 #define PIC16_MASK (0xFFFF)
 
+#define PIC16_IDLOC_MAX (8)
+#define PIC16_CONFIG_MAX (16)
+
 struct pic16_config {
-	uint16_t deviceid;	/* 0x3ffffe .. 0x3fffff */
-	uint8_t idloc[8];	/* 0x200000 .. 0x200007 */
-	uint8_t config[16];	/* 0x300000 .. 0x30000f */
+	uint16_t deviceid;			/* 0x3ffffe .. 0x3fffff */
+	uint8_t idloc[PIC16_IDLOC_MAX];		/* 0x200000 .. 0x200007 */
+	uint8_t config[PIC16_CONFIG_MAX];	/* 0x300000 .. 0x30000f */
 };
 
 struct pic16_dsmap {
@@ -45,6 +48,7 @@ struct pic16_dsmap {
 	uint32_t configaddr;	/* CONFIG ADDRESS                         */
 	uint8_t configsize;	/* CONFIG SIZE                            */
 	uint16_t erasesize;	/* ERASE BLOCK SIZE 64 or 1024 for PIC18J */
+	uint8_t *masks;		/* Config masks                           */
 };
 
 /******************************************************************************
@@ -76,7 +80,7 @@ struct pic16_dsmap {
 #define PIC16_DEVICEID_HIGH	(0x3fffff)	/* DEV10 DEV9 DEV8 DEV7 DEV6 DEV5 DEV4 DEV3 */
 #define PIC16_DEVICEID_IDMASK	(0xFFE0)	/* REV4 not used */
 #define PIC16_DEVICEID_REVMASK	(0x001F)	/* REV4 not used */
-#define PIC16_DEVICEID_SHIFT    (5)		/* REV4 not used */
+#define PIC16_DEVICEID_SHIFT	(5)		/* REV4 not used */
 #define PIC16_DEVICEID_IDMASK_REV4  (0xFFF0)	/* REV4 in use   */
 #define PIC16_DEVICEID_REVMASK_REV4 (0x000F)	/* REV4 in use   */
 #define PIC16_DEVICEID_SHIFT_REV4   (4)		/* REV4 in use   */
@@ -172,6 +176,8 @@ struct pic16_dsmap {
 
 /*
  * DS30500A == DS39567B
+ *
+ * NOT COMPATIBLE WITH THE VELLEMAN K8048 (VDD ON PIN 7)
  */
 #define DS30500A (30500)
 #define PIC18F2331 (0x08e0)
@@ -306,6 +312,89 @@ struct pic16_dsmap {
 #define PIC18F14K50  (0x4760)
 
 /*
+ * DS39644L
+ *
+ * PIC18F87J10 (1)
+ *	PIC18F65J10 PIC18F65J15 PIC18F66J10 PIC18F66J15 PIC18F67J10
+ *	PIC18F85J10 PIC18F85J15 PIC18F86J10 PIC18F86J15 PIC18F87J10
+ *
+ * PIC18F85J90 (1)
+ *	PIC18F63J90 PIC18F64J90 PIC18F65J90 PIC18F83J90
+ *	PIC18F84J90 PIC18F85J90
+ *
+ * PIC18F85J11 (1)
+ *	PIC18F63J11 PIC18F64J11 PIC18F65J11 PIC18F83J11
+ *	PIC18F84J11 PIC18F85J11
+ *
+ * PIC18F87J50 (2)
+ *	PIC18F65J50 PIC18F66J50 PIC18F66J55 PIC18F67J50
+ *	PIC18F85J50 PIC18F86J50 PIC18F86J55 PIC18F87J50
+ *
+ * PIC18F87J11 (2)
+ *	PIC18F66J11 PIC18F66J16 PIC18F67J11 PIC18F86J11
+ *	PIC18F86J16 PIC18F87J11
+ *
+ * PIC18F87J90 (2)
+ *	PIC18F66J90 PIC18F67J90 PIC18F86J90 PIC18F87J90
+ *
+ * PIC18F87J93 (2)
+ *	PIC18F66J93 PIC18F67J93 PIC18F86J93 PIC18F87J93
+ *
+ * PIC18F87J72 (2)
+ *	PIC18F86J72 PIC18F87J72
+ *
+ * (1) P9 = 3.4ms
+ * (2) P9 = 1.2ms
+ */
+#define DS39644L (39644)
+#define PIC18F63J11 (0x3900)
+#define PIC18F63J90 (0x3800)
+#define PIC18F64J11 (0x3920)
+#define PIC18F64J90 (0x3820)
+#define PIC18F65J10 (0x1520)
+#define PIC18F65J11 (0x3960)
+#define PIC18F65J15 (0x1540)
+#define PIC18F65J50 (0x4100)
+#define PIC18F65J90 (0x3860)
+#define PIC18F66J10 (0x1560)
+#define PIC18F66J11 (0x4440)
+#define PIC18F66J15 (0x1580)
+#define PIC18F66J16 (0x4460)
+#define PIC18F66J50 (0x4140)
+#define PIC18F66J55 (0x4160)
+#define PIC18F66J90 (0x5000)
+#define PIC18F66J93 (0x5040)
+#define PIC18F67J10 (0x15A0)
+#define PIC18F67J11 (0x4480)
+#define PIC18F67J50 (0x4180)
+#define PIC18F67J90 (0x5020)
+#define PIC18F67J93 (0x5060)
+#define PIC18F83J11 (0x3980)
+#define PIC18F83J90 (0x3880)
+#define PIC18F84J11 (0x39A0)
+#define PIC18F84J90 (0x38A0)
+#define PIC18F85J10 (0x15E0)
+#define PIC18F85J11 (0x39E0)
+#define PIC18F85J15 (0x1700)
+#define PIC18F85J50 (0x41A0)
+#define PIC18F85J90 (0x38E0)
+#define PIC18F86J10 (0x1720)
+#define PIC18F86J11 (0x44E0)
+#define PIC18F86J15 (0x1740)
+#define PIC18F86J16 (0x4500)
+#define PIC18F86J50 (0x41E0)
+#define PIC18F86J55 (0x4200)
+#define PIC18F86J72 (0x5040)
+#define PIC18F86J90 (0x5080)
+#define PIC18F86J93 (0x50C0)
+#define PIC18F87J10 (0x1760)
+#define PIC18F87J11 (0x4520)
+#define PIC18F87J50 (0x4220)
+#define PIC18F87J72 (0x5060)
+#define PIC18F87J90 (0x50A0)
+#define PIC18F87J93 (0x50E0)
+
+/*
  * DS39687E
  */
 #define DS39687E (39687)
@@ -379,6 +468,23 @@ struct pic16_dsmap {
 #define PIC18F44K20 (0x2080)
 #define PIC18F45K20 (0x2040)
 #define PIC18F46K20 (0x2000)
+
+/*
+ * DS39643C
+ */
+#define DS39643C (39643)
+#define PIC18F6527 (0x1340)
+#define PIC18F6622 (0x1380)
+#define PIC18F6627 (0x13C0)
+#define PIC18F6628 (0x49C0)
+#define PIC18F6722 (0x1400)
+#define PIC18F6723 (0x4A00)
+#define PIC18F8527 (0x1360)
+#define PIC18F8622 (0x13A0)
+#define PIC18F8627 (0x13E0)
+#define PIC18F8628 (0x49E0)
+#define PIC18F8722 (0x1420)
+#define PIC18F8723 (0x4A20)
 
 /******************************************************************************/
 

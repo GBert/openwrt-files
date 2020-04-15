@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -227,8 +227,18 @@ pic_pe_read_file(char *filename, uint32_t *nbytes)
 int
 pic_pe_lookup_file(char *pathname, const char *filename)
 {
+	int rc;
+
 	if (p.etc[0]) {
-		snprintf(pathname, STRLEN, "%s/%s", p.etc, filename);
+		rc = snprintf(pathname, STRLEN, "%s/%s", p.etc, filename);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+
 		if (access(pathname, R_OK) == 0)
 			return 0;
 	}
@@ -240,7 +250,16 @@ pic_pe_lookup_file(char *pathname, const char *filename)
 	}
 
 	char *dname = dirname(dotdup);
-	snprintf(pathname, STRLEN, "%s/%s", dname, filename);
+
+	rc = snprintf(pathname, STRLEN, "%s/%s", dname, filename);
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
 	free(dotdup);
 	if (access(pathname, R_OK) == 0)
 		return 0;
@@ -258,12 +277,29 @@ int
 pic_pe_lookup(char *pathname, const char *file)
 {
 	char filename[STRLEN];
+	int rc;
 
-	snprintf(filename, STRLEN, "%s.bin", file);
+	rc = snprintf(filename, STRLEN, "%s.bin", file);
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
 	if (pic_pe_lookup_file(pathname, filename) == 0)
 		return 0;
 
-	snprintf(filename, STRLEN, "%s.hex", file);
+	rc = snprintf(filename, STRLEN, "%s.hex", file);
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
 	return pic_pe_lookup_file(pathname, filename);
 }
 #endif /* P32 */
@@ -449,8 +485,11 @@ pic_program(char *filename, int blank)
 		p.pic->bulk_erase();
 
 	nbytes = inhx32_array_create(&pdata, filename, &count);
-	if (nbytes == 0)
+	if (nbytes == 0) {
+		if (p.error & BADINPUT)
+			io_exit(EX_BADINPUT);
 		return;
+	}
 
 	if (p.pic->program_begin)
 		p.pic->program_begin();
@@ -486,8 +525,11 @@ pic_verify(char *filename)
 		return 1;
 
 	nbytes = inhx32_array_create(&pdata, filename, &count);
-	if (nbytes == 0)
+	if (nbytes == 0) {
+		if (p.error & BADINPUT)
+			io_exit(EX_BADINPUT);
 		return 0;
+	}
 
 	if (p.pic->verify_begin)
 		p.pic->verify_begin();
@@ -519,8 +561,11 @@ pic_view(char *filename, int raw)
 	}
 
 	nbytes = inhx32_array_create(&pdata, filename, &count);
-	if (nbytes == 0)
+	if (nbytes == 0) {
+		if (p.error & BADINPUT)
+			io_exit(EX_BADINPUT);
 		return;
+	}
 
 	if (!raw) {
 		for (uint32_t i = 0; i < count; ++i)

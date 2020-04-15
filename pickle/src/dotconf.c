@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
- * 
+ * by the Free Software Foundation.
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
- * 
+ * Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -31,6 +31,7 @@ int
 getdotpath(void)
 {
 	struct stat st;
+	int rc;
 
 	if (stat(p.dotfile, &st) < 0) {
 		if (errno == ENOENT)
@@ -53,7 +54,16 @@ getdotpath(void)
 			printf("%s: fatal error: strdup failed\n", __func__);
 			io_exit(EX_OSERR); /* Panic */
 		}
-		snprintf(p.dotfile, STRLEN, "%s/%s", dotdup, DOTCONFIGNAME);
+
+		rc = snprintf(p.dotfile, STRLEN, "%s/%s", dotdup, DOTCONFIGNAME);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+
 		free(dotdup);
 
 		if (stat(p.dotfile, &st) < 0) {
@@ -80,11 +90,23 @@ getdotpath(void)
 void
 getdotfile(void)
 {
+	int rc;
+
 	char *filename = getenv("PICKLE");
 	if (filename != NULL) {
-		snprintf(p.dotfile, STRLEN, "%s", filename);
+		rc = snprintf(p.dotfile, STRLEN, "%s", filename);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+
 		if (getdotpath() == 0)
 			return;
+
+		printf("%s: warning: invalid PICKLE environment variable\n", __func__);
 	}
 
 	char dir[STRLEN];
@@ -92,20 +114,45 @@ getdotfile(void)
 		printf("%s: fatal error: getcwd failed\n", __func__);
 		io_exit(EX_OSERR); /* Panic */
 	}
-	snprintf(p.dotfile, STRLEN, "%s/%s", dir, DOTFILENAME);
+
+	rc = snprintf(p.dotfile, STRLEN, "%s/%s", dir, DOTFILENAME);
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
 	if (getdotpath() == 0)
 		return;
 
 	char *homedir = getenv("HOME");
 	if (homedir != NULL) {
-		snprintf(p.dotfile, STRLEN, "%s/%s", homedir, DOTFILENAME);
+		rc = snprintf(p.dotfile, STRLEN, "%s/%s", homedir, DOTFILENAME);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+
 		if (getdotpath() == 0)
 			return;
 	}
 
 	char *username = getenv("USER");
 	if (username != NULL) {
-		snprintf(p.dotfile, STRLEN, "/home/%s/%s", username, DOTFILENAME);
+		rc = snprintf(p.dotfile, STRLEN, "/home/%s/%s", username, DOTFILENAME);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
+
 		if (getdotpath() == 0)
 			return;
 	}
@@ -122,6 +169,7 @@ getconf(void)
 {
 	FILE *f1;
 	char line[STRLEN];
+	int rc;
 
 	/* Config defaults */
 	io_config();
@@ -132,8 +180,8 @@ getconf(void)
 	/* Load dot file when available */
 	if (p.dotfile[0] && (f1 = fopen(p.dotfile, "rb")) != NULL) {
 		while (fgets(line, STRLEN, f1) != NULL) {
-			/* Remove CRLF */
-			rmcrlf(line, STRLEN);
+			/* Remove whitespace */
+			rmws(line, STRLEN);
 
 			if (mystrcasestr(line, "DEVICE=") == line) {
 				strncpy(p.device, &line[7], STRLEN);
@@ -191,9 +239,22 @@ getconf(void)
 			else if (mystrcasestr(line, "ETC=") == line) {
 				strncpy(p.etc, &line[4], STRLEN);
 			}
+			else if (mystrcasestr(line, "CONFIG=") == line) {
+				p.config = strtoul(&line[7], NULL, 0);
+			}
+			else if (mystrcasestr(line, "ERROR=") == line) {
+				p.error = strtoul(&line[6], NULL, 0);
+			}
 		}
 		fclose(f1);
 	} else { /* We are using the defaults */
-		snprintf(p.dotfile, STRLEN, "Using defaults (override in %s)", DOTFILENAME);
+		rc = snprintf(p.dotfile, STRLEN, "Using defaults (override in %s)", DOTFILENAME);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
 	}
 }

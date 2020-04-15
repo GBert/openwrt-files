@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -79,10 +79,11 @@ struct pic32_dsmap {
 /*
  * KSEG1 PERIPHERALS
  */
-#define PIC32_PERI     (0xBF800000)	/* 0xBF800000 .. 0xBF8FFFFF PERIPHERAL    */
-#define PIC32_DEVID    (0xBF80F220)	/* DEVICE ID PIC32   */
-#define PIC32MM_DEVID  (0xBF803B20)	/* DEVICE ID PIC32MM */
-#define PIC32_IDMASK   (0x0FFFFFFF)
+#define PIC32_PERI        (0xBF800000)	/* 0xBF800000 .. 0xBF8FFFFF PERIPHERAL */
+#define PIC32_DEVID       (0xBF80F220)	/* DEVICE ID PIC32                     */
+#define PIC32MM_GPL_DEVID (0xBF803B20)	/* DEVICE ID PIC32MMxxxxGPLyyy         */
+#define PIC32MM_GPM_DEVID (0xBF803660)	/* DEVICE ID PIC32MMxxxxGPMyyy         */
+#define PIC32_IDMASK      (0x0FFFFFFF)
 
 /*
  * KSEG2 0x80000000 .. 0x9FFFFFFF (CACHE ENABLED)
@@ -363,8 +364,29 @@ struct pic32_dsmap {
 #define PIC32MM0032GPL028 (0x06B0A053)
 #define PIC32MM0064GPL028 (0x06B12053)
 #define PIC32MM0016GPL036 (0x06B06053)
-#define PIC32MM0032GPL036 (0x06B0E053)
+#define PIC32MM0032GPL036 (0x06B0B053)
 #define PIC32MM0064GPL036 (0x06B16053)
+
+/*
+ * PIC32MM0016/0032/0064/0128/0256GPM0XX
+ *
+ * Programming spec.
+ *
+ * DS60001387D
+ */
+#define DS60001387D (60001387)
+#define PIC32MM0064GPM028 (0x07708053)
+#define PIC32MM0128GPM028 (0x07710053)
+#define PIC32MM0256GPM028 (0x07718053)
+#define PIC32MM0064GPM036 (0x0770A053)
+#define PIC32MM0128GPM036 (0x07712053)
+#define PIC32MM0256GPM036 (0x0771A053)
+#define PIC32MM0064GPM048 (0x0772C053)
+#define PIC32MM0128GPM048 (0x07734053)
+#define PIC32MM0256GPM048 (0x0773C053)
+#define PIC32MM0064GPM064 (0x0770E053)
+#define PIC32MM0128GPM064 (0x07716053)
+#define PIC32MM0256GPM064 (0x0771E053)
 
 /******************************************************************************/
 

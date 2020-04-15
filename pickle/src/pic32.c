@@ -1,21 +1,23 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
+
+#undef DEBUG
 
 #include "pickle.h"
 
@@ -284,6 +286,20 @@ struct pic32_dsmap pic32_map[] =
 {"PIC32MM0032GPL036",	PIC32MM0032GPL036, DS60001324B,	PIC32_WORD(6),PIC32_WORD(32), 64,512},
 {"PIC32MM0064GPL036",	PIC32MM0064GPL036, DS60001324B,	PIC32_WORD(6),PIC32_WORD(64), 64,512},
 
+/* PIC32MM0064/0128/0245/GPM0XX */
+{"PIC32MM0064GPM028",   PIC32MM0064GPM028, DS60001387D, PIC32_WORD(6),PIC32_WORD(64), 64,512},
+{"PIC32MM0128GPM028",   PIC32MM0128GPM028, DS60001387D, PIC32_WORD(6),PIC32_WORD(128),64,512},
+{"PIC32MM0256GPM028",   PIC32MM0256GPM028, DS60001387D, PIC32_WORD(6),PIC32_WORD(256),64,512},
+{"PIC32MM0064GPM036",   PIC32MM0064GPM036, DS60001387D, PIC32_WORD(6),PIC32_WORD(64), 64,512},
+{"PIC32MM0128GPM036",   PIC32MM0128GPM036, DS60001387D, PIC32_WORD(6),PIC32_WORD(128),64,512},
+{"PIC32MM0256GPM036",   PIC32MM0256GPM036, DS60001387D, PIC32_WORD(6),PIC32_WORD(256),64,512},
+{"PIC32MM0064GPM048",   PIC32MM0064GPM048, DS60001387D, PIC32_WORD(6),PIC32_WORD(64), 64,512},
+{"PIC32MM0128GPM048",   PIC32MM0128GPM048, DS60001387D, PIC32_WORD(6),PIC32_WORD(128),64,512},
+{"PIC32MM0256GPM048",   PIC32MM0256GPM048, DS60001387D, PIC32_WORD(6),PIC32_WORD(256),64,512},
+{"PIC32MM0064GPM064",   PIC32MM0064GPM064, DS60001387D, PIC32_WORD(6),PIC32_WORD(64), 64,512},
+{"PIC32MM0128GPM064",   PIC32MM0128GPM064, DS60001387D, PIC32_WORD(6),PIC32_WORD(128),64,512},
+{"PIC32MM0256GPM064",   PIC32MM0256GPM064, DS60001387D, PIC32_WORD(6),PIC32_WORD(256),64,512},
+
 {"(null)",		0,		 0,			0, 0,		0, 0},
 /*Device name		Device id	 App. Data-Sheet	BOOT/PROG Size	Row/Page Size*/
 };
@@ -321,7 +337,7 @@ pic32_selector(void)
 
 struct pic32_dstab pic32_tab[] =
 {
-	/* Extract PE: unzip PICKIT3.jar              */
+	/* Extract PE: unzip PICKIT3.jar	      */
 
 	/* PIC32MX1XX/2XX DS60001168F		      */
 	{DS60001168F,	"RIPE_11_000301"},
@@ -338,15 +354,18 @@ struct pic32_dstab pic32_tab[] =
 	/* PIC32MZ EC DS60001191C		      */
 	{DS60001191C,	"RIPE_15_000504"},
 
-	/* PIC32MX1XX/2XX/5XX DS60001290D             */
+	/* PIC32MX1XX/2XX/5XX DS60001290D	      */
 	{DS60001290D,   "RIPE_11_000301"},
 
-	/* PIC32MK 0512/1024                          */
-	/* "RIPE_15a_000506"                          */
-#if 0
+	/* PIC32MK 0512/1024			      */
+	/* "RIPE_15a_000506"			      */
+
 	/* PIC32MM0016/0032/0064/0128/0256GPL0XX      */
 	{DS60001324B,	"RIPE_20b_000510"},
-#endif
+
+	/* PIC32MM0064/0128/0256GPM0XX		      */
+	{DS60001387D,	"RIPE_20a_000510"},
+
 	/* EOF					      */
 	{0,		"(null)"},
 
@@ -794,7 +813,8 @@ pic32_readfromaddress(uint32_t addr)
 {
 	switch (pic32_map[pic32_index].datasheet) {
 	default:return pic32_readfromaddress_m4k(addr);
-	case DS60001324B: /* PIC32MM */
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
 		return pic32_readfromaddress_mm(addr);
 	}
 }
@@ -876,7 +896,8 @@ pic32_erase_device(void)
 	 */
 
 	if ((pic32_map[pic32_index].datasheet == DS60001191C) ||	/* MZ EC */
-		(pic32_map[pic32_index].datasheet == DS60001324B)) {	/* MM */
+		(pic32_map[pic32_index].datasheet == DS60001324B) ||
+		(pic32_map[pic32_index].datasheet == DS60001387D)) {	/* MM */
 		pic32_xferdata(PIC32_MCHP_DE_ASSERT_RST);
 	}
 
@@ -942,7 +963,8 @@ pic32_enter_serial_execution_mode(void)
 	 */
 
 	if ((pic32_map[pic32_index].datasheet != DS60001191C) &&	/* ! MZ EC */
-		(pic32_map[pic32_index].datasheet != DS60001324B)) {	/* ! MM */
+		(pic32_map[pic32_index].datasheet != DS60001324B) &&
+		(pic32_map[pic32_index].datasheet != DS60001387D)) {	/* ! MM */
 		pic32_xferdata(PIC32_MCHP_FLASH_ENABLE);
 		statusVal = pic32_xferdata(PIC32_MCHP_STATUS) & PIC32_MCHP_STATUS_MASK;
 		if (statusVal != (PIC32_MCHP_STATUS_CPS | PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FAEN)) {
@@ -1179,8 +1201,9 @@ pic32_cfgcon(void)
 }
 #endif
 
+#if 0
 /*
- * Download the PE for PIC32MM devices
+ * Download the PE for PIC32MM GPL devices
  *
  * Custom PE loader.
  */
@@ -1235,54 +1258,73 @@ pic32_download_custom_pe_mm(uint8_t *pe, uint32_t nbytes)
 	pic32_xferinstruction(0x5339 | (address << 16));
 	pic32_xferinstruction(0x0C004599);
 }
+#endif
 
-#if 0
 /*
  * Download the PE for PIC32MM devices
  *
  * DS60001145P-page 25
  * DS60001364C-page 23
- *
- * XXX DATA-SHEET INVALID
+ * DS60001364D-pages 22 and 23
  */
 void
 pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 {
 	/* PE LOADER OP CODES */
 	static uint32_t peloader[] = {
-		0xDEAD41A7, // lui a3, 0xdead
-		0xFF2041A6, // lui a2, 0xff20
-		0xFF2041A5, // lui al, 0xff20
-			    // here1:
-		0x69E06A60, // lw a0, 0 (a2)
-			    // lw v1, 0 (a2)
-		0x000C94E3, // beq v1, a3, <here3>
-		0x8DFA0C00, // nop16
-			    // beqz v1, <here1>
-			    // here2:
-			    // lw v0, 0 (a1)
-		0xE9406DBE, // addiu v1, v1, -1
-			    // sw v0, 0 (a0)
-		0xADFB6E42, // addiu a0, a0, 4
-			    // bnez v1, <here2>
-		0xCFF20C00, // nop16
-			    // b <here1>
-		0x0C000C00, // nop16; nop16
-			    // here3:
-		0xA00041A2, // lui v0, 0xa000
-		0x03005042, // ori v0, v0, 0x300
-		0x0C004582, // jr v0
-			    // nop16
+	/*
+	 * TABLE 11-2
+	 *
+	 * NOT WORKING
+	 *
+	 *	0xDEAD41A7, // lui a3, 0xdead
+	 *	0xFF2041A6, // lui a2, 0xff20
+	 *	0xFF2041A5, // lui al, 0xff20
+	 *		    // here1:
+	 *	0x69E06A60, // lw a0, 0 (a2)
+	 *		    // lw v1, 0 (a2)
+	 *	0x000C94E3, // beq v1, a3, <here3>
+	 *	0x8DFA0C00, // nop16
+	 *		    // beqz v1, <here1>
+	 *		    // here2:
+	 *		    // lw v0, 0 (a1)
+	 *	0xE9406DBE, // addiu v1, v1, -1
+	 *		    // sw v0, 0 (a0)
+	 *	0xADFB6E42, // addiu a0, a0, 4
+	 *		    // bnez v1, <here2>
+	 *	0xCFF20C00, // nop16
+	 *		    // b <here1>
+	 *	0x0C000C00, // nop16; nop16
+	 *		    // here3:
+	 *	0xA00041A2, // lui v0, 0xa000
+	 *	0x03005042, // ori v0, v0, 0x300
+	 *	0x0C004582, // jr v0
+	 *		    // nop16
+	 *
+	 * SOLUTION
+	 *
+	 * See: https://www.microchip.com/forums/m973762.aspx
+	 */
+		0xFF2041A3,
+		0xDEAD41A5,
+		0x69306A30,
+		0x000994A2,
+		0xA00041B9,
+		0xFFF840E2,
+		0xEB406B30,
+		0xCFFA6E42,
+		0x33396D2E,
+		0x45990301,
+		0x0C000C00
 	};
-	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
 
-printf("%s() 1\n", __func__);
+	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
 
 	/*
 	 * Set up the PIC32MM RAM address for the PE.
 	 *
 	 * lui a0,0xa000
-	 * ori a0,a0,0x200 XXX
+	 * ori a0,a0,0x200
 	 */
 
 	pic32_xferinstruction(0xA00041A4);
@@ -1307,19 +1349,21 @@ printf("%s() 1\n", __func__);
 	 * Jump to the PE_loader.
 	 *
 	 * lui t9,0xa000
-	 * ori t9,t9,0x200 XXX
+	 * ori t9,t9,0x201
 	 * jr t9; nop16
+	 * nop16; nop16
+	 * nop16; nop16
 	 */
 
 	pic32_xferinstruction(0xA00041B9);
-	pic32_xferinstruction(0x02005339);
+	pic32_xferinstruction(0x02015339);
 	pic32_xferinstruction(0x0C004599);
+	pic32_xferinstruction(0x0C000C00);
+	pic32_xferinstruction(0x0C000C00);
 
 	/*
 	 * Load the PE using the PE_loader.
 	 */
-
-printf("%s() 2\n", __func__);
 
 	pic32_sendcommand(PIC32_ETAP_FASTDATA);
 	pic32_xferfastdata(pic32_kseg1(0x0300));
@@ -1336,13 +1380,10 @@ printf("%s() 2\n", __func__);
 	 * Jump to the PE.
 	 */
 
-printf("%s() 3\n", __func__);
-
 	pic32_xferfastdata(0x00000000);
 	pic32_xferfastdata(0xDEAD0000);
 	io_usleep(10000); /* 10ms */
 }
-#endif
 
 /*****************************************************************************
  *
@@ -1445,7 +1486,8 @@ pic32_download_data_block(uint32_t *panel, uint32_t panel_size)
 	switch (pic32_map[pic32_index].datasheet) {
 	default:pic32_download_data_block_m4k(panel, panel_size);
 		break;
-	case DS60001324B: /* PIC32MM */
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
 		pic32_download_data_block_mm(panel, panel_size);
 		break;
 	}
@@ -1678,7 +1720,8 @@ pic32_flash_row_write(uint32_t address)
 	switch (pic32_map[pic32_index].datasheet) {
 	default:pic32_flash_row_write_m4k(address);
 		break;
-	case DS60001324B: /* PIC32MM */
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
 		pic32_flash_row_write_mm(address);
 		break;
 	}
@@ -1806,8 +1849,9 @@ pic32_pe_load(void)
 	switch (pic32_map[pic32_index].datasheet) {
 	default:pic32_download_pe_m4k(pe, nbytes);
 		break;
-	case DS60001324B: /* PIC32MM */
-		pic32_download_custom_pe_mm(pe, nbytes);
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
+		pic32_download_pe_mm(pe, nbytes);
 		break;
 	}
 
@@ -1885,7 +1929,7 @@ pic32_read_config_memory(void)
 	}
 	if (!pic32_map[dev].deviceid) {
 		if (pic32_conf.deviceid == 0x00000000 || pic32_conf.deviceid == 0xFFFFFFFF) {
-			printf("%s: information: %s.\n",
+			printf("%s: information: %s\n",
 				__func__, io_fault(pic32_conf.deviceid));
 		} else {
 			printf("%s: information: device unknown: [%08X]\n",
@@ -1912,8 +1956,11 @@ pic32_read_config_memory(void)
 	switch (pic32_map[pic32_index].datasheet) {
 	default:pic32_conf.devidaddr = PIC32_DEVID;
 		break;
-	case DS60001324B: /* PIC32MM */
-		pic32_conf.devidaddr = PIC32MM_DEVID;
+	case DS60001324B: /* PIC32MM GPL */
+		pic32_conf.devidaddr = PIC32MM_GPL_DEVID;
+		break;
+	case DS60001387D: /* PIC32MM GPM */
+		pic32_conf.devidaddr = PIC32MM_GPM_DEVID;
 		break;
 	}
 
@@ -1943,7 +1990,8 @@ pic32_read_config_memory(void)
 		for (uint32_t i = 0; i < pic32_conf.configsize; ++i)
 			pic32_conf.config[pic32_conf.configsize - 1 - i] = pic32_readfromaddress(pic32_conf.configaddr + 4 * i);
 		break;
-	case DS60001324B: /* PIC32MM */
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
 		pic32_conf.configaddr = PIC32MM_PRI_CONFIG;
 		pic32_conf.configsize = PIC32MM_CONFIG_SIZE;
 		for (uint32_t i = 0; i < pic32_conf.configsize; ++i)
@@ -2081,8 +2129,8 @@ pic32_getregion(uint32_t address)
 	if (vaddr >= PIC32_BOOT && vaddr < (PIC32_BOOT + (pic32_map[pic32_index].boot << 2))) {
 		return PIC_REGIONBOOT;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%08X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%08X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2100,8 +2148,8 @@ pic32_init_writeregion(uint32_t region)
 		pic_write_panel(PIC_PANEL_BEGIN, region, pic32_map[pic32_index].row << 2);
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2117,8 +2165,8 @@ pic32_writeregion(uint32_t address, uint32_t region, uint32_t data)
 		pic_write_panel(PIC_PANEL_UPDATE, address, data);
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 }
 
 /*
@@ -2135,15 +2183,13 @@ pic32_init_verifyregion(uint32_t region)
 		/* Nothing to do on PIC32 */
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
- * VERIFY REGION
- *
- *  RETURN DATA
+ * GET VERIFY DATA FOR REGION
  */
 static inline uint32_t
 pic32_verifyregion(uint32_t address, uint32_t region, uint32_t wdata)
@@ -2151,9 +2197,8 @@ pic32_verifyregion(uint32_t address, uint32_t region, uint32_t wdata)
 	uint32_t vdata = 0;
 
 	if (region == PIC_REGIONNOTSUP) {
-		if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
 		return wdata;
 	}
 	if (pic32_conf.pepath[0]) {
@@ -2162,10 +2207,6 @@ pic32_verifyregion(uint32_t address, uint32_t region, uint32_t wdata)
 	} else {
 		/* !PE */
 		vdata = pic32_readfromaddress(pic32_kseg1(address));
-	}
-	if (vdata != wdata && p.f) {
-		printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
-			__func__, vdata, wdata, pic32_phy(address));
 	}
 	return vdata;
 }
@@ -2240,6 +2281,8 @@ pic32_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			((uint32_t)pdata->bytes[i + 3] << 24);
 		vdata = pic32_verifyregion(address, current_region, wdata);
 		if (vdata != wdata) {
+			if (p.f) printf("%s: error: read [%08X] expected [%08X] at [%08X]\n",
+				__func__, vdata, wdata, pic32_phy(address));
 			pdata->bytes[i] = vdata;
 			pdata->bytes[i + 1] = vdata >> 8;
 			pdata->bytes[i + 2] = vdata >> 16;
@@ -2314,7 +2357,8 @@ pic32_dumpconfig(uint32_t mode, uint32_t partition)
 				pic32_conf.configsize - 1 - i, pic32_conf.config[pic32_conf.configsize - 1 - i]);
 		}
 		break;
-	case DS60001324B: /* PIC32MM */
+	case DS60001324B: /* PIC32MM GPL */
+	case DS60001387D: /* PIC32MM GPM */
 		printf("[%08X] [RESERVED] %08X\n", pic32_phy(pic32_conf.configaddr),      pic32_conf.config[0]);
 		printf("[%08X] [FDEVOPT]  %08X\n", pic32_phy(pic32_conf.configaddr) + 4,  pic32_conf.config[1]);
 		printf("[%08X] [FICD]     %08X\n", pic32_phy(pic32_conf.configaddr) + 8,  pic32_conf.config[2]);

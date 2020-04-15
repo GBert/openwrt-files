@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -93,57 +93,86 @@ struct pic16n_config pic16n_conf;
 
 /*****************************************************************************
  *
+ * Hardware config masks
+ *
+ *  DS40001772B TABLE B-4: SUMMARY OF CONFIGURATION WORDS
+ *  DS40001836A TABLE B-4: SUMMARY OF CONFIGURATION WORDS
+ *  DS40001886B TABLE B-4: SUMMARY OF CONFIGURATION WORDS
+ *  DS40001927A TABLE B-4: SUMMARY OF CONFIGURATION WORDS
+ *  DS40001874F TABLE B-1: CONFIGURATION WORD AND MASK
+ *
+ * In the following tables ZERO represents undocumented configuration bits
+ *
+ *****************************************************************************/
+
+/*                          0 1L 1 1H 2 2L 3 2H 4 3L 5 3H 6 4L 7 4H 8 5L 9 5H A 6L B 6H */
+uint8_t DS40001772B_B4[] = {0x77,0x29,0xE3,0xBF,0x7F,0x3F,0xFF,0x37,0x03,ZERO,0xFF,0x02};
+uint8_t DS40001836A_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
+uint8_t DS40001886B_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
+uint8_t DS40001927A_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
+uint8_t DS40001874F_B1[] = {0x77,0x29,0xE3,0xBF,0x7F,0x3F,0xFF,0x37,0x03,0x00,0xFF,0x02};
+
+/*****************************************************************************
+ *
  * Hardware algorithm map
  *
  *****************************************************************************/
 
 struct pic16n_dsmap pic16n_map[] =
 {
-/*Device name	Device id	Data-sheet	Flash		 Config   EEProm	Latches Inf/Con*/
-{"PIC18F24K40", PIC18F24K40,    DS40001772B,	PIC16N_WORD(16), 12,      0/*256*/,	64,	0,0},
-{"PIC18F25K40", PIC18F25K40,    DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
-{"PIC18F45K40", PIC18F45K40,    DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
-{"PIC18F26K40", PIC18F26K40,    DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
-{"PIC18F46K40", PIC18F46K40,    DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
-{"PIC18F27K40", PIC18F27K40,    DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
-{"PIC18F47K40", PIC18F47K40,    DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
-{"PIC18LF24K40",PIC18LF24K40,   DS40001772B,	PIC16N_WORD(16), 12,      0/*256*/,	64,	0,0},
-{"PIC18LF25K40",PIC18LF25K40,   DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
-{"PIC18LF45K40",PIC18LF45K40,   DS40001772B,	PIC16N_WORD(32), 12,      0/*256*/,	64,	0,0},
-{"PIC18LF26K40",PIC18LF26K40,   DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
-{"PIC18LF46K40",PIC18LF46K40,   DS40001772B,	PIC16N_WORD(64), 12,      0/*1024*/,	64,	0,0},
-{"PIC18LF27K40",PIC18LF27K40,   DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
-{"PIC18LF47K40",PIC18LF47K40,   DS40001772B,	PIC16N_WORD(128),12,      0/*1024*/,	128,	0,0},
+/*Device name	Device id	Data-sheet	Flash		 Config   EEProm	Latches Inf/Con/Id	MASKS*/
+{"PIC18F24K40", PIC18F24K40,    DS40001772B,	PIC16N_WORD(16), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18F25K40", PIC18F25K40,    DS40001772B,	PIC16N_WORD(32), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18F45K40", PIC18F45K40,    DS40001772B,	PIC16N_WORD(32), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18F26K40", PIC18F26K40,    DS40001772B,	PIC16N_WORD(64), 12,      1024,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18F46K40", PIC18F46K40,    DS40001772B,	PIC16N_WORD(64), 12,      1024,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18F27K40", PIC18F27K40,    DS40001772B,	PIC16N_WORD(128),12,      1024,		128,	0,0,16,		DS40001772B_B4},
+{"PIC18F47K40", PIC18F47K40,    DS40001772B,	PIC16N_WORD(128),12,      1024,		128,	0,0,16,		DS40001772B_B4},
+{"PIC18LF24K40",PIC18LF24K40,   DS40001772B,	PIC16N_WORD(16), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18LF25K40",PIC18LF25K40,   DS40001772B,	PIC16N_WORD(32), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18LF45K40",PIC18LF45K40,   DS40001772B,	PIC16N_WORD(32), 12,      256,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18LF26K40",PIC18LF26K40,   DS40001772B,	PIC16N_WORD(64), 12,      1024,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18LF46K40",PIC18LF46K40,   DS40001772B,	PIC16N_WORD(64), 12,      1024,		64,	0,0,16,		DS40001772B_B4},
+{"PIC18LF27K40",PIC18LF27K40,   DS40001772B,	PIC16N_WORD(128),12,      1024,		128,	0,0,16,		DS40001772B_B4},
+{"PIC18LF47K40",PIC18LF47K40,   DS40001772B,	PIC16N_WORD(128),12,      1024,		128,	0,0,16,		DS40001772B_B4},
 
-{"PIC18F24K42", PIC18F24K42,    DS40001836A,	PIC16N_WORD(16), 10,      0/*256*/,	64,	32,5},
-{"PIC18F25K42", PIC18F25K42,    DS40001836A,	PIC16N_WORD(32), 10,      0/*256*/,	64,	32,5},
-{"PIC18LF24K42",PIC18LF24K42,   DS40001836A,	PIC16N_WORD(16), 10,      0/*256*/,	64,	32,5},
-{"PIC18LF25K42",PIC18LF25K42,   DS40001836A,	PIC16N_WORD(32), 10,      0/*256*/,	64,	32,5},
+{"PIC18F24K42", PIC18F24K42,    DS40001836A,	PIC16N_WORD(16), 10,      256,		64,	32,5,16,	DS40001836A_B4},
+{"PIC18F25K42", PIC18F25K42,    DS40001836A,	PIC16N_WORD(32), 10,      256,		64,	32,5,16,	DS40001836A_B4},
+{"PIC18LF24K42",PIC18LF24K42,   DS40001836A,	PIC16N_WORD(16), 10,      256,		64,	32,5,16,	DS40001836A_B4},
+{"PIC18LF25K42",PIC18LF25K42,   DS40001836A,	PIC16N_WORD(32), 10,      256,		64,	32,5,16,	DS40001836A_B4},
 
-{"PIC18F26K42", PIC18F26K42,    DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18F27K42", PIC18F27K42,    DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
-{"PIC18F45K42", PIC18F45K42,    DS40001886B,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
-{"PIC18F46K42", PIC18F46K42,    DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18F47K42", PIC18F47K42,    DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
-{"PIC18F55K42", PIC18F55K42,    DS40001886B,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
-{"PIC18F56K42", PIC18F56K42,    DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18F57K42", PIC18F57K42,    DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
-{"PIC18LF26K42",PIC18LF26K42,   DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18LF27K42",PIC18LF27K42,   DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
-{"PIC18LF45K42",PIC18LF45K42,   DS40001886B,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
-{"PIC18LF46K42",PIC18LF46K42,   DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18LF47K42",PIC18LF47K42,   DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
-{"PIC18LF55K42",PIC18LF55K42,   DS40001886B,	PIC16N_WORD(32), 10,      0/*256*/,	128,	32,5},
-{"PIC18LF56K42",PIC18LF56K42,   DS40001886B,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18LF57K42",PIC18LF57K42,   DS40001886B,	PIC16N_WORD(128),10,      0/*1024*/,	128,	32,5},
+{"PIC18F26K42", PIC18F26K42,    DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F27K42", PIC18F27K42,    DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F45K42", PIC18F45K42,    DS40001886B,	PIC16N_WORD(32), 10,      256,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F46K42", PIC18F46K42,    DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F47K42", PIC18F47K42,    DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F55K42", PIC18F55K42,    DS40001886B,	PIC16N_WORD(32), 10,      256,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F56K42", PIC18F56K42,    DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18F57K42", PIC18F57K42,    DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF26K42",PIC18LF26K42,   DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF27K42",PIC18LF27K42,   DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF45K42",PIC18LF45K42,   DS40001886B,	PIC16N_WORD(32), 10,      256,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF46K42",PIC18LF46K42,   DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF47K42",PIC18LF47K42,   DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF55K42",PIC18LF55K42,   DS40001886B,	PIC16N_WORD(32), 10,      256,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF56K42",PIC18LF56K42,   DS40001886B,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001886B_B4},
+{"PIC18LF57K42",PIC18LF57K42,   DS40001886B,	PIC16N_WORD(128),10,      1024,		128,	32,5,16,	DS40001886B_B4},
 
-{"PIC18F25K83", PIC18F25K83,    DS40001927A,	PIC16N_WORD(32), 10,      0/*1024*/,	128,	32,5},
-{"PIC18F26K83", PIC18F26K83,    DS40001927A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
-{"PIC18LF25K83",PIC18LF25K83,   DS40001927A,	PIC16N_WORD(32), 10,      0/*1024*/,	128,	32,5},
-{"PIC18LF26K83",PIC18LF26K83,   DS40001927A,	PIC16N_WORD(64), 10,      0/*1024*/,	128,	32,5},
+{"PIC18F25K83", PIC18F25K83,    DS40001927A,	PIC16N_WORD(32), 10,      1024,		128,	32,5,16,	DS40001927A_B4},
+{"PIC18F26K83", PIC18F26K83,    DS40001927A,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001927A_B4},
+{"PIC18LF25K83",PIC18LF25K83,   DS40001927A,	PIC16N_WORD(32), 10,      1024,		128,	32,5,16,	DS40001927A_B4},
+{"PIC18LF26K83",PIC18LF26K83,   DS40001927A,	PIC16N_WORD(64), 10,      1024,		128,	32,5,16,	DS40001927A_B4},
 
-{"(null)",      0,              0,              0,               0,       0,		0,	0,0},
-/*Device name	Device id	Data-sheet	Flash		 Config   EEProm	Latches Inf/Con*/
+{"PIC18F46Q10",	PIC18F46Q10,    DS40001874F,	PIC16N_WORD(64), 12,      1024,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F45Q10",	PIC18F45Q10,    DS40001874F,	PIC16N_WORD(32), 12,      256,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F26Q10",	PIC18F26Q10,    DS40001874F,	PIC16N_WORD(64), 12,      1024,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F25Q10",	PIC18F25Q10,    DS40001874F,	PIC16N_WORD(32), 12,      256,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F24Q10",	PIC18F24Q10,    DS40001874F,	PIC16N_WORD(16), 12,      256,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F27Q10",	PIC18F27Q10,    DS40001874F,	PIC16N_WORD(128),12,      1024,		2,	0,0,256,	DS40001874F_B1},
+{"PIC18F47Q10",	PIC18F47Q10,    DS40001874F,	PIC16N_WORD(128),12,      1024,		2,	0,0,256,	DS40001874F_B1},
+
+{"(null)",      0,              0,              0,               0,       0,		0,	0,0,0,		0},
+/*Device name	Device id	Data-sheet	Flash		 Config   EEProm	Latches Inf/Con/Id	MASKS*/
 };
 #define PIC16N_SIZE ((sizeof(pic16n_map) / sizeof(struct pic16n_dsmap)) - 1)
 
@@ -179,6 +208,9 @@ pic16n_bootloader(void)
 	char s[BUFLEN];
 
 	for (dev = 0; pic16n_map[dev].deviceid; ++dev) {
+		if (pic16n_map[dev].datasheet == DS40001874F)
+			continue;
+
 		for (i = 0; pic16n_map[dev].devicename[i] && i < BUFLEN; ++i)
 			s[i] = tolower(pic16n_map[dev].devicename[i]);
 		s[i] = 0;
@@ -233,7 +265,6 @@ pic16n_program_verify(void)
 
 	/* LVP */
 	if (p.key == LVPKEY) {
-
 		/* VPP HIGH */
 		io_set_vpp(HIGH);
 		/* TENTH(250ns) */
@@ -340,6 +371,7 @@ pic16n_increment_address(void)
  *  0x80 PC = address
  *
  * DS40001772B-page 10
+ * DS40001874F-page 10
  */
 static inline void
 pic16n_load_pc_address(uint32_t address)
@@ -400,6 +432,25 @@ pic16n_end_externally_timed_programming(uint32_t t)
 	io_usleep(t);
 }
 
+/*
+ * PROGRAM DATA COMMAND
+ *  0xC0 PC = PC
+ *  0xE0 PC = PC + 2
+ *
+ * DS40001874F-page 12
+ *
+ * DS40001874F TPINT(65us PROGRAM & CONFIG) TPDFM (11ms EEPROM)
+ */
+static inline void
+pic16n_program_data_command(uint16_t word, uint8_t j /* 0 || 1 */, uint32_t t)
+{
+	io_program_out(j ? 0xE0 : 0xC0, 8);
+	/* TDLY 1us */
+	io_program_out(word << 1, 24);
+	/* TPINT or TPDFM */
+	io_usleep(t);
+}
+
 /*ERASE***********************************************************************/
 
 /*
@@ -411,6 +462,7 @@ pic16n_end_externally_timed_programming(uint32_t t)
  * PC = 0x310000 ERASE EEPROM
  *
  * DS40001772B-page 12
+ * DS40001874F-page 10
  *
  * DS40001772B TERAB(25.2ms PIC18F26K40)
  */
@@ -445,14 +497,17 @@ pic16n_row_erase_memory(uint32_t t)
 void
 pic16n_bulk_erase(void)
 {
+	uint32_t t = (pic16n_map[pic16n_index].datasheet == DS40001874F)
+		? PIC16N_TERAB_Q : PIC16N_TERAB;
+
 	pic16n_program_verify();
 
 	pic16n_load_pc_address(PIC16N_USERID_ADDR);
-	pic16n_bulk_erase_memory(PIC16N_TERAB);
+	pic16n_bulk_erase_memory(t);
 
 	if (pic16n_map[pic16n_index].eeprom) {
 		pic16n_load_pc_address(PIC16N_EEPROM_ADDR);
-		pic16n_bulk_erase_memory(PIC16N_TERAB);
+		pic16n_bulk_erase_memory(t);
 	}
 
 	pic16n_standby();
@@ -507,7 +562,7 @@ pic16n_read_config_memory(void)
 		 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 		 */
 		if (pic16n_conf.deviceid == 0x0000 || pic16n_conf.deviceid == 0x3FFF) {
-			printf("%s: information: %s.\n",
+			printf("%s: information: %s\n",
 				__func__, io_fault(pic16n_conf.deviceid));
 		} else {
 			printf("%s: information: device unknown: [%04X]\n",
@@ -520,9 +575,13 @@ pic16n_read_config_memory(void)
 	/* Device recognised */
 	pic16n_index = dev;
 
+	/*
+	 * USER ID and CONFIG words are mapped to bytes because PIC18 HEX uses byte addressing.
+	 */
+
 	/* User ID */
 	pic16n_load_pc_address(PIC16N_USERID_ADDR);
-	for (uint32_t i = 0; i < PIC16N_USERID_MAX; i += 2) {
+	for (uint32_t i = 0; i < pic16n_map[pic16n_index].idsize; i += 2) {
 		word = pic16n_read_data_from_nvm(1);
 		pic16n_conf.userid[i] = word;
 		pic16n_conf.userid[i + 1] = word >> 8;
@@ -534,6 +593,10 @@ pic16n_read_config_memory(void)
 		word = pic16n_read_data_from_nvm(1);
 		pic16n_conf.config[i] = word;
 		pic16n_conf.config[i + 1] = word >> 8;
+		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGAND)) {
+			pic16n_conf.config[i] &= pic16n_map[pic16n_index].masks[i];
+			pic16n_conf.config[i + 1] &= pic16n_map[pic16n_index].masks[i + 1];
+		}
 	}
 
 	/* Device information area */
@@ -662,12 +725,18 @@ pic16n_write_panel(uint32_t region, uint32_t address, uint32_t *panel, uint32_t 
 {
 	uint16_t word;
 
-	for (uint32_t i = 0; i < panel_size; i += 2) {
-		word = panel[i] | (panel[i + 1] << 8);
-		pic16n_load_data_for_nvm(word, 1);
+	if (panel_size == 2) { /* DS40001874F */
+		word = panel[0] | panel[1] << 8;
+		pic16n_load_pc_address(address);
+		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q);
+	} else {
+		for (uint32_t i = 0; i < panel_size; i += 2) {
+			word = panel[i] | panel[i + 1] << 8;
+			pic16n_load_data_for_nvm(word, 1);
+		}
+		pic16n_load_pc_address(address);
+		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CODE);
 	}
-	pic16n_load_pc_address(address);
-	pic16n_begin_internally_timed_programming(PIC16N_TPINT_CODE);
 }
 
 /*****************************************************************************
@@ -677,15 +746,20 @@ pic16n_write_panel(uint32_t region, uint32_t address, uint32_t *panel, uint32_t 
  *****************************************************************************/
 
 /*
- * WRITE Data/EEPROM BYTE
+ * WRITE Data/EEPROM WORD
  */
 static inline
 void
-pic16n_write_data_memory(uint32_t address, uint8_t data)
+pic16n_write_data_memory(uint32_t address, uint16_t word)
 {
 	pic16n_load_pc_address(address);
-	pic16n_load_data_for_nvm(data, 0);
-	pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+
+	if (pic16n_map[pic16n_index].datasheet == DS40001874F) {
+		pic16n_program_data_command(word, 0, PIC16N_TPDFM_Q);
+	} else {
+		pic16n_load_data_for_nvm(word, 0);
+		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+	}
 }
 
 /*****************************************************************************
@@ -699,12 +773,15 @@ pic16n_write_data_memory(uint32_t address, uint8_t data)
  *  
  *  RETURN WORD
  */
-static inline
-uint16_t
+static inline uint16_t
 pic16n_write_config_word(uint16_t word)
 {
-	pic16n_load_data_for_nvm(word, 0);
-	pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+	if (pic16n_map[pic16n_index].datasheet == DS40001874F) {
+		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q);
+	} else {
+		pic16n_load_data_for_nvm(word, 0);
+		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+	}
 
 	return pic16n_read_data_from_nvm(1);
 }
@@ -722,7 +799,7 @@ pic16n_write_config(void)
 	pic16n_program_verify();
 
 	pic16n_load_pc_address(PIC16N_USERID_ADDR);
-	for (uint32_t i = 0; i < PIC16N_USERID_MAX; i += 2) {
+	for (uint32_t i = 0; i < pic16n_map[pic16n_index].idsize; i += 2) {
 		wdata = pic16n_conf.userid[i] | pic16n_conf.userid[i + 1] << 8;
 		vdata = pic16n_write_config_word(wdata);
 		if (vdata != wdata) {
@@ -734,9 +811,18 @@ pic16n_write_config(void)
 	}
 
 	pic16n_load_pc_address(PIC16N_CONFIG_ADDR);
-	for (uint32_t i = 0; i < PIC16N_CONFIG_MAX; i += 2) {
+	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
 		wdata = pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8;
+		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGSET))
+			wdata |= ~(pic16n_map[pic16n_index].masks[i] |
+				pic16n_map[pic16n_index].masks[i + 1] << 8);
 		vdata = pic16n_write_config_word(wdata);
+		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+			uint16_t mask = pic16n_map[pic16n_index].masks[i] |
+				pic16n_map[pic16n_index].masks[i + 1] << 8;
+			wdata &= mask;
+			vdata &= mask;
+		}
 		if (vdata != wdata) {
 			printf("%s: error: CONFIG%d write failed: read [%04X] expected [%04X]\n",
 				__func__, i + 1, vdata, wdata);
@@ -747,7 +833,7 @@ pic16n_write_config(void)
 
 	pic16n_standby();
 
-	return PIC16N_USERID_MAX + PIC16N_CONFIG_MAX;
+	return pic16n_map[pic16n_index].idsize + pic16n_map[pic16n_index].config;
 }
 
 /*****************************************************************************
@@ -780,7 +866,7 @@ pic16n_getregion(uint32_t address)
 	}
 	/* ID */
 	if (address >= PIC16N_USERID_ADDR && address < (PIC16N_USERID_ADDR +
-		PIC16N_USERID_MAX)) {
+		pic16n_map[pic16n_index].idsize)) {
 		return PIC_REGIONID;
 	}
 	/* CONFIG */
@@ -794,8 +880,8 @@ pic16n_getregion(uint32_t address)
 			pic16n_map[pic16n_index].eeprom))
 			return PIC_REGIONDATA;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%04X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%04X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -817,8 +903,8 @@ pic16n_init_writeregion(uint32_t region)
 	case PIC_REGIONDATA:
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -842,8 +928,6 @@ pic16n_writeregion(uint32_t address, uint32_t region, uint16_t data)
 		pic16n_write_data_memory(address, data);
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*
@@ -854,58 +938,33 @@ pic16n_writeregion(uint32_t address, uint32_t region, uint16_t data)
 static inline uint32_t
 pic16n_init_verifyregion(uint32_t region)
 {
-	switch (region) {
-	case PIC_REGIONCODE:
-	case PIC_REGIONID:
-	case PIC_REGIONCONFIG:
-	case PIC_REGIONDATA:
-		/* Nothing to do on PIC16 new */
-		return region;
+	if (region == PIC_REGIONNOTSUP) {
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
-	return PIC_REGIONNOTSUP;
+
+	return region;
 }
 
 /*
- * VERIFY REGION
- *
- *  RETURN DATA
+ * GET VERIFY DATA FOR REGION
  */
-static uint32_t
-pic16n_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint16_t wdata, uint8_t size)
+static uint16_t
+pic16n_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint8_t mode)
 {
-	uint16_t vdata = 0;
-
-	if (region == PIC_REGIONNOTSUP) {
-		if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
-		return wdata;
-	}
 	if (index == 0)
 		pic16n_load_pc_address(address);
-	switch (size) {
-	case 0:	vdata = pic16n_read_data_from_nvm(1) & 0xFF;		/* EEPROM BYTE */
-		break;
-	case 1: if (address & 1)					/* CODE/USERID/CONFIG BYTE */
-			vdata = pic16n_read_data_from_nvm(1) >> 8;	/* HIGH BYTE */
+
+	if (mode == 0)
+		return pic16n_read_data_from_nvm(1) & 0xFF;		/* EEPROM BYTE */
+
+	if (mode == 1) {						/* CODE/USERID/CONFIG BYTE */
+		if (address & 1)
+			return pic16n_read_data_from_nvm(1) >> 8;	/* HIGH BYTE */
 		else
-			vdata = pic16n_read_data_from_nvm(1) & 0xFF;	/* LOW BYTE */
-		break;
-	default:
-	case 2: vdata = pic16n_read_data_from_nvm(1);			/* CODE/USERID/CONFIG WORD */
-		break;
+			return pic16n_read_data_from_nvm(1) & 0xFF;	/* LOW  BYTE */
 	}
-	if (vdata != wdata && p.f) {
-		if (size == 2)
-			printf("%s: error: read [%04X] expected [%04X] at [%06X]\n",
-				__func__, vdata, wdata, address);
-		else
-			printf("%s: error: read [%02X] expected [%02X] at [%06X]\n",
-				__func__, vdata, wdata, address);
-	}
-	return vdata;
+	return pic16n_read_data_from_nvm(1);				/* CODE/USERID/CONFIG WORD */
 }
 
 /*****************************************************************************
@@ -922,7 +981,7 @@ pic16n_program_begin(void)
 {
 	pic16n_program_verify();
 
-	memset(pic16n_conf.userid, -1, sizeof(uint8_t) * PIC16N_USERID_MAX);
+	memset(pic16n_conf.userid, -1, sizeof(uint8_t) * pic16n_map[pic16n_index].idsize);
 	memset(pic16n_conf.config, -1, sizeof(uint8_t) * PIC16N_CONFIG_MAX);
 }
 
@@ -968,7 +1027,6 @@ pic16n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 {
 	uint32_t address, new_region;
 	uint16_t wdata, vdata;
-	uint8_t size;
 
 	for (uint32_t i = 0; i < pdata->nbytes;) {
 		address = pdata->address + i;
@@ -977,29 +1035,61 @@ pic16n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			current_region = pic16n_init_verifyregion(new_region);
 		if (current_region == PIC_REGIONNOTSUP) {
 			i += 1;
-		} else if (current_region == PIC_REGIONDATA) {
+		}
+		else if (current_region == PIC_REGIONDATA) {
 			wdata = pdata->bytes[i];
-			vdata = pic16n_verifyregion(address, current_region, i, wdata, 0);
+			vdata = pic16n_verifyregion(address, current_region, i, 0);
 			if (vdata != wdata) {
+				if (p.f) printf("%s: error: read [%02X] expected [%02X] at [%06X]\n",
+					__func__, vdata, wdata, address);
 				pdata->bytes[i] = vdata;
 				(*fail) += 1;
 			}
 			i += 1;
-		} else {
+		}
+		else if ((pdata->nbytes - i) == 1) {	/* BYTE */
 			wdata = pdata->bytes[i];
-			size = 1; /* BYTE */
-			if ((i + 1) < pdata->nbytes) {
-				wdata |= pdata->bytes[i + 1] << 8;
-				size = 2; /* WORD */
+			vdata = pic16n_verifyregion(address, current_region, i, 1);
+			if (current_region == PIC_REGIONCONFIG) {
+				if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+					uint8_t a = address - PIC16N_CONFIG_ADDR;
+					wdata &= pic16n_map[pic16n_index].masks[a];
+					vdata &= pic16n_map[pic16n_index].masks[a];
+				}
 			}
-			vdata = pic16n_verifyregion(address, current_region, i, wdata, size);
 			if (vdata != wdata) {
+				if (p.f) printf("%s: error: read [%02X] expected [%02X] at [%06X]\n",
+					__func__, vdata, wdata, address);
 				pdata->bytes[i] = vdata;
-				if (size == 2)
-					pdata->bytes[i + 1] = vdata >> 8;
-				(*fail) += size;
+				(*fail) += 1;
 			}
-			i += size;
+			i += 1;
+		}
+		else {					/* WORD */
+			wdata = pdata->bytes[i] | pdata->bytes[i + 1] << 8;
+			vdata = pic16n_verifyregion(address, current_region, i, 2);
+			if (current_region == PIC_REGIONCONFIG) {
+				if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+					uint8_t a = address - PIC16N_CONFIG_ADDR;
+					if (a < PIC16N_CONFIG_MAX) {
+						uint16_t mask = pic16n_map[pic16n_index].masks[a] |
+							pic16n_map[pic16n_index].masks[a + 1] << 8;
+						wdata &= mask;
+						vdata &= mask;
+					} else {
+						if (p.f) fprintf(p.f, "%s: warning: config address invalid [%06X]\n",
+							__func__, address);
+					}
+				}
+			}
+			if (vdata != wdata) {
+				if (p.f) printf("%s: error: read [%04X] expected [%04X] at [%06X]\n",
+					__func__, vdata, wdata, address);
+				pdata->bytes[i] = vdata;
+				pdata->bytes[i + 1] = vdata >> 8;
+				(*fail) += 2;
+			}
+			i += 2;
 		}
 	}
 	return current_region;
@@ -1029,28 +1119,41 @@ pic16n_view_data(pic_data *pdata)
 void
 pic16n_dumpdeviceid(void)
 {
-	printf("[000000] [PROGRAM]     %04X WORDS (%04X ROWS OF %04X WORDS)\n",
+	uint32_t i, j;
+	uint16_t word;
+
+	printf("[000000] [PROGRAM]  %04X WORDS (%04X ROWS OF %04X WORDS)\n",
 		pic16n_map[pic16n_index].flash,
 		2 * pic16n_map[pic16n_index].flash / pic16n_map[pic16n_index].latches,
 		pic16n_map[pic16n_index].latches / 2);
-	for (uint32_t i = 0; i < PIC16N_USERID_MAX; ++i) {
-		printf("[%06X] [IDLOCATION%d] %02X %c\n",
-			PIC16N_USERID_ADDR + i,
-			i + 1,
-			pic16n_conf.userid[i], PIC_CHAR(0xFF & pic16n_conf.userid[i]));
+
+	if (pic16n_map[pic16n_index].idsize <= 16) {
+		for (i = j = 0; i < pic16n_map[pic16n_index].idsize; i += 2, ++j) {
+			word = pic16n_conf.userid[i] | pic16n_conf.userid[i + 1] << 8;
+			printf("[%06X] [USERID%d]  %04X\n", PIC16N_USERID_ADDR + i, j, word);
+		}
+	} else for (i = 0; i < pic16n_map[pic16n_index].idsize; i += 16) {
+		printf("[%04X] [USERID%02X] ", PIC16N_USERID_ADDR + i, i / 2);
+		for (j = 0; j < 16; j += 2) {
+			word = pic16n_conf.userid[i + j] | pic16n_conf.userid[i + j + 1] << 8;
+			if (j != 14)
+				printf("%04X ", word);
+			else
+				printf("%04X\n", word);
+		}
 	}
 
 	pic16n_dumpconfig(PIC_BRIEF, 0);
 
 	if (pic16n_map[pic16n_index].eeprom) {
-		printf("[%06X] [DATA]        %04X BYTES\n",
+		printf("[%06X] [DATA]     %04X BYTES\n",
 			PIC16N_EEPROM_ADDR, pic16n_map[pic16n_index].eeprom);
 	}
 
 	/* Device information area */
 	if (pic16n_map[pic16n_index].devinfo) {
 		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devinfo; i += 8) {
-			printf("[%04X] [DEVINF%02X]    ", PIC16N_DEVINFO_ADDR + 2 * i, 2 * i);
+			printf("[%04X] [DEVINF%02X] ", PIC16N_DEVINFO_ADDR + 2 * i, 2 * i);
 			uint32_t j;
 			for (j = 0; j < 7; ++j)
 				printf("%04X ", pic16n_conf.devinfo[i + j]);
@@ -1060,18 +1163,18 @@ pic16n_dumpdeviceid(void)
 
 	/* Device configuration information */
 	if (pic16n_map[pic16n_index].devconf) {
-		printf("[%04X] [ERASE]       %04X\n", PIC16N_ERASE, pic16n_conf.devconf[0]);
-		printf("[%04X] [LATCHES]     %04X\n", PIC16N_LATCHES, pic16n_conf.devconf[1]);
-		printf("[%04X] [ROWS]        %04X\n", PIC16N_ROWS, pic16n_conf.devconf[2]);
-		printf("[%04X] [EEPROM]      %04X\n", PIC16N_EEPROM, pic16n_conf.devconf[3]);
-		printf("[%04X] [PINS]        %04X\n", PIC16N_PINS, pic16n_conf.devconf[4]);
+		printf("[%04X] [ERASE]    %04X\n", PIC16N_ERASE, pic16n_conf.devconf[0]);
+		printf("[%04X] [LATCHES]  %04X\n", PIC16N_LATCHES, pic16n_conf.devconf[1]);
+		printf("[%04X] [ROWS]     %04X\n", PIC16N_ROWS, pic16n_conf.devconf[2]);
+		printf("[%04X] [EEPROM]   %04X\n", PIC16N_EEPROM, pic16n_conf.devconf[3]);
+		printf("[%04X] [PINS]     %04X\n", PIC16N_PINS, pic16n_conf.devconf[4]);
 	}
 
-	printf("[3FFFFC] [REVISION]    %04X MAJ:%02X MIN:%02X\n",
+	printf("[3FFFFC] [REVISION] %04X MAJ:%02X MIN:%02X\n",
 		pic16n_conf.revisionid,
 		(pic16n_conf.revisionid >> PIC16N_MAJOR_SHIFT) & PIC16N_REV_MASK,
 		pic16n_conf.revisionid & PIC16N_REV_MASK);
-	printf("[3FFFFE] [DEVICEID]    %04X %s\n", pic16n_conf.deviceid,	
+	printf("[3FFFFE] [DEVICEID] %04X %s\n", pic16n_conf.deviceid,	
 		pic16n_map[pic16n_index].devicename);
 }
 
@@ -1082,9 +1185,8 @@ void
 pic16n_dumpconfig(uint32_t mode, uint32_t partition)
 {
 	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
-		printf("[%06X] [CONFIG%d]     %04X\n",
-			PIC16N_CONFIG_ADDR + i,
-			i / 2 + 1,
+		printf("[%06X] [CONFIG%d]  %04X\n",
+			PIC16N_CONFIG_ADDR + i, i / 2 + 1,
 			(pic16n_conf.config[i + 1] << 8) | pic16n_conf.config[i]);
 	}
 #ifdef VERBOSE
@@ -1214,12 +1316,12 @@ pic16n_dumpdevice(void)
 	/* PIC18: Extended address = 0x0020 (USERID: 0x200000) */
 	pic_dumpaddr(PIC16N_USERID_ADDR, 1);
 
-	for (i = 0; i < PIC16N_USERID_MAX; ++i)
-		pic_dumpbyte(i, pic16n_conf.userid[i]);
+	for (i = 0; i < pic16n_map[pic16n_index].idsize; i += 2)
+		pic_dumpword16(i / 2, pic16n_conf.userid[i] | pic16n_conf.userid[i + 1] << 8);
 
 	/* PIC18: Extended address = 0x0030 (CONFIG: 0x300000) */
 	pic_dumpaddr(PIC16N_CONFIG_ADDR, 1);
 
-	for (i = 0; i < pic16n_map[pic16n_index].config; ++i)
-		pic_dumpbyte(i, pic16n_conf.config[i]);
+	for (i = 0; i < pic16n_map[pic16n_index].config; i += 2)
+		pic_dumpword16(i / 2, pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8);
 }

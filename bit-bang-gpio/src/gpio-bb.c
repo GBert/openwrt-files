@@ -22,6 +22,7 @@
 #include <linux/gpio.h>
 #include <linux/uaccess.h>
 #include <linux/cdev.h>
+#include <linux/version.h>
 
 #include "gpio-bb.h"
 
@@ -258,11 +259,19 @@ static long gpio_bb_ioctl(struct file *file, unsigned int cmd, unsigned long arg
 		return -EINVAL;
 	}
 	if (_IOC_DIR(cmd) & _IOC_READ) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 		if (!access_ok(VERIFY_READ, (void *) arg, _IOC_SIZE(cmd)))
+#else
+		if (!access_ok((void *) arg, _IOC_SIZE(cmd)))
+#endif
 			return -EFAULT;
 	}
 	if (_IOC_DIR(cmd) & _IOC_WRITE) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,0,0)
 		if (!access_ok(VERIFY_WRITE, (void *) arg, _IOC_SIZE(cmd)))
+#else
+		if (!access_ok((void *) arg, _IOC_SIZE(cmd)))
+#endif
 			return -EFAULT;
 	}
 	switch (cmd) {

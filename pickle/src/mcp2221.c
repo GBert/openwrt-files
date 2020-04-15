@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018 Darron Broad
+ * Copyright (C) 2017-2019 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -161,7 +161,14 @@ mcp2221_open_hid(void)
 	struct hiddev_devinfo devinfo;
 
 	for (i = 0; i <= HIDMAX; ++i) {
-		snprintf(str, STRLEN, HIDDEV, i);
+		rc = snprintf(str, STRLEN, HIDDEV, i);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
 		rc = stat(str, &st);
 		if (rc < 0)
 			continue;

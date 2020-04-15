@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -93,83 +93,100 @@ struct pic14n_config pic14n_conf;
 
 /*****************************************************************************
  *
+ * Hardware config masks
+ *
+ *  DS40001838C TABLE B-1: DEVICE IDs AND CHECKSUMS
+ *  DS40001753B TABLE B-1: DEVICE IDs AND CHECKSUMS
+ *  DS40001880A TABLE B-1: DEVICE IDs AND CHECKSUMS
+ *  DS40001970A 4.1 Device IDs and Checksums
+ *
+ *****************************************************************************/
+
+/*                           1 8007 2 8008 3 8009 4 800A 5 800B */
+uint16_t DS40001838C_B1[] = {0x2977,0x3EE3,0x3F7F,0x2F9F,0x0001};
+uint16_t DS40001753B_B1[] = {0x2977,0x3EE3,0x3F7F,0x3003,0x0003};
+uint16_t DS40001880A_B1[] = {0x2F77,0x3EE7,0x3F7F,0x2F9F,0x0001};
+uint16_t DS40001970A_41[] = {0x2977,0x3EE7,0x3F7F,0x2F9F,0x0001};
+
+/*****************************************************************************
+ *
  * Hardware algorithm map
  *
  *****************************************************************************/
 
 struct pic14n_dsmap pic14n_map[] =
 {
-/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches	Inf/Con/Cal*/
-{"PIC16F18854", PIC16F18854,    DS40001753B,	PIC14N_WORD(7),  5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18854",PIC16LF18854,   DS40001753B,	PIC14N_WORD(7),  5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18855", PIC16F18855,    DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18855",PIC16LF18855,   DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18875", PIC16F18875,    DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18875",PIC16LF18875,   DS40001753B,	PIC14N_WORD(14), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18856", PIC16F18856,    DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18856",PIC16LF18856,   DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18876", PIC16F18876,    DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18876",PIC16LF18876,   DS40001753B,	PIC14N_WORD(28), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18857", PIC16F18857,    DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18857",PIC16LF18857,   DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16F18877", PIC16F18877,    DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
-{"PIC16LF18877",PIC16LF18877,   DS40001753B,	PIC14N_WORD(56), 5,      0/*256*/,	32,	0,0,4},
+/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches	Inf/Con/Cal	MASKS*/
+{"PIC16F18854", PIC16F18854,    DS40001753B,	PIC14N_WORD(7),  5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18854",PIC16LF18854,   DS40001753B,	PIC14N_WORD(7),  5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18855", PIC16F18855,    DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18855",PIC16LF18855,   DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18875", PIC16F18875,    DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18875",PIC16LF18875,   DS40001753B,	PIC14N_WORD(14), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18856", PIC16F18856,    DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18856",PIC16LF18856,   DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18876", PIC16F18876,    DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18876",PIC16LF18876,   DS40001753B,	PIC14N_WORD(28), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18857", PIC16F18857,    DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18857",PIC16LF18857,   DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16F18877", PIC16F18877,    DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
+{"PIC16LF18877",PIC16LF18877,   DS40001753B,	PIC14N_WORD(56), 5,      	256,	32,	0,0,4,		DS40001753B_B1},
 
-{"PIC16F15313", PIC16F15313,    DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
-{"PIC16LF15313",PIC16LF15313,   DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
-{"PIC16F15323", PIC16F15323,    DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
-{"PIC16LF15323",PIC16LF15323,   DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4},
-{"PIC16F15324", PIC16F15324,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16LF15324",PIC16LF15324,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16F15344", PIC16F15344,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16LF15344",PIC16LF15344,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16F15325", PIC16F15325,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF15325",PIC16LF15325,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F15345", PIC16F15345,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF15345",PIC16LF15345,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F15354", PIC16F15354,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16LF15354",PIC16LF15354,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16F15355", PIC16F15355,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF15355",PIC16LF15355,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F15356", PIC16F15356,    DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF15356",PIC16LF15356,   DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16F15375", PIC16F15375,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF15375",PIC16LF15375,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F15376", PIC16F15376,    DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF15376",PIC16LF15376,   DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
+{"PIC16F15313", PIC16F15313,    DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15313",PIC16LF15313,   DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15323", PIC16F15323,    DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15323",PIC16LF15323,   DS40001838B,	PIC14N_WORD(3.5),5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15324", PIC16F15324,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15324",PIC16LF15324,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15344", PIC16F15344,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15344",PIC16LF15344,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15325", PIC16F15325,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15325",PIC16LF15325,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15345", PIC16F15345,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15345",PIC16LF15345,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15354", PIC16F15354,    DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15354",PIC16LF15354,   DS40001838B,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15355", PIC16F15355,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15355",PIC16LF15355,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15356", PIC16F15356,    DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15356",PIC16LF15356,   DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15375", PIC16F15375,    DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15375",PIC16LF15375,   DS40001838B,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16F15376", PIC16F15376,    DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
+{"PIC16LF15376",PIC16LF15376,   DS40001838B,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4,		DS40001838C_B1},
 
-{"PIC16F19155",  PIC16F19155,   DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF19155", PIC16LF19155,  DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F19156",  PIC16F19156,   DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF19156", PIC16LF19156,  DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16F19175",  PIC16F19175,   DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF19175", PIC16LF19175,  DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F19176",  PIC16F19176,   DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF19176", PIC16LF19176,  DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16F19185",  PIC16F19185,   DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF19185", PIC16LF19185,  DS40001880A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F19186",  PIC16F19186,   DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF19186", PIC16LF19186,  DS40001880A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
+{"PIC16F19155",  PIC16F19155,   DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19155", PIC16LF19155,  DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16F19156",  PIC16F19156,   DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19156", PIC16LF19156,  DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16F19175",  PIC16F19175,   DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19175", PIC16LF19175,  DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16F19176",  PIC16F19176,   DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19176", PIC16LF19176,  DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16F19185",  PIC16F19185,   DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19185", PIC16LF19185,  DS40001880A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16F19186",  PIC16F19186,   DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
+{"PIC16LF19186", PIC16LF19186,  DS40001880A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001880A_B1},
 
-{"PIC16F18424",  PIC16F18424,   DS40001970A,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16LF18424", PIC16LF18424,  DS40001970A,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16F18425",  PIC16F18425,   DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF18425", PIC16LF18425,  DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F18426",  PIC16F18426,   DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF18426", PIC16LF18426,  DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16F18444",  PIC16F18444,   DS40001970A,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16LF18444", PIC16LF18444,  DS40001970A,	PIC14N_WORD(7),  5,      	0,	32,	32,5,4},
-{"PIC16F18445",  PIC16F18445,   DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF18445", PIC16LF18445,  DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F18446",  PIC16F18446,   DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF18446", PIC16LF18446,  DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16F18455",  PIC16F18455,   DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16LF18455", PIC16LF18455,  DS40001970A,	PIC14N_WORD(14), 5,      	0,	32,	32,5,4},
-{"PIC16F18456",  PIC16F18456,   DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
-{"PIC16LF18456", PIC16LF18456,  DS40001970A,	PIC14N_WORD(28), 5,      	0,	32,	32,5,4},
+{"PIC16F18424",  PIC16F18424,   DS40001970A,	PIC14N_WORD(7),  5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18424", PIC16LF18424,  DS40001970A,	PIC14N_WORD(7),  5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18425",  PIC16F18425,   DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18425", PIC16LF18425,  DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18426",  PIC16F18426,   DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18426", PIC16LF18426,  DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18444",  PIC16F18444,   DS40001970A,	PIC14N_WORD(7),  5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18444", PIC16LF18444,  DS40001970A,	PIC14N_WORD(7),  5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18445",  PIC16F18445,   DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18445", PIC16LF18445,  DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18446",  PIC16F18446,   DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18446", PIC16LF18446,  DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18455",  PIC16F18455,   DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18455", PIC16LF18455,  DS40001970A,	PIC14N_WORD(14), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16F18456",  PIC16F18456,   DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
+{"PIC16LF18456", PIC16LF18456,  DS40001970A,	PIC14N_WORD(28), 5,      	256,	32,	32,5,4,		DS40001970A_41},
 
-{"(null)",      0,              0,              0,               0,             0,      0,      0,0,0},
-/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches	Inf/Con/Cal*/
+{"(null)",      0,              0,              0,               0,             0,      0,      0,0,0,		0},
+/*Device name	Device id	Data-sheet	Flash		 Config		EEProm	Latches	Inf/Con/Cal	MASKS*/
 };
 #define PIC14N_SIZE ((sizeof(pic14n_map) / sizeof(struct pic14n_dsmap)) - 1)
 
@@ -261,7 +278,6 @@ pic14n_program_verify(void)
 
 	/* LVP */
 	if (p.key == LVPKEY) {
-
 		/* VPP HIGH */
 		io_set_vpp(HIGH);
 		/* TENTH(250ns) */
@@ -534,7 +550,7 @@ pic14n_read_config_memory(void)
 		 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 		 */
 		if (pic14n_conf.deviceid == 0x0000 || pic14n_conf.deviceid == 0x3FFF) {
-			printf("%s: information: %s.\n",
+			printf("%s: information: %s\n",
 				__func__, io_fault(pic14n_conf.deviceid));
 		} else {
 			printf("%s: information: device unknown: [%04X]\n",
@@ -548,8 +564,11 @@ pic14n_read_config_memory(void)
 	pic14n_index = dev;
 
 	/* Config word(s) */
-	for (uint32_t i = 0; i < pic14n_map[pic14n_index].config; ++i)
+	for (uint32_t i = 0; i < pic14n_map[pic14n_index].config; ++i) {
 		pic14n_conf.config[i] = pic14n_read_data_from_nvm(1);
+		if (pic14n_map[pic14n_index].masks && (p.config & CONFIGAND))
+			pic14n_conf.config[i] &= pic14n_map[pic14n_index].masks[i];
+	}
 
 	/* Device information area */
 	if (pic14n_map[pic14n_index].devinfo) {
@@ -722,7 +741,7 @@ pic14n_write_config_word(uint16_t word)
 uint32_t
 pic14n_write_config(void)
 {
-	uint16_t vdata;
+	uint16_t wdata, vdata;
 
 	pic14n_program_verify();
 
@@ -738,11 +757,18 @@ pic14n_write_config(void)
 	}
 
 	pic14n_load_pc_address(PIC14N_CONFIG_ADDR);
-	for (uint32_t i = 0; i < PIC14N_CONFIG_MAX; ++i) {
-		vdata = pic14n_write_config_word(pic14n_conf.config[i]);
-		if (vdata != pic14n_conf.config[i]) {
+	for (uint32_t i = 0; i < pic14n_map[pic14n_index].config; ++i) {
+		wdata = pic14n_conf.config[i];
+		if (pic14n_map[pic14n_index].masks && (p.config & CONFIGSET))
+			wdata |= ~(pic14n_map[pic14n_index].masks[i]);
+		vdata = pic14n_write_config_word(wdata);
+		if (pic14n_map[pic14n_index].masks && (p.config & CONFIGVER)) {
+			wdata &= pic14n_map[pic14n_index].masks[i];
+			vdata &= pic14n_map[pic14n_index].masks[i];
+		}
+		if (vdata != wdata) {
 			printf("%s: error: CONFIG%d write failed: read [%04X] expected [%04X]\n",
-				__func__, i + 1, vdata, pic14n_conf.config[i]);
+				__func__, i + 1, vdata, wdata);
 			pic14n_standby();
 			return 0;
 		}
@@ -750,7 +776,7 @@ pic14n_write_config(void)
 
 	pic14n_standby();
 
-	return (PIC14N_USERID_MAX + PIC14N_CONFIG_MAX) << 1;
+	return (PIC14N_USERID_MAX + pic14n_map[pic14n_index].config) << 1;
 }
 
 /*****************************************************************************
@@ -796,8 +822,8 @@ pic14n_getregion(uint32_t address)
 		if (address >= PIC14N_EEPROM_ADDR && address < data_high)
 			return PIC_REGIONDATA;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%04X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%04X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -819,8 +845,8 @@ pic14n_init_writeregion(uint32_t region)
 	case PIC_REGIONDATA:
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -844,8 +870,6 @@ pic14n_writeregion(uint32_t address, uint32_t region, uint16_t data)
 		pic14n_write_data_memory(address, data);
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
 }
 
 /*
@@ -856,43 +880,30 @@ pic14n_writeregion(uint32_t address, uint32_t region, uint16_t data)
 static inline uint32_t
 pic14n_init_verifyregion(uint32_t region)
 {
-	switch (region) {
-	case PIC_REGIONCODE:
-	case PIC_REGIONID:
-	case PIC_REGIONCONFIG:
-	case PIC_REGIONDATA:
-		/* Nothing to do on PIC14 new */
-		return region;
+	if (region == PIC_REGIONNOTSUP) {
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
-	return PIC_REGIONNOTSUP;
+
+	return region;
 }
 
 /*
- * VERIFY REGION
- *
- *  RETURN DATA
+ * GET VERIFY DATA FOR REGION
  */
 static inline uint32_t
 pic14n_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint16_t wdata)
 {
-	uint16_t vdata = 0;
-
 	if (region == PIC_REGIONNOTSUP) {
-		if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
 		return wdata;
 	}
+
 	if (index == 0)
 		pic14n_load_pc_address(address);
-	vdata = pic14n_read_data_from_nvm(1);
-	if (vdata != wdata && p.f) {
-		printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
-			__func__, vdata, wdata, address);
-	}
-	return vdata;
+
+	return pic14n_read_data_from_nvm(1);
 }
 
 /*****************************************************************************
@@ -933,9 +944,7 @@ pic14n_program_data(uint32_t current_region, pic_data *pdata)
 		}
 		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8);
-		wdata &= PIC14N_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC14N_MASK;
 		pic14n_writeregion(address, current_region, wdata);
 	}
 	return current_region;
@@ -969,11 +978,18 @@ pic14n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			current_region = pic14n_init_verifyregion(new_region);
 		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8);
-		wdata &= PIC14N_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC14N_MASK;
 		vdata = pic14n_verifyregion(address, current_region, i, wdata);
+		if (current_region == PIC_REGIONCONFIG) {
+			if (pic14n_map[pic14n_index].masks && (p.config & CONFIGVER)) {
+				uint8_t a = address - PIC14N_CONFIG_ADDR;
+				wdata &= pic14n_map[pic14n_index].masks[a];
+				vdata &= pic14n_map[pic14n_index].masks[a];
+			}
+		}
 		if (vdata != wdata) {
+			if (p.f) printf("%s: error: read [%04X] expected [%04X] at [%04X]\n",
+				__func__, vdata, wdata, address);
 			pdata->bytes[i] = vdata;
 			pdata->bytes[i + 1] = vdata >> 8;
 			(*fail) += 2;
@@ -992,8 +1008,7 @@ pic14n_view_data(pic_data *pdata)
 
 	printf("[%04X] ", pdata->address >> 1);
 	for (uint32_t i = 0; i < pdata->nbytes; i += 2) {
-		wdata = pdata->bytes[i] | (pdata->bytes[i + 1] << 8);
-		wdata &= PIC14_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC14_MASK;
 		printf("%04X ", wdata);
 	}
 	putchar('\n');

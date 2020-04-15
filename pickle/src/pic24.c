@@ -1,21 +1,23 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
+
+#undef DEBUG
 
 #include "pickle.h"
 
@@ -356,21 +358,21 @@ struct pic24_dsmap pic24_map[] =
 {"PIC24HJ256GP610A",   PIC24HJ256GP610A,   87552, 0,     DS70152H,  0xF80000, 8, 0xF80010, 4, 0, 0,        64,0,512,0,   0,0,0},
 
 /* These devices have 10 config bytes at the end of program flash */
-{"PIC24EP32GP202",     PIC24EP32GP202,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"PIC24EP32GP203",     PIC24EP32GP203,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"PIC24EP32GP204",     PIC24EP32GP204,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32GP502",   dsPIC33EP32GP502,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32GP503",   dsPIC33EP32GP503,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32GP504",   dsPIC33EP32GP504,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"PIC24EP32MC202",     PIC24EP32MC202,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"PIC24EP32MC203",     PIC24EP32MC203,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"PIC24EP32MC204",     PIC24EP32MC204,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC202",   dsPIC33EP32MC202,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC203",   dsPIC33EP32MC203,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC204",   dsPIC33EP32MC204,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC502",   dsPIC33EP32MC502,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC503",   dsPIC33EP32MC503,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
-{"dsPIC33EP32MC504",   dsPIC33EP32MC504,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
+{"PIC24EP32GP202",     PIC24EP32GP202,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"PIC24EP32GP203",     PIC24EP32GP203,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"PIC24EP32GP204",     PIC24EP32GP204,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32GP502",   dsPIC33EP32GP502,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32GP503",   dsPIC33EP32GP503,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32GP504",   dsPIC33EP32GP504,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"PIC24EP32MC202",     PIC24EP32MC202,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"PIC24EP32MC203",     PIC24EP32MC203,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"PIC24EP32MC204",     PIC24EP32MC204,     11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC202",   dsPIC33EP32MC202,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC203",   dsPIC33EP32MC203,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC204",   dsPIC33EP32MC204,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC502",   dsPIC33EP32MC502,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC503",   dsPIC33EP32MC503,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP32MC504",   dsPIC33EP32MC504,   11264, 0,     DS70663D,  0x0057EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
 {"PIC24EP64GP202",     PIC24EP64GP202,     22528, 0,     DS70663D,  0x00AFEC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
 {"PIC24EP64GP203",     PIC24EP64GP203,     22528, 0,     DS70663D,  0x00AFEC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
 {"PIC24EP64GP204",     PIC24EP64GP204,     22528, 0,     DS70663D,  0x00AFEC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
@@ -436,6 +438,25 @@ struct pic24_dsmap pic24_map[] =
 {"dsPIC33EP512MC502",  dsPIC33EP512MC502,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
 {"dsPIC33EP512MC504",  dsPIC33EP512MC504,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
 {"dsPIC33EP512MC506",  dsPIC33EP512MC506,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,1024,2,   0,0,0},
+
+{"dsPIC33EP128GM304",  dsPIC33EP128GM304,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP128GM604",  dsPIC33EP128GM604,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP128GM306",  dsPIC33EP128GM306,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP128GM706",  dsPIC33EP128GM706,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP128GM310",  dsPIC33EP128GM310,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP128GM710",  dsPIC33EP128GM710,  44032, 0,     DS70663D,  0x0157EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM304",  dsPIC33EP256GM304,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM604",  dsPIC33EP256GM604,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM306",  dsPIC33EP256GM306,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM706",  dsPIC33EP256GM706,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM310",  dsPIC33EP256GM310,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP256GM710",  dsPIC33EP256GM710,  87552, 0,     DS70663D,  0x02AFEC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM304",  dsPIC33EP512GM304,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM604",  dsPIC33EP512GM604,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM306",  dsPIC33EP512GM306,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM706",  dsPIC33EP512GM706,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM310",  dsPIC33EP512GM310,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
+{"dsPIC33EP512GM710",  dsPIC33EP512GM710,  175104,0,     DS70663D,  0x0557EC,10, 0x800FF8, 4, 0, 0,        2,0,512,2,    0,0,0},
 
 {"dsPIC30F1010",       dsPIC30F1010,       2048,  0,     DS70284B,  0xF80000, 8, 0x8005C0,32, 0, 0,        32,0,32,0,    0,0,0},
 {"dsPIC30F2020",       dsPIC30F2020,       4096,  0,     DS70284B,  0xF80000, 8, 0x8005C0,32, 0, 0,        32,0,32,0,    0,0,0},
@@ -1755,7 +1776,7 @@ pic24_read_config_memory(void)
 	}
 	if (!pic24_map[pic24_index].deviceid) {
 		if (pic24_conf.deviceid == 0x0000 || pic24_conf.deviceid == 0xFFFF) {
-			printf("%s: information: %s.\n",
+			printf("%s: information: %s\n",
 				__func__, io_fault(pic24_conf.deviceid));
 		} else {
 			printf("%s: information: device unknown: [%06X] [%06X]\n",
@@ -1948,7 +1969,14 @@ pic24_read_program_memory_block(uint32_t *data, uint32_t addr, uint32_t size)
 		data[i++] = (uint32_t)word1;
 #ifdef DEBUG
 		char d[STRLEN];
-		snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
+		int rc = snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
 		printf("%s: PCL=%04X\n", d, pic24_readreg(_PCL));
 #endif
 		addr += 4;
@@ -1979,7 +2007,15 @@ pic24_read_data_memory_block(uint16_t *data, uint32_t addr, uint16_t size)
 		data[i++] = pic24_table_read16_post_increment();
 #ifdef DEBUG
 		char d[STRLEN];
-		snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
+		int rc;
+		rc = snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
+		if (rc < 0) {
+			printf("%s: fatal error: snprintf failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		} else if (rc >= STRLEN) {
+			printf("%s: fatal error: snprintf overrun\n", __func__);
+			io_exit(EX_SOFTWARE); /* Panic */
+		}
 		printf("%s: PCL=%04X\n", d, pic24_readreg(_PCL));
 #endif
 	}
@@ -2626,8 +2662,8 @@ pic24_getregion(uint32_t address)
 			return PIC_REGIONCONFIG;
 		}
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%06X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%06X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2662,8 +2698,8 @@ pic24_init_writeregion(uint32_t region)
 	case PIC_REGIONBOOT:
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2695,8 +2731,8 @@ pic24_writeregion(uint32_t address, uint32_t region, uint32_t data)
 	case PIC_REGIONBOOT: /* IGNORED: COMMAND LINE ONLY */
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 }
 
 /*
@@ -2710,27 +2746,23 @@ pic24_init_verifyregion(uint32_t region)
 	if (region != PIC_REGIONNOTSUP) {
 		return region;
 	}
-	if (p.f)
-		printf("%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
- * VERIFY REGION
- *
- *  RETURN DATA
+ * GET VERIFY DATA FOR REGION
  */
 static inline uint32_t
 pic24_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint32_t wdata)
 {
-	uint32_t vdata = 0;
-
 	switch (region) {
 	case PIC_REGIONNOTSUP:
-		if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
 	case PIC_REGIONCONFIG: /* UNSUPPORTED: BIT MASKS NEEDED  */
+		/* FIXME */
 	case PIC_REGIONBOOT:   /* IGNORED:     COMMAND LINE ONLY */
 		return wdata;
 	}
@@ -2738,12 +2770,8 @@ pic24_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint32_t w
 		pic24_set_read_pointer(address);
 		pic24_goto200();
 	}
-	vdata = pic24_table_read24_post_increment();
-	if (vdata != wdata && p.f) {
-		fprintf(p.f, "%s: error: read [%06X] expected [%06X] at [%06X]\n",
-			__func__, vdata, wdata, address);
-	}
-	return vdata;
+
+	return pic24_table_read24_post_increment();
 }
 
 /*****************************************************************************
@@ -2814,11 +2842,11 @@ pic24_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			current_region = pic24_init_verifyregion(new_region);
 		if (current_region == PIC_REGIONNOTSUP)
 			continue;
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8) |
-			(pdata->bytes[i + 2] << 16);
+		wdata = pdata->bytes[i] | pdata->bytes[i + 1] << 8 | pdata->bytes[i + 2] << 16;
 		vdata = pic24_verifyregion(address, current_region, i, wdata);
 		if (vdata != wdata) {
+			if (p.f) fprintf(p.f, "%s: error: read [%06X] expected [%06X] at [%06X]\n",
+				__func__, vdata, wdata, address);
 			pdata->bytes[i] = vdata;
 			pdata->bytes[i + 1] = vdata >> 8;
 			pdata->bytes[i + 2] = vdata >> 16;
@@ -3134,6 +3162,50 @@ pic24_dumpconfig_gs(uint32_t configaddr, uint32_t configval[])
  * DUMP CONFIG WORD DETAILS FOR DEVICE
  */
 void
+pic24_dumpconfig_gs2(uint32_t configaddr, uint32_t configval[])
+{
+	char config[25][11] = {
+		/* 0x00XF80 */ "[UNKNOWN]",
+		/* 0x0XXF92 */ "[UNKNOWN]",
+		/* 0x0XXF84 */ "[UNKNOWN]",
+		/* 0x0XXF86 */ "[UNKNOWN]",
+		/* 0x0XXF88 */ "[UNKNOWN]",
+		/* 0x0XXF8A */ "[UNKNOWN]",
+		/* 0x0XXF8C */ "[FSEC]",
+		/* 0x0XXF8E */ "[UNKNOWN]",
+		/* 0x00XF90 */ "[FBSLIM]",
+		/* 0x0XXF92 */ "[UNKNOWN]",
+		/* 0x00XF94 */ "[FSIGN]",
+		/* 0x0XXF96 */ "[UNKNOWN]",
+		/* 0x00XF98 */ "[FOSCSEL]",
+		/* 0x0XXF9A */ "[UNKNOWN]",
+		/* 0x00XF9C */ "[FOSC]",
+		/* 0x0XXF9E */ "[UNKNOWN]",
+		/* 0x00XFA0 */ "[FWDT]",
+		/* 0x0XXFA2 */ "[UNKNOWN]",
+		/* 0x00XFA4 */ "[FPOR]",
+		/* 0x0XXFA6 */ "[UNKNOWN]",
+		/* 0x00XFA8 */ "[FICD]",
+		/* 0x0XXFAA */ "[UNKNOWN]",
+		/* 0x00XFAC */ "[FDEVOPT]",
+		/* 0x0XXFAE */ "[UNKNOWN]",
+		/* 0x00XFB0 */ "[FALTREG]"
+	};
+	for (uint32_t i = 0; i < pic24_map[pic24_index].nconfig; ++i) {
+		if (strcmp(config[i], "[UNKNOWN]"))
+			printf("[%06X] %-11s %04X\n", configaddr + 2 * i,
+				config[i], 0xFFFF & configval[i]);
+	}
+	if (pic24_supports_partition()) {
+		printf("[%06X] [FBTSEQ]    %06X\n", PIC24_FBTSEQ | configaddr,
+			configval[PIC24_FBTSEQ]);
+	}
+}
+
+/*
+ * DUMP CONFIG WORD DETAILS FOR DEVICE
+ */
+void
 pic24_dumpconfig_switch(uint32_t configaddr, uint32_t configval[])
 {
 	switch (pic24_map[pic24_index].datasheet) {
@@ -3145,9 +3217,11 @@ pic24_dumpconfig_switch(uint32_t configaddr, uint32_t configval[])
 		pic24_dumpconfig_ga6(configaddr, configval);
 		break;
 	case DS70005160C: /* dsPIC33EP64GS502  */
-	case DS70005192B: /* dsPIC33EP16GS202  */
 	case DS70005256A: /* dsPIC33EP128GS702 */
 		pic24_dumpconfig_gs(configaddr, configval);
+		break;
+	case DS70005192B: /* dsPIC33EP16GS202 */
+		pic24_dumpconfig_gs2(configaddr, configval);
 		break;
 	default:printf("[UNIMPLEMENTED]\n");
 		break;

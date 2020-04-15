@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -473,7 +473,7 @@ pic12_read_config_memory(void)
 
 	/* Device detect not available */
 	if (!p.devicename[0]) {
-		printf("%s: information: device must be selected on this architecture.\n", __func__);
+		printf("%s: information: device must be selected on this architecture\n", __func__);
 		return -1;
 	}
 
@@ -497,7 +497,7 @@ pic12_read_config_memory(void)
 	 * VELLEMAN K0848 SWITCH IN RUN     [3FFF]
 	 */
 	if (pic12_conf.config == 0x0000 || pic12_conf.config == 0x3FFF) {
-		printf("%s: information: %s.\n", __func__, io_fault(pic12_conf.config));
+		printf("%s: information: %s\n", __func__, io_fault(pic12_conf.config));
 		pic12_standby();
 		return -1;
 	}
@@ -754,8 +754,8 @@ pic12_getregion(uint16_t address)
 	if (address == PIC12_CONFIG) {
 		return PIC_REGIONCONFIG;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%04X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%04X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -775,8 +775,8 @@ pic12_initregion(uint16_t region, uint16_t *address)
 		*address = PIC12_CONFIG;
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	*address = 0;
 	return PIC_REGIONNOTSUP;
 }
@@ -793,8 +793,8 @@ pic12_loadregion(uint16_t region, uint16_t word)
 		pic12_load_data_for_program_memory(word);
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 }
 
 /*****************************************************************************
@@ -834,36 +834,24 @@ pic12_programregion(uint16_t address, uint16_t region, uint16_t data)
 		}
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%04X] [%d]\n", __func__, address, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%04X] [%d]\n",
+		__func__, address, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
- * VERIFY DATA FOR REGION
- *
- *  RETURN BYTE FAILURE COUNT
+ * GET VERIFY DATA FOR REGION
  */
 static inline uint16_t
 pic12_verifyregion(uint16_t address, uint16_t region, uint16_t wdata)
 {
-	uint16_t vdata = 0;
+	if (region == PIC_REGIONCODE || region == PIC_REGIONCONFIG)
+		return pic12_read_data_from_program_memory();
+	
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 
-	switch (region) {
-	case PIC_REGIONCODE:
-	case PIC_REGIONCONFIG:
-		vdata = pic12_read_data_from_program_memory();
-		break;
-	default:if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
-		return wdata;
-	}
-	if (vdata != wdata && p.f) {
-		fprintf(p.f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
-			__func__, vdata, wdata, address);
-	}
-	return vdata;
+	return wdata;
 }
 
 /*****************************************************************************
@@ -938,11 +926,11 @@ pic12_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			pic12_increment_address();
 			PC_address++;
 		}
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8);
-		wdata &= PIC12_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC12_MASK;
 		vdata = pic12_verifyregion(address, current_region, wdata);
 		if (vdata != wdata) {
+			if (p.f) fprintf(p.f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
+				__func__, vdata, wdata, address);
 			pdata->bytes[i] = vdata;
 			pdata->bytes[i + 1] = vdata >> 8;
 			(*fail) += 2;

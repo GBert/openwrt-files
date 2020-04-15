@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Darron Broad
+ * Copyright (C) 2015-2019 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.

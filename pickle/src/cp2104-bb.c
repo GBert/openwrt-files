@@ -1,19 +1,19 @@
 /*
- * Copyright (C) 2017-2018 Darron Broad
+ * Copyright (C) 2017-2019 Darron Broad
  * Copyright (C) 2015 Gerhard Bertelsmann
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -73,8 +73,17 @@ int
 cp2104_bb_open(void)
 {
 	char str[STRLEN];
+	int rc;
 
-	snprintf(str, STRLEN, "/dev/ttyUSB%c", p.device[2]); /* CP0 = /dev/ttyUSB0 */
+	rc = snprintf(str, STRLEN, "/dev/ttyUSB%c", p.device[2]); /* CP0 = /dev/ttyUSB0 */
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
         fd = open(str, O_RDWR | O_NOCTTY | O_NDELAY);
 	if (fd < 0)
 		return -1;

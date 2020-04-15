@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -230,7 +230,7 @@ struct pic24_dsmap {
 
 /*
  * DS39768D
- * 
+ *
  * LVP KEY ENTRY
  */
 #define DS39768D (39768)
@@ -610,6 +610,28 @@ struct pic24_dsmap {
 #define dsPIC33EP512MC502 (0x1785)
 #define dsPIC33EP512MC504 (0x1784)
 #define dsPIC33EP512MC506 (0x1787)
+
+/*
+ * DS80000577P
+ */
+#define dsPIC33EP128GM304 (0x1B40)
+#define dsPIC33EP128GM604 (0x1B48)
+#define dsPIC33EP128GM306 (0x1B43)
+#define dsPIC33EP128GM706 (0x1B4B)
+#define dsPIC33EP128GM310 (0x1B47)
+#define dsPIC33EP128GM710 (0x1B4F)
+#define dsPIC33EP256GM304 (0x1B80)
+#define dsPIC33EP256GM604 (0x1B88)
+#define dsPIC33EP256GM306 (0x1B83)
+#define dsPIC33EP256GM706 (0x1B8B)
+#define dsPIC33EP256GM310 (0x1B87)
+#define dsPIC33EP256GM710 (0x1B8F)
+#define dsPIC33EP512GM304 (0x1BC0)
+#define dsPIC33EP512GM604 (0x1BC8)
+#define dsPIC33EP512GM306 (0x1BC3)
+#define dsPIC33EP512GM706 (0x1BCB)
+#define dsPIC33EP512GM310 (0x1BC7)
+#define dsPIC33EP512GM710 (0x1BCF)
 
 /*
  * dsPIC30F SMPS (switch mode power supply) Flash Programming Specification

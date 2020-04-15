@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * Copyright (C) 2016 Gerhard Bertelsmann
  * All rights reserved.
  *

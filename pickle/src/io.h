@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -59,6 +59,7 @@ struct io_ops {
 /* Winklepicker reset */
 #define TX_BREAK      (0x8000)	/* send BREAK after open and before close */
 
+/* I/O back-ends */
 #define IONONE      (0) /* NO I/O                               */
 #define IOALLWINNER (1)	/* LINUX ALLWINNER GPIO                 */
 #define IOBITBANG   (2)	/* LINUX BIT-BANG DRIVER                */
@@ -68,6 +69,11 @@ struct io_ops {
 #define IOMCP23017  (6)	/* LINUX MCP23017 I2C GPIO              */
 #define IORPI       (7)	/* LINUX RPI GPIO DIRECT/VELLEMAN K8048 */
 #define IOSERIAL    (8)	/* POSIX SERIAL BIT-BANG TTY/TTYUSB     */
+
+/* Config mask rules (where supported & implemented) */
+#define CONFIGVER  (1)	/* VERIFY CONFIG BITS */
+#define CONFIGAND  (2)	/* AND CONFIG BITS AFTER READ */
+#define CONFIGSET  (4)	/* SET UNUSED CONFIG BITS BEFORE WRITE */
 
 #define GPIO_PGM_DISABLED (uint16_t)(-1)
 

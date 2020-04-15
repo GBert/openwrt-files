@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
- * 
+ * by the Free Software Foundation.
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
- * 
+ * Public License for more details.
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -20,7 +20,11 @@
 #ifndef _PICKLE_H
 #define _PICKLE_H
 
-#undef DEBUG
+#ifdef DEBUG
+#define DPRINT(...) printf(__VA_ARGS__)
+#else
+#define DPRINT(...)
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +65,8 @@
 #ifndef TRUE
 #define TRUE (HIGH)
 #endif
+
+#define ZERO (0)
 
 #define STRLEN (512)
 #define STRMAX (STRLEN - 1)
@@ -121,7 +127,11 @@ struct pickle;
 #include "util.h"
 #include "dotconf.h"
 #include "io.h"
+
+#if defined(PTEST) || defined(PIO)
 #include "icspio.h"
+#endif
+
 #include "pic.h"
 #include "pic12.h"
 #include "pic14.h"
@@ -130,6 +140,7 @@ struct pickle;
 #include "pic16n.h"
 #include "pic24.h"
 #include "pic32.h"
+
 #include "inhx32.h"
 
 /* SESSION */
@@ -152,6 +163,7 @@ struct pickle {
 	uint32_t sleep_high;	/* I/O clock high duration  */
 	uint32_t fwsleep;	/* ICSPIO bit time          */
 	uint32_t debug;		/* default 0 (no debugging) */
+	uint32_t config;	/* default 0 (disabled)     */
 	uint32_t baudrate;	/* STK500v2 baud rate       */
 	uint32_t mcp;		/* MCP23017 I2C address     */
 	char usb_serial[STRLEN];/* USB serial number        */
@@ -160,6 +172,7 @@ struct pickle {
 	uint16_t pgdo;		/* DTR/PGD DATA_OUT         */
 	uint16_t pgdi;		/* CTS/PGD DATA_IN          */
 	uint16_t pgm;		/* PGM OUT                  */
+	uint32_t error;		/* Error rules              */
 
 	/* Device configuration */
 	uint8_t clock_falling;	/* Clock falling edge for shifting in bits        */
@@ -174,6 +187,10 @@ struct pickle {
 	/* I/O open */
 	uint8_t iot;
 };
+
+/* Error rules */
+#define BADINPUT (1)
+#define EX_BADINPUT (1)
 
 /* prototypes */
 int main(int, char **);

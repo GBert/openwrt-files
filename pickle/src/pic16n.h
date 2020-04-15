@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -26,30 +26,35 @@
 
 #define PIC16N_WORD_MASK (0x0000FFFF)
 #define PIC16N_DATA_MASK (0x000000FF)
-#define PIC16N_USERID_MAX  (8)
-#define PIC16N_CONFIG_MAX  (12)
-#define PIC16N_DEVINFO_MAX (32)
-#define PIC16N_DEVCONF_MAX (5)
+#define PIC16N_USERID_MAX  (256)	/* 256 BYTES / 128 WORDS */
+#define PIC16N_CONFIG_MAX  (12)		/* 12  BYTES / 6   WORDS */
+#define PIC16N_DEVINFO_MAX (32)		/* WORDS */
+#define PIC16N_DEVCONF_MAX (5)		/* WORDS */
 
 struct pic16n_config {
-	uint8_t userid[PIC16N_USERID_MAX];	/* 200000 .. 200007 */
-	uint8_t config[PIC16N_CONFIG_MAX]; 	/* 300000 .. 30000B */
-	uint16_t devinfo[PIC16N_DEVINFO_MAX];   /* 3F0000 .. 3F003F */
-	uint16_t devconf[PIC16N_DEVCONF_MAX];   /* 3FFF00 .. 3FFF09 */
-	uint16_t revisionid;     	        /* 3FFFFC           */
-	uint16_t deviceid;              	/* 3FFFFE           */
+	uint8_t userid[PIC16N_USERID_MAX];	/* 200000 .. 2000FF */
+	uint8_t config[PIC16N_CONFIG_MAX];	/* 300000 .. 30000B */
+	uint16_t devinfo[PIC16N_DEVINFO_MAX];	/* 3F0000 .. 3F003F */
+	uint16_t devconf[PIC16N_DEVCONF_MAX];	/* 3FFF00 .. 3FFF09 */
+	uint16_t revisionid;			/* 3FFFFC           */
+	uint16_t deviceid;			/* 3FFFFE           */
 };
 
 struct pic16n_dsmap {
-	char devicename[STRLEN];	/*                           */
-	uint16_t deviceid;    		/*                           */
-	uint32_t datasheet;     	/* programming specification */
-	uint32_t flash;    		/* program flash size        */
-	uint32_t config;		/* configuration size        */
-	uint32_t eeprom;		/* nvm eeprom size           */
-	uint32_t latches;		/* latch / erase row size    */
-	uint32_t devinfo;               /* devinfo size in words     */
-	uint32_t devconf;               /* devconf size in words     */
+	char devicename[STRLEN];	/*                                    */
+	uint16_t deviceid;		/*                                    */
+	uint32_t datasheet;		/* programming specification          */
+	uint32_t flash;			/* program flash size in words        */
+	uint32_t config;		/* configuration size in bytes (even) */
+	uint32_t eeprom;		/* nvm eeprom size in bytes           */
+	uint32_t latches;		/* latch size                         */
+#if 0
+	uint32_t erase	;		/* erase size                         */
+#endif
+	uint32_t devinfo;		/* devinfo size in words              */
+	uint32_t devconf;		/* devconf size in words              */
+	uint32_t idsize;		/* user id size in bytes (even)       */
+	uint8_t *masks;			/* config masks                       */
 };
 
 /******************************************************************************
@@ -65,7 +70,7 @@ struct pic16n_dsmap {
 #define PIC16N_DEVCONF_ADDR (0x3FFF00)
 #define PIC16N_REVID_ADDR   (0x3FFFFC)
 #define PIC16N_DEVID_ADDR   (0x3FFFFE)
-#define PIC16N_EEFAKE_ADDR  (0xF00000) /* EEPROM pseudo address */
+#define PIC16N_EEFAKE_ADDR  (0xF00000) /* EEPROM pseudo address (NOT USED) */
 
 #define PIC16N_ERASE        (0x3FFF00)
 #define PIC16N_LATCHES      (0x3FFF02)
@@ -77,6 +82,10 @@ struct pic16n_dsmap {
 #define PIC16N_TPINT_CONFIG (5600)	/*  5.6 ms */
 #define PIC16N_TERAB        (25200)	/* 25.2 ms */
 #define PIC16N_TERAR        (2800)	/*  2.8 ms */
+
+#define PIC16N_TPDFM_Q      (11000)	/* 11.0 ms */
+#define PIC16N_TPINT_Q      (65)	/*   65 us */
+#define PIC16N_TERAB_Q      (75000)	/* 75.0 ms */
 
 #define PIC16N_MAJOR_SHIFT  (6)
 #define PIC16N_REV_MASK     (0x003F)
@@ -107,7 +116,7 @@ struct pic16n_dsmap {
 #define PIC18LF25K42 (0x6DC0)
 #define PIC18LF24K42 (0x6DE0)
 
-#define DS40001886B (0x40001886)
+#define DS40001886B (40001886)
 #define PIC18F26K42  (0x6C60)
 #define PIC18F27K42  (0x6C40)
 #define PIC18F45K42  (0x6C20)
@@ -125,12 +134,21 @@ struct pic16n_dsmap {
 #define PIC18LF56K42 (0x6CE0)
 #define PIC18LF57K42 (0x6CC0)
 
-#define DS40001927A (0x40001927)
+#define DS40001927A (40001927)
 #define PIC18F25K83  (0x6EE0)
 #define PIC18F26K83  (0x6EC0)
 #define PIC18LF25K83 (0x6F20)
 #define PIC18LF26K83 (0x6F00)
- 
+
+#define DS40001874F (40001874)
+#define PIC18F46Q10 (0x7120)
+#define PIC18F45Q10 (0x7140)
+#define PIC18F26Q10 (0x7180)
+#define PIC18F25Q10 (0x71A0)
+#define PIC18F24Q10 (0x71C0)
+#define PIC18F27Q10 (0x7100)
+#define PIC18F47Q10 (0x70E0)
+
 /******************************************************************************/
 
 uint32_t pic16n_arch(void);

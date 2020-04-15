@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -26,6 +26,8 @@ extern struct pickle p;
 
 /*
  * DETERMINE BACK-END
+ *
+ * Returns 0 if undetermind, else 1..N
  */
 uint8_t
 io_backend(void)
@@ -63,7 +65,7 @@ io_backend(void)
 	if (strstr(p.device, "/dev/tty") == p.device)
 		return serial_bb_backend();
 #endif
-	return 0; /* Unsupported */
+	return 0; /* Undetermined, unsupported, unknown */
 }
 
 /*
@@ -114,6 +116,7 @@ io_config(void)
 	p.pgdo = 9;					/* DTR/PGD DATA_OUT       */
 	p.pgdi = 9;					/* CTS/PGD DATA_IN        */
 	p.pgm  = GPIO_PGM_DISABLED;			/* PGM                    */
+	p.config = CONFIGVER + CONFIGAND;		/* VERIFY + DUMP          */
 }
 
 /*
@@ -178,6 +181,8 @@ io_close(int run)
 void
 io_exit(int err)
 {
+	fflush(stdout);
+
 	if (p.iot != IONONE)
 		io_close(p.bitrules & VPP_RUN);
 

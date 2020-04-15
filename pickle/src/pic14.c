@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -1596,7 +1596,7 @@ pic14_read_config_memory(void)
 			 * VELLEMAN K0848 SWITCH IN PROG    [XXXX]
 			 */
 			if (pic14_conf.deviceid == 0x0000 || pic14_conf.deviceid == 0x3FFF) {
-				printf("%s: information: %s.\n",
+				printf("%s: information: %s\n",
 					__func__, io_fault(pic14_conf.deviceid));
 			} else {
 				printf("%s: information: device unknown: [%04X]\n",
@@ -2052,8 +2052,8 @@ pic14_getregion(uint16_t address)
 		if (address >= data_low && address < data_high)
 			return PIC_REGIONDATA;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: address unsupported [%04X]\n", __func__, address);
+	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%04X]\n",
+		__func__, address);
 	return PIC_REGIONNOTSUP;
 }
 
@@ -2080,8 +2080,8 @@ pic14_initregion(uint16_t region, uint16_t *address)
 		*address = pic14_map[pic14_index].dataaddr;
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	*address = 0;
 	return PIC_REGIONNOTSUP;
 }
@@ -2102,8 +2102,8 @@ pic14_loadregion(uint16_t region, uint16_t word)
 		pic14_load_data_for_data_memory(word);
 		return;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 }
 
 /*****************************************************************************
@@ -2155,46 +2155,30 @@ pic14_programregion(uint16_t address, uint16_t region, uint16_t data)
 		pic14_write_word(region);
 		return region;
 	}
-	if (p.f)
-		fprintf(p.f, "%s: warning: region unsupported [%d]\n", __func__, region);
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
 	return PIC_REGIONNOTSUP;
 }
 
 /*
- * VERIFY DATA FOR REGION
- *
- *  RETURN DATA
+ * GET VERIFY DATA FOR REGION
  */
 static inline uint16_t
 pic14_verifyregion(uint16_t address, uint16_t region, uint16_t wdata)
 {
-	uint16_t vdata = 0;
-
 	switch (region) {
 	case PIC_REGIONCODE:
 	case PIC_REGIONID:
 	case PIC_REGIONCONFIG:
-		vdata = pic14_read_data_from_program_memory();
-		break;
+		return pic14_read_data_from_program_memory();
 	case PIC_REGIONDATA:
-		vdata = pic14_read_data_from_data_memory();
-		break;
-	default:if (p.f)
-			fprintf(p.f, "%s: warning: region unsupported [%d]\n",
-				__func__, region);
-		return wdata;
+		return pic14_read_data_from_data_memory();
 	}
-	if (pic14_map[pic14_index].datasheet == DS41191C) {
-		if (address == PIC14_BANDGAPADDR) {
-			vdata &= PIC14_CONFIGMASK;
-			wdata &= PIC14_CONFIGMASK;
-		}
-	}
-	if (vdata != wdata && p.f) {
-		fprintf(p.f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
-			__func__, vdata, wdata, address);
-	}
-	return vdata;
+
+	if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+		__func__, region);
+
+	return wdata;
 }
 
 /*****************************************************************************
@@ -2227,9 +2211,7 @@ pic14_program_data(uint32_t current_region, pic_data *pdata)
 			pic14_increment_address();
 			PC_address++;
 		}
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8);
-		wdata &= PIC14_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC14_MASK;
 		pic14_programregion(address, current_region, wdata);
 	}
 	return current_region;
@@ -2269,11 +2251,17 @@ pic14_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			pic14_increment_address();
 			PC_address++;
 		}
-		wdata = pdata->bytes[i] |
-			(pdata->bytes[i + 1] << 8);
-		wdata &= PIC14_MASK;
+		wdata = (pdata->bytes[i] | pdata->bytes[i + 1] << 8) & PIC14_MASK;
 		vdata = pic14_verifyregion(address, current_region, wdata);
+		if (pic14_map[pic14_index].datasheet == DS41191C) {
+			if (address == PIC14_BANDGAPADDR) {
+				vdata &= PIC14_CONFIGMASK;
+				wdata &= PIC14_CONFIGMASK;
+			}
+		}
 		if (vdata != wdata) {
+			if (p.f) fprintf(p.f, "%s: error: read [%04X] expected [%04X] at [%04X]\n",
+				__func__, vdata, wdata, address);
 			pdata->bytes[i] = vdata;
 			pdata->bytes[i + 1] = vdata >> 8;
 			(*fail) += 2;

@@ -1,18 +1,18 @@
 /*
- * Copyright (C) 2005-2018 Darron Broad
+ * Copyright (C) 2005-2019 Darron Broad
  * All rights reserved.
- * 
+ *
  * This file is part of Pickle Microchip PIC ICSP.
- * 
+ *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation. 
- * 
+ *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
  * Public License for more details. 
- * 
+ *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
@@ -101,6 +101,34 @@ rmcrlf(char *s, int slen)
 
 	while (l >= 0 && (s[l]=='\r' || s[l]=='\n'))
 		s[l--]= '\0';
+
+	return s;
+}
+
+/*
+ * return string with whitespace removed
+ */
+char *
+rmws(char *s, int slen)
+{
+	char *t = malloc(slen);
+
+	if (t == NULL)
+		return s;
+
+	int i = 0, j = 0;
+
+	s[slen - 1] = '\0';
+
+	while (s[i]) {
+		if (s[i] > ' ')
+			t[j++] = s[i];
+		++i;
+	}
+	t[j] = '\0';
+
+	strcpy(s, t);
+	free(t);
 
 	return s;
 }
