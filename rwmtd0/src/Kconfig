@@ -1,0 +1,5 @@
+config RWMTD0
+    tristate "R/W for mtd0"
+    select RWMTD0
+    help
+      R/W for mtd0
