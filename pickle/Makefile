@@ -76,10 +76,6 @@ endif
 ifneq (,$(findstring mt76x8,$(CONFIG_TARGET_SUBTARGET)) or $(findstring mt7688,$(CONFIG_TARGET_SUBTARGET)))
 	$(INSTALL_BIN) ./config/config_srse2 $(1)/root/.pickle/config
 endif
-ifdef CONFIG_LINUX_5_4
-	$(INSTALL_BIN) ./config/config_srse2_5.4 $(1)/root/.pickle/config
-endif
-
 
 endef
 
