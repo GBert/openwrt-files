@@ -1,12 +1,12 @@
 #
-# Copyright (C) 2017 OpenWrt
+# Copyright (C) 2021 OpenWrt
 # See LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=websockify
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
