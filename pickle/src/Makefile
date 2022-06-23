@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2005-2016 Darron Broad
+# Copyright (C) 2005-2020 Darron Broad
 # All rights reserved.
 #
 # This file is part of Pickle Microchip PIC ICSP.
@@ -17,7 +17,7 @@
 # with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
 #
 
-# build targets and backend configuration
+# build targets and i/o configuration, see config directory
 include config.mk
 
 #FreeBSD IBMPC: FreeBSD 9.0-RELEASE   amd64
@@ -154,16 +154,43 @@ ifeq "$(PICKLE_BPI)" "1"
 endif
 
 ifeq "$(SYSTEM)" "Linux"
- ifeq "$(MCP23017)" "1"
- CFLAGS+=-DMCP23017
- SOURCE1+=mcp23017.c
- SOURCE2+=mcp23017.c
- SOURCE3+=mcp23017.c
- SOURCE4+=mcp23017.c
- SOURCE5+=mcp23017.c
+ ifeq "$(PCF8574)" "1"
+ CFLAGS+=-DPCF8574
+ SOURCE1+=pcf8574.c
+ SOURCE2+=pcf8574.c
+ SOURCE3+=pcf8574.c
+ SOURCE4+=pcf8574.c
+ SOURCE5+=pcf8574.c
  endif
 
- ifeq "$(MCP23017)" "1"
+ ifeq "$(MCP23016)" "1"
+ CFLAGS+=-DMCP23016
+ SOURCE1+=mcp23016.c
+ SOURCE2+=mcp23016.c
+ SOURCE3+=mcp23016.c
+ SOURCE4+=mcp23016.c
+ SOURCE5+=mcp23016.c
+ endif
+
+ ifeq "$(MCP230XX)" "1"
+ CFLAGS+=-DMCP230XX
+ SOURCE1+=mcp230xx.c
+ SOURCE2+=mcp230xx.c
+ SOURCE3+=mcp230xx.c
+ SOURCE4+=mcp230xx.c
+ SOURCE5+=mcp230xx.c
+ endif
+
+ ifeq "$(MCP23SXX)" "1"
+ CFLAGS+=-DMCP23SXX
+ SOURCE1+=mcp23sxx.c
+ SOURCE2+=mcp23sxx.c
+ SOURCE3+=mcp23sxx.c
+ SOURCE4+=mcp23sxx.c
+ SOURCE5+=mcp23sxx.c
+ endif
+
+ ifeq "$(MCP2221)" "1"
  CFLAGS+=-DMCP2221
  SOURCE1+=mcp2221.c
  SOURCE2+=mcp2221.c
@@ -188,6 +215,15 @@ ifeq "$(SYSTEM)" "Linux"
  SOURCE3+=gpio-bb.c
  SOURCE4+=gpio-bb.c
  SOURCE5+=gpio-bb.c
+ endif
+
+ ifeq "$(SYSFSGPIO)" "1"
+ CFLAGS+=-DSYSFSGPIO
+ SOURCE1+=sysfs_gpio.c rw.c
+ SOURCE2+=sysfs_gpio.c rw.c
+ SOURCE3+=sysfs_gpio.c rw.c
+ SOURCE4+=sysfs_gpio.c rw.c
+ SOURCE5+=sysfs_gpio.c
  endif
 
  ifeq "$(FTDI)" "1"
