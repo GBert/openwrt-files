@@ -25,6 +25,7 @@
 #
 #DEVICE=/dev/i2c-1
 DEVICE=FTDI
+IFACE=0
 
 # I/O 1/2-bit delay/sleep time
 #

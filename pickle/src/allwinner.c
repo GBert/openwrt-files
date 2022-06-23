@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2015-2019 Darron Broad
+ * Copyright (C) 2015-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -51,8 +51,8 @@ static aw_device_t aw = {0};	/* Type of Pi.  */
 
 struct io_ops allwinner_ops = {
 	.type		= IOALLWINNER,
-	.single		= 1,
 	.run		= 1,
+	.uid		= 0,
 	.open		= allwinner_open,
 	.release	= allwinner_release,
 	.close		= allwinner_close,
@@ -104,7 +104,7 @@ allwinner_open(void)
 	/* Open /dev/mem */
 	gpio_mem = open("/dev/mem", O_RDWR | O_SYNC);
 	if (gpio_mem < 0) {
-		printf("%s: warning: open failed [%s]\n", __func__, strerror(errno));
+		printf("%s: warning: open failed [/dev/mem] [%s]\n", __func__, strerror(errno));
 		gpio_mem = -1;
 		return -1;
 	}
@@ -145,7 +145,7 @@ allwinner_release(void)
 		allwinner_release_pin(p.pgdo);
 	if (p.bitrules & PGC_RELEASE)
 		allwinner_release_pin(p.pgc);
-	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_DISABLED)
 		allwinner_release_pin(p.pgm);
 	if (p.bitrules & VPP_RELEASE)
 		allwinner_release_pin(p.vpp);
@@ -189,7 +189,7 @@ allwinner_usleep(int n)
 void
 allwinner_set_pgm(uint8_t pgm)
 {
-	if (p.pgm != GPIO_PGM_DISABLED)
+	if (p.pgm != GPIO_DISABLED)
 		allwinner_set(p.pgm, pgm);
 }
 
@@ -335,7 +335,7 @@ allwinner_select_pin(uint8_t pin)
 
 	allwinner_pud(pin, AW_PX_PULL_UP);	/* Pull-up on */
 
-        gpio_pins[pin] = 1;             	/* Pin now in use */
+	gpio_pins[pin] = 1;			/* Pin now in use */
 }
 
 int

@@ -1,4 +1,4 @@
-# Copyright (C) 2018 OpenWrt.org
+# Copyright (C) 2022 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=pickle
-PKG_RELEASE:=4.2.1
+PKG_RELEASE:=5.02
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_BUILD_PARALLEL:=1

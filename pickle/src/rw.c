@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -24,7 +24,7 @@
  */
 
 /*
- * Read at most buflen characters into buffer
+ * Read at most bufmax characters into buffer
  *
  *  The number of characters read is not guaranteed to be greater than one
  *  regardless of the number requested.
@@ -32,7 +32,7 @@
  *  return number of bytes or error
  */
 int
-rw_get(int fsock, char *buffer, int buflen, int timeout)
+rw_get(int fsock, char *buffer, int bufmax, int timeout)
 {
 	struct timeval timeval;
 	fd_set fdset;
@@ -58,7 +58,7 @@ rw_get(int fsock, char *buffer, int buflen, int timeout)
 		if (!FD_ISSET(fsock, &fdset)) {
 			return -ETIMEDOUT;
 		}
-		rc = read(fsock, buffer, buflen);
+		rc = read(fsock, buffer, bufmax);
 		if (rc < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				continue;
@@ -74,24 +74,24 @@ rw_get(int fsock, char *buffer, int buflen, int timeout)
 }
 
 /*
- * Read buflen characters into buffer
+ * Read bufmax characters into buffer
  *
  *  return number of bytes or error
  */
 int
-rw_read(int fsock, char *buffer, int buflen, int timeout)
+rw_read(int fsock, char *buffer, int bufmax, int timeout)
 {
 	int rc, nb = 0;
 
 	do {
-		rc = rw_get(fsock, &buffer[nb], buflen - nb, timeout);
+		rc = rw_get(fsock, &buffer[nb], bufmax - nb, timeout);
 		if (rc < 0)
 			return rc;
 		nb += rc;
 	}
-	while (nb < buflen);
+	while (nb < bufmax);
 #if 0
-	if (nb > buflen) {
+	if (nb > bufmax) {
 		return -EIO;
 	}
 #endif
@@ -99,18 +99,18 @@ rw_read(int fsock, char *buffer, int buflen, int timeout)
 }
 
 /*
- * Write buflen characters from buffer
+ * Write bufmax characters from buffer
  *
  *  return number of bytes or error
  */
 int
-rw_write(int fsock, char *buffer, int buflen, int timeout)
+rw_write(int fsock, char *buffer, int bufmax, int timeout)
 {
 	fd_set fdset;
 	struct timeval timeval;
 	int rc = 0, nb = 0;
 
-	while (nb < buflen) {
+	while (nb < bufmax) {
 		timeval.tv_sec = timeout;
 		timeval.tv_usec = 0;
 
@@ -130,7 +130,7 @@ rw_write(int fsock, char *buffer, int buflen, int timeout)
 		if (!FD_ISSET(fsock, &fdset)) {
 			return -ETIMEDOUT;
 		}
-		rc = write(fsock, &buffer[nb], buflen - nb);
+		rc = write(fsock, &buffer[nb], bufmax - nb);
 		if (rc < 0) {
 			if (errno == EINTR || errno == EAGAIN) {
 				continue;
@@ -143,7 +143,7 @@ rw_write(int fsock, char *buffer, int buflen, int timeout)
 		nb += rc;
 	}
 #if 0
-	if (nb > buflen) {
+	if (nb > bufmax) {
 		return -EIO;
 	}
 #endif

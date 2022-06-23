@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2013-2019 Darron Broad
+ * Copyright (C) 2013-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -33,7 +33,7 @@ extern struct pickle p;
  *
  *****************************************************************************/
 
-static int gpio_bb_fd = -1;	/* File descriptor */
+static int fd = -1;		/* File descriptor */
 
 /*******************************************************************************
  *
@@ -43,10 +43,10 @@ static int gpio_bb_fd = -1;	/* File descriptor */
 
 struct io_ops gpio_bb_ops = {
 	.type		= IOBITBANG,
-	.single		= 1,
 	.run		= 1,
+	.uid		= 0,
 	.open		= gpio_bb_open,
-	.release        = gpio_bb_release,
+	.release	= gpio_bb_release,
 	.close		= gpio_bb_close,
 	.error		= gpio_bb_error,
 	.usleep		= NULL,
@@ -71,10 +71,9 @@ gpio_bb_backend(void)
 int
 gpio_bb_open(void)
 {
-	gpio_bb_fd = open("/dev/gpio-bb", O_RDWR);
-
-	if (gpio_bb_fd < 0) {
-		gpio_bb_fd = -1;
+	fd = open(p.iface, O_RDWR);
+	if (fd < 0) {
+		fd = -1;
 		return -1;
 	}
 
@@ -90,7 +89,7 @@ gpio_bb_release(void)
 	if (p.bitrules & PGC_RELEASE) {
 		gpio_bb_release_pin(p.pgc);
 	}
-	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED) {
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_DISABLED) {
 		gpio_bb_release_pin(p.pgm);
 	}
 	if (p.bitrules & VPP_RELEASE) {
@@ -101,8 +100,8 @@ gpio_bb_release(void)
 void
 gpio_bb_close(void)
 {
-	close(gpio_bb_fd);
-	gpio_bb_fd = -1;
+	close(fd);
+	fd = -1;
 }
 
 char *
@@ -114,10 +113,10 @@ gpio_bb_error(void)
 void
 gpio_bb_set_pgm(uint8_t pgm)
 {
-	if (p.pgm != GPIO_PGM_DISABLED) {
+	if (p.pgm != GPIO_DISABLED) {
 		struct gpio_bb_io io = {.dir = 0, .pin = p.pgm, .bit = pgm};
 
-		ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+		ioctl(fd, GPIO_BB_IO, &io);
 	}
 }
 
@@ -126,7 +125,7 @@ gpio_bb_set_vpp(uint8_t vpp)
 {
 	struct gpio_bb_io io = {.dir = 0, .pin = p.vpp, .bit = vpp};
 
-	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+	ioctl(fd, GPIO_BB_IO, &io);
 }
 
 void
@@ -134,7 +133,7 @@ gpio_bb_set_pgd(uint8_t pgd)
 {
 	struct gpio_bb_io io = {.dir = 0, .pin = p.pgdo, .bit = pgd};
 
-	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+	ioctl(fd, GPIO_BB_IO, &io);
 }
 
 void
@@ -142,7 +141,7 @@ gpio_bb_set_pgc(uint8_t pgc)
 {
 	struct gpio_bb_io io = {.dir = 0, .pin = p.pgc, .bit = pgc};
 
-	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+	ioctl(fd, GPIO_BB_IO, &io);
 }
 
 uint8_t
@@ -150,7 +149,7 @@ gpio_bb_get_pgd(void)
 {
 	struct gpio_bb_io io = {.dir = 1, .pin = p.pgdi, .bit = 0};
 
-	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+	ioctl(fd, GPIO_BB_IO, &io);
 
 	return io.bit;
 }
@@ -169,7 +168,7 @@ gpio_bb_configure(void)
 	config.clock_delay_high = p.sleep_high;
 	config.lock = (p.bitrules & BB_LOCK) ? 1 : 0;
 
-	ioctl(gpio_bb_fd, GPIO_BB_CONFIGURE, &config);
+	ioctl(fd, GPIO_BB_CONFIGURE, &config);
 }
 
 uint32_t
@@ -177,7 +176,7 @@ gpio_bb_shift_in(uint8_t nbits)
 {
 	struct gpio_bb_shift shift = {1, nbits, 0};
 
-	ioctl(gpio_bb_fd, GPIO_BB_SHIFT, &shift);
+	ioctl(fd, GPIO_BB_SHIFT, &shift);
 
 	return (uint32_t)(shift.bits);
 }
@@ -187,7 +186,7 @@ gpio_bb_shift_out(uint32_t bits, uint8_t nbits)
 {
 	struct gpio_bb_shift shift = {0, nbits, (uint64_t)(bits)};
 
-	ioctl(gpio_bb_fd, GPIO_BB_SHIFT, &shift);
+	ioctl(fd, GPIO_BB_SHIFT, &shift);
 }
 
 /*
@@ -198,5 +197,5 @@ gpio_bb_release_pin(uint16_t pin)
 {
 	struct gpio_bb_io io = {.dir = 1, .pin = pin, .bit = 0};
 
-	ioctl(gpio_bb_fd, GPIO_BB_IO, &io);
+	ioctl(fd, GPIO_BB_IO, &io);
 }

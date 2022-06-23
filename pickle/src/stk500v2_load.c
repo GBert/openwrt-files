@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -60,8 +60,8 @@ stk500v2_cmd(uint16_t msgsize)
 			 * decide to eat a packet.
 			 *
 			 * It will also occur after opening a connection to
-			 * an Arduino with a bootloader that both becomes
-			 * active on serial port open (DTR reset).
+			 * an Arduino with a bootloader that becomes active
+			 * on serial port open (DTR reset).
 			 */
 			printf("%s: command timed out, resending ...\n", __func__);
 			continue;
@@ -311,13 +311,13 @@ stk500v2_panel(int prog_mode, uint32_t panel_address,
 		printf("%s: failed to load address\n", __func__);
 		return rc;
 	}
-	if (prog_mode == 'p'/* rogram */) {
+	if (prog_mode == 'p'/* program */) {
 		rc = stk500v2_program_flash_isp(panel, panel_size);
 		if (rc < 0) {
 			printf("%s: failed to program flash\n", __func__);
 			return rc;
 		}
-	} else { /* 'v' erify */
+	} else { /* == 'v' verify */
 		rc = stk500v2_read_flash_isp(panel_size);
 		if (rc < 0) {
 			printf("%s: failed to read flash\n", __func__);

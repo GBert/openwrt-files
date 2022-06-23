@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -352,7 +352,8 @@ struct pic32_dstab pic32_tab[] =
 	{DS61156H,	"RIPE_06_000201"},
 
 	/* PIC32MZ EC DS60001191C		      */
-	{DS60001191C,	"RIPE_15_000504"},
+	/* {DS60001191C, "RIPE_15_000504"},	      */
+	{DS60001191C,	"RIPE_15_000502"},
 
 	/* PIC32MX1XX/2XX/5XX DS60001290D	      */
 	{DS60001290D,   "RIPE_11_000301"},
@@ -455,6 +456,34 @@ pic32_standby(void)
 
 /*****************************************************************************
  *
+ * Memory Operations
+ *
+ *****************************************************************************/
+
+/*
+ * Kernel KSEG1 address to physical address
+ *
+ * DS61115F-page 3-15
+ */
+static inline uint32_t
+pic32_phy(uint32_t addr)
+{
+	return addr & 0x1FFFFFFF;
+}
+
+/*
+ * Physical address to kernel KSEG1 address
+ *
+ * DS61115F-page 3-15
+ */
+static inline uint32_t
+pic32_kseg1(uint32_t addr)
+{
+	return addr | 0xA0000000;
+}
+
+/*****************************************************************************
+ *
  * Pseudo Operations
  *
  *****************************************************************************/
@@ -516,7 +545,7 @@ pic32_sendcommand(uint8_t nbits, uint32_t tdi)
 	 *    controller to the Run/Test Idle state.
 	 */
 
-	/* ENTER RUN-TEST/IDLE STATE */ 
+	/* ENTER RUN-TEST/IDLE STATE */
 	io_clock_bit_4phase(1, 0);		/* UPDATE-IR		*/
 	io_clock_bit_4phase(0, 0);		/* RUN-TEST/IDLE 	*/
 }
@@ -562,7 +591,7 @@ pic32_xferdata(uint8_t nbits, uint32_t tdi)
 	 *    controller to the Run/Test Idle state.
 	 */
 
-	/* ENTER RUN-TEST/IDLE STATE */ 
+	/* ENTER RUN-TEST/IDLE STATE */
 	io_clock_bit_4phase(1, 0);		/* UPDATE-DR		*/
 	io_clock_bit_4phase(0, 0);		/* RUN-TEST/IDLE	*/
 
@@ -603,7 +632,7 @@ pic32_xferfastdata(uint32_t tdi)
 	}
 
 	/*
-	 * 2. The input value of the PrAcc bit, which is ‘0’, is clocked
+	 * 2. The input value of the PrAcc bit, which is "0", is clocked
 	 *    in.
 	 */
 
@@ -618,7 +647,7 @@ pic32_xferfastdata(uint32_t tdi)
 	 *    to the Run/Test Idle state.
 	 */
 
-	/* ENTER RUN-TEST/IDLE STATE */ 
+	/* ENTER RUN-TEST/IDLE STATE */
 	io_clock_bit_4phase(1, 0);		/* UPDATE-DR		*/
 	io_clock_bit_4phase(0, 0);		/* RUN-TEST/IDLE	*/
 
@@ -691,7 +720,7 @@ pic32_xferinstruction(uint32_t instruction)
 }
 
 /*
- * ReadFromAddress Pseudo Operation for PIC32MX, PIC32MZ & PIC32MK devices
+ * ReadFromAddress Pseudo Operation for PIC32MX, PIC32MZ & PIC32MK devices (!PE)
  *
  *  To read 32 bits of data from the device memory
  *
@@ -748,7 +777,7 @@ pic32_readfromaddress_m4k(uint32_t addr)
 }
 
 /*
- * ReadFromAddress Pseudo Operation for PIC32MM devices
+ * ReadFromAddress Pseudo Operation for PIC32MM devices (!PE)
  *
  *  To read 32 bits of data from the device memory
  *
@@ -806,45 +835,17 @@ pic32_readfromaddress_mm(uint32_t addr)
 }
 
 /*
- * Read From Address
+ * Read From Address (!PE)
  */
 static inline uint32_t
 pic32_readfromaddress(uint32_t addr)
 {
 	switch (pic32_map[pic32_index].datasheet) {
-	default:return pic32_readfromaddress_m4k(addr);
+	default:return pic32_readfromaddress_m4k(pic32_kseg1(addr));
 	case DS60001324B: /* PIC32MM GPL */
 	case DS60001387D: /* PIC32MM GPM */
-		return pic32_readfromaddress_mm(addr);
+		return pic32_readfromaddress_mm(pic32_kseg1(addr));
 	}
-}
-
-/*****************************************************************************
- *
- * Memory Operations
- *
- *****************************************************************************/
-
-/*
- * Kernel KSEG1 address to physical address
- *
- * DS61115F-page 3-15
- */
-static inline uint32_t
-pic32_phy(uint32_t addr)
-{
-	return addr & 0x1FFFFFFF;
-}
-
-/*
- * Physical address to kernel KSEG1 address
- *
- * DS61115F-page 3-15
- */
-static inline uint32_t
-pic32_kseg1(uint32_t addr)
-{
-	return addr | 0xA0000000;
 }
 
 /*****************************************************************************
@@ -906,7 +907,7 @@ pic32_erase_device(void)
 	 *
 	 * statusVal = XferData (MCHP_STATUS).
 	 *
-	 * If CFGRDY (statusVal<3>) is not ‘1’ and FCBUSY (statusVal<2>) is not ‘0’, GOTO to step 5.
+	 * If CFGRDY (statusVal<3>) is not "1" and FCBUSY (statusVal<2>) is not "0", GOTO to step 5.
 	 */
 
 	gettimeofday(&tv1, NULL);
@@ -919,6 +920,7 @@ pic32_erase_device(void)
 		io_usleep(18000); /* 18 ms */
 
 		statusVal = pic32_xferdata(PIC32_MCHP_STATUS) & (PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FCBUSY);
+
 		gettimeofday(&tv2, NULL);
 		timersub(&tv2, &tv1, &tv3);
 	}
@@ -940,6 +942,7 @@ void
 pic32_enter_serial_execution_mode(void)
 {
 	uint32_t statusVal;
+	struct timeval tv1, tv2, tv3;
 
 	statusVal = pic32_check_device_status();
 	if (statusVal != (PIC32_MCHP_STATUS_CPS | PIC32_MCHP_STATUS_CFGRDY)) {
@@ -959,14 +962,24 @@ pic32_enter_serial_execution_mode(void)
 	pic32_xferdata(PIC32_MCHP_DE_ASSERT_RST);
 
 	/*
-	 * Flash Enable, PIC32MX devices only
+	 * Flash Enable, PIC32MX / PIC32MM devices only
 	 */
 
-	if ((pic32_map[pic32_index].datasheet != DS60001191C) &&	/* ! MZ EC */
-		(pic32_map[pic32_index].datasheet != DS60001324B) &&
-		(pic32_map[pic32_index].datasheet != DS60001387D)) {	/* ! MM */
+	if (pic32_map[pic32_index].datasheet != DS60001191C) { /* ! MZ EC */
+
 		pic32_xferdata(PIC32_MCHP_FLASH_ENABLE);
-		statusVal = pic32_xferdata(PIC32_MCHP_STATUS) & PIC32_MCHP_STATUS_MASK;
+
+		/* Wait until Flash is ready */
+		gettimeofday(&tv1, NULL);
+		do {
+			statusVal = pic32_xferdata(PIC32_MCHP_STATUS) & PIC32_MCHP_STATUS_MASK;
+
+			gettimeofday(&tv2, NULL);
+			timersub(&tv2, &tv1, &tv3);
+		}
+		while ((statusVal != (PIC32_MCHP_STATUS_CPS | PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FAEN)) &&
+			(tv3.tv_sec < PIC_TIMEOUT));
+
 		if (statusVal != (PIC32_MCHP_STATUS_CPS | PIC32_MCHP_STATUS_CFGRDY | PIC32_MCHP_STATUS_FAEN)) {
 			printf("%s: fatal error: status invalid [0x%02X]\n", __func__, statusVal);
 			pic32_standby();
@@ -1044,7 +1057,7 @@ pic32_download_custom_pe_m4k(uint8_t *pe, uint32_t nbytes)
 	/* LUI S0, <RAM_ADDR(31:16)>   */
 	pic32_xferinstruction(0x3C1A0000);
 
- 	/* ORI S0,S0, <RAM_ADDR(15:0)> */
+	/* ORI S0,S0, <RAM_ADDR(15:0)> */
 	pic32_xferinstruction(0x36100900);
 
 	for (uint32_t i = 0; i < nbytes; i += 4) {
@@ -1171,9 +1184,9 @@ pic32_download_pe_m4k(uint8_t *pe, uint32_t nbytes)
 	pic32_xferfastdata(nbytes >> 2);
 	for (uint32_t i = 0; i < nbytes; i += 4) {
 		uint32_t wdata = (uint32_t)pe[i] |
-		        ((uint32_t)pe[i + 1] << 8) |
-		        ((uint32_t)pe[i + 2] << 16) |
-		        ((uint32_t)pe[i + 3] << 24);
+			((uint32_t)pe[i + 1] << 8) |
+			((uint32_t)pe[i + 2] << 16) |
+			((uint32_t)pe[i + 3] << 24);
 		pic32_xferfastdata(wdata);
 	}
 
@@ -1215,7 +1228,7 @@ pic32_download_custom_pe_mm(uint8_t *pe, uint32_t nbytes)
 	/* LUI A0, <RAM_ADDR(31:16)> */
 	pic32_xferinstruction(0x41A4 | (address & 0xFFFF0000));
 
- 	/* ORI A0,A0, <RAM_ADDR(15:0)> */
+	/* ORI A0,A0, <RAM_ADDR(15:0)> */
 	pic32_xferinstruction(0x5084 | (address << 16));
 
 	for (uint32_t i = 0; i < nbytes; i += 4) {
@@ -1317,7 +1330,6 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 		0x45990301,
 		0x0C000C00
 	};
-
 	#define PESIZE (sizeof(peloader) / sizeof(uint32_t))
 
 	/*
@@ -1370,9 +1382,9 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
 	pic32_xferfastdata(nbytes >> 2);
 	for (uint32_t i = 0; i < nbytes; i += 4) {
 		uint32_t wdata = (uint32_t)pe[i] |
-		        ((uint32_t)pe[i + 1] << 8) |
-		        ((uint32_t)pe[i + 2] << 16) |
-		        ((uint32_t)pe[i + 3] << 24);
+			((uint32_t)pe[i + 1] << 8) |
+			((uint32_t)pe[i + 2] << 16) |
+			((uint32_t)pe[i + 3] << 24);
 		pic32_xferfastdata(wdata);
 	}
 
@@ -1392,7 +1404,7 @@ pic32_download_pe_mm(uint8_t *pe, uint32_t nbytes)
  *****************************************************************************/
 
 /*
- * Download Data Block for PIC32MX, PIC32MZ & PIC32MK devices
+ * Download Data Block for PIC32MX, PIC32MZ & PIC32MK devices (!PE)
  *
  * DS60001145M-page 25
  */
@@ -1435,7 +1447,7 @@ pic32_download_data_block_m4k(uint32_t *panel, uint32_t panel_size)
 }
 
 /*
- * Download Data Block for PIC32MM devices
+ * Download Data Block for PIC32MM devices (!PE)
  *
  * DS60001364C-page 24
  */
@@ -1478,7 +1490,7 @@ pic32_download_data_block_mm(uint32_t *panel, uint32_t panel_size)
 }
 
 /*
- * Download Data Block
+ * Download Data Block (!PE)
  */
 static inline void
 pic32_download_data_block(uint32_t *panel, uint32_t panel_size)
@@ -1500,7 +1512,7 @@ pic32_download_data_block(uint32_t *panel, uint32_t panel_size)
  *****************************************************************************/
 
 /*
- * Flash Row Write for PIC32MX, PIC32MZ & PIC32MK devices
+ * Flash Row Write for PIC32MX, PIC32MZ & PIC32MK devices (!PE)
  *
  * DS60001145M-page 26
  */
@@ -1512,7 +1524,7 @@ pic32_flash_row_write_m4k(uint32_t address)
 	 * WR = 1 and WREN = 1, respectively.
 	 *
 	 * Registers s1 and s2 are set for the unlock data values and S0 is
-	 * initialized to ‘0’.
+	 * initialized to "0".
 	 */
 
 	pic32_xferinstruction(0x34054003); /* ori a1,$0,0x4003 */
@@ -1587,7 +1599,7 @@ pic32_flash_row_write_m4k(uint32_t address)
 	 */
 
 	else
- 		pic32_xferinstruction(0xac900070);           /* sw s0,112(a0) */
+		pic32_xferinstruction(0xac900070);           /* sw s0,112(a0) */
 
 	/*
 	 * Set up the NVMCON register for write operation.
@@ -1621,10 +1633,11 @@ pic32_flash_row_write_m4k(uint32_t address)
 }
 
 /*
- * Flash Row Write for PIC32MM devices
+ * Flash Row Write for PIC32MM devices (!PE)
  *
  * DS60001145P-page 29
  * DS60001364C-page 26
+ * DS60001364E-page 27
  */
 void
 pic32_flash_row_write_mm(uint32_t address)
@@ -1632,7 +1645,7 @@ pic32_flash_row_write_mm(uint32_t address)
 	/*
 	 * Initialize constants. Registers a1 and a2 are set for WREN = 1 or NVMOP<3:0> = 0011
 	 * and WR = 1, respectively. Registers s1 and s2 are set for the unlock data values and
-	 * s0 is initialized to ‘0’.
+	 * s0 is initialized to "0".
 	 */
 
 	pic32_xferinstruction(0x400350A0); /* li a1,0x4003     */
@@ -1650,13 +1663,26 @@ pic32_flash_row_write_mm(uint32_t address)
 	pic32_xferinstruction(0x000041B0); /* lui s0,0x0000 <RAM_ADDR(31:16)> */
 
 	/*
-	 * Set register a0 to the base address of the NVM controller (0xBF80_2380). Register s3
+	 * Set register a0 to the base address of the NVM controller. Register s3
 	 * is set for the value used to disable write protection in NVMBPB.
 	 */
 	
-	pic32_xferinstruction(0xBF8041A4); /* lui a0,0xbf80    */
-	pic32_xferinstruction(0x23805084); /* ori a0,a0,0x2380 */
-	pic32_xferinstruction(0x80005260); /* li s3,0x8000 // BWPAUNLK bit mask */
+	uint32_t nvmcon = 0;
+	switch (pic32_map[pic32_index].datasheet) {
+	default:printf("%s: fatal error: NVMCON not defined for PIC32 family\n", __func__);
+		pic32_standby();
+		io_exit(EX_SOFTWARE); /* Panic */
+		break;
+	case DS60001324B:
+		nvmcon = PIC32MM_GPL_NVMCON; /* 0xBF802380 */
+		break;
+	case DS60001387D:
+		nvmcon = PIC32MM_GPM_NVMCON; /* 0xBF802930 */
+		break;
+	}
+	pic32_xferinstruction(0x41A4 | (nvmcon & 0xFFFF0000)); /* lui a0,<NVMCON(31:16)> */
+	pic32_xferinstruction(0x5084 | (nvmcon << 16));        /* ori a0,a0,<NVMCON(15:0)> */
+	pic32_xferinstruction(0x80005260);                     /* li s3,0x8000 // BWPAUNLK bit mask */
 
 	/*
 	 * Unlock and disable Boot Flash write protection.
@@ -1702,6 +1728,17 @@ pic32_flash_row_write_mm(uint32_t address)
 	 */
 #if 0
 	io_usleep(1500); /* 1.5 ms */
+#else
+	/*
+	 * Wait at least 500 ns after seeing a "0" in the WR bit (NVMCON[15]) before
+	 * writing to any of the NVM registers. This requires inserting a NOP in the
+	 * execution.
+	 *
+	 * DS60001364E-page 27
+	 */
+
+	pic32_xferinstruction(0x0C000C00); /* nop16; nop16 */
+	pic32_xferinstruction(0x0C000C00); /* nop16; nop16 */
 #endif
 	/*
 	 * Clear the WREN bit (NVMCONM<14>).
@@ -1712,17 +1749,17 @@ pic32_flash_row_write_mm(uint32_t address)
 }
 
 /*
- * Flash Row Write
+ * Flash Row Write (!PE)
  */
 static inline void
 pic32_flash_row_write(uint32_t address)
 {
 	switch (pic32_map[pic32_index].datasheet) {
-	default:pic32_flash_row_write_m4k(address);
+	default:pic32_flash_row_write_m4k(pic32_phy(address));
 		break;
 	case DS60001324B: /* PIC32MM GPL */
 	case DS60001387D: /* PIC32MM GPM */
-		pic32_flash_row_write_mm(address);
+		pic32_flash_row_write_mm(pic32_phy(address));
 		break;
 	}
 }
@@ -1750,6 +1787,7 @@ pic32_getperesponse(void)
  *  Op code 0x0
  *
  * DS60001145N-page 32
+ * DS60001364E-page 30
  */
 void
 pic32_pe_row_program(uint32_t addr, uint32_t *panel, uint32_t panel_size)
@@ -1772,6 +1810,20 @@ pic32_pe_row_program(uint32_t addr, uint32_t *panel, uint32_t panel_size)
 		pic32_xferfastdata(wdata);
 	}
 	
+	/*
+	 * PIC32MM GPL: Allow JTAGEN to be cleared, per section 17
+	 * of DS60001364E. The specification states that you only need
+	 * to do this for four-wire JTAG, but PIC32MM0064GPL028
+	 * silicon rev 4 also needs this on ICSP.
+	 */
+	if (pic32_kseg1(addr) == PIC32MM_CONFIG_PANEL &&
+		pic32_map[pic32_index].datasheet == DS60001324B) /* PIC32MM GPL */ {
+		pic32_sendcommand(PIC32_MTAP_SW_MTAP);
+		/* PE delay (DS60001364E) + Self-Timed Row Write Cycle Time (DS60001324B) */
+		io_usleep(250 + 1500);
+		pic32_sendcommand(PIC32_MTAP_SW_ETAP);
+	}
+
 	/* Check response */
 	uint32_t rc = pic32_getperesponse();
 	if (rc & 0xFFFF) {
@@ -1913,7 +1965,7 @@ pic32_read_config_memory(void)
 	/* NULL device */
 	pic32_index = PIC32_SIZE;
 
-	/* Reset configuraton */
+	/* Reset configuration */
 	memset(&pic32_conf, 0, sizeof(pic32_conf));
 
 	pic32_program_verify();
@@ -2206,7 +2258,7 @@ pic32_verifyregion(uint32_t address, uint32_t region, uint32_t wdata)
 		vdata = pic32_pe_readword(address);
 	} else {
 		/* !PE */
-		vdata = pic32_readfromaddress(pic32_kseg1(address));
+		vdata = pic32_readfromaddress(address);
 	}
 	return vdata;
 }
@@ -2231,9 +2283,9 @@ pic32_program_begin(void)
 /*
  * PROGRAM DATA
  */
-uint32_t        
+uint32_t
 pic32_program_data(uint32_t current_region, pic_data *pdata)
-{       
+{
 	uint32_t address, new_region;
 
 	for (uint32_t i = 0; i < pdata->nbytes; ++i) {
@@ -2258,14 +2310,14 @@ pic32_program_end(__attribute__((unused)) int config)
 {
 	pic_write_panel(PIC_PANEL_END, PIC_VOID, PIC_VOID);
 	pic32_standby();
-} 
+}
 
 /*
  * VERIFY DATA
  */
-uint32_t        
+uint32_t
 pic32_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
-{       
+{
 	uint32_t address, new_region, wdata, vdata;
 
 	for (uint32_t i = 0; i < pdata->nbytes; i += 4) {

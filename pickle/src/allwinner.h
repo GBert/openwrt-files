@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2015-2019 Darron Broad
+ * Copyright (C) 2015-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -65,7 +65,7 @@ typedef struct aw_device {
  *
  * 1.19.1 Port Description
  *
- * Port A(PA): 18 input/output port 
+ * Port A(PA): 18 input/output port
  * Port B(PB): 24 input/output port
  * Port C(PC): 25 input/output port
  * Port D(PD): 28 input/output port
@@ -79,7 +79,7 @@ typedef struct aw_device {
  *
  * 4.22 Port Controller
  *
- * Port A(PA): 22 input/output port 
+ * Port A(PA): 22 input/output port
  * Port C(PC): 19 input/output port
  * Port D(PD): 18 input/output port
  * Port E(PE): 16 input/output port

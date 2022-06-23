@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
+
+#define DEBUG
 
 #include "pickle.h"
 
@@ -100,6 +102,7 @@ struct pic16n_config pic16n_conf;
  *  DS40001886B TABLE B-4: SUMMARY OF CONFIGURATION WORDS
  *  DS40001927A TABLE B-4: SUMMARY OF CONFIGURATION WORDS
  *  DS40001874F TABLE B-1: CONFIGURATION WORD AND MASK
+ *  DS40002079C Table 6-1. Configuration Byte and Mask
  *
  * In the following tables ZERO represents undocumented configuration bits
  *
@@ -111,6 +114,9 @@ uint8_t DS40001836A_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
 uint8_t DS40001886B_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
 uint8_t DS40001927A_B4[] = {0x77,0x2B,0xFF,0xBF,0x7F,0x3F,0x9F,0x2F,0x01,0x00};
 uint8_t DS40001874F_B1[] = {0x77,0x29,0xE3,0xBF,0x7F,0x3F,0xFF,0x37,0x03,0x00,0xFF,0x02};
+
+/*                          1    2    3    4    5    6    7    8    9    A    B    C    */
+uint8_t DS40002079C_61[] = {0x77,0x29,0xFF,0xBF,0x7F,0x3F,0x3F,0x8F,0x00,0x01};
 
 /*****************************************************************************
  *
@@ -171,6 +177,16 @@ struct pic16n_dsmap pic16n_map[] =
 {"PIC18F27Q10",	PIC18F27Q10,    DS40001874F,	PIC16N_WORD(128),12,      1024,		2,	0,0,256,	DS40001874F_B1},
 {"PIC18F47Q10",	PIC18F47Q10,    DS40001874F,	PIC16N_WORD(128),12,      1024,		2,	0,0,256,	DS40001874F_B1},
 
+{"PIC18F25Q43", PIC18F25Q43,    DS40002079D,	PIC16N_WORD(32), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F26Q43", PIC18F26Q43,    DS40002079D,	PIC16N_WORD(64), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F27Q43", PIC18F27Q43,    DS40002079D,	PIC16N_WORD(128),10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F45Q43", PIC18F45Q43,    DS40002079D,	PIC16N_WORD(32), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F46Q43", PIC18F46Q43,    DS40002079D,	PIC16N_WORD(64), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F47Q43", PIC18F47Q43,    DS40002079D,	PIC16N_WORD(128),10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F55Q43", PIC18F55Q43,    DS40002079D,	PIC16N_WORD(32), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F56Q43", PIC18F56Q43,    DS40002079D,	PIC16N_WORD(64), 10,      1024,		2,	32,5,32,	DS40002079C_61},
+{"PIC18F57Q43", PIC18F57Q43,    DS40002079D,	PIC16N_WORD(128),10,      1024,		2,	32,5,32,	DS40002079C_61},
+
 {"(null)",      0,              0,              0,               0,       0,		0,	0,0,0,		0},
 /*Device name	Device id	Data-sheet	Flash		 Config   EEProm	Latches Inf/Con/Id	MASKS*/
 };
@@ -208,7 +224,9 @@ pic16n_bootloader(void)
 	char s[BUFLEN];
 
 	for (dev = 0; pic16n_map[dev].deviceid; ++dev) {
-		if (pic16n_map[dev].datasheet == DS40001874F)
+		if (pic16n_map[dev].datasheet == DS40001874F) /* XXX unsupported */
+			continue;
+		if (pic16n_map[dev].datasheet == DS40002079D) /* XXX unsupported */
 			continue;
 
 		for (i = 0; pic16n_map[dev].devicename[i] && i < BUFLEN; ++i)
@@ -336,6 +354,8 @@ pic16n_load_data_for_nvm(uint32_t word, uint8_t j /* 0 || 1 */)
  *  0xFE PC = PC + 1 DATA
  *
  * DS40001772B-page 10
+ * DS40001874F-page 10
+ * DS40002079D-page 13
  */
 static inline uint32_t
 pic16n_read_data_from_nvm(uint8_t j /* 0 || 1 */)
@@ -358,6 +378,8 @@ pic16n_read_data_from_nvm(uint8_t j /* 0 || 1 */)
  *  0xF8 PC = PC + 1 DATA
  *
  * DS40001772B-page 10
+ * DS40001874F-page 10
+ * DS40002079D-page 13
  */
 static inline void
 pic16n_increment_address(void)
@@ -372,6 +394,7 @@ pic16n_increment_address(void)
  *
  * DS40001772B-page 10
  * DS40001874F-page 10
+ * DS40002079D-page 13
  */
 static inline void
 pic16n_load_pc_address(uint32_t address)
@@ -389,7 +412,6 @@ pic16n_load_pc_address(uint32_t address)
  *  0xE0
  *
  * DS40001772B-page 12
- *
  * DS40001772B TPINT(2.8ms PROGRAM) TPINT(5.6ms CONFIG/EEPROM)
  */
 static inline void
@@ -405,7 +427,6 @@ pic16n_begin_internally_timed_programming(uint32_t t)
  *  0xC0
  *
  * DS40001772B-page 12
- *
  * DS40001772B TPEXT(2.1ms PROGRAM) (NOT CONFIG)
  */
 static inline void
@@ -421,7 +442,6 @@ pic16n_begin_externally_timed_programming(uint32_t t)
  *  0x82
  *
  * DS40001772B-page 12
- *
  * DS40001772B TDIS(300us PROGRAM)
  */
 static inline void
@@ -437,9 +457,10 @@ pic16n_end_externally_timed_programming(uint32_t t)
  *  0xC0 PC = PC
  *  0xE0 PC = PC + 2
  *
- * DS40001874F-page 12
- *
+ * DS40001874F-page 10
  * DS40001874F TPINT(65us PROGRAM & CONFIG) TPDFM (11ms EEPROM)
+ *
+ * DS40002079D-page 13
  */
 static inline void
 pic16n_program_data_command(uint16_t word, uint8_t j /* 0 || 1 */, uint32_t t)
@@ -462,9 +483,10 @@ pic16n_program_data_command(uint16_t word, uint8_t j /* 0 || 1 */, uint32_t t)
  * PC = 0x310000 ERASE EEPROM
  *
  * DS40001772B-page 12
- * DS40001874F-page 10
- *
  * DS40001772B TERAB(25.2ms PIC18F26K40)
+ *
+ * DS40001874F-page 10
+ * DS40002079D-page 13
  */
 static inline void
 pic16n_bulk_erase_memory(uint32_t t)
@@ -474,11 +496,33 @@ pic16n_bulk_erase_memory(uint32_t t)
 }
 
 /*
+ * BULK ERASE MEMORY
+ *  0x18
+ *
+ * DS40002079D-page 16
+ *
+ * 24-bit payload
+ *
+ * Bit 1: Data EEPROM		0x02
+ * Bit 2: Flash memory		0x04
+ * Bit 3: User ID memory	0x08
+ * Bit 4: Configuration memory	0x10
+ *
+ * TERAB 11ms
+ */
+static inline void
+pic16n_bulk_erase_memory_Q43(uint32_t t)
+{
+	io_program_out(0x18, 8);
+	io_program_out(0x1E, 24);
+	io_usleep(t);
+}
+
+/*
  * ROW ERASE MEMORY (PRELOAD PC)
  *  0xF0
  *
  * DS40001772B-page 12
- *
  * DS40001772B TERAR(2.8ms)
  */
 static inline void
@@ -497,17 +541,31 @@ pic16n_row_erase_memory(uint32_t t)
 void
 pic16n_bulk_erase(void)
 {
-	uint32_t t = (pic16n_map[pic16n_index].datasheet == DS40001874F)
-		? PIC16N_TERAB_Q : PIC16N_TERAB;
-
 	pic16n_program_verify();
 
-	pic16n_load_pc_address(PIC16N_USERID_ADDR);
-	pic16n_bulk_erase_memory(t);
+	switch (pic16n_map[pic16n_index].datasheet) {
 
-	if (pic16n_map[pic16n_index].eeprom) {
+	case DS40002079D:
+		pic16n_bulk_erase_memory_Q43(PIC16N_TERAB_Q43);
+		break;
+
+	case DS40001874F:
+		pic16n_load_pc_address(PIC16N_USERID_ADDR);
+		pic16n_bulk_erase_memory(PIC16N_TERAB_Q10);
+
 		pic16n_load_pc_address(PIC16N_EEPROM_ADDR);
-		pic16n_bulk_erase_memory(t);
+		pic16n_bulk_erase_memory(PIC16N_TERAB_Q10);
+		break;
+
+	default:
+		pic16n_load_pc_address(PIC16N_USERID_ADDR);
+		pic16n_bulk_erase_memory(PIC16N_TERAB);
+
+		if (pic16n_map[pic16n_index].eeprom) {
+			pic16n_load_pc_address(PIC16N_EEPROM_ADDR);
+			pic16n_bulk_erase_memory(PIC16N_TERAB);
+		}
+		break;
 	}
 
 	pic16n_standby();
@@ -589,26 +647,40 @@ pic16n_read_config_memory(void)
 
 	/* Config word(s) */
 	pic16n_load_pc_address(PIC16N_CONFIG_ADDR);
-	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
-		word = pic16n_read_data_from_nvm(1);
-		pic16n_conf.config[i] = word;
-		pic16n_conf.config[i + 1] = word >> 8;
-		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGAND)) {
-			pic16n_conf.config[i] &= pic16n_map[pic16n_index].masks[i];
-			pic16n_conf.config[i + 1] &= pic16n_map[pic16n_index].masks[i + 1];
+	if (pic16n_map[pic16n_index].datasheet == DS40002079D) {
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; ++i) {
+			pic16n_conf.config[i] = pic16n_read_data_from_nvm(1);
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGAND))
+				pic16n_conf.config[i] &= pic16n_map[pic16n_index].masks[i];
+		}
+	} else {
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
+			word = pic16n_read_data_from_nvm(1);
+			pic16n_conf.config[i] = word;
+			pic16n_conf.config[i + 1] = word >> 8;
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGAND)) {
+				pic16n_conf.config[i] &= pic16n_map[pic16n_index].masks[i];
+				pic16n_conf.config[i + 1] &= pic16n_map[pic16n_index].masks[i + 1];
+			}
 		}
 	}
 
 	/* Device information area */
 	if (pic16n_map[pic16n_index].devinfo) {
-		pic16n_load_pc_address(PIC16N_DEVINFO_ADDR);
+		if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+			pic16n_load_pc_address(PIC16N_DEVINFO_ADDR_Q43);
+		else
+			pic16n_load_pc_address(PIC16N_DEVINFO_ADDR);
 		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devinfo && i < PIC16N_DEVINFO_MAX; ++i)
 			pic16n_conf.devinfo[i] = pic16n_read_data_from_nvm(1);
 	}
 
 	/* Device configuration information */
 	if (pic16n_map[pic16n_index].devconf) {
-		pic16n_load_pc_address(PIC16N_DEVCONF_ADDR);
+		if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+			pic16n_load_pc_address(PIC16N_DEVCONF_ADDR_Q43);
+		else
+			pic16n_load_pc_address(PIC16N_DEVCONF_ADDR);
 		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devconf && i < PIC16N_DEVCONF_MAX; ++i)
 			pic16n_conf.devconf[i] = pic16n_read_data_from_nvm(1);
 	}
@@ -650,24 +722,13 @@ pic16n_get_program_size(uint32_t *addr, uint32_t partition)
 uint32_t
 pic16n_get_data_size(uint32_t *addr)
 {
-	*addr = PIC16N_EEPROM_ADDR;
+	if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+		*addr = PIC16N_EEPROM_ADDR_Q43;
+	else
+		*addr = PIC16N_EEPROM_ADDR;
 
 	return pic16n_map[pic16n_index].eeprom;
 }
-
-/*
- * REWRITE EEPROM/FLASH ADDRESS
- */
-#if 0
-static inline uint32_t
-pic16n_get_data_addr(uint32_t addr)
-{
-	if (addr >= PIC16N_EEFAKE_ADDR)
-		addr = addr - PIC16N_EEFAKE_ADDR + PIC16N_EEPROM_ADDR;
-
-	return addr;
-}
-#endif
 
 /*
  * READ PROGRAM FLASH MEMORY BLOCK ADDR .. ADDR + SIZE
@@ -725,7 +786,7 @@ pic16n_write_panel(uint32_t region, uint32_t address, uint32_t *panel, uint32_t 
 {
 	uint16_t word;
 
-	if (panel_size == 2) { /* DS40001874F */
+	if (panel_size == 2) { /* DS40001874F || DS40002079D */
 		word = panel[0] | panel[1] << 8;
 		pic16n_load_pc_address(address);
 		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q);
@@ -752,13 +813,17 @@ static inline
 void
 pic16n_write_data_memory(uint32_t address, uint16_t word)
 {
-	pic16n_load_pc_address(address);
 
-	if (pic16n_map[pic16n_index].datasheet == DS40001874F) {
+	pic16n_load_pc_address(address);
+	switch (pic16n_map[pic16n_index].datasheet) {
+	case DS40001874F:
+	case DS40002079D:
 		pic16n_program_data_command(word, 0, PIC16N_TPDFM_Q);
-	} else {
-		pic16n_load_data_for_nvm(word, 0);
+		break;
+
+	default:pic16n_load_data_for_nvm(word, 0);
 		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+		break;
 	}
 }
 
@@ -769,21 +834,57 @@ pic16n_write_data_memory(uint32_t address, uint16_t word)
  *****************************************************************************/
 
 /*
- * WRITE USERID/CONFIG WORD
- *  
+ * WRITE USERID WORD
+ *
+ *  RETURN WORD
+ */
+static inline uint16_t
+pic16n_write_userid_word(uint16_t word)
+{
+	switch (pic16n_map[pic16n_index].datasheet) {
+	case DS40001874F:
+		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q10);
+		break;
+
+	case DS40002079D:
+		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q43);
+		break;
+
+	default:pic16n_load_data_for_nvm(word, 0);
+		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+		break;
+	}
+
+	word = (uint16_t)pic16n_read_data_from_nvm(1);
+
+	return word;
+}
+
+/*
+ * WRITE CONFIG WORD
+ *
  *  RETURN WORD
  */
 static inline uint16_t
 pic16n_write_config_word(uint16_t word)
 {
-	if (pic16n_map[pic16n_index].datasheet == DS40001874F) {
-		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q);
-	} else {
-		pic16n_load_data_for_nvm(word, 0);
+	switch (pic16n_map[pic16n_index].datasheet) {
+	case DS40001874F:
+		pic16n_program_data_command(word, 0, PIC16N_TPINT_Q10);
+		break;
+
+	case DS40002079D:
+		pic16n_program_data_command(word, 0, PIC16N_TPDFM_Q43);
+		break;
+
+	default:pic16n_load_data_for_nvm(word, 0);
 		pic16n_begin_internally_timed_programming(PIC16N_TPINT_CONFIG);
+		break;
 	}
 
-	return pic16n_read_data_from_nvm(1);
+	word = (uint16_t)pic16n_read_data_from_nvm(1);
+
+	return word;
 }
 
 /*
@@ -801,7 +902,7 @@ pic16n_write_config(void)
 	pic16n_load_pc_address(PIC16N_USERID_ADDR);
 	for (uint32_t i = 0; i < pic16n_map[pic16n_index].idsize; i += 2) {
 		wdata = pic16n_conf.userid[i] | pic16n_conf.userid[i + 1] << 8;
-		vdata = pic16n_write_config_word(wdata);
+		vdata = pic16n_write_userid_word(wdata);
 		if (vdata != wdata) {
 			printf("%s: error: USERID%d write failed: read [%04X] expected [%04X]\n",
 				__func__, i, vdata, wdata);
@@ -811,24 +912,48 @@ pic16n_write_config(void)
 	}
 
 	pic16n_load_pc_address(PIC16N_CONFIG_ADDR);
-	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
-		wdata = pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8;
-		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGSET))
-			wdata |= ~(pic16n_map[pic16n_index].masks[i] |
-				pic16n_map[pic16n_index].masks[i + 1] << 8);
-		vdata = pic16n_write_config_word(wdata);
-		if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
-			uint16_t mask = pic16n_map[pic16n_index].masks[i] |
-				pic16n_map[pic16n_index].masks[i + 1] << 8;
-			wdata &= mask;
-			vdata &= mask;
+	switch (pic16n_map[pic16n_index].datasheet) {
+	case DS40002079D:
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; ++i) {
+			wdata = pic16n_conf.config[i];
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGSET)) {
+				wdata |= ~(pic16n_map[pic16n_index].masks[i] | 0xFF00);
+			}
+			vdata = pic16n_write_config_word(wdata);
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+				wdata &= pic16n_map[pic16n_index].masks[i];
+				vdata &= pic16n_map[pic16n_index].masks[i];
+			}
+			if (vdata != wdata) {
+				printf("%s: error: CONFIG%d write failed: read [%02X] expected [%02X]\n",
+					__func__, i + 1, vdata, wdata);
+				pic16n_standby();
+				return 0;
+			}
 		}
-		if (vdata != wdata) {
-			printf("%s: error: CONFIG%d write failed: read [%04X] expected [%04X]\n",
-				__func__, i + 1, vdata, wdata);
-			pic16n_standby();
-			return 0;
+		break;
+
+	default:for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
+			wdata = pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8;
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGSET)) {
+				wdata |= ~(pic16n_map[pic16n_index].masks[i] |
+					pic16n_map[pic16n_index].masks[i + 1] << 8);
+			}
+			vdata = pic16n_write_config_word(wdata);
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+				uint16_t mask = pic16n_map[pic16n_index].masks[i] |
+					pic16n_map[pic16n_index].masks[i + 1] << 8;
+				wdata &= mask;
+				vdata &= mask;
+			}
+			if (vdata != wdata) {
+				printf("%s: error: CONFIG%d write failed: read [%04X] expected [%04X]\n",
+					__func__, i + 1, vdata, wdata);
+				pic16n_standby();
+				return 0;
+			}
 		}
+		break;
 	}
 
 	pic16n_standby();
@@ -856,6 +981,8 @@ pic16n_write_config(void)
  *
  *  RETURN PIC_REGIONDATA:
  *      0x310000 .. 0x31XXXX
+ *      or
+ *      0x380000 .. 0x38XXXX
  */
 uint16_t
 pic16n_getregion(uint32_t address)
@@ -876,9 +1003,19 @@ pic16n_getregion(uint32_t address)
 	}
 	/* DATA EEPROM */
 	if (pic16n_map[pic16n_index].eeprom) {
-		if (address >= PIC16N_EEPROM_ADDR && address < (PIC16N_EEPROM_ADDR +
-			pic16n_map[pic16n_index].eeprom))
-			return PIC_REGIONDATA;
+		switch (pic16n_map[pic16n_index].datasheet) {
+		case DS40002079D:
+			if (address >= PIC16N_EEPROM_ADDR_Q43 &&
+				address < (PIC16N_EEPROM_ADDR_Q43 + pic16n_map[pic16n_index].eeprom)) {
+				return PIC_REGIONDATA;
+			}
+			break;
+
+		default:if (address >= PIC16N_EEPROM_ADDR &&
+				address < (PIC16N_EEPROM_ADDR + pic16n_map[pic16n_index].eeprom)) {
+				return PIC_REGIONDATA;
+			}
+		}
 	}
 	if (p.f) fprintf(p.f, "%s: warning: address unsupported [%04X]\n",
 		__func__, address);
@@ -950,21 +1087,36 @@ pic16n_init_verifyregion(uint32_t region)
  * GET VERIFY DATA FOR REGION
  */
 static uint16_t
-pic16n_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint8_t mode)
+pic16n_verifyregion(uint32_t address, uint32_t region, uint16_t index, uint16_t wdata, uint8_t mode)
 {
+	if (region == PIC_REGIONNOTSUP) {
+		if (p.f) fprintf(p.f, "%s: warning: region unsupported [%d]\n",
+			__func__, region);
+		return wdata;
+	}
+
 	if (index == 0)
 		pic16n_load_pc_address(address);
 
-	if (mode == 0)
-		return pic16n_read_data_from_nvm(1) & 0xFF;		/* EEPROM BYTE */
+	switch (mode) {
+	case PIC16N_VERIFY_BYTE:
+		return pic16n_read_data_from_nvm(1) & 0xFF;
 
-	if (mode == 1) {						/* CODE/USERID/CONFIG BYTE */
+	case PIC16N_VERIFY_HIGHLOW:
 		if (address & 1)
-			return pic16n_read_data_from_nvm(1) >> 8;	/* HIGH BYTE */
+			return pic16n_read_data_from_nvm(1) >> 8;	/* HIGH */
 		else
-			return pic16n_read_data_from_nvm(1) & 0xFF;	/* LOW  BYTE */
+			return pic16n_read_data_from_nvm(1) & 0xFF;	/* LOW */
+		break;
+
+	case PIC16N_VERIFY_WORD:
+		return pic16n_read_data_from_nvm(1);
+
+	default:if (p.f) fprintf(p.f, "%s: warning: mode unsupported [%d]\n",
+			__func__, mode);
 	}
-	return pic16n_read_data_from_nvm(1);				/* CODE/USERID/CONFIG WORD */
+
+	return wdata;
 }
 
 /*****************************************************************************
@@ -1033,12 +1185,15 @@ pic16n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 		new_region = pic16n_getregion(address);
 		if (new_region != current_region)
 			current_region = pic16n_init_verifyregion(new_region);
+		/* PIC_REGIONNOTSUP */
 		if (current_region == PIC_REGIONNOTSUP) {
 			i += 1;
 		}
+		/* PIC_REGIONDATA */
 		else if (current_region == PIC_REGIONDATA) {
+			/* EEPROM BYTE */
 			wdata = pdata->bytes[i];
-			vdata = pic16n_verifyregion(address, current_region, i, 0);
+			vdata = pic16n_verifyregion(address, current_region, i, wdata, PIC16N_VERIFY_BYTE);
 			if (vdata != wdata) {
 				if (p.f) printf("%s: error: read [%02X] expected [%02X] at [%06X]\n",
 					__func__, vdata, wdata, address);
@@ -1047,9 +1202,32 @@ pic16n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			}
 			i += 1;
 		}
-		else if ((pdata->nbytes - i) == 1) {	/* BYTE */
+		/*
+		 * PIC_REGIONCODE
+		 * PIC_REGIONCONFIG
+		 * PIC_REGIONID
+		 */
+		else if ((pic16n_map[pic16n_index].datasheet == DS40002079D && current_region == PIC_REGIONCONFIG)) {
+			/* Q43 CONFIG BYTE */
 			wdata = pdata->bytes[i];
-			vdata = pic16n_verifyregion(address, current_region, i, 1);
+			vdata = pic16n_verifyregion(address, current_region, i, wdata, PIC16N_VERIFY_BYTE);
+			if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
+				uint8_t a = address - PIC16N_CONFIG_ADDR;
+				wdata &= pic16n_map[pic16n_index].masks[a];
+				vdata &= pic16n_map[pic16n_index].masks[a];
+			}
+			if (vdata != wdata) {
+				if (p.f) printf("%s: error: read [%02X] expected [%02X] at [%06X]\n",
+					__func__, vdata, wdata, address);
+				pdata->bytes[i] = vdata;
+				(*fail) += 1;
+			}
+			i += 1;
+		}
+		else if ((pdata->nbytes - i) == 1) {
+			/* CODE/ID/CONFIG BYTE */
+			wdata = pdata->bytes[i];
+			vdata = pic16n_verifyregion(address, current_region, i, wdata, PIC16N_VERIFY_HIGHLOW);
 			if (current_region == PIC_REGIONCONFIG) {
 				if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
 					uint8_t a = address - PIC16N_CONFIG_ADDR;
@@ -1065,9 +1243,10 @@ pic16n_verify_data(uint32_t current_region, pic_data *pdata, uint32_t *fail)
 			}
 			i += 1;
 		}
-		else {					/* WORD */
+		else {
+			/* CODE/ID/CONFIG WORD */
 			wdata = pdata->bytes[i] | pdata->bytes[i + 1] << 8;
-			vdata = pic16n_verifyregion(address, current_region, i, 2);
+			vdata = pic16n_verifyregion(address, current_region, i, wdata, PIC16N_VERIFY_WORD);
 			if (current_region == PIC_REGIONCONFIG) {
 				if (pic16n_map[pic16n_index].masks && (p.config & CONFIGVER)) {
 					uint8_t a = address - PIC16N_CONFIG_ADDR;
@@ -1119,7 +1298,7 @@ pic16n_view_data(pic_data *pdata)
 void
 pic16n_dumpdeviceid(void)
 {
-	uint32_t i, j;
+	uint32_t a, i, j;
 	uint16_t word;
 
 	printf("[000000] [PROGRAM]  %04X WORDS (%04X ROWS OF %04X WORDS)\n",
@@ -1146,14 +1325,21 @@ pic16n_dumpdeviceid(void)
 	pic16n_dumpconfig(PIC_BRIEF, 0);
 
 	if (pic16n_map[pic16n_index].eeprom) {
-		printf("[%06X] [DATA]     %04X BYTES\n",
-			PIC16N_EEPROM_ADDR, pic16n_map[pic16n_index].eeprom);
+		if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+			a = PIC16N_EEPROM_ADDR_Q43;
+		else
+			a = PIC16N_EEPROM_ADDR;
+		printf("[%06X] [DATA]     %04X BYTES\n", a, pic16n_map[pic16n_index].eeprom);
 	}
 
 	/* Device information area */
 	if (pic16n_map[pic16n_index].devinfo) {
+		if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+			a = PIC16N_DEVINFO_ADDR_Q43;
+		else
+			a = PIC16N_DEVINFO_ADDR;
 		for (uint32_t i = 0; i < pic16n_map[pic16n_index].devinfo; i += 8) {
-			printf("[%04X] [DEVINF%02X] ", PIC16N_DEVINFO_ADDR + 2 * i, 2 * i);
+			printf("[%04X] [DEVINF%02X] ", a + 2 * i, 2 * i);
 			uint32_t j;
 			for (j = 0; j < 7; ++j)
 				printf("%04X ", pic16n_conf.devinfo[i + j]);
@@ -1184,10 +1370,19 @@ pic16n_dumpdeviceid(void)
 void
 pic16n_dumpconfig(uint32_t mode, uint32_t partition)
 {
-	for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
-		printf("[%06X] [CONFIG%d]  %04X\n",
-			PIC16N_CONFIG_ADDR + i, i / 2 + 1,
-			(pic16n_conf.config[i + 1] << 8) | pic16n_conf.config[i]);
+	if (pic16n_map[pic16n_index].datasheet == DS40002079D) {
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; ++i) {
+			printf("[%06X] [CONFIG%d] ", PIC16N_CONFIG_ADDR + i, i + 1);
+			if (i < 9)
+				putchar(' ');
+			printf("%02X\n", pic16n_conf.config[i]);
+		}
+	} else {
+		for (uint32_t i = 0; i < pic16n_map[pic16n_index].config; i += 2) {
+			printf("[%06X] [CONFIG%d]  %04X\n",
+				PIC16N_CONFIG_ADDR + i, i / 2 + 1,
+				(pic16n_conf.config[i + 1] << 8) | pic16n_conf.config[i]);
+		}
 	}
 #ifdef VERBOSE
 	if (mode == PIC_VERBOSE) switch (pic16n_map[pic16n_index].datasheet) {
@@ -1284,8 +1479,11 @@ pic16n_dumpinhxdata(uint32_t address, uint32_t size, uint16_t *data)
 {
 	uint32_t i, j;
 
-	/* PIC18: Extended address = 0x0031 (EEPROM: 0x310000) */
-	pic_dumpaddr(PIC16N_EEPROM_ADDR, 1);
+	/* PIC18: Extended address = 0x0031 / 0x0038 (EEPROM: 0x310000 / 0x38000) */
+	if (pic16n_map[pic16n_index].datasheet == DS40002079D)
+		pic_dumpaddr(PIC16N_EEPROM_ADDR_Q43, 1);
+	else
+		pic_dumpaddr(PIC16N_EEPROM_ADDR, 1);
 
 	for (i = 0; i < size; address += 16, i += 16) {
 		if (pic_mtdata(0xFF, 16, &data[i]))
@@ -1322,6 +1520,11 @@ pic16n_dumpdevice(void)
 	/* PIC18: Extended address = 0x0030 (CONFIG: 0x300000) */
 	pic_dumpaddr(PIC16N_CONFIG_ADDR, 1);
 
-	for (i = 0; i < pic16n_map[pic16n_index].config; i += 2)
-		pic_dumpword16(i / 2, pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8);
+	if (pic16n_map[pic16n_index].datasheet == DS40002079D) {
+		for (i = 0; i < pic16n_map[pic16n_index].config; ++i)
+			pic_dumpbyte(i, pic16n_conf.config[i]);
+	} else {
+		for (i = 0; i < pic16n_map[pic16n_index].config; i += 2)
+			pic_dumpword16(i / 2, pic16n_conf.config[i] | pic16n_conf.config[i + 1] << 8);
+	}
 }

@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -48,31 +48,29 @@ usage(char *execname, char *msg)
 	printf("EXAMPLES:\n"
 		" ptest VPP|PGC|PGD|PGM 5\n"
 		"\t\tVPP, PGC, PGD or PGM LOW->HIGH->LOW output test with 5 seconds mark time.\n"
-		" ptest 0 10\n"
+		" ptest INPUT 10\n"
 		"\t\tPGD input test with 10 iterations of 1 second per step.\n"
-		" ptest 1 10\n"
+		" ptest DSUB9 10\n"
 		"\t\tD-SUB-9 test with 10 seconds per step.\n"
-		" ptest 2 10\n"
+		" ptest ICSP 10\n"
 		"\t\tICSP test with 10 seconds per step.\n"
-		" ptest 3 0\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with no mark time.\n"
-		" ptest 3 1\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with SLEEP mark time.\n"
-		" ptest 3 100\n"
-		"\t\tD-SUB-9 RTS 7 (PGC) DTR 4 (PGD) test with 100 microseconds mark time.\n"
-		" ptest 4 100\n"
-		"\t\t16F627 debug test with 100 microseconds clock mark time.\n"
+		" ptest CLOCK 0\n"
+		"\t\tPGC/RTS(7) clock test with no mark time.\n"
+		" ptest CLOCK 10\n"
+		"\t\tPGC/RTS(7) clock test with 10us mark time.\n"
+		" ptest 16F627 100\n"
+		"\t\tPIC16F627 debug test with 100us clock mark time.\n"
 #ifdef PIO
-		" ptest 5 100\n"
-		"\t\tICSPIO test with 100 microseconds clock mark time.\n"
+		" ptest ICSPIO 100\n"
+		"\t\tICSPIO test with 100us clock mark time.\n"
 #endif
 #ifdef RPI
-		" ptest 6 10\n"
-		"\t\tRPi GPIO test with 10 seconds mark time.\n"
+		" ptest RPI 10\n"
+		"\t\tRPI GPIO test with 10 seconds mark time.\n"
 #endif
 #ifdef ALLWINNER
-		" ptest 7 10\n"
-		"\t\tAllWinner GPIO test with 10 seconds mark time.\n"
+		" ptest ALLWINNER 10\n"
+		"\t\tBPI/OPI GPIO test with 10 seconds mark time.\n"
 #endif
 		"\n");
 
@@ -93,19 +91,23 @@ usage(char *execname, char *msg)
 static void
 test_pin(int pin, int t)
 {
-	printf("\nTEST MODE VPP|PGD|PGC|PGM\n\n");
+	printf("\nTEST VPP|PGD|PGC|PGM OUTPUT\n\n");
 
 	switch (pin) {
-	case 0: printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
+	case PIN_VPP:
+		printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
 		io_set_vpp(LOW);
 		break;
-	case 1: printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
+	case PIN_PGC:
+		printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
 		io_set_pgc(LOW);
 		break;
-	case 2: printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
+	case PIN_PGD:
+		printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
 		io_set_pgd(LOW);
 		break;
-	case 3: printf("PGM LOW  [3 seconds]\n");
+	case PIN_PGM:
+		printf("PGM LOW  [3 seconds]\n");
 		io_set_pgm(LOW);
 		break;
 	}
@@ -113,16 +115,20 @@ test_pin(int pin, int t)
 		sleep(3);
 
 	switch (pin) {
-	case 0: printf("VPP HIGH (ICSP 1) (D-SUB-9 TX 3) [%d seconds]\n", t);
+	case PIN_VPP:
+		printf("VPP HIGH (ICSP 1) (D-SUB-9 TX 3) [%d seconds]\n", t);
 		io_set_vpp(HIGH);
 		break;
-	case 1: printf("PGC HIGH (ICSP 5) (D-SUB-9 RTS 7) [%d seconds]\n", t);
+	case PIN_PGC:
+		printf("PGC HIGH (ICSP 5) (D-SUB-9 RTS 7) [%d seconds]\n", t);
 		io_set_pgc(HIGH);
 		break;
-	case 2: printf("PGD HIGH (ICSP 4) (D-SUB-9 DTR 3) [%d seconds]\n", t);
+	case PIN_PGD:
+		printf("PGD HIGH (ICSP 4) (D-SUB-9 DTR 3) [%d seconds]\n", t);
 		io_set_pgd(HIGH);
 		break;
-	case 3: printf("PGM HIGH [%d seconds]\n", t);
+	case PIN_PGM:
+		printf("PGM HIGH [%d seconds]\n", t);
 		io_set_pgm(HIGH);
 		break;
 	}
@@ -130,16 +136,20 @@ test_pin(int pin, int t)
 		sleep(t);
 
 	switch (pin) {
-	case 0: printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
+	case PIN_VPP:
+		printf("VPP LOW  (ICSP 1) (D-SUB-9 TX 3) [3 seconds]\n");
 		io_set_vpp(LOW);
 		break;
-	case 1: printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
+	case PIN_PGC:
+		printf("PGC LOW  (ICSP 5) (D-SUB-9 RTS 7) [3 seconds]\n");
 		io_set_pgc(LOW);
 		break;
-	case 2: printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
+	case PIN_PGD:
+		printf("PGD LOW  (ICSP 4) (D-SUB-9 DTR 3) [3 seconds]\n");
 		io_set_pgd(LOW);
 		break;
-	case 3: printf("PGM LOW  [3 seconds]\n");
+	case PIN_PGM:
+		printf("PGM LOW  [3 seconds]\n");
 		io_set_pgm(LOW);
 		break;
 	}
@@ -171,7 +181,7 @@ test_in(int t)
 static void
 test_dsub9(int t)
 {
-	printf("\nTEST MODE 1 [D-SUB-9]\n\n");
+	printf("\nTEST D-SUB-9\n\n");
 
 	p.bitrules = 0; /* Disable BITRULES */
 
@@ -226,7 +236,7 @@ test_dsub9(int t)
 static void
 test_icsp(int t)
 {
-	printf("\nTEST MODE 2 [ICSP]\n\n");
+	printf("\nTEST ICSP CONNECTOR\n\n");
 
 	printf("VPP LOW  (0V)  (ICSP 1) [%d seconds] ", t);
 	fflush(stdout);
@@ -274,19 +284,17 @@ test_icsp(int t)
 }
 
 /*
- * Test D-SUB-9 RTS 7 (PGC) DTR 4 (PGD)
+ * Test CLOCK
  */
 static void
 test_toggle(int t)
 {
-	printf("\nTEST MODE 3 [D-SUB-9 RTS 7 (PGC) DTR 4 (PGD)] CTRL-C TO STOP\n\n");
+	printf("\nTEST CLOCK PGC/RTS(7) [CTRL-C TO STOP]\n\n");
 
 	while (!io_stop) {
-		io_set_pgd(0);
-		io_set_pgc(1);
+		io_set_pgc(HIGH);
 		io_usleep(t);
-		io_set_pgd(1);
-		io_set_pgc(0);
+		io_set_pgc(LOW);
 		io_usleep(t);
 	}
 
@@ -305,9 +313,10 @@ static void
 test_debug(int t)
 {
 	int i, j = 0;
-	uint8_t c, line[STRLEN];
+	uint8_t c;
+	uint8_t line[STRLEN] = {0};
 
-	printf("\nTEST MODE 4 [16F627 debug.asm] CTRL-C TO STOP\n\n");
+	printf("\nTEST 16F627 debug.asm [CTRL-C TO STOP]\n\n");
 
 	/* Initialise for data input */
 	io_data_input();
@@ -366,7 +375,7 @@ test_icspio(int t)
 	uint8_t cmd[2];
 	uint32_t ld = 0;
 
-	printf("\nTEST MODE 5 [ICSPIO] CTRL-C TO STOP\n\n");
+	printf("\nTEST ICSPIO [CTRL-C TO STOP]\n\n");
 
 	/* VPP LOW */
 	io_set_vpp(LOW);
@@ -412,7 +421,7 @@ test_rpi(int seconds)
 {
 	uint8_t output_level = 0, input_level;
 
-	printf("\nTEST MODE 6 [RPI GPIO] CTRL-C TO STOP\n");
+	printf("\nTEST RPI GPIO [CTRL-C TO STOP]\n");
 
 	while (!io_stop) {
 		printf("\n");
@@ -420,7 +429,7 @@ test_rpi(int seconds)
 		raspi_set_vpp(output_level);
 		printf("GPIO %-3d (VPP) (TX)  = %d\n", p.vpp, output_level);
 
-		if (p.pgm != GPIO_PGM_DISABLED) {
+		if (p.pgm != GPIO_DISABLED) {
 			raspi_set_pgm(output_level);
 			printf("GPIO %-3d (PGM)       = %d\n", p.pgm, output_level);
 		}
@@ -453,7 +462,7 @@ test_allwinner(int seconds)
 {
 	uint8_t output_level = 0, input_level;
 
-	printf("\nTEST MODE 7 [ALLWINNER GPIO] CTRL-C TO STOP\n");
+	printf("\nTEST ALLWINNER GPIO [CTRL-C TO STOP]\n");
 
 	while (!io_stop) {
 		printf("\n");
@@ -461,9 +470,9 @@ test_allwinner(int seconds)
 		allwinner_set_vpp(output_level);
 		printf("GPIO %-3d (VPP) = %d\n", p.vpp, output_level);
 
-		if (p.pgm != GPIO_PGM_DISABLED) {
-		        allwinner_set_pgm(output_level);
-		        printf("GPIO %-3d (PGM) = %d\n", p.pgm, output_level);
+		if (p.pgm != GPIO_DISABLED) {
+			allwinner_set_pgm(output_level);
+			printf("GPIO %-3d (PGM) = %d\n", p.pgm, output_level);
 		}
 
 		allwinner_set_pgc(output_level);
@@ -473,8 +482,8 @@ test_allwinner(int seconds)
 		printf("GPIO %-3d (PGD) = %d\n", p.pgdo,output_level);
 
 		if (p.pgdi != p.pgdo) {
-		        input_level = allwinner_get_pgd();
-		        printf("GPIO %02d (PGD) = %d\n", p.pgdi, input_level);
+			input_level = allwinner_get_pgd();
+			printf("GPIO %02d (PGD) = %d\n", p.pgdi, input_level);
 		}
 
 		fflush(stdout);
@@ -484,6 +493,20 @@ test_allwinner(int seconds)
 	}
 }
 #endif /* ALLWINNER */
+
+/*
+ * Reset uid if setuid
+ */
+static void
+resetuid(void)
+{
+	if (getuid() != geteuid()) {
+		if (setuid(getuid()) < 0) {
+			printf("%s: fatal error: setuid failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		}
+	}
+}
 
 int
 main(int argc, char *argv[])
@@ -507,69 +530,81 @@ main(int argc, char *argv[])
 
 	/* Determine back-end */
 	if (io_backend() == 0)
-		usage(execname, "Unsupported backend device in config. Run `pickle` to list");
-
-	/* Open device */
-	if (io_open() < 0) {
 		usage(execname, io_error());
-	}
 
-	/* Reset uid */
-	if (getuid() != geteuid()) {
-		if (setuid(getuid()) < 0) {
-			printf("%s: fatal error: setuid failed\n", __func__);
-			io_exit(EX_OSERR); /* Panic */
-		}
-	}
+	/* Raise priority */
+	setpriority(PRIO_PROCESS, 0, -20);
 
-	/* Perform operation */
+	/*
+	 * Open device
+	 */
+
+	if (p.io->uid)
+		resetuid();
+	if (io_open() < 0)
+		usage(execname, io_error());
+	if (!p.io->uid)
+		resetuid();
+
+	/* Check args */
 	if (argc < 3)
 		usage(execname, "Missing args");
 	if (argc > 3)
 		usage(execname, "Too many args");
 
+	/* Get args */
 	int32_t testarg = strtol(argv[2], NULL, 0);
 	if (testarg < 0)
 		usage(execname, "Invalid arg");
 
-	if (strcasecmp(argv[1], "VPP") == 0) 
-		test_pin(0, testarg);
-	else if (strcasecmp(argv[1], "PGC") == 0)
-		test_pin(1, testarg);
-	else if (strcasecmp(argv[1], "PGD") == 0)
-		test_pin(2, testarg);
-	else if (strcasecmp(argv[1], "PGM") == 0)
-		test_pin(3, testarg);
-	else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
-		int32_t test = strtol(argv[1], NULL, 0);
-		switch (test) {
-		case 0: test_in(testarg);
-			break;
-		case 1: test_dsub9(testarg);
-			break;
-		case 2: test_icsp(testarg);
-			break;
-		case 3: test_toggle(testarg);
-			break;
-		case 4: test_debug(testarg);
-			break;
+	/*
+	 * Perform operation
+	 */
+
+	if (strcasecmp(argv[1], "VPP") == 0) {
+		test_pin(PIN_VPP, testarg);
+	}
+	else if (strcasecmp(argv[1], "PGC") == 0) {
+		test_pin(PIN_PGC, testarg);
+	}
+	else if (strcasecmp(argv[1], "PGD") == 0) {
+		test_pin(PIN_PGD, testarg);
+	}
+	else if (strcasecmp(argv[1], "PGM") == 0) {
+		test_pin(PIN_PGM, testarg);
+	}
+	else if (strcasecmp(argv[1], "INPUT") == 0) {
+		test_in(testarg);
+	}
+	else if (strcasecmp(argv[1], "DSUB9") == 0) {
+		test_dsub9(testarg);
+	}
+	else if (strcasecmp(argv[1], "ICSP") == 0) {
+		test_icsp(testarg);
+	}
+	else if (strcasecmp(argv[1], "CLOCK") == 0) {
+		test_toggle(testarg);
+	}
+	else if (strcasecmp(argv[1], "16F627") == 0) {
+		test_debug(testarg);
+	}
 #ifdef PIO
-		case 5: test_icspio(testarg);
-			break;
+	else if (strcasecmp(argv[1], "ICSPIO") == 0) {
+		test_icspio(testarg);
+	}
 #endif
 #ifdef RPI
-		case 6: test_rpi(testarg);
-			break;
+	else if (strcasecmp(argv[1], "RPI") == 0) {
+		test_rpi(testarg);
+	}
 #endif
 #ifdef ALLWINNER
-		case 7: test_allwinner(testarg);
-			break;
+	else if (strcasecmp(argv[1], "ALLWINNER") == 0) {
+		test_allwinner(testarg);
+	}
 #endif
-		default:usage(execname, "Invalid arg");
-			break;
-		}
-	} else {
-		usage(execname, "Invalid arg");
+	else {
+		usage(execname, "Invalid test");
 	}
 	io_exit(EX_OK);
 }

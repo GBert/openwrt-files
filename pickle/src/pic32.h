@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -29,17 +29,17 @@
 
 struct pic32_config {
 	uint32_t deviceid;
-	uint32_t config[PIC32_CONFIG_MAX];/* CONFIG WORDS            */
+	uint32_t config[PIC32_CONFIG_MAX];/* CONFIG WORDS	     */
 	uint32_t configaddr;		/* BOOT ADDR + SIZE * 4 - 16 */
 	uint32_t configsize;
-	uint32_t devidaddr;		/* DEVICE ID ADDRESS         */
+	uint32_t devidaddr;		/* DEVICE ID ADDRESS	     */
 	uint32_t status;		/* INITIAL DEVICE STATUS     */
-	char pepath[STRLEN];		/* PE FILE PATH              */
+	char pepath[STRLEN];		/* PE FILE PATH		     */
 };
 
 struct pic32_dstab {
 	uint32_t datasheet;		/* DEVICE APP. DATASHEET */
-	char filename[STRLEN];		/* PE HEX FILE NAME      */
+	char filename[STRLEN];		/* PE HEX FILE NAME	 */
 };
 
 struct pic32_dsmap {
@@ -66,24 +66,27 @@ struct pic32_dsmap {
 /*
  * KSEG1 0xA0000000 .. 0xBFFFFFFF (CACHE DISABLED)
  */
-#define PIC32_RAM    (0xA0000000)	/* 0xA0000000 .. 0xAXXXXXXX RAM           */
+#define PIC32_RAM    (0xA0000000)	/* 0xA0000000 .. 0xAXXXXXXX RAM		  */
 #define PIC32_CODE   (0xBD000000)	/* 0xBD000000 .. 0xBDXXXXXX PROGRAM FLASH */
-#define PIC32_BOOT   (0xBFC00000)	/* 0xBFC00000 .. 0xBFC0XXXX BOOT FLASH    */
+#define PIC32_BOOT   (0xBFC00000)	/* 0xBFC00000 .. 0xBFC0XXXX BOOT FLASH	  */
 
 #define PIC32_CONFIG_SIZE (4)
 
-#define PIC32MM_PRI_CONFIG (0xBFC017C0)	/* PRIMARY CONFIG */
-#define PIC32MM_ALT_CONFIG (0xBFC01740)	/* ALT.    CONFIG */
-#define PIC32MM_CONFIG_SIZE (10)
+#define PIC32MM_CONFIG_PANEL (0xBFC01700)	/* CONFIG PANEL   */
+#define PIC32MM_PRI_CONFIG   (0xBFC017C0)	/* PRIMARY CONFIG */
+#define PIC32MM_ALT_CONFIG   (0xBFC01740)	/* ALT.    CONFIG */
+#define PIC32MM_CONFIG_SIZE  (10)
 
 /*
  * KSEG1 PERIPHERALS
  */
-#define PIC32_PERI        (0xBF800000)	/* 0xBF800000 .. 0xBF8FFFFF PERIPHERAL */
-#define PIC32_DEVID       (0xBF80F220)	/* DEVICE ID PIC32                     */
-#define PIC32MM_GPL_DEVID (0xBF803B20)	/* DEVICE ID PIC32MMxxxxGPLyyy         */
-#define PIC32MM_GPM_DEVID (0xBF803660)	/* DEVICE ID PIC32MMxxxxGPMyyy         */
-#define PIC32_IDMASK      (0x0FFFFFFF)
+#define PIC32_PERI	   (0xBF800000)	/* 0xBF800000 .. 0xBF8FFFFF PERIPHERAL */
+#define PIC32_DEVID	   (0xBF80F220)	/* DEVICE ID PIC32		       */
+#define PIC32MM_GPL_DEVID  (0xBF803B20)	/* DEVICE ID PIC32MMxxxxGPLyyy	       */
+#define PIC32MM_GPM_DEVID  (0xBF803660)	/* DEVICE ID PIC32MMxxxxGPMyyy	       */
+#define PIC32MM_GPL_NVMCON (0xBF802380)	/* DEVICE ID PIC32MMxxxxGPLyyy	       */
+#define PIC32MM_GPM_NVMCON (0xBF802930)	/* DEVICE ID PIC32MMxxxxGPMyyy	       */
+#define PIC32_IDMASK	   (0x0FFFFFFF)
 
 /*
  * KSEG2 0x80000000 .. 0x9FFFFFFF (CACHE ENABLED)
@@ -94,53 +97,53 @@ struct pic32_dsmap {
  *****************************************************************************/
 
 /* TMS HEADER */
-#define PIC32_SELECT_DR			1,0x01	/* ENTER SELECT-DR-SCAN STATE   */
-#define PIC32_CAPTURE_DR		2,0x01	/* ENTER CAPTURE-DR STATE       */
-#define PIC32_SHIFT_DR			3,0x01	/* ENTER SHIFT-DR STATE         */
+#define PIC32_SELECT_DR			1,0x01	/* ENTER SELECT-DR-SCAN STATE	*/
+#define PIC32_CAPTURE_DR		2,0x01	/* ENTER CAPTURE-DR STATE	*/
+#define PIC32_SHIFT_DR			3,0x01	/* ENTER SHIFT-DR STATE		*/
 
-#define PIC32_SELECT_IR			2,0x03	/* ENTER SELECT-IR-SCAN STATE   */
-#define PIC32_CAPTURE_IR		3,0x03	/* ENTER CAPTURE-IR STATE       */
-#define PIC32_SHIFT_IR			4,0x03	/* ENTER SHIFT-IR STATE         */
+#define PIC32_SELECT_IR			2,0x03	/* ENTER SELECT-IR-SCAN STATE	*/
+#define PIC32_CAPTURE_IR		3,0x03	/* ENTER CAPTURE-IR STATE	*/
+#define PIC32_SHIFT_IR			4,0x03	/* ENTER SHIFT-IR STATE		*/
 
 /* TMS HEADER + FOOTER */
 #define PIC32_RESET			5,0x1F	/* ENTER TEST-LOGIC-RESET STATE */
-#define PIC32_IDLE6			6,0x1F	/* ENTER RUN-TEST/IDLE STATE    */
+#define PIC32_IDLE6			6,0x1F	/* ENTER RUN-TEST/IDLE STATE	*/
 
 /* TMS FOOTER */
-#define PIC32_UPDATE			1,0x01	/* ENTER UPDATE-DR/IR STATE     */
-#define PIC32_IDLE2			2,0x01	/* ENTER RUN-TEST/IDLE STATE    */
+#define PIC32_UPDATE			1,0x01	/* ENTER UPDATE-DR/IR STATE	*/
+#define PIC32_IDLE2			2,0x01	/* ENTER RUN-TEST/IDLE STATE	*/
 
 #define PIC32_MTAP_COMMAND		5,0x07	/* SELECT MCHP COMMAND REGISTER */
-#define PIC32_MTAP_SW_MTAP		5,0x04	/* SWITCH TO MCHP CONTROLLER    */
-#define PIC32_MTAP_SW_ETAP		5,0x05	/* SWITCH TO EJTAG CONTROLLER   */
-#define PIC32_MTAP_IDCODE		5,0x01	/* SELECT DEVICE ID REGISTER    */
-#define PIC32_MCHP_STATUS		8,0x00	/* RETURN MCHP STATUS           */
-#define PIC32_MCHP_ASSERT_RST		8,0xD1	/* PUT DEVICE IN RESET          */
-#define PIC32_MCHP_DE_ASSERT_RST	8,0xD0	/* TAKE DEVICE OUT OF RESET     */
-#define PIC32_MCHP_ERASE		8,0xFC	/* CHIP ERASE                   */
-#define PIC32_MCHP_FLASH_ENABLE		8,0xFE	/* SET FLASH ENABLE BIT         */
-#define PIC32_MCHP_FLASH_DISABLE	8,0xFD	/* CLEAR FLASH ENABLE BIT       */
-#define PIC32_ETAP_ADDRESS		5,0x08	/* SELECT ADDRESS REGISTER      */
-#define PIC32_ETAP_DATA			5,0x09	/* SELECT DATA REGISTER         */
-#define PIC32_ETAP_CONTROL		5,0x0A	/* SELECT CONTROL REGISTER      */
-#define PIC32_ETAP_EJTAGBOOT		5,0x0C	/* EXECUTE BOOT CODE            */
-#define PIC32_ETAP_FASTDATA		5,0x0E	/* SELECT FASTDATA REGISTER     */
+#define PIC32_MTAP_SW_MTAP		5,0x04	/* SWITCH TO MCHP CONTROLLER	*/
+#define PIC32_MTAP_SW_ETAP		5,0x05	/* SWITCH TO EJTAG CONTROLLER	*/
+#define PIC32_MTAP_IDCODE		5,0x01	/* SELECT DEVICE ID REGISTER	*/
+#define PIC32_MCHP_STATUS		8,0x00	/* RETURN MCHP STATUS		*/
+#define PIC32_MCHP_ASSERT_RST		8,0xD1	/* PUT DEVICE IN RESET		*/
+#define PIC32_MCHP_DE_ASSERT_RST	8,0xD0	/* TAKE DEVICE OUT OF RESET	*/
+#define PIC32_MCHP_ERASE		8,0xFC	/* CHIP ERASE			*/
+#define PIC32_MCHP_FLASH_ENABLE		8,0xFE	/* SET FLASH ENABLE BIT		*/
+#define PIC32_MCHP_FLASH_DISABLE	8,0xFD	/* CLEAR FLASH ENABLE BIT	*/
+#define PIC32_ETAP_ADDRESS		5,0x08	/* SELECT ADDRESS REGISTER	*/
+#define PIC32_ETAP_DATA			5,0x09	/* SELECT DATA REGISTER		*/
+#define PIC32_ETAP_CONTROL		5,0x0A	/* SELECT CONTROL REGISTER	*/
+#define PIC32_ETAP_EJTAGBOOT		5,0x0C	/* EXECUTE BOOT CODE		*/
+#define PIC32_ETAP_FASTDATA		5,0x0E	/* SELECT FASTDATA REGISTER	*/
 
 /*****************************************************************************
  * MCHP STATUS (8 bits)
  */
 
-#define PIC32_MCHP_STATUS_MM     (0x100)	/* PIC32MM MAGIC */
+#define PIC32_MCHP_STATUS_MM	 (0x100)	/* PIC32MM MAGIC */
 
-#define PIC32_MCHP_STATUS_MASK   (0xFF)
+#define PIC32_MCHP_STATUS_MASK	 (0xFF)
 
-#define PIC32_MCHP_STATUS_CPS    (0x80)		/* CODE PROTECT	 */
+#define PIC32_MCHP_STATUS_CPS	 (0x80)		/* CODE PROTECT	 */
 #define PIC32_MCHP_STATUS_NVMERR (0x20)		/* NVM ERROR	 */
 		/* NVMERR N/A PIC32MX320/340/360/420/440/460	 */
 
 #define PIC32_MCHP_STATUS_CFGRDY (0x08)		/* CONFIG READY	 */
 #define PIC32_MCHP_STATUS_FCBUSY (0x04)		/* FLASH BUSY	 */
-#define PIC32_MCHP_STATUS_FAEN   (0x02)		/* FLASH ENABLED */
+#define PIC32_MCHP_STATUS_FAEN	 (0x02)		/* FLASH ENABLED */
 		/* FAEN N/A ON PIC32MZ EC			 */
 
 #define PIC32_MCHP_STATUS_DEVRST (0x01)		/* DEVICE RESET	 */
@@ -148,19 +151,19 @@ struct pic32_dsmap {
 /*****************************************************************************/
 
 #define PIC32_EJTAG_CONTROL_ROCC     (0x80000000) /* PROCESSOR RESET  */
-/* 30-29:PSZ     */
-/* 23:VPED       */
-/* 22:DOZE       */
-/* 21:HALT       */
-/* 20:PERRST     */
+/* 30-29:PSZ	 */
+/* 23:VPED	 */
+/* 22:DOZE	 */
+/* 21:HALT	 */
+/* 20:PERRST	 */
 #define PIC32_EJTAG_CONTROL_PRNW     (0x00080000) /* PROCESSOR R/W    */
 #define PIC32_EJTAG_CONTROL_PRACC    (0x00040000) /* PROCESSOR ACCESS */
-/* 16:PRRST      */
+/* 16:PRRST	 */
 #define PIC32_EJTAG_CONTROL_PROBEN   (0x00008000) /* PROBE ENABLED    */
 #define PIC32_EJTAG_CONTROL_PROBTRAP (0x00004000) /* PROBE ADDRESS    */
 /* 13:ISAONDEBUG */
 #define PIC32_EJTAG_CONTROL_EJTAGBRK (0x00001000) /* DEBUG INTERRUPT  */
-#define PIC32_EJTAG_CONTROL_DM       (0x00000008) /* DEBUG MODE       */
+#define PIC32_EJTAG_CONTROL_DM	     (0x00000008) /* DEBUG MODE       */
 
 /* PIC32 PROGRAMMING EXECUTIVE */
 #define PIC32_PE_READWORDS (0x00000100UL) /* PE BLOCK READ CACHE */
@@ -172,9 +175,9 @@ struct pic32_dsmap {
  * PICMicro devices
  *****************************************************************************/
 
-/* 
- * App. Data-sheet
- *
+/*
+ * Device Family				Data-sheet
+ * --------------------------------------------	-----------
  * PIC32MX3XX/4XX				DS61143H
  * PIC32MX5XX/6XX/7XX				DS61156H
  * PIC32MX1XX/2XX				DS60001168F
@@ -182,6 +185,7 @@ struct pic32_dsmap {
  * PIC32MZ EC					DS60001191C
  * PIC32MX1XX/2XX/5XX				DS60001290D
  * PIC32MM0016/0032/0064/0128/0256GPL0XX	DS60001324B
+ * PIC32MM0016/0032/0064/0128/0256GPM0XX	DS60001387D
  */
 #define DS61143H    (61143)
 #define DS61156H    (61156)
@@ -189,13 +193,14 @@ struct pic32_dsmap {
 #define DS60001185C (60001185)
 #define DS60001191C (60001191)
 #define DS60001290D (60001290)
+#define DS60001324B (60001324)
+#define DS60001387D (60001387)
 
 /*
  * Programming Spec.
  *
  * DS60001145M
  */
-#define DS60001145M (60001145)
 #define PIC32MX110F016B (0x04A07053)
 #define PIC32MX110F016C (0x04A09053)
 #define PIC32MX110F016D (0x04A0B053)
@@ -350,13 +355,34 @@ struct pic32_dsmap {
 #define PIC32MX570F512L (0x06A35053)
 
 /*
+ * Programming Spec.
+ *
+ * DS60001145X
+ */
+#define PIC32MX154F128B (0x07800053)
+#define PIC32MX154F128D (0x07804053)
+#define PIC32MX155F128B (0x07808053)
+#define PIC32MX155F128D (0x0780C053)
+#define PIC32MX174F256B (0x07801053)
+#define PIC32MX174F256D (0x07805053)
+#define PIC32MX175F256B (0x07809053)
+#define PIC32MX175F256D (0x0780D053)
+#define PIC32MX254F128B (0x07802053)
+#define PIC32MX254F128D (0x07806053)
+#define PIC32MX255F128B (0x0780A053)
+#define PIC32MX255F128D (0x0780E053)
+#define PIC32MX274F256B (0x07803053)
+#define PIC32MX274F256D (0x07807053)
+#define PIC32MX275F256B (0x0780B053)
+#define PIC32MX275F256D (0x0780F053)
+
+/*
  * PIC32MM0016/0032/0064/0128/0256GPL0XX
  *
  * Programming spec.
  *
  * DS60001364C
  */
-#define DS60001324B (60001324)
 #define PIC32MM0016GPL020 (0x06B04053)
 #define PIC32MM0032GPL020 (0x06B0C053)
 #define PIC32MM0064GPL020 (0x06B14053)
@@ -372,9 +398,8 @@ struct pic32_dsmap {
  *
  * Programming spec.
  *
- * DS60001387D
+ * DS60001364D
  */
-#define DS60001387D (60001387)
 #define PIC32MM0064GPM028 (0x07708053)
 #define PIC32MM0128GPM028 (0x07710053)
 #define PIC32MM0256GPM028 (0x07718053)

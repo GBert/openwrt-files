@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -39,6 +39,10 @@ usage_pickle(void)
 		" %s\n"
 		"\t\tConfiguration file.\n\n", p.dotfile);
 
+	printf("ENVIRONMENT:\n"
+		" PICKLE\n"
+		"\t\tConfiguration file.\n\n");
+
 	printf("FRONTENDS:\n"
 		" INHX32\n"
 		"\t\tFile or standard input.\n"
@@ -50,13 +54,8 @@ usage_pickle(void)
 
 	printf("BACKENDS:\n");
 #ifdef ALLWINNER
-	printf(" ALLWINNER\n"
-		"\t\tLinux Banana Pi (A20), Orange Pi (H2+/H3) GPIO.\n");
-#endif
-#ifdef BITBANG
-	printf(" BIT-BANG\n"
-		"\t\tLinux GPIO bit-bang version %d.%d.\n",
-		GPIO_BB_VERSION_MAJ, GPIO_BB_VERSION_MIN);
+	printf(" BPI/OPI\n"
+		"\t\tLinux AllWinner Banana Pi (A20) and Orange Pi (H2+/H3) GPIO.\n");
 #endif
 #ifdef CP2104
 	printf(" CP2104\n"
@@ -64,29 +63,46 @@ usage_pickle(void)
 #endif
 #ifdef FTDI
 	printf(" FTDI\n"
-		"\t\tLinux FTDI bit-bang.\n");
+		"\t\tLinux FTDI USB bit-bang.\n");
+#endif
+#ifdef BITBANG
+	printf(" GPIO-BB\n"
+		"\t\tLinux GPIO bit-bang version %d.%d.\n",
+		GPIO_BB_VERSION_MAJ, GPIO_BB_VERSION_MIN);
 #endif
 #ifdef MCP2221
 	printf(" MCP2221\n"
 		"\t\tLinux MCP2221 GPIO.\n");
 #endif
-#ifdef MCP23017
-	printf(" MCP23017\n"
-		"\t\tLinux MCP23017 I2C.\n");
+#ifdef MCP23016
+	printf(" MCP23016\n"
+		"\t\tLinux MCP23016 I2C.\n");
+#endif
+#ifdef MCP230XX
+	printf(" MCP230XX\n"
+		"\t\tLinux MCP23008/17 I2C.\n");
+#endif
+#ifdef MCP23SXX
+	printf(" MCP23SXX\n"
+		"\t\tLinux MCP23S08/17 SPI.\n");
+#endif
+#ifdef PCF8574
+	printf(" PCF8574\n"
+		"\t\tLinux PCF8574 I2C.\n");
 #endif
 #ifdef RPI
 	printf(" RPI\n"
-		"\t\tLinux Raspberry Pi GPIO.\n");
+		"\t\tLinux Raspberry Pi GPIO (Pi0/Pi1/Pi2/Pi3/Pi4).\n");
+#endif
+#ifdef SYSFSGPIO
+	printf(" SYSFSGPIO\n"
+		"\t\tLinux SysFs GPIO.\n");
 #endif
 #ifdef SERIAL
-	printf(" SERIAL\n"
-		"\t\tPOSIX serial bit-bang.\n");
+	printf(" TTY\n"
+		"\t\tPOSIX Serial bit-bang.\n");
 #endif
 	printf("\n");
-
-	printf("ENVIRONMENT:\n"
-		" PICKLE\n"
-		"\t\tConfiguration file.\n\n");
 
 	printf("EXAMPLES:\n"
 #ifdef P12
@@ -120,6 +136,10 @@ usage_pickle(void)
 #ifdef PCTRL
 		" pctrl RUN|STOP|RESTORE\n"
 		"\t\tControl master clear.\n"
+#endif
+#ifdef PIO
+		" pio COMMAND [ARG]\n"
+		"\t\tICSPIO operations.\n"
 #endif
 #ifdef STK500
 		" pload PROGRAM|VERIFY TTY|IP FILE [16|24|32]\n"
@@ -634,6 +654,39 @@ usage(char *execname, char *msg)
 }
 
 /*
+ * Are you sure?
+ *
+ * Confirm blanking or erasing
+ */
+static int
+areyousure(const char *s)
+{
+	int c;
+
+	printf("%s: are you sure [y/N]? ", s);
+
+	c = fgetc(stdin);
+	if (c == 'y' || c == 'Y')
+		return 1;
+
+	return 0;
+}
+
+/*
+ * Reset uid if setuid
+ */
+static void
+resetuid(void)
+{
+	if (getuid() != geteuid()) {
+		if (setuid(getuid()) < 0) {
+			printf("%s: fatal error: setuid failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		}
+	}
+}
+
+/*
  * Open device and perform command
  */
 int
@@ -659,30 +712,33 @@ main(int argc, char **argv)
 	
 	/* Determine back-end */
 	if (io_backend() == 0)
-		usage(execname, "Unsupported backend device in config. Run `pickle` to list");
-
-	/* Open device */
-	if (io_open() < 0)
 		usage(execname, io_error());
 
 	/* Raise priority */
 	setpriority(PRIO_PROCESS, 0, -20);
 
-	/* Reset uid */
-	if (getuid() != geteuid()) {
-		if (setuid(getuid()) < 0) {
-			printf("%s: fatal error: setuid failed\n", __func__);
-			io_exit(EX_OSERR); /* Panic */
-		}
-	}
+	/*
+	 * Open device
+	 */
 
+	if (p.io->uid)
+		resetuid();
+	if (io_open() < 0)
+		usage(execname, io_error());
+	if (!p.io->uid)
+		resetuid();
+	
 	/* Determine arch: 12 | 14 | 16 | 24 | 32 */
 	if (pic_arch(execname) == 0)
 		usage_pickle();
 
-	/* Perform operation */
+	/* Check args */
 	if (argc < 2)
 		usage(execname, "Missing arg(s)");
+
+	/*
+	 * Get args & perform operation
+	 */
 
 	/* Device selection and partition */
 	int argv1 = tolower((int)argv[1][0]);
@@ -695,9 +751,9 @@ main(int argc, char **argv)
 		}
 		p.partition = (argv1 == 'p') ? TRUE : FALSE;
 		if (mystrcasestr(argv[2], "dspic") == argv[2]) {
-			strncpy(p.devicename, argv[2], STRLEN);
+			strncpy(p.devicename, argv[2], STRMAX);
 		} else if (mystrcasestr(argv[2], "pic") == argv[2]) {
-			strncpy(p.devicename, argv[2], STRLEN);
+			strncpy(p.devicename, argv[2], STRMAX);
 		} else {
 			int32_t temp = strtol(argv[2], NULL, 0);
 			if (temp < 10 || temp > 33) {
@@ -705,10 +761,10 @@ main(int argc, char **argv)
 			}
 			if (temp == 30 || temp == 33) {
 				strcpy(p.devicename, "dspic");
-				strncpy(&p.devicename[5], argv[2], STRLEN - 5);
+				strncpy(&p.devicename[5], argv[2], STRMAX - 5);
 			} else {
 				strcpy(p.devicename, "pic");
-				strncpy(&p.devicename[3], argv[2], STRLEN - 3);
+				strncpy(&p.devicename[3], argv[2], STRMAX - 3);
 			}
 		}
 		argc -= 2;
@@ -813,7 +869,7 @@ main(int argc, char **argv)
 				if (argc > 2)
 					usage(execname, "Too many args [data]");
 				pic_dumpdata();
-			} else if (argv11 == 'e') { 	/* DEBUG */
+			} else if (argv11 == 'e') {	/* DEBUG */
 				pic_debug();
 			} else {			/* DUMP */
 				if (argc > 2)
@@ -824,7 +880,8 @@ main(int argc, char **argv)
 
 	case 'e':	if (argv11 == 'r') {		/* ERASE FLASH | ID | ROW[NROWS] */
 				uint32_t row = 0, nrows = 1;
-				char prompt[STRLEN] = {0}, *endptr = NULL;
+				char prompt[STRLEN] = {0};
+				char *endptr = NULL;
 
 				if (argc < 3)
 					usage(execname, "Missing arg [erase]");
@@ -836,19 +893,19 @@ main(int argc, char **argv)
 				case 'i': /* IDLOCATION    */
 				case 'u': /* USERID/CONFIG */
 					row = PIC_ERASE_ID;
-					strncpy(prompt, "Erase id", STRLEN);
+					strncpy(prompt, "Erase id", STRMAX);
 					break;
 				case 'c': /* CONFIG */
 					row = PIC_ERASE_CONFIG;
-					strncpy(prompt, "Erase config", STRLEN);
+					strncpy(prompt, "Erase config", STRMAX);
 					break;
 				case 'e': /* EEPROM */
 					row = PIC_ERASE_EEPROM;
-					strncpy(prompt, "Erase EEPROM", STRLEN);
+					strncpy(prompt, "Erase EEPROM", STRMAX);
 					break;
 				case 'f': /* FLASH */
 					nrows = UINT32_MAX;
-					strncpy(prompt, "Erase program flash", STRLEN);
+					strncpy(prompt, "Erase program flash", STRMAX);
 					break;
 				default:  /* FLASH ROW */
 					{
@@ -970,10 +1027,7 @@ main(int argc, char **argv)
 			}
 			break;
 #ifdef STK500
-	case '/':	if (strstr(argv[1], "/dev/tty") != argv[1]) {
-				usage(execname, "Invalid device [TTY]");
-			}
-			if (strstr(argv[1], p.device) != NULL) {
+	case '/':	if (strstr(argv[1], p.device) != NULL) {
 				usage(execname, "Device in use [TTY]");
 			}
 			stk500v2_listen(argv[1], 0);

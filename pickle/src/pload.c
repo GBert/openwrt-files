@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -82,11 +82,15 @@ main(int argc, char *argv[])
 	/* Get configuration (BAUDRATE) */
 	getconf();
 
-	/* Perform operation */
+	/* Check args */
 	if (argc < 3)
 		usage(execname, "Missing arg");
 	if (argc > 5)
 		usage(execname, "Too many args");
+
+	/*
+	 * Get args
+	 */
 
 	/* Program or verify */
 	int prog_mode = tolower((int)argv[1][0]);
@@ -97,7 +101,7 @@ main(int argc, char *argv[])
 	char *target = argv[2];
 
 	/* File or stdin */
-	char file[STRLEN];
+	char file[STRLEN] = {0};
 	strcpy(file, "-");
 	if (argc >= 4)
 		strncpy(file, argv[3], STRMAX);
@@ -110,6 +114,7 @@ main(int argc, char *argv[])
 			usage(execname, "Invalid size");
 	}
 
+	/* Perform operation */
 	io_signal_on(); // !SIGPIPE
 	stk500v2_load(prog_mode, target, file, size);
 	io_signal_off();

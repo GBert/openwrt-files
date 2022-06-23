@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -192,9 +192,9 @@ struct pic14_dsmap pic14_map[] =
 {"PIC12F617",	PIC12F617,	2048,	0,	DS41284E,  0x2000, 0x2100, 0x2008, 1,      1,     4,       16},
 
 /* These devices have two config words at 2007 & 2008 and one calibration word at 2009 */
-{"PIC16F882",	PIC16F882,	2048,	128,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     8,       16},
-{"PIC16F883",	PIC16F883,	4096,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     8,       16},
-{"PIC16F884",	PIC16F884,	4096,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     8,       16},
+{"PIC16F882",	PIC16F882,	2048,	128,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     4,       16},
+{"PIC16F883",	PIC16F883,	4096,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     4,       16},
+{"PIC16F884",	PIC16F884,	4096,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     4,       16},
 {"PIC16F886",	PIC16F886,	8192,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     8,       16},
 {"PIC16F887",	PIC16F887,	8192,	256,	DS41287D,  0x2000, 0x2100, 0x2009, 2,      1,     8,       16},
 
@@ -1808,7 +1808,7 @@ pic14_write_word(uint16_t region)
 
 /*****************************************************************************
  *
- * Read/Write Calibration 
+ * Read/Write Calibration
  *
  *****************************************************************************/
 
@@ -2117,7 +2117,7 @@ pic14_loadregion(uint16_t region, uint16_t word)
  */
 static inline uint16_t
 pic14_programregion(uint16_t address, uint16_t region, uint16_t data)
-{ 
+{
 	static int write_pending = 0;
 
 	switch (region) {
@@ -2354,7 +2354,7 @@ pic14_dumpdeviceid(void)
 		} else for (uint32_t i = 0; i < pic14_map[pic14_index].ncalib; ++i) {
 			if (i < 9)
 				printf("[%04X] [CALIB%d]   %04X\n", caddr++, i + 1, pic14_conf.calib[i]);
-			else 
+			else
 				printf("[%04X] [CALIB%d]  %04X\n", caddr++, i + 1, pic14_conf.calib[i]);
 		}
 	}

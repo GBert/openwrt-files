@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -109,7 +109,7 @@ getdotfile(void)
 		printf("%s: warning: invalid PICKLE environment variable\n", __func__);
 	}
 
-	char dir[STRLEN];
+	char dir[STRLEN] = {0};
 	if (getcwd(dir, STRLEN) == NULL) {
 		printf("%s: fatal error: getcwd failed\n", __func__);
 		io_exit(EX_OSERR); /* Panic */
@@ -162,13 +162,52 @@ getdotfile(void)
 }
 
 /*
+ * Dot variable
+ *
+ * return line with whitespace and comments removed
+ */
+char *
+getvar(char *s, int slen)
+{
+	int i = 0, j = 0;
+	char *t;
+
+	if (!slen) {
+		printf("%s: fatal error: invalid length\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
+	t = malloc(slen);
+	if (t == NULL) {
+		printf("%s: fatal error: malloc failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	}
+
+	s[slen - 1] = '\0';
+
+	while (s[i] && s[i] != '#') {
+
+		if (s[i] > ' ')
+			t[j++] = s[i];
+		++i;
+	}
+
+	t[j] = '\0';
+
+	strcpy(s, t);
+	free(t);
+
+	return s;
+}
+
+/*
  * Configuration
  */
 void
 getconf(void)
 {
 	FILE *f1;
-	char line[STRLEN];
+	char line[STRLEN] = {0};
 	int rc;
 
 	/* Config defaults */
@@ -180,11 +219,16 @@ getconf(void)
 	/* Load dot file when available */
 	if (p.dotfile[0] && (f1 = fopen(p.dotfile, "rb")) != NULL) {
 		while (fgets(line, STRLEN, f1) != NULL) {
-			/* Remove whitespace */
-			rmws(line, STRLEN);
+
+			/* Get variable in line */
+			getvar(line, STRLEN);
+			
+			/* Ignore empty line */
+			if (!*line)
+				continue;
 
 			if (mystrcasestr(line, "DEVICE=") == line) {
-				strncpy(p.device, &line[7], STRLEN);
+				strncpy(p.device, &line[7], STRMAX);
 			}
 			else if (mystrcasestr(line, "BAUDRATE=") == line) {
 				p.baudrate = strtoul(&line[9], NULL, 0);
@@ -198,6 +242,9 @@ getconf(void)
 			}
 			else if (mystrcasestr(line, "SLEEP_HIGH=") == line) {
 				p.sleep_high = strtoul(&line[11], NULL, 0);
+			}
+			else if (mystrcasestr(line, "SLEEP_ALGO=") == line) {
+				p.sleep_algo = strtoul(&line[11], NULL, 0);
 			}
 			else if (mystrcasestr(line, "BITRULES=") == line) {
 				p.bitrules = strtoul(&line[9], NULL, 0);
@@ -224,11 +271,14 @@ getconf(void)
 			else if (mystrcasestr(line, "PGDI=") == line) {
 				p.pgdi = strtoul(&line[5], NULL, 0);
 			}
-			else if (mystrcasestr(line, "USB_SERIAL=") == line) {
-				strncpy(p.usb_serial, &line[11], STRLEN);
+			else if (mystrcasestr(line, "SERIAL=") == line) {
+				strncpy(p.serial, &line[7], STRMAX);
 			}
-			else if (mystrcasestr(line, "MCP=") == line) {
-				p.mcp = strtoul(&line[4], NULL, 0);
+			else if (mystrcasestr(line, "ADDR=") == line) {
+				p.addr = strtoul(&line[5], NULL, 0);
+			}
+			else if (mystrcasestr(line, "IFACE=") == line) {
+				strncpy(p.iface, &line[6], STRMAX);
 			}
 			else if (mystrcasestr(line, "FWSLEEP=") == line) {
 				p.fwsleep = strtoul(&line[8], NULL, 0);
@@ -237,7 +287,7 @@ getconf(void)
 				p.debug = strtoul(&line[6], NULL, 0);
 			}
 			else if (mystrcasestr(line, "ETC=") == line) {
-				strncpy(p.etc, &line[4], STRLEN);
+				strncpy(p.etc, &line[4], STRMAX);
 			}
 			else if (mystrcasestr(line, "CONFIG=") == line) {
 				p.config = strtoul(&line[7], NULL, 0);
@@ -245,9 +295,12 @@ getconf(void)
 			else if (mystrcasestr(line, "ERROR=") == line) {
 				p.error = strtoul(&line[6], NULL, 0);
 			}
+			else {
+				printf("%s: warning: invalid config option [%s]\n", __func__, line);
+			}
 		}
 		fclose(f1);
-	} else { /* We are using the defaults */
+	} else {	/* We are using the defaults */
 		rc = snprintf(p.dotfile, STRLEN, "Using defaults (override in %s)", DOTFILENAME);
 		if (rc < 0) {
 			printf("%s: fatal error: snprintf failed\n", __func__);

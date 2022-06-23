@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -50,10 +50,10 @@ static uint8_t gpio_pins[GPIO_RPI_NPINS], gpio_dirs[GPIO_RPI_NPINS], gpio_alt[GP
 
 struct io_ops raspi_ops = {
 	.type		= IORPI,
-	.single		= 1,
 	.run		= 1,
+	.uid		= 0,
 	.open		= raspi_open,
-	.release        = raspi_release,
+	.release	= raspi_release,
 	.close		= raspi_close,
 	.error		= raspi_error,
 	.usleep		= raspi_usleep,
@@ -75,6 +75,42 @@ raspi_backend(void)
 	return p.io->type;
 }
 
+static off_t
+raspi_peri_base_addr(void)
+{
+	FILE *fp;
+	uint8_t buf[4];
+	uint32_t addr;
+
+	if ((fp = fopen(BCM_RANGES, "rb")) == NULL) {
+		printf("%s: warning: open failed [%s] [%s]\n", __func__, BCM_RANGES, strerror(errno));
+		return -1;
+	}
+	if (fseek(fp, 4U, SEEK_SET) < 0)
+		goto error;
+
+	/* RPi 0 / 0W / 1 / 2 / 02W / 3 */
+	if (fread(buf, sizeof(uint8_t), 4, fp) < 0)
+		goto error;
+	addr = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+	if (addr) {
+		fclose(fp);
+		return addr;
+	}
+
+	/* RPI4 / 400 */
+	if (fread(buf, sizeof(uint8_t), 4, fp) < 0)
+		goto error;
+	addr = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
+	if (addr) {
+		fclose(fp);
+		return addr;
+	}
+
+error:	fclose(fp);
+	return -1;
+}
+
 int
 raspi_open(void)
 {
@@ -82,23 +118,32 @@ raspi_open(void)
 	uint8_t type = p.device[3];
 
 	/* Determine GPIO base address */
-	if (type == '\0' || type == '0' || type == '1') {
-		gpio_base_addr = BCM2835_PERI_BASE_ADDR + GPIO_BASE_ADDR_OFFSET;
+	if (type == '\0') {
+		/* AUTO-DETECT */
+		gpio_base_addr = raspi_peri_base_addr();
+		if (gpio_base_addr == -1)
+			return -1; /* Unknown */
+	}
+	else if (type == '0' || type == '1') {
+		/* RPI 0 / 0W / 1 */
+		gpio_base_addr = BCM2835_PERI_BASE_ADDR;
 	}
 	else if (type == '2' || type == '3') {
-		gpio_base_addr = BCM2836_PERI_BASE_ADDR + GPIO_BASE_ADDR_OFFSET;
+		/* RPI 2 / 02W / 3 */
+		gpio_base_addr = BCM2836_PERI_BASE_ADDR;
 	}
 	else if (type == '4') {
-		gpio_base_addr = BCM2711_PERI_BASE_ADDR + GPIO_BASE_ADDR_OFFSET;
+		/* RPI 4 / 400 */
+		gpio_base_addr = BCM2711_PERI_BASE_ADDR;
 	}
-	else {
+	else
 		return -1; /* Unknown */
-	}
+	gpio_base_addr += GPIO_BASE_ADDR_OFFSET;
 
 	/* Open /dev/mem */
 	gpio_mem = open("/dev/mem", O_RDWR | O_SYNC);
 	if (gpio_mem < 0) {
-		printf("%s: warning: open failed [%s]\n", __func__, strerror(errno));
+		printf("%s: warning: open failed [/dev/mem] [%s]\n", __func__, strerror(errno));
 		gpio_mem = -1;
 		return -1;
 	}
@@ -125,7 +170,7 @@ raspi_release(void)
 		raspi_release_pin(p.pgdo);
 	if (p.bitrules & PGC_RELEASE)
 		raspi_release_pin(p.pgc);
-	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_PGM_DISABLED)
+	if (p.bitrules & PGM_RELEASE && p.pgm != GPIO_DISABLED)
 		raspi_release_pin(p.pgm);
 	if (p.bitrules & VPP_RELEASE)
 		raspi_release_pin(p.vpp);
@@ -151,7 +196,7 @@ raspi_close(void)
 char *
 raspi_error(void)
 {
-	return "Can't open RPi I/O";
+	return "Can't open RPI I/O";
 }
 
 void
@@ -169,7 +214,7 @@ raspi_usleep(int n)
 void
 raspi_set_pgm(uint8_t pgm)
 {
-	if (p.pgm != GPIO_PGM_DISABLED)
+	if (p.pgm != GPIO_DISABLED)
 		raspi_set(p.pgm, pgm);
 }
 
@@ -305,7 +350,7 @@ raspi_select_alt(uint8_t pin)
 
 	uint32_t val = gpio_alt[pin] << raspi_lshift(pin);
 
-	DPRINT("%s() PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
+	DPRINT("%s: PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
 
 	*reg |= val; /* Input, Output or ALT0 .. ALT5 */
 }
@@ -327,7 +372,7 @@ raspi_select_pin(uint8_t pin)
 
 	gpio_alt[pin] = val;		/* Save Input, Output or ALT0 .. ALT5 */
 
-	DPRINT("%s() PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
+	DPRINT("%s: PIN=%2d ALT=%d\n", __func__, pin, gpio_alt[pin]);
 
 	raspi_select_input(pin);	/* Input */
 

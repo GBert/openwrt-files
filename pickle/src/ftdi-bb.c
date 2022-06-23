@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * Copyright (C) 2016 Gerhard Bertelsmann
  * All rights reserved.
  *
@@ -18,6 +18,8 @@
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
  */
 
+#undef DEBUG
+
 #include "pickle.h"
 
 /******************************************************************************
@@ -35,7 +37,7 @@ extern struct pickle p;
  *****************************************************************************/
 
 /* Shadow output */
-static uint8_t pin_latch = 0x00, pin_ddr = /* Magic */ 0xBB;
+static uint8_t latch = 0x00, ddr = /* Magic */ 0xBB;
 
 /* FTDI handle */
 static struct ftdi_context handle = {0};
@@ -51,10 +53,10 @@ static uint8_t buffer[FTDI_BB_BUFFER_SIZE];
 
 struct io_ops ftdi_bb_ops = {
 	.type		= IOFTDI,
-	.single		= 1,
 	.run		= 0,
+	.uid		= 0,
 	.open		= ftdi_bb_open,
-	.release        = NULL,
+	.release	= NULL,
 	.close		= ftdi_bb_close,
 	.error		= ftdi_bb_error,
 	.usleep		= NULL,
@@ -81,23 +83,30 @@ ftdi_bb_open(void)
 {
 	/* Initialize and find device */
 	if (ftdi_init(&handle) < 0) {
-		printf("%s: ftdi_init failed [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+		DPRINT("%s: ftdi_init failed [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 
-	if (*p.usb_serial) {
-		if ((ftdi_usb_open_desc(&handle, 0x0403, 0x6015, NULL, p.usb_serial) < 0) &&
-			(ftdi_usb_open_desc(&handle, 0x0403, 0x6001, NULL, p.usb_serial) < 0)) {
-			printf("%s: can't open FT232R/FT230X device [%s] with serial ID %s\n",
-				__func__, ftdi_get_error_string(&handle), p.usb_serial);
+	if (ftdi_set_interface(&handle, strtoul(p.iface, NULL, 0)) < 0) {
+		DPRINT("%s: can't set interface [%s]\n", __func__, ftdi_get_error_string(&handle));
+		return -1;
+	}
+
+	if (*p.serial) {
+		if ((ftdi_usb_open_desc(&handle,     /* FT230X  */ 0x0403, 0x6015, NULL, p.serial) < 0) &&
+			(ftdi_usb_open_desc(&handle, /* FT4232H */ 0x0403, 0x6011, NULL, p.serial) < 0) &&
+			(ftdi_usb_open_desc(&handle, /* FT2232H */ 0x0403, 0x6010, NULL, p.serial) < 0) &&
+			(ftdi_usb_open_desc(&handle, /* FT232   */ 0x0403, 0x6001, NULL, p.serial) < 0)) {
+			DPRINT("%s: can't open FTDI device [%s] with serial ID %s\n",
+				__func__, ftdi_get_error_string(&handle), p.serial);
 			return -1;
 		}
 	} else {
-		if ((ftdi_usb_open(&handle, 0x0403, 0x6015) < 0) &&
-			(ftdi_usb_open(&handle, 0x0403, 0x6001) < 0)) {
-			printf("%s: can't open FT230X device [%s]\n", __func__,
-				ftdi_get_error_string(&handle));
+		if ((ftdi_usb_open(&handle,     /* FT230X  */ 0x0403, 0x6015) < 0) &&
+			(ftdi_usb_open(&handle, /* FT4232H */ 0x0403, 0x6011) < 0) &&
+			(ftdi_usb_open(&handle, /* FT2232H */ 0x0403, 0x6010) < 0) &&
+			(ftdi_usb_open(&handle, /* FT232   */ 0x0403, 0x6001) < 0)) {
+			DPRINT("%s: can't open FTDI device [%s]\n", __func__, ftdi_get_error_string(&handle));
 			return -1;
 		}
 	}
@@ -107,8 +116,7 @@ ftdi_bb_open(void)
 		return -1;
 
 	if (ftdi_set_baudrate(&handle, p.baudrate) < 0) {
-		printf("%s: can't set baudrate [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+		DPRINT("%s: can't set baudrate [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 
@@ -164,13 +172,13 @@ ftdi_bb_close(void)
 char *
 ftdi_bb_error(void)
 {
-	return "Can't open FTDI bit-bang I/O";
+	return "Can't open FTDI I/O";
 }
 
 void
 ftdi_bb_set_pgm(uint8_t pgm)
 {
-	if (p.pgm != GPIO_PGM_DISABLED) {
+	if (p.pgm != GPIO_DISABLED) {
 		struct ftdi_bb_io io = {.dir = 0, .pin = p.pgm, .bit = pgm};
 
 		ftdi_bb_io(&io);
@@ -232,17 +240,16 @@ ftdi_bb_shift_out(uint32_t bits, uint8_t nbits)
 int
 ftdi_bb_bitmode(uint8_t new_ddr)
 {
-	if (pin_ddr != new_ddr) {
+	if (ddr != new_ddr) {
 		int rc, retry = 10;
 		
-		pin_ddr = new_ddr;
+		ddr = new_ddr;
 
-		while ((rc = ftdi_set_bitmode(&handle, pin_ddr, BITMODE_SYNCBB)) < 0 && retry--)
+		while ((rc = ftdi_set_bitmode(&handle, ddr, BITMODE_SYNCBB)) < 0 && retry--)
 			io_usleep(10000);
 
 		if (rc < 0) {
-			printf("%s: ftdi_set_bimode failed [%s]\n", __func__,
-				ftdi_get_error_string(&handle));
+			DPRINT("%s: ftdi_set_bitmode failed [%s]\n", __func__, ftdi_get_error_string(&handle));
 			return -1;
 		}
 	}
@@ -253,40 +260,38 @@ ftdi_bb_bitmode(uint8_t new_ddr)
 int
 ftdi_bb_io(struct ftdi_bb_io *io)
 {
-	uint8_t new_ddr = pin_ddr, pin_port;
+	uint8_t new_ddr = ddr, port;
 
 	if (io->dir) {	/* In */
 		new_ddr &= ~(1 << io->pin);
 	} else {	/* Out */
 		new_ddr |= (1 << io->pin);
 		if (io->bit)	/* Set */
-			pin_latch |= (1 << io->pin);
+			latch |= (1 << io->pin);
 		else		/* Reset */
-			pin_latch &= ~(1 << io->pin);
+			latch &= ~(1 << io->pin);
 	}
 
 	if (ftdi_bb_bitmode(new_ddr) < 0)
 		return -1;
 
-	if (ftdi_write_data(&handle, &pin_latch, 1) < 0) {
-		printf("%s: ftdi_write_error [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+	if (ftdi_write_data(&handle, &latch, 1) < 0) {
+		DPRINT("%s: ftdi_write_error [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 
-	if (ftdi_read_data(&handle, &pin_port, 1) < 0) {
-		printf("%s: ftdi_read_error [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+	if (ftdi_read_data(&handle, &port, 1) < 0) {
+		DPRINT("%s: ftdi_read_error [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 
 	if (io->dir) /* In */
-		io->bit = (pin_port & (1 << io->pin)) != 0;
+		io->bit = (port & (1 << io->pin)) != 0;
 
 	return 0;
 }
 
-static inline void
+static void
 ftbi_bb_dumpbuffer(struct ftdi_bb_shift *shift, uint32_t ix)
 {
 	uint8_t c, d, bit;
@@ -324,7 +329,7 @@ ftdi_bb_shift(struct ftdi_bb_shift *shift)
 	assert(shift->nbits > 0 && shift->nbits < 65);
 
 	if (p.pgdi == p.pgdo) {
-		uint8_t new_ddr = pin_ddr;
+		uint8_t new_ddr = ddr;
 
 		if (shift->dir) /* In */
 			new_ddr &= ~(1 << p.pgdi);
@@ -339,18 +344,18 @@ ftdi_bb_shift(struct ftdi_bb_shift *shift)
 	value = shift->bits;
 	value_mask = (p.msb_first) ? (1U << (shift->nbits - 1)) : (1 << 0);
 	for (uint32_t i = 0; i < shift->nbits; ++i) {
-		if (!shift->dir) {	/* Out */
-			if (value & value_mask)	/* Set */
-				pin_latch |= (1 << p.pgdo);
-			else			/* Reset */
-				pin_latch &= ~(1 << p.pgdo);
+		if (!shift->dir) {		/* Out        */
+			if (value & value_mask)	/* Set        */
+				latch |= (1 << p.pgdo);
+			else			/* Reset      */
+				latch &= ~(1 << p.pgdo);
 		}
-		buffer[ix++] = pin_latch;	/* STEP 1     */
-		pin_latch |= (1 << p.pgc);	/* CLOCK HIGH */
-		buffer[ix++] = pin_latch;	/* STEP 2     */
-		buffer[ix++] = pin_latch;	/* STEP 3     */
-		pin_latch &= ~(1 << p.pgc);	/* CLOCK LOW  */
-		buffer[ix++] = pin_latch;	/* STEP 4     */
+		buffer[ix++] = latch;		/* STEP 1     */
+		latch |= (1 << p.pgc);		/* CLOCK HIGH */
+		buffer[ix++] = latch;		/* STEP 2     */
+		buffer[ix++] = latch;		/* STEP 3     */
+		latch &= ~(1 << p.pgc);		/* CLOCK LOW  */
+		buffer[ix++] = latch;		/* STEP 4     */
 		value_mask = (p.msb_first) ? (value_mask >> 1) : (value_mask << 1);
 	}
 
@@ -360,14 +365,12 @@ ftdi_bb_shift(struct ftdi_bb_shift *shift)
 	assert(ix < FTDI_BB_BUFFER_SIZE);
 
 	if ((ftdi_write_data(&handle, buffer, ix)) < 0) {
-		printf("%s: ftdi_write_error [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+		DPRINT("%s: ftdi_write_error [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 
 	if ((ftdi_read_data(&handle, buffer, ix)) < 0) {
-		printf("%s: ftdi_read_error [%s]\n", __func__,
-			ftdi_get_error_string(&handle));
+		DPRINT("%s: ftdi_read_error [%s]\n", __func__, ftdi_get_error_string(&handle));
 		return -1;
 	}
 

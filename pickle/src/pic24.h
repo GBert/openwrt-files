@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -341,7 +341,7 @@ struct pic24_dsmap {
  * NO FAMILY PROGRAMMING DATA-SHEET AVAILABLE.
  * REFER TO DS39919C ABOVE.
  *
- * DEVID  UNUSED<23:16> FAM<7:0> DEV<7:0> 
+ * DEVID  UNUSED<23:16> FAM<7:0> DEV<7:0>
  * DEVREV UNUSED<23:4>  REV<3:0>
  */
 #define PIC24F04KA200 (0x0D02) /* FAM D DEV 2 */
@@ -350,7 +350,7 @@ struct pic24_dsmap {
 /*
  * DS30625D
  *
- * DEVID  UNUSED<23:16> FAM<7:0> DEV<7:0> 
+ * DEVID  UNUSED<23:16> FAM<7:0> DEV<7:0>
  * DEVREV UNUSED<23:4>  REV<3:0>
  */
 #define DS30625D (30625)

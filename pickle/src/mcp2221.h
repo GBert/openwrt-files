@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Darron Broad
+ * Copyright (C) 2017-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -51,6 +51,7 @@ uint8_t mcp2221_backend(void);
 int mcp2221_open(void);
 void mcp2221_close(void);
 char *mcp2221_error(void);
+void mcp2221_set_pgm(uint8_t);
 void mcp2221_set_vpp(uint8_t);
 void mcp2221_set_pgd(uint8_t);
 void mcp2221_set_pgc(uint8_t);

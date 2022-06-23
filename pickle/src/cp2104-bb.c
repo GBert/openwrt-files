@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Darron Broad
+ * Copyright (C) 2017-2020 Darron Broad
  * Copyright (C) 2015 Gerhard Bertelsmann
  * All rights reserved.
  *
@@ -7,12 +7,12 @@
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -34,7 +34,7 @@ extern struct pickle p;
  *
  *****************************************************************************/
 
-static int fd = -1; /* File descriptor */
+static int fd = -1;		/* File descriptor */
 
 /*******************************************************************************
  *
@@ -44,14 +44,14 @@ static int fd = -1; /* File descriptor */
 
 struct io_ops cp2104_bb_ops = {
 	.type		= IOCP2104,
-	.single		= 0,
 	.run		= 1,
+	.uid		= 0,
 	.open		= cp2104_bb_open,
-	.release        = NULL,
+	.release	= NULL,
 	.close		= cp2104_bb_close,
 	.error		= cp2104_bb_error,
 	.usleep		= NULL,
-	.set_pgm	= NULL,
+	.set_pgm	= cp2104_bb_set_pgm,
 	.set_vpp	= cp2104_bb_set_vpp,
 	.set_pgd	= cp2104_bb_set_pgd,
 	.set_pgc	= cp2104_bb_set_pgc,
@@ -72,23 +72,14 @@ cp2104_bb_backend(void)
 int
 cp2104_bb_open(void)
 {
-	char str[STRLEN];
-	int rc;
-
-	rc = snprintf(str, STRLEN, "/dev/ttyUSB%c", p.device[2]); /* CP0 = /dev/ttyUSB0 */
-	if (rc < 0) {
-		printf("%s: fatal error: snprintf failed\n", __func__);
-		io_exit(EX_OSERR); /* Panic */
-	} else if (rc >= STRLEN) {
-		printf("%s: fatal error: snprintf overrun\n", __func__);
-		io_exit(EX_SOFTWARE); /* Panic */
+	fd = open(p.iface, O_RDWR | O_NOCTTY | O_NDELAY);
+	if (fd < 0) {
+		fd = -1;
+		return -1;
 	}
 
-        fd = open(str, O_RDWR | O_NOCTTY | O_NDELAY);
-	if (fd < 0)
-		return -1;
-
-	cp2104_bb_set(p.pgdi, HIGH); /* Open-drain input mode */
+	/* Open-drain input mode */
+	cp2104_bb_set(p.pgdi, HIGH);
 
 	return 0;
 }
@@ -104,6 +95,13 @@ char *
 cp2104_bb_error(void)
 {
 	return "Can't open CP2104 I/O";
+}
+
+void
+cp2104_bb_set_pgm(uint8_t pgm)
+{
+	if (p.pgm != GPIO_DISABLED)
+		cp2104_bb_set(p.pgm, pgm);
 }
 
 void
@@ -134,7 +132,7 @@ void
 cp2104_bb_set(uint8_t pin, uint8_t val)
 {
 	uint32_t gpio;
-	
+
 	pin &= 3;
 
 	gpio = 1 << pin;

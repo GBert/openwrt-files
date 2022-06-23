@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -23,8 +23,8 @@
 /* I/O OPERATIONS */
 struct io_ops {
 	uint8_t type;
-	uint8_t single;
 	uint8_t run;
+	uint8_t uid;
 	int (*open)(void);
 	void (*release)(void);
 	void (*close)(void);
@@ -41,41 +41,54 @@ struct io_ops {
 };
 
 /* I/O bit rules */
-#define PGD_OUT_FLIP  (0x0001)	/* invert pgd o/p */
-#define PGC_OUT_FLIP  (0x0002)	/* invert pgc o/p */
-#define VPP_OUT_FLIP  (0x0004)	/* invert vpp o/p */
-#define PGD_IN_FLIP   (0x0008)	/* invert pgd i/p */
-#define PGD_IN_PULLUP (0x0010)	/* pgd o/p high for pgd i/p */
-#define PGM_OUT_FLIP  (0x0020)	/* invert pgm o/p */
-#define VPP_OUT_CLOCK (0x0040)	/* vpp clocks a T-type flip-flop */
+#define PGD_OUT_FLIP	(0x00000001)	/* invert pgd o/p			  */
+#define PGC_OUT_FLIP	(0x00000002)	/* invert pgc o/p			  */
+#define VPP_OUT_FLIP	(0x00000004)	/* invert vpp o/p			  */
+#define PGD_IN_FLIP	(0x00000008)	/* invert pgd i/p			  */
+#define PGD_IN_PULLUP	(0x00000010)	/* pgd o/p high for pgd i/p		  */
+#define PGM_OUT_FLIP	(0x00000020)	/* invert pgm o/p			  */
+#define VPP_OUT_CLOCK	(0x00000040)	/* vpp clocks a T-type flip-flop	  */
+#define PGD_IN_PULLDOWN	(0x00000080)	/* pgd o/p low for pgd i/p		  */
 /* GPIO bit rules */
-#define PGD_RELEASE   (0x0100)	/* pgd released on exit */
-#define PGC_RELEASE   (0x0200)	/* pgc released on exit */
-#define PGM_RELEASE   (0x0400)	/* pgm released on exit */
-#define VPP_RELEASE   (0x0800)	/* vpp released on exit */
-#define VPP_RUN       (0x1000)	/* vpp high on exit if not released */
-#define BB_LOCK       (0x2000)	/* gpio-bb shift with lock */
-#define ALT_RELEASE   (0x4000)	/* re-enable ALT function if released */
+#define PGD_RELEASE	(0x00000100)	/* pgd released on exit			  */
+#define PGC_RELEASE	(0x00000200)	/* pgc released on exit			  */
+#define PGM_RELEASE	(0x00000400)	/* pgm released on exit			  */
+#define VPP_RELEASE	(0x00000800)	/* vpp released on exit			  */
+#define VPP_RUN		(0x00001000)	/* vpp high on exit if not released	  */
+#define BB_LOCK		(0x00002000)	/* gpio-bb shift with lock		  */
+#define ALT_RELEASE	(0x00004000)	/* re-enable ALT function if released	  */
 /* Winklepicker reset */
-#define TX_BREAK      (0x8000)	/* send BREAK after open and before close */
+#define TX_BREAK	(0x00008000)	/* send BREAK after open and before close */
+#define SYSFS_SAFE	(0x00010000)	/* SysFs GPIO uses safe but slower I/O    */
 
 /* I/O back-ends */
-#define IONONE      (0) /* NO I/O                               */
-#define IOALLWINNER (1)	/* LINUX ALLWINNER GPIO                 */
-#define IOBITBANG   (2)	/* LINUX BIT-BANG DRIVER                */
-#define IOCP2104    (3)	/* LINUX CP2104 USB UART                */
-#define IOFTDI      (4)	/* LINUX FTDI BIT-BANG                  */
-#define IOMCP2221   (5)	/* LINUX MCP2221 USB GPIO               */
-#define IOMCP23017  (6)	/* LINUX MCP23017 I2C GPIO              */
-#define IORPI       (7)	/* LINUX RPI GPIO DIRECT/VELLEMAN K8048 */
-#define IOSERIAL    (8)	/* POSIX SERIAL BIT-BANG TTY/TTYUSB     */
+#define IONONE		(0)		/* NO I/O				  */
+#define IOALLWINNER	(1)		/* LINUX ALLWINNER GPIO			  */
+#define IOBITBANG	(2)		/* LINUX BIT-BANG DRIVER		  */
+#define IOCP2104	(3)		/* LINUX CP2104 USB UART		  */
+#define IOFTDI		(4)		/* LINUX FTDI BIT-BANG			  */
+#define IOMCP2221	(5)		/* LINUX MCP2221 USB GPIO		  */
+#define IOMCP230XX	(6)		/* LINUX MCP23008/17 I2C GPIO		  */
+#define IOMCP23SXX	(7)		/* LINUX MCP23S08/17 SPI GPIO		  */
+#define IORPI		(8)		/* LINUX RPI GPIO DIRECT/VELLEMAN K8048   */
+#define IOSERIAL	(9)		/* POSIX SERIAL BIT-BANG TTY/TTYUSB	  */
+#define IOPCF8574	(10)		/* LINUX PCF8574 I2C GPIO		  */
+#define IOMCP23016	(11)		/* LINUX MCP23016 I2C GPIO		  */
+#define IOSYSFSGPIO	(12)		/* LINUX SYSFS GPIO			  */
+
 
 /* Config mask rules (where supported & implemented) */
-#define CONFIGVER  (1)	/* VERIFY CONFIG BITS */
-#define CONFIGAND  (2)	/* AND CONFIG BITS AFTER READ */
-#define CONFIGSET  (4)	/* SET UNUSED CONFIG BITS BEFORE WRITE */
+#define CONFIGVER	(1)		/* VERIFY CONFIG BITS			  */
+#define CONFIGAND	(2)		/* AND CONFIG BITS AFTER READ		  */
+#define CONFIGSET	(4)		/* SET UNUSED CONFIG BITS BEFORE WRITE	  */
 
-#define GPIO_PGM_DISABLED (uint16_t)(-1)
+#define GPIO_DISABLED	(uint16_t)(-1)
+
+/* SLEEP algorithm selection */
+#define IOSLEEP_DEFAULT (0)		/* Input/Busy/usleep */
+#define IOSLEEP_INPUT	(1)		/* Input	     */
+#define IOSLEEP_BUSY	(2)		/* gettimeofday()    */
+#define IOSLEEP_USLEEP	(3)		/* usleep()	     */
 
 typedef volatile uint32_t *GPIO_ADDR;
 

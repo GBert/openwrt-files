@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2019 Darron Broad
+ * Copyright (C) 2017-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -46,14 +46,14 @@ static uint8_t latch = 0xF, port = 0xF, tris;
 
 struct io_ops mcp2221_ops = {
 	.type		= IOMCP2221,
-	.single		= 0,
 	.run		= 1,
+	.uid		= 0,
 	.open		= mcp2221_open,
-	.release        = NULL,
+	.release	= NULL,
 	.close		= mcp2221_close,
 	.error		= mcp2221_error,
 	.usleep		= NULL,
-	.set_pgm	= NULL,
+	.set_pgm	= mcp2221_set_pgm,
 	.set_vpp	= mcp2221_set_vpp,
 	.set_pgd	= mcp2221_set_pgd,
 	.set_pgc	= mcp2221_set_pgc,
@@ -105,7 +105,20 @@ mcp2221_close(void)
 char *
 mcp2221_error(void)
 {
-	return "Can't open MCP2221 USB GPIO";
+	return "Can't open MCP2221 I/O";
+}
+
+void
+mcp2221_set_pgm(uint8_t pgm)
+{
+	if (p.pgm != GPIO_DISABLED) {
+		if (pgm)
+			latch |= (1 << p.pgm);
+		else
+			latch &= ~(1 << p.pgm);
+
+		mcp2221_cmd_set_gpio_output_values();
+	}
 }
 
 void
@@ -155,7 +168,7 @@ mcp2221_get_pgd(void)
 int
 mcp2221_open_hid(void)
 {
-	char str[STRLEN];
+	char str[STRLEN] = {0};
 	struct stat st;
 	int rc, i, f;
 	struct hiddev_devinfo devinfo;

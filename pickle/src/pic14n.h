@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -175,6 +175,23 @@ struct pic14n_dsmap {
 #define PIC16LF18455 (0x30D8)
 #define PIC16F18456  (0x30D9)
 #define PIC16LF18456 (0x30DA)
+
+/* DS40002149A */
+#define DS40002149A (40002149)
+#define PIC16F15213 (0x30E3)
+#define PIC16F15214 (0x30E6)
+#define PIC16F15223 (0x30E4)
+#define PIC16F15224 (0x30E7)
+#define PIC16F15225 (0x30E9)
+#define PIC16F15243 (0x30E5)
+#define PIC16F15244 (0x30E8)
+#define PIC16F15245 (0x30EA)
+#define PIC16F15254 (0x30F0)
+#define PIC16F15255 (0x30EF)
+#define PIC16F15256 (0x30EB)
+#define PIC16F15274 (0x30EE)
+#define PIC16F15275 (0x30ED)
+#define PIC16F15276 (0x30EC)
 
 /******************************************************************************/
 

@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -28,7 +28,7 @@
 #define PIC16N_DATA_MASK (0x000000FF)
 #define PIC16N_USERID_MAX  (256)	/* 256 BYTES / 128 WORDS */
 #define PIC16N_CONFIG_MAX  (12)		/* 12  BYTES / 6   WORDS */
-#define PIC16N_DEVINFO_MAX (32)		/* WORDS */
+#define PIC16N_DEVINFO_MAX (128)	/* WORDS */
 #define PIC16N_DEVCONF_MAX (5)		/* WORDS */
 
 struct pic16n_config {
@@ -63,14 +63,20 @@ struct pic16n_dsmap {
 
 #define PIC16N_WORD(X) ((X) * 512) /* KB to words */
 
-#define PIC16N_USERID_ADDR  (0x200000)
-#define PIC16N_CONFIG_ADDR  (0x300000)
-#define PIC16N_EEPROM_ADDR  (0x310000) /* EEPROM physical address */
-#define PIC16N_DEVINFO_ADDR (0x3F0000)
-#define PIC16N_DEVCONF_ADDR (0x3FFF00)
-#define PIC16N_REVID_ADDR   (0x3FFFFC)
-#define PIC16N_DEVID_ADDR   (0x3FFFFE)
-#define PIC16N_EEFAKE_ADDR  (0xF00000) /* EEPROM pseudo address (NOT USED) */
+#define PIC16N_USERID_ADDR	(0x200000) /* User ID words */
+#define PIC16N_CONFIG_ADDR	(0x300000) /* Configuration words or bytes (Q43) */
+
+#define PIC16N_EEPROM_ADDR	(0x310000) /* EEPROM physical address */
+#define PIC16N_EEPROM_ADDR_Q43	(0x380000) /* Q43 EEPROM physical address */
+
+#define PIC16N_DEVINFO_ADDR	(0x3F0000) /* Device information address */
+#define PIC16N_DEVINFO_ADDR_Q43	(0x2C0000) /* Q43 device information address */
+
+#define PIC16N_DEVCONF_ADDR	(0x3FFF00) /* Device configuration address */
+#define PIC16N_DEVCONF_ADDR_Q43	(0x3C0000) /* Q43 device configuration address */
+
+#define PIC16N_REVID_ADDR	(0x3FFFFC) /* Revision ID word */
+#define PIC16N_DEVID_ADDR	(0x3FFFFE) /* Device ID word */
 
 #define PIC16N_ERASE        (0x3FFF00)
 #define PIC16N_LATCHES      (0x3FFF02)
@@ -78,17 +84,33 @@ struct pic16n_dsmap {
 #define PIC16N_EEPROM       (0x3FFF06)
 #define PIC16N_PINS         (0x3FFF08)
 
-#define PIC16N_TPINT_CODE   (2800)	/*  2.8 ms */
-#define PIC16N_TPINT_CONFIG (5600)	/*  5.6 ms */
-#define PIC16N_TERAB        (25200)	/* 25.2 ms */
-#define PIC16N_TERAR        (2800)	/*  2.8 ms */
+/* K series */
+#define PIC16N_TPINT_CODE   (2800)		/*  2.8 ms */
+#define PIC16N_TPINT_CONFIG (5600)		/*  5.6 ms */
+#define PIC16N_TERAB        (25200)		/* 25.2 ms */
+#define PIC16N_TERAR        (2800)		/*  2.8 ms */
 
-#define PIC16N_TPDFM_Q      (11000)	/* 11.0 ms */
-#define PIC16N_TPINT_Q      (65)	/*   65 us */
-#define PIC16N_TERAB_Q      (75000)	/* 75.0 ms */
+/* Q series */
+#define PIC16N_TERAS_Q10    (11000)		/* 11.0 ms PAGE ERASE    */
+#define PIC16N_TPINT_Q10    (65)		/*   65 us FLASH/CONFIG  */
+#define PIC16N_TERAB_Q10    (75000)		/* 75.0 ms BULK ERASE    */
+#define PIC16N_TPDFM_Q10    (11000)		/* 11.0 ms EEPROM        */
+
+#define PIC16N_TERAS_Q43    (11000)		/* 11.0 ms PAGE ERASE    */
+#define PIC16N_TPINT_Q43    (75)		/*   75 us FLASH         */
+#define PIC16N_TERAB_Q43    (11000)		/* 11.0 ms BULK ERASE    */
+#define PIC16N_TPDFM_Q43    (11000)		/* 11.0 ms EEPROM/CONFIG */
+
+#define PIC16N_TERAS_Q      (PIC16N_TPINT_Q43)
+#define PIC16N_TPINT_Q      (PIC16N_TPINT_Q43)
+#define PIC16N_TPDFM_Q      (PIC16N_TPINT_Q43)
 
 #define PIC16N_MAJOR_SHIFT  (6)
 #define PIC16N_REV_MASK     (0x003F)
+
+#define PIC16N_VERIFY_BYTE    (0)
+#define PIC16N_VERIFY_HIGHLOW (1)
+#define PIC16N_VERIFY_WORD    (2)
 
 /******************************************************************************
  * PICMicro devices (8-bit data devices using new programming protocol)
@@ -148,6 +170,17 @@ struct pic16n_dsmap {
 #define PIC18F24Q10 (0x71C0)
 #define PIC18F27Q10 (0x7100)
 #define PIC18F47Q10 (0x70E0)
+
+#define DS40002079D (40002079)
+#define PIC18F25Q43 (0x73C0)
+#define PIC18F26Q43 (0x7420)
+#define PIC18F27Q43 (0x7480)
+#define PIC18F45Q43 (0x73E0)
+#define PIC18F46Q43 (0x7440)
+#define PIC18F47Q43 (0x74A0)
+#define PIC18F55Q43 (0x7400)
+#define PIC18F56Q43 (0x7460)
+#define PIC18F57Q43 (0x74C0)
 
 /******************************************************************************/
 

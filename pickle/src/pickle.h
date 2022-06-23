@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -47,7 +47,7 @@
 #include <sys/select.h>
 #include <sys/mman.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 #include <libgen.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -68,11 +68,25 @@
 
 #define ZERO (0)
 
-#define STRLEN (512)
-#define STRMAX (STRLEN - 1)
-
+/*
+ * Always terminated buffer
+ *
+ * Zero fill on initialisation
+ *
+ * Buffer size for functions which always add a terminator
+ *
+ * Eg. snprintf
+ */
 #define BUFLEN (512)
+#define STRLEN (512)
+
+/*
+ * Buffer size for functions which may or may not add a terminator
+ *
+ * Eg. strncpy, strncat
+ */
 #define BUFMAX (BUFLEN - 1)
+#define STRMAX (STRLEN - 1)
 
 #define UL_ON ("\033[4m")
 #define UL_OFF ("\033[0m")
@@ -95,8 +109,17 @@ struct pickle;
 #ifdef ALLWINNER
 #include "allwinner.h"
 #endif
-#ifdef MCP23017
-#include "mcp23017.h"
+#ifdef MCP23016
+#include "mcp23016.h"
+#endif
+#ifdef MCP230XX
+#include "mcp230xx.h"
+#endif
+#ifdef MCP23SXX
+#include "mcp23sxx.h"
+#endif
+#ifdef PCF8574
+#include "pcf8574.h"
 #endif
 #ifdef BITBANG
 #include "gpio-bb.h"
@@ -113,6 +136,9 @@ struct pickle;
 #endif
 #ifdef CP2104
 #include "cp2104-bb.h"
+#endif
+#ifdef SYSFSGPIO
+#include "sysfs_gpio.h"
 #endif
 
 #if defined(STK500) || defined(PLOAD)
@@ -133,13 +159,27 @@ struct pickle;
 #endif
 
 #include "pic.h"
+#ifdef P12
 #include "pic12.h"
+#endif
+#ifdef P14
 #include "pic14.h"
+#endif
+#ifdef N14
 #include "pic14n.h"
+#endif
+#ifdef P16
 #include "pic16.h"
+#endif
+#ifdef N16
 #include "pic16n.h"
+#endif
+#ifdef P24
 #include "pic24.h"
+#endif
+#ifdef P32
 #include "pic32.h"
+#endif
 
 #include "inhx32.h"
 
@@ -155,18 +195,20 @@ struct pickle {
 
 	/* Dot file settings */
 	char dotfile[STRLEN];	/* configuration file name  */
-	char device[STRLEN];	/* I/O device name          */
+	char device[STRLEN];	/* I/O device type          */
 	char etc[STRLEN];	/* user PE directory        */
+	char serial[STRLEN];	/* USB serial               */
+	char iface[STRLEN];	/* I/O interface            */
+	uint32_t addr;		/* I2C/SPI address          */
 	uint32_t bitrules;	/* I/O bit rules            */
 	uint32_t busy;		/* I/O busy cursor speed    */
 	uint32_t sleep_low;	/* I/O clock low duration   */
 	uint32_t sleep_high;	/* I/O clock high duration  */
+	uint32_t sleep_algo;	/* I/O sleep algorithm      */
 	uint32_t fwsleep;	/* ICSPIO bit time          */
 	uint32_t debug;		/* default 0 (no debugging) */
-	uint32_t config;	/* default 0 (disabled)     */
+	uint32_t config;	/* default VERIFY + DUMP    */
 	uint32_t baudrate;	/* STK500v2 baud rate       */
-	uint32_t mcp;		/* MCP23017 I2C address     */
-	char usb_serial[STRLEN];/* USB serial number        */
 	uint16_t vpp;		/* TX/!MCLR/VPP             */
 	uint16_t pgc;		/* RTS/PGC CLOCK            */
 	uint16_t pgdo;		/* DTR/PGD DATA_OUT         */

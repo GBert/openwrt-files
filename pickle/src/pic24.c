@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -688,7 +688,7 @@ pic24_bootloader(void)
 	for (dev = 0; pic24_map[dev].deviceid; ++dev) {
 		if (pic24_map[dev].devicename[0] == 'P')
 			devname = &pic24_map[dev].devicename[3];
-		else 
+		else
 			devname = &pic24_map[dev].devicename[5];
 		printf(".ifdef __%s\n", devname);
 		printf("    .include    \"p%s.inc\"\n", devname);
@@ -1878,7 +1878,7 @@ pic24_get_program_size(uint32_t *addr, uint32_t partition)
 	if (pic24_has_partition()) {
 		if (partition == PIC_PART2)
 			*addr = PIC24_CODE_UPPER;
-		else 
+		else
 			*addr = PIC24_CODE_LOWER;
 
 		return pic24_map[pic24_index].flash >> 1;
@@ -1968,7 +1968,7 @@ pic24_read_program_memory_block(uint32_t *data, uint32_t addr, uint32_t size)
 		data[i++] = (uint32_t)word0;
 		data[i++] = (uint32_t)word1;
 #ifdef DEBUG
-		char d[STRLEN];
+		char d[STRLEN] = {0};
 		int rc = snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
 		if (rc < 0) {
 			printf("%s: fatal error: snprintf failed\n", __func__);
@@ -2006,7 +2006,7 @@ pic24_read_data_memory_block(uint16_t *data, uint32_t addr, uint16_t size)
 			pic24_goto200();
 		data[i++] = pic24_table_read16_post_increment();
 #ifdef DEBUG
-		char d[STRLEN];
+		char d[STRLEN] = {0};
 		int rc;
 		rc = snprintf(d, STRLEN, "%s() addr=%06X size=%d", __func__, addr, size);
 		if (rc < 0) {

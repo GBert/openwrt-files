@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -37,32 +37,36 @@ usage(char *execname, char *msg)
 	if (msg)
 		printf("Error: %s.\n\n", msg);
 
-	printf("Commands:\n"
-		" LED       0x00..0x3F            Set Velleman K8048 LEDs.\n"
-		" SWITCH                          Get Velleman K8048 switches.\n"
-		" SLEEP                           Sleep until watchdog time-out.\n"
-		" WATCHDOG  E|D                   Set watchdog enable/disable.\n"
-		" CLOCK     0..7                  Set internal RC clock divider.\n"
-		" DIRECTION A..D|G 0x00..0xFF     Set port data direction.\n"
-		" OUTPUT    A..D|G 0x00..0xFF     Set port data output.\n"
-		" INPUT     A..D|G                Get port data input, output on stdout.\n"
-		" ANALOG    0..N|D                Set analog channel enable/disable.\n"
-		" SAMPLE                          Get analog channel input.\n"
-		" EEREAD    0x00..0xFF            Get data EEPROM.\n"
-		" EEWRITE   0x00..0xFF 0x00..0xFF Set data EEPROM.\n"
-		" READ      0x0000..0xFFFF        Get program flash.\n"
-		" VREF      0..15|D               Set vref voltage level or disable.\n"
-		" 8         0..0xFF               Send an 8-bit arg & get an 8-bit answer.\n"
-		" 16        0..0xFFFF             Send a 16-bit arg & get an 8-bit answer.\n"
-		" 24        0..0xFFFFFF           Send a 24-bit arg & get an 8-bit answer.\n"
-		" 32        0..0xFFFFFFFF         Send a 32-bit arg & get an 8-bit answer.\n"
-		" TEST      0..0xFF               Send an 8-bit test arg & get no reply.\n"
-		" ERROR                           Get last firmware error.\n"
-		"\n");
-
 	printf("FILES:\n"
 		" %s\n"
 		"\t\tConfiguration.\n\n", p.dotfile);
+
+	printf("ENVIRONMENT:\n"
+		" PICKLE\n"
+		"\t\tConfiguration file.\n\n");
+
+	printf("COMMANDS:\n"
+		" LED\t\t0x00..0x3F\t\tSet Velleman K8048 LEDs.\n"
+		" SWITCH\t\t\t\t\tGet Velleman K8048 switches.\n"
+		" SLEEP\t\t\t\t\tSleep until watchdog time-out.\n"
+		" WATCHDOG\tE|D\t\t\tSet watchdog enable/disable.\n"
+		" CLOCK\t\t0..7\t\t\tSet internal RC clock divider.\n"
+		" DIRECTION\tA..D|G 0x00..0xFF\tSet port data direction.\n"
+		" OUTPUT\t\tA..D|G 0x00..0xFF\tSet port data output.\n"
+		" INPUT\t\tA..D|G\t\t\tGet port data input, output on stdout.\n"
+		" ANALOG\t\t0..N|D\t\t\tSet analog channel enable/disable.\n"
+		" SAMPLE\t\t\t\t\tGet analog channel input.\n"
+		" EEREAD\t\t0x00..0xFF\t\tGet data EEPROM.\n"
+		" EEWRITE\t0x00..0xFF 0x00..0xFF\tSet data EEPROM.\n"
+		" READ\t\t0x0000..0xFFFF\t\tGet program flash.\n"
+		" VREF\t\t0..15|D\t\t\tSet vref voltage level or disable.\n"
+		" 8\t\t0..0xFF\t\t\tSend an 8-bit arg & get an 8-bit answer.\n"
+		" 16\t\t0..0xFFFF\t\tSend a 16-bit arg & get an 8-bit answer.\n"
+		" 24\t\t0..0xFFFFFF\t\tSend a 24-bit arg & get an 8-bit answer.\n"
+		" 32\t\t0..0xFFFFFFFF\t\tSend a 32-bit arg & get an 8-bit answer.\n"
+		" TEST\t\t0..0xFF\t\t\tSend an 8-bit test arg & get no reply.\n"
+		" ERROR\t\t\t\t\tGet last firmware error.\n"
+		"\n");
 
 	printf("EXAMPLES:\n"
 		" pio WATCHDOG D\n"
@@ -163,6 +167,20 @@ getportarg(char *execname, char *args)
 	return 0; /* Not reached */
 }
 
+/*
+ * Reset uid if setuid
+ */
+static void
+resetuid(void)
+{
+	if (getuid() != geteuid()) {
+		if (setuid(getuid()) < 0) {
+			printf("%s: fatal error: setuid failed\n", __func__);
+			io_exit(EX_OSERR); /* Panic */
+		}
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -185,30 +203,38 @@ main(int argc, char *argv[])
 
 	/* Determine back-end */
 	if (io_backend() == 0)
-		usage(execname, "Unsupported backend device in config. Run `pickle` to list");
-
-	/* Open device */
-	if (io_open() < 0) {
 		usage(execname, io_error());
-	}
+
+	/* Raise priority */
+	setpriority(PRIO_PROCESS, 0, -20);
+
+	/*
+	 * Open device
+	 */
+
+	if (p.io->uid)
+		resetuid();
+	if (io_open() < 0)
+		usage(execname, io_error());
+	if (!p.io->uid)
+		resetuid();
 
 	/* Reset uid */
-	if (getuid() != geteuid()) {
-		if (setuid(getuid()) < 0) {
-			printf("%s: fatal error: setuid failed\n", __func__);
-			io_exit(EX_OSERR); /* Panic */
-		}
-	}
+	resetuid();
 
-	/* Perform operation */
+	/* Check args */
 	if (argc < 2)
 		usage(execname, "Missing arg(s)");
 
-	int err;
-	uint8_t cmd[STRLEN];
+	/*
+	 * Perform operation
+	 */
+
+	int err, retry = 10;
+	uint8_t cmd[STRLEN] = {0};
 
 	/*
- 	 * ICSPIO
+	 * ICSPIO
 	 */
 	if (strcasecmp(argv[1], "LED") == 0)
 	{
@@ -218,19 +244,24 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_LED;
-		cmd[1] = getbytearg(execname, argv[2]); /* Data */
-		do {
+		cmd[1] = getbytearg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: LED(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "SWITCH") == 0)
@@ -238,43 +269,55 @@ main(int argc, char *argv[])
 		if (argc > 2)
 			usage(execname, "Too many args");
 
-		uint32_t sw = 0;
-
 		cmd[0] = CMD_SWITCH;
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 0, &sw, 1);
-			fprintf(stderr, "0x%02X() = 0x%02X\n", cmd[0], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: SWITCH()\n",
+					__func__);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 0, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", sw);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "SLEEP") == 0)
 	{
 		if (argc > 2)
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_SLEEP;
-		do {
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: SLEEP()\n",
+					__func__);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 0, NULL, 0);
-			fprintf(stderr, "0x%02X() = 0x%02X\n",
-				cmd[0], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "WATCHDOG") == 0)
 	{
 		if (argc < 3)
@@ -284,28 +327,31 @@ main(int argc, char *argv[])
 
 		cmd[0] = CMD_WATCHDOG;
 		if (argv[2][0] == 'd' || argv[2][0] == 'D') {
-			/* Disable */
 			cmd[1] = 0x00;
 		} else if (argv[2][0] == 'e' || argv[2][0] == 'E') {
-			/* Enable */
 			cmd[1] = 0x01;
 		} else {
 			usage(execname, "Invalid arg");
 		}
-		do {
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: WATCHDOG(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "CLOCK") == 0)
 	{
 		if (argc < 3)
@@ -314,19 +360,24 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_CLOCK;
-		cmd[1] = getbytearg(execname, argv[2]); /* Data */
-		do {
+		cmd[1] = getbytearg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: CLOCK(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "DIRECTION") == 0)
@@ -337,22 +388,27 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_DIRECTION;
-		cmd[1] = getportarg(execname, argv[2]); /* Port */
-		cmd[2] = getbytearg(execname, argv[3]); /* I/O  */
-		do {
+		cmd[1] = getportarg(execname, argv[2]);
+		cmd[2] = getbytearg(execname, argv[3]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: DIRECTION(0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X, 0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "OUTPUT") == 0)
 	{
 		if (argc < 4)
@@ -361,20 +417,25 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_OUTPUT;
-		cmd[1] = getportarg(execname, argv[2]); /* Port */
-		cmd[2] = getbytearg(execname, argv[3]); /* Data */
-		do {
+		cmd[1] = getportarg(execname, argv[2]);
+		cmd[2] = getbytearg(execname, argv[3]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: OUTPUT(0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X, 0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "INPUT") == 0)
@@ -384,24 +445,29 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t in;
-
 		cmd[0] = CMD_INPUT;
-		cmd[1] = getportarg(execname, argv[2]); /* Port */
-		do {
-			in = 0;
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &in, 1);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		cmd[1] = getportarg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: INPUT(0x%02X)\n",
+					__func__, cmd[1]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", in);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "ANALOG") == 0) {
@@ -412,24 +478,27 @@ main(int argc, char *argv[])
 
 		cmd[0] = CMD_ANALOG;
 		if (argv[2][0] == 'd' || argv[2][0] == 'D') {
-			/* Disable */
 			cmd[1] = 0xFF;
 		} else {
-			/* Channel */
 			cmd[1] = getbytearg(execname, argv[2]);
 		}
-		do {
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: ANALOG(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "SAMPLE") == 0)
@@ -437,23 +506,28 @@ main(int argc, char *argv[])
 		if (argc > 2)
 			usage(execname, "Too many args");
 
-		uint32_t sample;
-
 		cmd[0] = CMD_SAMPLE;
-		do {
-			sample = 0;
-			err = icspio_command(p.fwsleep, FWSAMPLE, cmd, 0, &sample, 2);
-			fprintf(stderr, "0x%02X() = 0x%02X\n",
-				cmd[0], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: SAMPLE()\n",
+					__func__);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, FWSAMPLE, cmd, 0, &res, 2);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%04X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%04X\n", sample);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "EEREAD") == 0) {
@@ -462,23 +536,29 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t data;
-
 		cmd[0] = CMD_EEREAD;
-		cmd[1] = getbytearg(execname, argv[2]); /* Address */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &data, 1);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		cmd[1] = getbytearg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: EEREAD(0x%02X)\n",
+					__func__, cmd[1]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", data);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "EEWRITE") == 0)
@@ -489,20 +569,25 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_EEWRITE;
-		cmd[1] = getbytearg(execname, argv[2]); /* Address */
-		cmd[2] = getbytearg(execname, argv[3]); /* Data */
-		do {
+		cmd[1] = getbytearg(execname, argv[2]);
+		cmd[2] = getbytearg(execname, argv[3]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: EEWRITE(0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2]);
+
 			err = icspio_command(p.fwsleep, FWEEPROM, cmd, 2, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X, 0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "READ") == 0) {
@@ -511,25 +596,31 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t data;
-		uint16_t addr = getshortarg(execname, argv[2]); /* Address */
-
 		cmd[0] = CMD_READ;
-		cmd[1] = addr >> 8; /* Address high */
-		cmd[2] = addr;      /* Address low  */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, &data, 2);
-			fprintf(stderr, "0x%02X(0x%02X,0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		uint16_t addr = getshortarg(execname, argv[2]);
+		cmd[1] = addr >> 8; /* High */
+		cmd[2] = addr;	    /* Low  */
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: READ(0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2]);
+
+			uint32_t res;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, &res, 2);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%04X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%04X\n", data);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "VREF") == 0) {
@@ -540,24 +631,27 @@ main(int argc, char *argv[])
 
 		cmd[0] = CMD_VREF;
 		if (argv[2][0] == 'd' || argv[2][0] == 'D') {
-			/* Disable */
 			cmd[1] = 0xFF;
 		} else {
-			/* Voltage */
 			cmd[1] = getbytearg(execname, argv[2]);
 		}
-		do {
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: VREF(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "8") == 0)
@@ -567,25 +661,31 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t in = 0;
-
 		cmd[0] = CMD_ARG8;
-		cmd[1] = getbytearg(execname, argv[2]); /* FW arg */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &in, 1);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		cmd[1] = getbytearg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: 8(0x%02X)\n",
+					__func__, cmd[1]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", in);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "16") == 0)
 	{
 		if (argc < 3)
@@ -593,27 +693,33 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t in = 0;
-		uint16_t fwarg = getshortarg(execname, argv[2]); /* FW arg */
-
 		cmd[0] = CMD_ARG16;
-		cmd[1] = fwarg >> 8; /* Arg high */
-		cmd[2] = fwarg;      /* Arg low  */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, &in, 1);
-			fprintf(stderr, "0x%02X(0x%02X,0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		uint16_t arg = getshortarg(execname, argv[2]);
+		cmd[1] = arg >> 8; /* High */
+		cmd[2] = arg;	   /* Low  */
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: 16(0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 2, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", in);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
-	
+
 	else if (strcasecmp(argv[1], "24") == 0)
 	{
 		if (argc < 3)
@@ -621,26 +727,32 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t in = 0;
-		uint32_t fwarg = get24arg(execname, argv[2]); /* FW arg */
-
 		cmd[0] = CMD_ARG24;
-		cmd[1] = fwarg >> 16; /* Arg high */
-		cmd[2] = fwarg >> 8;
-		cmd[3] = fwarg;       /* Arg low  */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 3, &in, 1);
-			fprintf(stderr, "0x%02X(0x%02X,0x%02X,0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], cmd[3], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		uint32_t arg = get24arg(execname, argv[2]);
+		cmd[1] = arg >> 16; /* High */
+		cmd[2] = arg >> 8;
+		cmd[3] = arg;	    /* Low  */
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: 24(0x%02X,0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2], cmd[3]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 3, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", in);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "32") == 0)
@@ -650,27 +762,33 @@ main(int argc, char *argv[])
 		if (argc > 3)
 			usage(execname, "Too many args");
 
-		uint32_t in = 0;
-		uint32_t fwarg = getintarg(execname, argv[2]); /* FW arg */
-
 		cmd[0] = CMD_ARG24;
-		cmd[1] = fwarg >> 24; /* Arg high */
-		cmd[2] = fwarg >> 16;
-		cmd[3] = fwarg >> 8;
-		cmd[4] = fwarg;       /* Arg low  */
-		do {
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 4, &in, 1);
-			fprintf(stderr, "0x%02X(0x%02X,0x%02X,0x%02X,0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+		uint32_t arg = getintarg(execname, argv[2]);
+		cmd[1] = arg >> 24; /* High */
+		cmd[2] = arg >> 16;
+		cmd[3] = arg >> 8;
+		cmd[4] = arg;	    /* Low  */
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: 32(0x%02X,0x%02X,0x%02X,0x%02X)\n",
+					__func__, cmd[1], cmd[2], cmd[3], cmd[4]);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 4, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", in);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "TEST") == 0)
@@ -681,19 +799,24 @@ main(int argc, char *argv[])
 			usage(execname, "Too many args");
 
 		cmd[0] = CMD_TEST;
-		cmd[1] = getbytearg(execname, argv[2]); /* FW arg */
-		do {
+		cmd[1] = getbytearg(execname, argv[2]);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: TEST(0x%02X)\n",
+					__func__, cmd[1]);
+
 			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 1, NULL, 0);
-			fprintf(stderr, "0x%02X(0x%02X) = 0x%02X\n",
-				cmd[0], cmd[1], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
+			if (err == ERRNONE)
+				goto done;
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
 					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
-			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else if (strcasecmp(argv[1], "ERROR") == 0)
@@ -701,29 +824,34 @@ main(int argc, char *argv[])
 		if (argc > 2)
 			usage(execname, "Too many args");
 
-		uint32_t le;
-
 		cmd[0] = CMD_ERROR;
-		do {
-			le = 0;
-			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 0, &le, 1);
-			fprintf(stderr, "0x%02X() = 0x%02X\n",
-				cmd[0], err);
-			if (err != ERRNONE) {
-				if (p.debug >= 1) {
-					fprintf(stderr, "%s: error: %s [0x%02X]\n",
-					__func__, icspio_err(err), err);
-				}		
-				io_usleep(RESYNC * p.fwsleep);
+
+		while (retry-- && !io_stop) {
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: ERROR()\n",
+					__func__);
+
+			uint32_t res = 0;
+
+			err = icspio_command(p.fwsleep, p.fwsleep << 1, cmd, 0, &res, 1);
+			if (err == ERRNONE) {
+				fprintf(stdout, "0x%02X\n", res);
+				goto done;
 			}
-		} while (!io_stop && err != ERRNONE && err != ERRNOTSUP);
-		fprintf(stdout, "0x%02X\n", le);
+
+			if (p.debug >= 1)
+				fprintf(stderr, "%s: error: %s [0x%02X]\n",
+					__func__, icspio_err(err), err);
+
+			io_usleep(RESYNC * p.fwsleep);
+		}
+		fprintf(stdout, (io_stop) ? "ABORT\n" : "ERROR\n");
 	}
 
 	else {
-		usage(execname, "Unknown operation");
+		usage(execname, "Unknown command");
 	}
 
-	io_exit(EX_OK);
+done:	io_exit(EX_OK);
 	return 0;
 }

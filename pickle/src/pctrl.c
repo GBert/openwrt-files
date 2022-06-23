@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -29,7 +29,7 @@ struct pickle p = {0};
 static void
 usage(char *execname, char *msg)
 {
-	printf("USAGE: %s RUN|STOP|RESTORE [BEFORE][AFTER][DURING]\n", execname);
+	printf("USAGE: %s RUN|STOP|RESTORE [BEFORE][AFTER][DURATION]\n", execname);
 	printf("Control master clear.\n\n");
 
 	if (msg)
@@ -43,13 +43,29 @@ usage(char *execname, char *msg)
 		" PICKLE\n"
 		"\t\tConfiguration file.\n\n");
 
+	printf("COMMANDS:\n"
+		" RUN\t\tRaise master clear to take the device out of reset.\n"
+		" STOP\t\tLower master clear to put the device into reset.\n"
+		" RESTORE\tLower then raise master clear to reset the device.\n\n");
+
+	printf("ARGUMENTS:\n"
+		" BEFORE\t\tDelay in milliseconds before command.\n"
+		" AFTER\t\tDelay in milliseconds after command.\n"
+		" DURATION\tDuration of reset for RESTORE command.\n\n");
+
+	printf("DEFAULTS:\n"
+		" BEFORE\t\t%dms.\n"
+		" AFTER\t\t%dms.\n"
+		" DURATION\t%dms.\n\n",
+		BEFORE / 1000, AFTER / 1000, DURATION / 1000);
+
 	printf("EXAMPLES:\n"
-		" pctrl RUN 100\n"
-		"\t\tWait 100ms then raise master clear to take the device out of reset.\n"
-		" pctrl STOP 0 100\n"
-		"\t\tLower master clear to put the device in reset then wait 100ms.\n"
-		" pctrl RESTORE 0 0 500\n"
-		"\t\tLower master clear for 500ms before raising to reset the device.\n"
+		" pctrl RUN 10\n"
+		"\t\tWait 10ms then raise master clear to take the device out of reset.\n"
+		" pctrl STOP 0 10\n"
+		"\t\tLower master clear to put the device into reset then wait 10ms.\n"
+		" pctrl RESTORE 0 0 100\n"
+		"\t\tLower for 100ms then raise master clear to reset the device.\n"
 
 		"\n");
 
@@ -64,7 +80,7 @@ int
 main(int argc, char *argv[])
 {
 	char *execdup = NULL, *execname = NULL;
-	uint32_t before = 0, after = 0, during = 10000;
+	uint32_t before = BEFORE, after = AFTER, duration = DURATION;
 
 	/* Get exec name */
 	execdup = (char *)strdup(argv[0]);
@@ -83,7 +99,7 @@ main(int argc, char *argv[])
 
 	/* Determine back-end */
 	if (io_backend() == 0)
-		usage(execname, "Unsupported backend device in config. Run `pickle` to list");
+		usage(execname, io_error());
 
 	/* Open device */
 	if (io_open() < 0)
@@ -97,37 +113,49 @@ main(int argc, char *argv[])
 		}
 	}
 
-	/* Get args */
+	/* Check args */
 	if (argc < 2)
 		usage(execname, "Missing arg");
+	if (argc > 5)
+		usage(execname, "Too many args");
+
+	if (strcasecmp(argv[1], "RUN") == 0)
+		printf("RUN\n");
+	else if (strcasecmp(argv[1], "STOP") == 0)
+		printf("STOP\n");
+	else if (strcasecmp(argv[1], "RESTORE") == 0)
+		printf("RESTORE\n");
+	else
+		usage(execname, "Invalid command");
+
+	/* Get args */
 	if (argc > 2)
 		before = 1000 * strtoul(argv[2], NULL, 0);
 	if (argc > 3)
 		after = 1000 * strtoul(argv[3], NULL, 0);
 	if (argc > 4)
-		during = 1000 * strtoul(argv[4], NULL, 0);
-	if (argc > 5)
-		usage(execname, "Too many args");
+		duration = 1000 * strtoul(argv[4], NULL, 0);
 
+	/*
+	 * Perform operation
+	 */
+
+	/* BEFORE */	
 	io_usleep(before);
 
 	/* RUN/STOP RESTORE */
-	if (strcasecmp(argv[1], "RUN") == 0) {
+	if (strcasecmp(argv[1], "RUN") == 0)
 		io_close(HIGH);
-		printf("RUN\n");
-	} else if (strcasecmp(argv[1], "STOP") == 0) {
+	else if (strcasecmp(argv[1], "STOP") == 0)
 		io_close(LOW);
-		printf("STOP\n");
-	} else if (strcasecmp(argv[1], "RESTORE") == 0) {
+	else if (strcasecmp(argv[1], "RESTORE") == 0) {
 		io_set_vpp(LOW);
-		io_usleep(during);
+		/* DURATION */
+		io_usleep(duration);
 		io_close(HIGH);
-		printf("RESTORE\n");
-	} else {
-		io_close(HIGH);
-		printf("RUN [DEFAULT]\n");
 	}
 
+	/* AFTER */	
 	io_usleep(after);
 
 	io_exit(EX_OK);

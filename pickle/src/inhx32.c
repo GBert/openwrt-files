@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
@@ -26,6 +26,62 @@
  *****************************************************************************/
 
 extern struct pickle p;
+
+/******************************************************************************
+ *
+ * UTILITY FUNCTIONS
+ *
+ *****************************************************************************/
+
+/*
+ * return the value of a hex nibble
+ */
+static uint8_t
+inhx32_hex2nibble(const char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return 0;
+}
+
+/*
+ * return the value of a hex byte
+ */
+static uint8_t
+inhx32_hex2byte(const char *s)
+{
+	if (s[0] && s[1])
+		return inhx32_hex2nibble(s[0]) << 4 | inhx32_hex2nibble(s[1]);
+
+	return 0;
+}
+
+/*
+ * return string with CRLF removed from end
+ */
+static char *
+inhx32_trim(char *s, int slen)
+{
+	int l;
+
+	if (!slen) {
+		printf("%s: fatal error: invalid length\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
+
+	s[slen - 1] = '\0';
+
+	l = strlen(s) - 1;
+
+	while (l >= 0 && (s[l]=='\r' || s[l]=='\n'))
+		s[l--]= '\0';
+
+	return s;
+}
 
 /******************************************************************************
  *
@@ -80,7 +136,7 @@ inhx32_fgets(char *line, FILE *fp,
 		return -1; /* Invalid line prefix */
 
 	/* Remove CRLF */
-	rmcrlf(line, STRLEN);
+	inhx32_trim(line, STRLEN);
 
 	/* Validate line length */
 	len = strlen(line);
@@ -90,23 +146,23 @@ inhx32_fgets(char *line, FILE *fp,
 	/* Validate checksum */
 	cc = 0;
 	for (i = 1; line[i]; i += 2)
-		cc += hex2byte(&line[i]); 
+		cc += inhx32_hex2byte(&line[i]);
 	if (cc != 0)
 		return -3; /* Invalid checksum */
 
 	/* Determine number of bytes in this line */
-	*bb = hex2byte(&line[BB]);
+	*bb = inhx32_hex2byte(&line[BB]);
 
 	/* Validate byte length */
 	if (len != (2 * *bb + 11))
 		return -4; /* Invalid byte length */
 
 	/* Determine address for this line */
-	*aaaa = (hex2byte(&line[AAAA]) << 8) |
-		hex2byte(&line[AAAA + 2]);
+	*aaaa = (inhx32_hex2byte(&line[AAAA]) << 8) |
+		inhx32_hex2byte(&line[AAAA + 2]);
 
 	/* Determine record type */
-	*tt = hex2byte(&line[TT]);
+	*tt = inhx32_hex2byte(&line[TT]);
 
 	/* Process a data record */
 	if (*tt == TT_DATA) {
@@ -133,8 +189,8 @@ inhx32_fgets(char *line, FILE *fp,
 			return -7; /* Invalid address record */
 
 		/* Determine extended address */
-		*extended_addr = (hex2byte(&line[HHHH]) << 8) |
-				hex2byte(&line[HHHH + 2]);
+		*extended_addr = (inhx32_hex2byte(&line[HHHH]) << 8) |
+				inhx32_hex2byte(&line[HHHH + 2]);
 
 		/* Valid address record */
 		return 1;
@@ -197,13 +253,13 @@ inhx32_error(int err, int val)
 
 /*
  * Get data
- *  
+ *
  *  Returns number of bytes or 0 for EOF or -1 for error escalation
  */
 int
 inhx32_get(FILE *fp, pic_data **data)
 {
-	char line[STRLEN];
+	char line[STRLEN] = {0};
 	uint8_t bb, tt;
 	uint16_t aaaa, ix, i;
 	static uint16_t extended_addr = 0;
@@ -233,7 +289,7 @@ inhx32_get(FILE *fp, pic_data **data)
 	/* Extract and store bytes */
 	ix = HHHH;
 	for (i = 0; i < bb; ++i) {
-		(*data)->bytes[i] = hex2byte(&line[ix]);
+		(*data)->bytes[i] = inhx32_hex2byte(&line[ix]);
 		ix += 2;
 	}
 
@@ -278,7 +334,7 @@ inhx32_get(FILE *fp, pic_data **data)
 uint32_t
 inhx32_qsort_input(FILE **fp, const char *filename, char *tempname, uint32_t *count)
 {
-	char line[STRLEN];
+	char line[STRLEN] = {0};
 	uint8_t bb, tt;
 	uint16_t dummy;
 
@@ -659,15 +715,15 @@ static uint32_t inhx32_index;
 /*
  * Walk array
  */
-void 
-inhx32_array_walk(const void *entry, VISIT order, int level) 
-{ 
+void
+inhx32_array_walk(const void *entry, VISIT order, int level)
+{
 	pic_data *data = *(pic_data **)entry;
 
 	if (order == postorder || order == leaf) {
 		inhx32_pdata[inhx32_index++] = data;
 	}
-} 
+}
 
 /*
  * Allocate array
@@ -738,9 +794,9 @@ static uint8_t *inhx32_pmem;
 /*
  * Walk memory
  */
-void 
-inhx32_memory_walk(const void *entry, VISIT order, int level) 
-{ 
+void
+inhx32_memory_walk(const void *entry, VISIT order, int level)
+{
 	pic_data *data = *(pic_data **)entry;
 	uint8_t i;
 
@@ -748,7 +804,7 @@ inhx32_memory_walk(const void *entry, VISIT order, int level)
 		for (i = 0; i < data->nbytes; ++i)
 			inhx32_pmem[inhx32_index++] = data->bytes[i];
 	}
-} 
+}
 
 /*
  * Allocate memory

@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -33,45 +33,114 @@ uint8_t
 io_backend(void)
 {
 #ifdef ALLWINNER
-	if ((strcasecmp(p.device, "bpi") == 0) ||
-		(mystrcasestr(p.device, "opi") == p.device))
+	/*
+	 * DEVICE=BPI
+	 * DEVICE=OPI
+	 * DEVICE=OPI0
+	 */
+	if ((strcasecmp(p.device, "BPI") == 0) || (mystrcasestr(p.device, "OPI") == p.device))
 		return allwinner_backend();
 #endif
 #ifdef BITBANG
-	if (strcmp(p.device, "/dev/gpio-bb") == 0)
+	/*
+	 * DEVICE=GPIO-BB
+	 * IFACE=/dev/gpio-bb
+	 */
+	if (strcasecmp(p.device, "GPIO-BB") == 0)
 		return gpio_bb_backend();
 #endif
 #ifdef CP2104
-	if (mystrcasestr(p.device, "cp") == p.device)
+	/*
+	 * DEVICE=CP2104
+	 * IFACE=/dev/ttyUSB0
+	 */
+	if (strcasecmp(p.device, "CP2104") == 0)
 		return cp2104_bb_backend();
 #endif
 #ifdef FTDI
-	if (strcasecmp(p.device, "ftdi") == 0)
+	/*
+	 * DEVICE=FTDI
+	 * IFACE=0
+	 * SERIAL=ABCDEFGH
+	 */
+	if (strcasecmp(p.device, "FTDI") == 0)
 		return ftdi_bb_backend();
 #endif
 #ifdef MCP2221
-	if (strcasecmp(p.device, "mcp") == 0)
+	/*
+	 * DEVICE=MCP2221
+	 */
+	if (strcasecmp(p.device, "MCP2221") == 0)
 		return mcp2221_backend();
 #endif
-#ifdef MCP23017
-	if (strstr(p.device, "/dev/i2c") == p.device)
-		return mcp23017_backend();
+#ifdef MCP23016
+	/*
+	 * DEVICE=MCP23016
+	 * IFACE=/dev/i2c-1
+	 */
+	if (strcasecmp(p.device, "MCP23016") == 0)
+		return mcp23016_backend();
+#endif
+#ifdef MCP230XX
+	/*
+	 * DEVICE=MCP230XX
+	 * IFACE=/dev/i2c-1
+	 */
+	if (strcasecmp(p.device, "MCP230XX") == 0)
+		return mcp230xx_backend();
+#endif
+#ifdef MCP23SXX
+	/*
+	 * DEVICE=MCP23SXX
+	 * IFACE=/dev/spidev0.1
+	 */
+	if (strcasecmp(p.device, "MCP23SXX") == 0)
+		return mcp23sxx_backend();
+#endif
+#ifdef PCF8574
+	/*
+	 * DEVICE=PCF8574
+	 * IFACE=/dev/i2c-1
+	 */
+	if (strcasecmp(p.device, "PCF8574") == 0)
+		return pcf8574_backend();
 #endif
 #ifdef RPI
-	if (mystrcasestr(p.device, "rpi") == p.device)
+	/*
+	 * DEVICE=RPI
+	 * DEVICE=RPI0
+	 * DEVICE=RPI1
+	 * DEVICE=RPI2
+	 * DEVICE=RPI3
+	 * DEVICE=RPI4
+	 */
+	if (mystrcasestr(p.device, "RPI") == p.device)
 		return raspi_backend();
 #endif
 #ifdef SERIAL
-	if (strstr(p.device, "/dev/tty") == p.device)
+	/*
+	 * DEVICE=TTY
+	 * IFACE=/dev/ttyS0
+	 * IFACE=/dev/ttyUSB0
+	 */
+	if (strcasecmp(p.device, "TTY") == 0)
 		return serial_bb_backend();
 #endif
-	return 0; /* Undetermined, unsupported, unknown */
+#ifdef SYSFSGPIO
+	/*
+	 * DEVICE=SYSFSGPIO
+	 */
+	if (strcasecmp(p.device, "SYSFSGPIO") == 0)
+		return sysfs_gpio_backend();
+#endif
+
+	/* Undetermined, unsupported, unknown */
+	return 0;
 }
 
 /*
  * CTRL-C signal handler
  */
-
 int io_stop = 0;
 
 void
@@ -102,21 +171,22 @@ void
 io_config(void)
 {
 	bzero(&p, sizeof(struct pickle));
-	p.f = stderr;					/* Message output stream  */
-	strncpy(p.device, "/dev/ttyS0", STRLEN);	/* Default device         */
-	p.bitrules = PGD_IN_PULLUP | PGD_OUT_FLIP |	/* Default BITRULES       */
-	PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP;
-	p.sleep_high = 1;				/* Mark time              */
-	p.sleep_low = 1;				/* Space time             */
-	p.fwsleep = 30;					/* ICSPIO mark/space time */
-	p.baudrate = 115200;				/* STK500v2 baud rate     */
-	p.mcp  = 0x20;					/* MCP23017 I2C address   */
-	p.vpp  = 11;					/* TX/!MCLR/VPP           */
-	p.pgc  = 10;					/* RTS/PGC CLOCK          */
-	p.pgdo = 9;					/* DTR/PGD DATA_OUT       */
-	p.pgdi = 9;					/* CTS/PGD DATA_IN        */
-	p.pgm  = GPIO_PGM_DISABLED;			/* PGM                    */
-	p.config = CONFIGVER + CONFIGAND;		/* VERIFY + DUMP          */
+	p.f = stderr;					/* Message output stream    */
+	strncpy(p.device, "TTY", STRMAX);		/* Default device	    */
+	strncpy(p.iface, "/dev/ttyS0", STRMAX);		/* Default interface	    */
+	p.bitrules = PGD_IN_PULLUP | PGD_OUT_FLIP |	/* Default BITRULES for the */
+	PGC_OUT_FLIP | VPP_OUT_FLIP | PGD_IN_FLIP;	/*	     Velleman K8048 */
+	p.sleep_high = 1;				/* Mark time		    */
+	p.sleep_low = 1;				/* Space time		    */
+	p.fwsleep = 30;					/* ICSPIO mark/space time   */
+	p.baudrate = 115200;				/* STK500v2/SPI baud rate   */
+	p.addr = 0x20;					/* I2C/SPI iface address    */
+	p.vpp  = 11;					/* TX/!MCLR/VPP		    */
+	p.pgc  = 10;					/* RTS/PGC CLOCK	    */
+	p.pgdo = 9;					/* DTR/PGD DATA_OUT	    */
+	p.pgdi = 9;					/* CTS/PGD DATA_IN	    */
+	p.pgm  = GPIO_DISABLED;				/* PGM			    */
+	p.config = CONFIGVER + CONFIGAND;		/* VERIFY + DUMP	    */
 }
 
 /*
@@ -191,16 +261,28 @@ io_exit(int err)
 
 /*
  * Error
+ *
+ * Eg. Can't open Serial I/O.
  */
 char *
 io_error(void)
 {
-	static char *msg;
+	static char msg[STRLEN] = {0};
+	int rc;
 
 	if (p.io && p.io->error)
-		msg = p.io->error();
- 	else
-		msg = "I/O error";
+		rc = snprintf(msg, STRLEN, "%s [DEVICE=%s] [IFACE=%s]",
+			p.io->error(), p.device, p.iface);
+	else
+		rc = snprintf(msg, STRLEN, "Can't open unsupported I/O [DEVICE=%s] [IFACE=%s].\n\n"
+			"	Run `pickle` to list supported backend I/O", p.device, p.iface);
+	if (rc < 0) {
+		printf("%s: fatal error: snprintf failed\n", __func__);
+		io_exit(EX_OSERR); /* Panic */
+	} else if (rc >= STRLEN) {
+		printf("%s: fatal error: snprintf overrun\n", __func__);
+		io_exit(EX_SOFTWARE); /* Panic */
+	}
 
 	return msg;
 }
@@ -224,36 +306,61 @@ io_fault(int errorcode)
 void
 io_usleep(uint32_t n)
 {
+	struct timeval tv1, tv2;
+	int diff;
+
 	/* No sleep */
 	if (n == 0)
 		return;
 
-	/* I/O sleep */
-	if (n < 10 && p.io && p.io->usleep) {
-		p.io->usleep(n);
+	switch (p.sleep_algo) {
+	case IOSLEEP_DEFAULT:
+		/* Input */
+		if (n < 10 && p.io && p.io->usleep) {
+			p.io->usleep(n);
+			return;
+		}
+		/* Busy */
+		if (n < 100) {
+			gettimeofday(&tv1, NULL);
+			do {
+				gettimeofday(&tv2, NULL);
+				diff = tv2.tv_usec - tv1.tv_usec;
+				if (diff < 0)
+					diff += 1000000;
+			}
+			while (diff < n);
+			return;
+		}
+		/* Usleep() */
+		usleep(n);
+		break;
 
-		return;
-	}
+	case IOSLEEP_INPUT:
+		/* Input */
+		if (p.io && p.io->usleep) {
+			p.io->usleep(n);
+			return;
+		}
+		/* Follow through */
 
-	/* Busy sleep */
-	if (n < 100) {
-		struct timeval tv1, tv2;
-		int diff;
+	case IOSLEEP_USLEEP:
+		/* Usleep() */
+		usleep(n);
+		break;
 
+	case IOSLEEP_BUSY:
+		/* Busy */
 		gettimeofday(&tv1, NULL);
 		do {
 			gettimeofday(&tv2, NULL);
 			diff = tv2.tv_usec - tv1.tv_usec;
 			if (diff < 0)
-				diff += 1000000;	
+				diff += 1000000;
 		}
 		while (diff < n);
-
-		return;
+		break;
 	}
-
-	/* System sleep */
-	usleep(n);
 }
 
 /*
@@ -262,11 +369,13 @@ io_usleep(uint32_t n)
 void
 io_set_pgm(uint8_t pgm)
 {
-	if (p.bitrules & PGM_OUT_FLIP)
-		pgm = HIGH - pgm;
+	if (p.io && p.io->set_pgm) {
 
-	if (p.io && p.io->set_pgm)
+		if (p.bitrules & PGM_OUT_FLIP)
+			pgm = HIGH - pgm;
+
 		p.io->set_pgm(pgm);
+	}
 }
 
 /*
@@ -275,11 +384,13 @@ io_set_pgm(uint8_t pgm)
 void
 io_set_vpp(uint8_t vpp)
 {
-	if (p.bitrules & VPP_OUT_FLIP)
-		vpp = HIGH - vpp;
+	if (p.io && p.io->set_vpp) {
 
-	if (p.io && p.io->set_vpp)
+		if (p.bitrules & VPP_OUT_FLIP)
+			vpp = HIGH - vpp;
+
 		p.io->set_vpp(vpp);
+	}
 }
 
 /*
@@ -288,11 +399,13 @@ io_set_vpp(uint8_t vpp)
 void
 io_set_pgd(uint8_t pgd)
 {
-	if (p.bitrules & PGD_OUT_FLIP)
-		pgd = HIGH - pgd;
+	if (p.io && p.io->set_pgd) {
 
-	if (p.io && p.io->set_pgd)
+		if (p.bitrules & PGD_OUT_FLIP)
+			pgd = HIGH - pgd;
+
 		p.io->set_pgd(pgd);
+	}
 }
 
 /*
@@ -301,11 +414,13 @@ io_set_pgd(uint8_t pgd)
 void
 io_set_pgc(uint8_t pgc)
 {
-	if (p.bitrules & PGC_OUT_FLIP)
-		pgc = HIGH - pgc;
+	if (p.io && p.io->set_pgc) {
 
-	if (p.io && p.io->set_pgc)
+		if (p.bitrules & PGC_OUT_FLIP)
+			pgc = HIGH - pgc;
+
 		p.io->set_pgc(pgc);
+	}
 }
 
 /*
@@ -316,11 +431,13 @@ io_get_pgd(void)
 {
 	uint8_t pgd = 0;
 
-	if (p.io && p.io->get_pgd)
+	if (p.io && p.io->get_pgd) {
+
 		pgd = p.io->get_pgd();
 
-	if (p.bitrules & PGD_IN_FLIP)
-		pgd = HIGH - pgd;
+		if (p.bitrules & PGD_IN_FLIP)
+			pgd = HIGH - pgd;
+	}
 
 	return pgd;
 }
@@ -366,19 +483,19 @@ io_clock_bit(uint32_t ldly, uint32_t hdly)
 void
 io_data_input(void)
 {
-	/* Not for single data GPIO */
-	if (p.io && p.io->single && p.pgdi == p.pgdo)
-		return;
-
-	/* Pull-up PGD output for PGD input (Eg. Velleman K8048) */
-	io_set_pgd((p.bitrules & PGD_IN_PULLUP) ? (HIGH) : (LOW));
+	if (p.bitrules & PGD_IN_PULLUP) {
+		io_set_pgd(HIGH);
+	}
+	else if (p.bitrules & PGD_IN_PULLDOWN) {
+		io_set_pgd(LOW);
+	}
 }
 
 /*
  * Return first bit mask
  */
-static inline
-uint32_t io_first_mask(uint8_t nbits)
+static inline uint32_t
+io_first_mask(uint8_t nbits)
 {
 	return (p.msb_first) ? (1U << (nbits - 1)) : (1 << 0);
 }
@@ -386,8 +503,8 @@ uint32_t io_first_mask(uint8_t nbits)
 /*
  * Return next bit mask
  */
-static inline
-uint32_t io_next_mask(uint32_t mask)
+static inline uint32_t
+io_next_mask(uint32_t mask)
 {
 	return (p.msb_first) ? (mask >> 1) : (mask << 1);
 }

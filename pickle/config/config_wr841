@@ -18,7 +18,8 @@
 #DEVICE=/dev/ttyUSB0
 #DEVICE=RPI
 #DEVICE=/dev/i2c-1
-DEVICE=/dev/gpio-bb
+DEVICE=GPIO-BB
+IFACE=/dev/gpio-bb
 
 # For ttyS 1us is fine
 # For ttyUSB try 600us

@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2005-2019 Darron Broad
+ * Copyright (C) 2005-2020 Darron Broad
  * All rights reserved.
  *
  * This file is part of Pickle Microchip PIC ICSP.
  *
  * Pickle Microchip PIC ICSP is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
- * by the Free Software Foundation. 
+ * by the Free Software Foundation.
  *
  * Pickle Microchip PIC ICSP is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
- * Public License for more details. 
+ * Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along
  * with Pickle Microchip PIC ICSP. If not, see http://www.gnu.org/licenses/
@@ -276,7 +276,7 @@ pic_pe_lookup_file(char *pathname, const char *filename)
 int
 pic_pe_lookup(char *pathname, const char *file)
 {
-	char filename[STRLEN];
+	char filename[STRLEN] = {0};
 	int rc;
 
 	rc = snprintf(filename, STRLEN, "%s.bin", file);
@@ -429,7 +429,7 @@ pic_read_program_memory_block(uint32_t *data, uint32_t addr, uint32_t size)
 }
 
 /*
- * READ DATA EEPROM/FLASH MEMORY BLOCK 
+ * READ DATA EEPROM/FLASH MEMORY BLOCK
  *
  *  INVOKE AFTER `pic_get_data_size'
  */
@@ -445,7 +445,7 @@ pic_read_data_memory_block(uint16_t *data, uint32_t addr, uint16_t size)
 
 	return rc;
 }
- 
+
 /*
  * BULK ERASE DEVICE
  *
@@ -688,7 +688,7 @@ pic_dumposccal(void)
  * DUMP EXTENDED ADDRESS
  *
  * :BBAAAATTHHHHCC
- *  
+ *
  *  BB   02   = NUMBER OF BYTES
  *  AAAA 0000 = ADDRESS (0000)
  *  TT   04   = EXTENDED_LINEAR_ADDRESS
