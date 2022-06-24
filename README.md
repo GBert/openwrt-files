@@ -50,7 +50,7 @@ root@OpenWrt:~# p16 lvp programm 18f26k80\_blink.hex
 Total: 132
 root@OpenWrt:~# p16 lvp verify 18f26k80\_blink.hex 
 Total: 118 Pass: 118 Fail: 0
-root@OpenWrt:~# time k16 lvp flash
+root@OpenWrt:~# time p16 lvp flash
 [000000] 0E8F 14D3 0970 6ED3 8C9B 010F 6B5D 6B5C ....p..n....]k\k
 [000010] 6AC2 6AC1 6AC0 6B5F 6B5E 9092 8089 0100 .j.j.j\_k^k......
 [000020] 0E9C 6E01 0EDD 6E02 0E25 6E03 2E03 EF16 ...n...n%..n....
