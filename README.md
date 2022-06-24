@@ -35,7 +35,7 @@ lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/kctrl -> /usr/
 -rwxr-xr-x    1 root     root         21784 Oct 26 17:04 /usr/bin/kio
 lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/kload -> /usr/bin/k8048
 lrwxrwxrwx    1 root     root            14 Oct 26 17:05 /usr/bin/ktest -> /usr/bin/k8048
-root@OpenWrt:~# k16 lvp info
+root@OpenWrt:~# p16 lvp info
 [000000] [PROGRAM]     8000 WORDS (0400 ROWS OF 0020 WORDS)
 [200000] [IDLOCATION1] FF .
 [200001] [IDLOCATION2] FF .
@@ -55,11 +55,11 @@ root@OpenWrt:~# k16 lvp info
 [3FFFFE] [DEVICEID]    6123 DEV:309 REV:03 PIC18F26K80
 [F00000] [DATA]	       0400 BYTES
 root@OpenWrt:~# # blanking the device is not needed before progamming - just to see if its working
-root@OpenWrt:~# k16 lvp blank
+root@OpenWrt:~# p16 lvp blank
 Blank device: Are you sure [y/N]? y
-root@OpenWrt:~# k16 lvp programm 18f26k80\_blink.hex 
+root@OpenWrt:~# p16 lvp programm 18f26k80\_blink.hex 
 Total: 132
-root@OpenWrt:~# k16 lvp verify 18f26k80\_blink.hex 
+root@OpenWrt:~# p16 lvp verify 18f26k80\_blink.hex 
 Total: 118 Pass: 118 Fail: 0
 root@OpenWrt:~# time k16 lvp flash
 [000000] 0E8F 14D3 0970 6ED3 8C9B 010F 6B5D 6B5C ....p..n....]k\k
