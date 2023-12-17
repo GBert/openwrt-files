@@ -1,0 +1,6 @@
+config I2CARD
+    tristate "I2C loco card interface"
+    depends on I2C
+    select I2CARD
+    help
+      Fast I2C loco card interface
