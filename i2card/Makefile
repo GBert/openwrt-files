@@ -17,8 +17,9 @@ define KernelPackage/$(PKG_NAME)
   SUBMENU:=I2C support
   TITLE:=Fast I2C loco card interface
   DEPENDS:=
-  FILES:=$(PKG_BUILD_DIR)/i2card.ko
   KCONFIG:=
+  FILES:=$(PKG_BUILD_DIR)/i2card.ko
+  AUTOLOAD:=$(call AutoLoad,52,i2card)
 endef
 
 define KernelPackage/$(PKG_NAME)/description
