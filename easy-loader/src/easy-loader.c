@@ -126,8 +126,8 @@ struct command_packet {
  * CAN Bus
  */
 #define CAN_ID        (0x666)
-#define CAN_MSG_DELAY (100)
-#define CAN_CMD_DELAY (100)
+#define CAN_MSG_DELAY (200)
+#define CAN_CMD_DELAY (200)
 
 /*
  * Baud rate lookup
